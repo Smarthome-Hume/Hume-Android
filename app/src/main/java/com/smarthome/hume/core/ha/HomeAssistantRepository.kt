@@ -1,6 +1,5 @@
 package com.smarthome.hume.core.ha
 
-import android.util.Log
 import com.smarthome.hume.core.model.HAEntity
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.toHomeEntity
@@ -22,23 +21,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.TimeUnit
 
 class HomeAssistantRepository {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
-    private val restClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
-    private val wsClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS)
-        .pingInterval(30, TimeUnit.SECONDS)
-        .build()
+    private val client = OkHttpClient.Builder().pingInterval(30, TimeUnit.SECONDS).build()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var ws: WebSocket? = null
     private var msgId = 1
@@ -51,202 +38,57 @@ class HomeAssistantRepository {
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
-    private val _status = MutableStateFlow("Chưa kết nối")
-    val status: StateFlow<String> = _status.asStateFlow()
-
     fun configure(url: String, token: String) {
-        baseUrl = normalizeBaseUrl(url)
+        this.baseUrl = url.trim().trimEnd('/')
         this.token = token.trim()
-        Log.d(TAG, "Configured HA baseUrl=$baseUrl tokenLength=${this.token.length}")
     }
 
     fun connect() {
-        if (baseUrl.isBlank() || token.isBlank()) {
-            _status.value = "Thiếu URL hoặc token"
-            return
-        }
-
+        if (baseUrl.isBlank() || token.isBlank()) return
         disconnect()
-        _status.value = "Đang tải entities bằng REST..."
-
-        scope.launch {
-            val loaded = fetchInitialStates()
-            if (loaded) connectWebSocket()
-        }
+        scope.launch { fetchInitialStates() }
+        val wsUrl = baseUrl.replaceFirst("http://", "ws://").replaceFirst("https://", "wss://") + "/api/websocket"
+        ws = client.newWebSocket(Request.Builder().url(wsUrl).build(), listener)
     }
 
-    fun disconnect() {
-        ws?.close(1000, "bye")
-        ws = null
-        _connected.value = false
-    }
-
-    private fun connectWebSocket() {
-        val wsUrl = baseUrl
-            .replaceFirst("http://", "ws://")
-            .replaceFirst("https://", "wss://") + "/api/websocket"
-        Log.d(TAG, "Connecting WebSocket: $wsUrl")
-        ws = wsClient.newWebSocket(Request.Builder().url(wsUrl).build(), listener)
-    }
+    fun disconnect() { ws?.close(1000, "bye"); ws = null; _connected.value = false }
 
     private val listener = object : WebSocketListener() {
-        override fun onOpen(webSocket: WebSocket, response: Response) {
-            Log.d(TAG, "WebSocket opened")
-        }
-
-        override fun onMessage(webSocket: WebSocket, text: String) {
-            Log.d(TAG, "WS ${text.take(300)}")
-            handleWs(text)
-        }
-
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            Log.e(TAG, "WebSocket failed", t)
-            _connected.value = false
-            _status.value = if (_entities.value.isNotEmpty()) {
-                "Đã tải ${_entities.value.size} entities; realtime chưa kết nối"
-            } else {
-                "WebSocket lỗi: ${t.message ?: "unknown"}"
-            }
-        }
-
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            Log.d(TAG, "WebSocket closed: $code $reason")
-            _connected.value = false
-        }
+        override fun onMessage(webSocket: WebSocket, text: String) { handleWs(text) }
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { _connected.value = false }
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { _connected.value = false }
     }
 
     private fun handleWs(text: String) {
-        val obj = runCatching { json.parseToJsonElement(text).jsonObject }
-            .onFailure { Log.e(TAG, "WS JSON parse failed", it) }
-            .getOrNull() ?: return
-
+        val obj = runCatching { json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return
         when (obj["type"]?.jsonPrimitive?.contentOrNull) {
             "auth_required" -> ws?.send("""{"type":"auth","access_token":"$token"}""")
             "auth_ok" -> {
                 _connected.value = true
-                _status.value = "Realtime đã kết nối; ${_entities.value.size} entities"
                 ws?.send("""{"id":${++msgId},"type":"subscribe_events","event_type":"state_changed"}""")
             }
-            "auth_invalid" -> {
-                _connected.value = false
-                _status.value = "Token Home Assistant không hợp lệ"
-            }
+            "auth_invalid" -> _connected.value = false
             "event" -> {
-                val newState = obj["event"]?.jsonObject
-                    ?.get("data")?.jsonObject
-                    ?.get("new_state") ?: return
-                val ent = runCatching { json.decodeFromJsonElement(HAEntity.serializer(), newState) }
-                    .onFailure { Log.e(TAG, "Decode WS entity failed", it) }
-                    .getOrNull() ?: return
+                val newState = obj["event"]?.jsonObject?.get("data")?.jsonObject?.get("new_state") ?: return
+                val ent = runCatching { json.decodeFromJsonElement(HAEntity.serializer(), newState) }.getOrNull() ?: return
                 _entities.value = _entities.value + (ent.entityId to ent.toHomeEntity())
             }
         }
     }
 
-    suspend fun fetchInitialStates(): Boolean {
-        val url = "$baseUrl/api/states"
-        Log.d(TAG, "Fetching HA states from $url")
-
-        val okHttpResult = fetchStatesWithOkHttp(url)
-        if (okHttpResult != null) return applyStates(okHttpResult, "OkHttp")
-
-        _status.value = "OkHttp lỗi, thử fallback..."
-        val fallbackResult = fetchStatesWithHttpUrlConnection(url)
-        if (fallbackResult != null) return applyStates(fallbackResult, "HttpURLConnection")
-
-        return false
-    }
-
-    private fun fetchStatesWithOkHttp(url: String): String? {
-        return try {
-            val req = Request.Builder()
-                .url(url)
-                .header("Authorization", "Bearer $token")
-                .header("Accept", "application/json")
-                .build()
-
-            restClient.newCall(req).execute().use { response ->
-                val body = response.body?.string().orEmpty()
-                Log.d(TAG, "OkHttp GET /api/states -> HTTP ${response.code}, body=${body.take(300)}")
-                if (!response.isSuccessful) {
-                    _status.value = "REST OkHttp lỗi: HTTP ${response.code}"
-                    null
-                } else body
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "OkHttp fetchInitialStates failed", e)
-            _status.value = "REST OkHttp lỗi: ${e.message ?: e.javaClass.simpleName}"
-            null
-        }
-    }
-
-    private fun fetchStatesWithHttpUrlConnection(url: String): String? {
-        return try {
-            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 30000
-                readTimeout = 30000
-                setRequestProperty("Authorization", "Bearer $token")
-                setRequestProperty("Accept", "application/json")
-            }
-            val code = conn.responseCode
-            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-            val body = BufferedReader(InputStreamReader(stream)).use { it.readText() }
-            conn.disconnect()
-            Log.d(TAG, "HttpURLConnection GET /api/states -> HTTP $code, body=${body.take(300)}")
-            if (code !in 200..299) {
-                _status.value = "REST fallback lỗi: HTTP $code"
-                null
-            } else body
-        } catch (e: Exception) {
-            Log.e(TAG, "HttpURLConnection fetchInitialStates failed", e)
-            _status.value = "REST fallback lỗi: ${e.message ?: e.javaClass.simpleName}"
-            null
-        }
-    }
-
-    private fun applyStates(body: String, source: String): Boolean {
-        val arr = runCatching { json.decodeFromString<List<HAEntity>>(body) }
-            .onFailure {
-                Log.e(TAG, "Decode /api/states failed via $source", it)
-                _status.value = "Lỗi đọc entities ($source): ${it.message ?: "parse failed"}"
-            }
-            .getOrNull() ?: return false
-
+    suspend fun fetchInitialStates() {
+        val req = Request.Builder().url("$baseUrl/api/states").header("Authorization", "Bearer $token").build()
+        val body = client.newCall(req).execute().body?.string() ?: return
+        val arr = runCatching { json.decodeFromString<List<HAEntity>>(body) }.getOrDefault(emptyList())
         _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
-        _status.value = "Đã tải ${arr.size} entities bằng $source"
-        Log.d(TAG, "Loaded entities=${arr.size} via $source")
-        return true
     }
 
     fun callService(domain: String, service: String, dataJson: String) {
         scope.launch {
-            try {
-                val body = dataJson.toRequestBody("application/json".toMediaType())
-                val req = Request.Builder()
-                    .url("$baseUrl/api/services/$domain/$service")
-                    .header("Authorization", "Bearer $token")
-                    .header("Content-Type", "application/json")
-                    .post(body)
-                    .build()
-                restClient.newCall(req).execute().use { response ->
-                    Log.d(TAG, "POST /api/services/$domain/$service -> HTTP ${response.code}")
-                    if (!response.isSuccessful) _status.value = "Service lỗi: HTTP ${response.code}"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "callService failed", e)
-                _status.value = "Service lỗi: ${e.message ?: e.javaClass.simpleName}"
-            }
+            val body = dataJson.toRequestBody("application/json".toMediaType())
+            val req = Request.Builder().url("$baseUrl/api/services/$domain/$service")
+                .header("Authorization", "Bearer $token").post(body).build()
+            client.newCall(req).execute().close()
         }
-    }
-
-    private fun normalizeBaseUrl(input: String): String {
-        val trimmed = input.trim().trimEnd('/')
-        if (trimmed.isBlank()) return ""
-        return if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) trimmed else "http://$trimmed"
-    }
-
-    companion object {
-        private const val TAG = "HumeHA"
     }
 }
