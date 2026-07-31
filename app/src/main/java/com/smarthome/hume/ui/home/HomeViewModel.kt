@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 /** Everything the home dashboard renders, in one immutable snapshot. */
 data class HomeUiState(
@@ -37,7 +38,9 @@ class HomeViewModel(
     private val sensors: SensorDatabase,
 ) : ViewModel() {
 
-    val rooms: List<RoomConfig> = DefaultRooms.climateRooms + DefaultRooms.basicRooms
+    val climateRooms: List<RoomConfig> = DefaultRooms.climateRooms
+    val basicRooms: List<RoomConfig> = DefaultRooms.basicRooms
+    val rooms: List<RoomConfig> = climateRooms + basicRooms
 
     /** Exposed for the bottom sheets, which still issue their own service calls. */
     val repository: HomeAssistantRepository get() = ha
@@ -71,6 +74,19 @@ class HomeViewModel(
         return ids
     }
 
+    /** Add the detected energy sensors to the realtime set once they are known. */
+    fun watchEnergySensors(entities: Map<String, HomeEntity>) {
+        val extra = listOfNotNull(
+            EnergyDetect.solarPower(entities)?.entityId,
+            EnergyDetect.dailyEnergy(entities)?.entityId,
+            EnergyDetect.gridPower(entities)?.entityId,
+            EnergyDetect.loadPower(entities)?.entityId,
+            EnergyDetect.battery(entities)?.entityId,
+        )
+        if (extra.isEmpty()) return
+        ha.setWatchedEntities(watchedIds() + extra)
+    }
+
     override fun onCleared() {
         ha.setWatchedEntities(emptySet())
         super.onCleared()
@@ -87,6 +103,13 @@ class HomeViewModel(
 
     fun activateScene(item: SceneItem) = runScene(ha, item)
 
+    /** Step the air conditioner target temperature from the room card. */
+    fun adjustTarget(room: RoomConfig, delta: Double) {
+        val climate = room.climateEntity ?: return
+        val current = uiState.value.entities.attr(climate, "temperature")?.toDoubleOrNull() ?: return
+        ha.setClimateTemperature(climate, (current + delta).coerceIn(16.0, 32.0))
+    }
+
     /** Home Assistant history first, local sensor database as the offline fallback. */
     suspend fun history(entityId: String, hours: Int = 24): List<HistoryPoint> {
         val remote = ha.fetchHistory(entityId, hours)
@@ -94,6 +117,35 @@ class HomeViewModel(
         return withContext(Dispatchers.IO) {
             sensors.history(entityId, System.currentTimeMillis() - hours * 3_600_000L)
         }
+    }
+
+    /** Seven day series for the solar card: one bar per day, highest reading wins. */
+    suspend fun weekly(entityId: String): List<DayValue> {
+        val points = history(entityId, 24 * 7)
+        if (points.isEmpty()) return emptyList()
+        val calendar = Calendar.getInstance()
+        val buckets = LinkedHashMap<String, Pair<Double, Int>>()
+        points.forEach { point ->
+            calendar.timeInMillis = point.timeMs
+            val key = calendar.get(Calendar.YEAR).toString() + "-" + calendar.get(Calendar.DAY_OF_YEAR)
+            val weekday = calendar.get(Calendar.DAY_OF_WEEK)
+            val previous = buckets[key]?.first ?: Double.NEGATIVE_INFINITY
+            buckets[key] = maxOf(previous, point.value) to weekday
+        }
+        val today = Calendar.getInstance().let { it.get(Calendar.YEAR).toString() + "-" + it.get(Calendar.DAY_OF_YEAR) }
+        return buckets.entries.takeLast(7).map { (key, pair) ->
+            DayValue(label = weekdayLabel(pair.second), value = pair.first, isToday = key == today)
+        }
+    }
+
+    private fun weekdayLabel(dayOfWeek: Int): String = when (dayOfWeek) {
+        Calendar.MONDAY -> "T2"
+        Calendar.TUESDAY -> "T3"
+        Calendar.WEDNESDAY -> "T4"
+        Calendar.THURSDAY -> "T5"
+        Calendar.FRIDAY -> "T6"
+        Calendar.SATURDAY -> "T7"
+        else -> "CN"
     }
 }
 
