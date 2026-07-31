@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -24,9 +25,13 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "HumeHA"
+
+/** One point of /api/history/period, used by ChartDialog. */
+data class HistoryPoint(val timeMs: Long, val value: Double)
 
 class HomeAssistantRepository {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -177,6 +182,40 @@ class HomeAssistantRepository {
         } catch (t: Throwable) {
             Log.e(TAG, "fetchInitialStates failed for $url", t)
             _lastError.value = "REST: ${t.message}"
+        }
+    }
+
+    /**
+     * GET /api/history/period, ported from HomeAssistantManager.swift.
+     * Non-numeric states are skipped, so this only makes sense for sensors.
+     */
+    suspend fun fetchHistory(entityId: String, hours: Int = 24): List<HistoryPoint> = withContext(Dispatchers.IO) {
+        val startIso = Instant.ofEpochMilli(System.currentTimeMillis() - hours * 3_600_000L).toString()
+        val url = "$baseUrl/api/history/period/$startIso" +
+            "?filter_entity_id=$entityId&minimal_response&significant_changes_only"
+        try {
+            val req = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
+            client.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                Log.i(TAG, "GET /api/history/period ($entityId) -> HTTP ${resp.code}, ${body.length} bytes")
+                if (!resp.isSuccessful) return@use emptyList()
+                val series = json.parseToJsonElement(body).jsonArray.firstOrNull()?.jsonArray
+                    ?: return@use emptyList()
+                series.mapNotNull { element ->
+                    val row = element.jsonObject
+                    val value = row["state"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: return@mapNotNull null
+                    val stamp = row["last_changed"]?.jsonPrimitive?.contentOrNull
+                        ?: row["last_updated"]?.jsonPrimitive?.contentOrNull
+                        ?: return@mapNotNull null
+                    val millis = runCatching { Instant.parse(stamp).toEpochMilli() }.getOrNull()
+                        ?: return@mapNotNull null
+                    HistoryPoint(millis, value)
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "fetchHistory failed for $url", t)
+            _lastError.value = "History: ${t.message}"
+            emptyList()
         }
     }
 
