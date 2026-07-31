@@ -26,9 +26,13 @@ import java.util.concurrent.TimeUnit
 
 class HomeAssistantRepository {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
+    private val restClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+    private val wsClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.SECONDS)
         .pingInterval(30, TimeUnit.SECONDS)
         .build()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -58,22 +62,28 @@ class HomeAssistantRepository {
         }
 
         disconnect()
-        _status.value = "Đang tải entities..."
+        _status.value = "Đang tải entities bằng REST..."
 
-        // Load REST states immediately. Do not wait for WebSocket auth_ok, because
-        // WS can be blocked by proxy/LAN while REST still works.
-        scope.launch { fetchInitialStates() }
-
-        val wsUrl = baseUrl
-            .replaceFirst("http://", "ws://")
-            .replaceFirst("https://", "wss://") + "/api/websocket"
-        ws = client.newWebSocket(Request.Builder().url(wsUrl).build(), listener)
+        // The app must be usable even when HA WebSocket is slow/blocked.
+        // Load entities with REST first, then start WebSocket only after REST succeeds.
+        scope.launch {
+            val loaded = fetchInitialStates()
+            if (loaded) connectWebSocket()
+        }
     }
 
     fun disconnect() {
         ws?.close(1000, "bye")
         ws = null
         _connected.value = false
+    }
+
+    private fun connectWebSocket() {
+        val wsUrl = baseUrl
+            .replaceFirst("http://", "ws://")
+            .replaceFirst("https://", "wss://") + "/api/websocket"
+        Log.d(TAG, "Connecting WebSocket: $wsUrl")
+        ws = wsClient.newWebSocket(Request.Builder().url(wsUrl).build(), listener)
     }
 
     private val listener = object : WebSocketListener() {
@@ -89,7 +99,12 @@ class HomeAssistantRepository {
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             Log.e(TAG, "WebSocket failed", t)
             _connected.value = false
-            if (_entities.value.isEmpty()) _status.value = "WebSocket lỗi: ${t.message ?: "unknown"}"
+            // Do not overwrite successful REST state with a WS error.
+            _status.value = if (_entities.value.isNotEmpty()) {
+                "Đã tải ${_entities.value.size} entities; realtime chưa kết nối"
+            } else {
+                "WebSocket lỗi: ${t.message ?: "unknown"}"
+            }
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
@@ -107,9 +122,8 @@ class HomeAssistantRepository {
             "auth_required" -> ws?.send("""{"type":"auth","access_token":"$token"}""")
             "auth_ok" -> {
                 _connected.value = true
-                _status.value = "Realtime đã kết nối"
+                _status.value = "Realtime đã kết nối; ${_entities.value.size} entities"
                 ws?.send("""{"id":${++msgId},"type":"subscribe_events","event_type":"state_changed"}""")
-                scope.launch { fetchInitialStates() }
             }
             "auth_invalid" -> {
                 _connected.value = false
@@ -127,39 +141,39 @@ class HomeAssistantRepository {
         }
     }
 
-    suspend fun fetchInitialStates() {
-        try {
-            val currentBase = baseUrl
-            val currentToken = token
+    suspend fun fetchInitialStates(): Boolean {
+        return try {
             val req = Request.Builder()
-                .url("$currentBase/api/states")
-                .header("Authorization", "Bearer $currentToken")
-                .header("Content-Type", "application/json")
+                .url("$baseUrl/api/states")
+                .header("Authorization", "Bearer $token")
+                .header("Accept", "application/json")
                 .build()
 
-            client.newCall(req).execute().use { response ->
+            restClient.newCall(req).execute().use { response ->
                 val body = response.body?.string().orEmpty()
                 Log.d(TAG, "GET /api/states -> HTTP ${response.code}, body=${body.take(300)}")
 
                 if (!response.isSuccessful) {
-                    _status.value = "Không tải được entities: HTTP ${response.code}"
-                    return
+                    _status.value = "REST lỗi: HTTP ${response.code}"
+                    return false
                 }
 
                 val arr = runCatching { json.decodeFromString<List<HAEntity>>(body) }
                     .onFailure {
                         Log.e(TAG, "Decode /api/states failed", it)
-                        _status.value = "Lỗi đọc dữ liệu entities: ${it.message ?: "parse failed"}"
+                        _status.value = "Lỗi đọc entities: ${it.message ?: "parse failed"}"
                     }
-                    .getOrNull() ?: return
+                    .getOrNull() ?: return false
 
                 _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
-                _status.value = "Đã tải ${arr.size} entities"
+                _status.value = "Đã tải ${arr.size} entities bằng REST"
                 Log.d(TAG, "Loaded entities=${arr.size}")
+                true
             }
         } catch (e: Exception) {
             Log.e(TAG, "fetchInitialStates failed", e)
-            _status.value = "Lỗi kết nối Home Assistant: ${e.message ?: e.javaClass.simpleName}"
+            _status.value = "REST lỗi: ${e.message ?: e.javaClass.simpleName}"
+            false
         }
     }
 
@@ -173,7 +187,7 @@ class HomeAssistantRepository {
                     .header("Content-Type", "application/json")
                     .post(body)
                     .build()
-                client.newCall(req).execute().use { response ->
+                restClient.newCall(req).execute().use { response ->
                     Log.d(TAG, "POST /api/services/$domain/$service -> HTTP ${response.code}")
                     if (!response.isSuccessful) _status.value = "Service lỗi: HTTP ${response.code}"
                 }
