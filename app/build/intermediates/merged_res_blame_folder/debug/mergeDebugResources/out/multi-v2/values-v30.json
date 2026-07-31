@@ -4,7 +4,7 @@
             "outputFile": "com.smarthome.hume.app-mergeDebugResources-54:/values-v30/values-v30.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\okash\\.gradle\\caches\\9.5.0\\transforms\\b21a44d3fec50d2f1de4de948727e3b6\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "source": "C:\\Users\\okash\\.gradle\\caches\\9.6.1\\transforms\\28f3f0b5aa20472c630a274e95f06faa\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
