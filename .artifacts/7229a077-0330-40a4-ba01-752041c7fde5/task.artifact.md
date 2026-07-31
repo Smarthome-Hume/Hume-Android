@@ -1,0 +1,3 @@
+- [x] Fix JVM Target Compatibility in `app/build.gradle.kts`
+- [x] Suppress deprecated AGP warning in `gradle.properties`
+- [x] Verify build and sync
