@@ -3,6 +3,7 @@ package com.smarthome.hume.ui.root
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -23,14 +24,30 @@ import com.smarthome.hume.ui.home.HomeScreen
 import com.smarthome.hume.ui.login.LoginScreen
 import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
+import com.smarthome.hume.ui.theme.HumeIcons
 
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
-    if (!settings.hasToken) { LoginScreen(settingsStore); return }
+    if (!settings.hasToken) {
+        LoginScreen(settingsStore)
+        return
+    }
     var tab by remember { mutableStateOf(HumeTab.Home) }
-    Scaffold(bottomBar = {
-        NavigationBar { HumeTab.entries.forEach { item -> NavigationBarItem(selected = tab == item, onClick = { tab = item }, icon = { Text(iconFor(item)) }, label = { Text(item.label) }) } }
-    }) { pad ->
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                HumeTab.entries.forEach { item ->
+                    NavigationBarItem(
+                        selected = tab == item,
+                        onClick = { tab = item },
+                        icon = { Icon(HumeIcons.tab(item), contentDescription = item.label) },
+                        label = { Text(item.label) },
+                        alwaysShowLabel = true,
+                    )
+                }
+            }
+        },
+    ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
             when (tab) {
                 HumeTab.Home -> HomeScreen(ha)
@@ -42,4 +59,3 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         }
     }
 }
-private fun iconFor(tab: HumeTab) = when (tab) { HumeTab.Home -> "⌂"; HumeTab.Energy -> "⚡"; HumeTab.Security -> "🛡"; HumeTab.Profile -> "👤"; HumeTab.AI -> "✦" }
