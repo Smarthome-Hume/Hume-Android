@@ -4,6 +4,7 @@ package com.smarthome.hume.ui.home
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -63,8 +67,8 @@ internal const val ALARM_ENTITY = "alarm_control_panel.alarm_security"
 /**
  * Home dashboard, ported from Hume/Views/Home/HomeView.swift.
  *
- * GreetingHeader -> AlarmLightsCard -> RoomGrid -> RoomBottomSheet / LightsBottomSheet.
- * SolarEnergyCard, SceneSection and ChartDialog land in the next slice.
+ * GreetingHeader -> AlarmLightsCard -> SolarEnergyCard -> RoomGrid -> SceneSection,
+ * plus LightsBottomSheet, NotificationBottomSheet, RoomBottomSheet and ChartDialog.
  */
 @Composable
 fun HomeScreen(ha: HomeAssistantRepository) {
@@ -75,8 +79,11 @@ fun HomeScreen(ha: HomeAssistantRepository) {
 
     var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
     var lightsSheet by remember { mutableStateOf(false) }
+    var notificationSheet by remember { mutableStateOf(false) }
+    var chartEntityId by remember { mutableStateOf<String?>(null) }
 
     val lightsOn = rooms.count { entities[it.lightEntity]?.isOn == true }
+    val alertCount = remember(entities) { homeAlerts(entities).size }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -90,7 +97,9 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 connected = connected,
                 entityCount = entities.size,
                 error = lastError,
+                alertCount = alertCount,
                 onRefresh = { ha.refresh() },
+                onOpenNotifications = { notificationSheet = true },
             )
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -101,6 +110,9 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 onOpenLights = { lightsSheet = true },
                 onAllOff = { setAllLights(ha, rooms, false) },
             )
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            SolarEnergyCard(entities = entities, onChart = { chartEntityId = it })
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
@@ -116,7 +128,11 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 entities = entities,
                 onToggle = { toggleLight(ha, room, entities) },
                 onOpen = { roomSheet = room },
+                onChart = { entityId -> chartEntityId = entityId },
             )
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            SceneSection(entities = entities, ha = ha)
         }
     }
 
@@ -126,6 +142,12 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     if (lightsSheet) {
         LightsBottomSheet(rooms = rooms, ha = ha, entities = entities, onDismiss = { lightsSheet = false })
     }
+    if (notificationSheet) {
+        NotificationBottomSheet(entities = entities, onDismiss = { notificationSheet = false })
+    }
+    chartEntityId?.let { entityId ->
+        ChartDialog(entityId = entityId, ha = ha, entities = entities, onDismiss = { chartEntityId = null })
+    }
 }
 
 @Composable
@@ -133,7 +155,9 @@ private fun GreetingHeader(
     connected: Boolean,
     entityCount: Int,
     error: String?,
+    alertCount: Int,
     onRefresh: () -> Unit,
+    onOpenNotifications: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -144,6 +168,11 @@ private fun GreetingHeader(
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (connected) HumeColors.Green else HumeColors.Amber,
                 )
+            }
+            IconButton(onClick = onOpenNotifications) {
+                BadgedBox(badge = { if (alertCount > 0) Badge { Text(alertCount.toString()) } }) {
+                    Icon(Icons.Rounded.Notifications, contentDescription = "Thông báo")
+                }
             }
             IconButton(onClick = onRefresh) {
                 Icon(Icons.Rounded.Refresh, contentDescription = "Làm mới")
@@ -228,6 +257,7 @@ private fun RoomCard(
     entities: Map<String, HomeEntity>,
     onToggle: () -> Unit,
     onOpen: () -> Unit,
+    onChart: (String) -> Unit,
 ) {
     val isOn = entities[room.lightEntity]?.isOn == true
     val container by animateColorAsState(
@@ -261,17 +291,25 @@ private fun RoomCard(
             )
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Metric(HumeIcons.Temperature, entities.num(room.tempEntity, 1) + "°")
+                Metric(
+                    icon = HumeIcons.Temperature,
+                    value = entities.num(room.tempEntity, 1) + "°",
+                    modifier = Modifier.clickable { onChart(room.tempEntity) },
+                )
                 Spacer(Modifier.width(10.dp))
-                Metric(HumeIcons.Humidity, entities.num(room.humidityEntity, 0) + "%")
+                Metric(
+                    icon = HumeIcons.Humidity,
+                    value = entities.num(room.humidityEntity, 0) + "%",
+                    modifier = Modifier.clickable { onChart(room.humidityEntity) },
+                )
             }
         }
     }
 }
 
 @Composable
-internal fun Metric(icon: ImageVector, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+internal fun Metric(icon: ImageVector, value: String, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(4.dp))
         Text(value, style = MaterialTheme.typography.bodySmall)
