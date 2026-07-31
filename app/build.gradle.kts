@@ -2,7 +2,6 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
-    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -16,15 +15,6 @@ android {
         versionName = "0.1.0"
     }
     buildFeatures { compose = true }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    kotlin {
-        jvmToolchain(21)
-    }
 }
 
 dependencies {
