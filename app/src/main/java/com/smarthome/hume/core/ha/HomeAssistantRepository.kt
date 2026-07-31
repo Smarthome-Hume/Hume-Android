@@ -14,10 +14,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -32,6 +38,12 @@ private const val TAG = "HumeHA"
 
 /** One point of /api/history/period, used by ChartDialog. */
 data class HistoryPoint(val timeMs: Long, val value: Double)
+
+/** Domains whose changes users expect to see instantly when the entity is on screen. */
+private val INTERACTIVE_DOMAINS = setOf(
+    "light", "switch", "lock", "cover", "fan", "climate", "media_player",
+    "alarm_control_panel", "binary_sensor", "input_boolean", "scene", "script", "automation",
+)
 
 class HomeAssistantRepository {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -60,14 +72,47 @@ class HomeAssistantRepository {
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
+    /** Entity registry and area registry, loaded once per WebSocket session. */
+    private val _registry = MutableStateFlow<Map<String, RegistryEntry>>(emptyMap())
+    val registry: StateFlow<Map<String, RegistryEntry>> = _registry.asStateFlow()
+
+    private val _areas = MutableStateFlow<Map<String, String>>(emptyMap())
+    val areas: StateFlow<Map<String, String>> = _areas.asStateFlow()
+
+    /** Entity IDs currently visible in the UI. Only these get realtime treatment. */
+    private val _watched = MutableStateFlow<Set<String>>(emptySet())
+    val watchedEntityIds: StateFlow<Set<String>> = _watched.asStateFlow()
+
+    private val bucketOverrides = HashMap<String, UpdateBucket>()
+    private val pending = HashMap<String, HomeEntity>()
+    private val lastFlush = HashMap<UpdateBucket, Long>()
+    private val registryRequests = HashMap<Int, String>()
+
+    /** Set by HumeApplication so numeric readings land in the local sensor database. */
+    var sensorSink: ((String, Double, Long) -> Unit)? = null
+
+    init {
+        scope.launch {
+            while (true) {
+                delay(1_000)
+                flushDueBuckets()
+            }
+        }
+    }
+
+    /* ---------------- configuration and lifecycle ---------------- */
+
     fun configure(url: String, token: String) {
         this.baseUrl = url.trim().trimEnd('/')
         this.token = token.trim()
         Log.i(TAG, "Configured HA baseUrl=$baseUrl tokenLength=${this.token.length}")
     }
 
+    private val isConfigured: Boolean
+        get() = baseUrl.isNotBlank() && token.isNotBlank()
+
     fun connect() {
-        if (baseUrl.isBlank() || token.isBlank()) {
+        if (!isConfigured) {
             Log.w(TAG, "connect() skipped: baseUrl or token is empty")
             return
         }
@@ -81,6 +126,22 @@ class HomeAssistantRepository {
     fun disconnect() {
         wantConnection = false
         closeSocket()
+    }
+
+    /** Called from MainActivity's lifecycle observer when the app becomes visible. */
+    fun onAppForeground() {
+        if (!isConfigured) return
+        wantConnection = true
+        reconnectAttempt = 0
+        scope.launch { fetchInitialStates() }
+        if (ws == null) openSocket()
+    }
+
+    /** Called when the app is no longer visible: drop the socket instead of burning battery. */
+    fun onAppBackground() {
+        wantConnection = false
+        closeSocket()
+        Log.i(TAG, "App backgrounded, WebSocket released")
     }
 
     private fun closeSocket() {
@@ -111,6 +172,84 @@ class HomeAssistantRepository {
             openSocket()
         }
     }
+
+    /* ---------------- watched entities and update buckets ---------------- */
+
+    /** Tell the repository which entities are on screen right now. */
+    fun setWatchedEntities(ids: Set<String>) {
+        _watched.value = ids
+        // Anything already queued for a watched entity should show up immediately.
+        val ready = HashMap<String, HomeEntity>()
+        synchronized(pending) {
+            ids.forEach { id -> pending.remove(id)?.let { ready[id] = it } }
+        }
+        if (ready.isNotEmpty()) applyUpdates(ready)
+    }
+
+    fun watchEntity(entityId: String) = setWatchedEntities(_watched.value + entityId)
+
+    fun unwatchEntity(entityId: String) = setWatchedEntities(_watched.value - entityId)
+
+    /** Pin one entity to a specific bucket, e.g. a slow outdoor sensor at ONE_HOUR. */
+    fun setBucket(entityId: String, bucket: UpdateBucket) {
+        bucketOverrides[entityId] = bucket
+    }
+
+    fun bucketFor(entityId: String): UpdateBucket {
+        bucketOverrides[entityId]?.let { return it }
+        val watched = _watched.value.contains(entityId)
+        val domain = entityId.substringBefore('.')
+        return when {
+            watched && domain in INTERACTIVE_DOMAINS -> UpdateBucket.REALTIME
+            watched -> UpdateBucket.TEN_SECONDS
+            domain in INTERACTIVE_DOMAINS -> UpdateBucket.THIRTY_SECONDS
+            else -> UpdateBucket.FIVE_MINUTES
+        }
+    }
+
+    private fun onIncomingState(entity: HomeEntity) {
+        if (bucketFor(entity.id) == UpdateBucket.REALTIME) {
+            applyUpdates(mapOf(entity.id to entity))
+        } else {
+            synchronized(pending) { pending[entity.id] = entity }
+        }
+    }
+
+    private fun flushDueBuckets() {
+        val now = System.currentTimeMillis()
+        val ready = HashMap<String, HomeEntity>()
+        synchronized(pending) {
+            if (pending.isEmpty()) return
+            val iterator = pending.entries.iterator()
+            val touched = HashSet<UpdateBucket>()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                val bucket = bucketFor(entry.key)
+                val last = lastFlush[bucket] ?: 0L
+                if (now - last >= bucket.intervalMs) {
+                    ready[entry.key] = entry.value
+                    touched += bucket
+                    iterator.remove()
+                }
+            }
+            touched.forEach { lastFlush[it] = now }
+        }
+        if (ready.isNotEmpty()) applyUpdates(ready)
+    }
+
+    private fun applyUpdates(updates: Map<String, HomeEntity>) {
+        _entities.value = _entities.value + updates
+        val sink = sensorSink ?: return
+        val watched = _watched.value
+        updates.values.forEach { entity ->
+            val value = entity.numericState
+            if (value != null && watched.contains(entity.id)) {
+                sink(entity.id, value, System.currentTimeMillis())
+            }
+        }
+    }
+
+    /* ---------------- WebSocket ---------------- */
 
     private val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
@@ -144,6 +283,7 @@ class HomeAssistantRepository {
                 _connected.value = true
                 _lastError.value = null
                 ws?.send("""{"id":${++msgId},"type":"subscribe_events","event_type":"state_changed"}""")
+                requestRegistries()
             }
             "auth_invalid" -> {
                 Log.e(TAG, "WebSocket auth_invalid: token rejected by Home Assistant")
@@ -153,10 +293,70 @@ class HomeAssistantRepository {
             "event" -> {
                 val newState = obj["event"]?.jsonObject?.get("data")?.jsonObject?.get("new_state") ?: return
                 val ent = runCatching { json.decodeFromJsonElement(HAEntity.serializer(), newState) }.getOrNull() ?: return
-                _entities.value = _entities.value + (ent.entityId to ent.toHomeEntity())
+                onIncomingState(ent.toHomeEntity())
+            }
+            "result" -> {
+                val id = obj["id"]?.jsonPrimitive?.intOrNull ?: return
+                when (registryRequests.remove(id)) {
+                    "entities" -> parseEntityRegistry(obj["result"])
+                    "areas" -> parseAreaRegistry(obj["result"])
+                }
             }
         }
     }
+
+    private fun requestRegistries() {
+        val areaId = ++msgId
+        registryRequests[areaId] = "areas"
+        ws?.send("""{"id":$areaId,"type":"config/area_registry/list"}""")
+        val entityId = ++msgId
+        registryRequests[entityId] = "entities"
+        ws?.send("""{"id":$entityId,"type":"config/entity_registry/list"}""")
+    }
+
+    private fun parseEntityRegistry(element: JsonElement?) {
+        val array = element as? JsonArray ?: return
+        val map = HashMap<String, RegistryEntry>(array.size)
+        array.forEach { item ->
+            val row = runCatching { item.jsonObject }.getOrNull() ?: return@forEach
+            val entityId = row["entity_id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            map[entityId] = RegistryEntry(
+                entityId = entityId,
+                name = row["name"]?.jsonPrimitive?.contentOrNull
+                    ?: row["original_name"]?.jsonPrimitive?.contentOrNull,
+                areaId = row["area_id"]?.jsonPrimitive?.contentOrNull,
+                deviceId = row["device_id"]?.jsonPrimitive?.contentOrNull,
+                platform = row["platform"]?.jsonPrimitive?.contentOrNull,
+            )
+        }
+        _registry.value = map
+        Log.i(TAG, "Entity registry loaded: ${map.size} entries")
+    }
+
+    private fun parseAreaRegistry(element: JsonElement?) {
+        val array = element as? JsonArray ?: return
+        val map = HashMap<String, String>(array.size)
+        array.forEach { item ->
+            val row = runCatching { item.jsonObject }.getOrNull() ?: return@forEach
+            val id = row["area_id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            val name = row["name"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            map[id] = name
+        }
+        _areas.value = map
+        Log.i(TAG, "Area registry loaded: ${map.size} areas")
+    }
+
+    /** Area name for an entity, resolved through the registry. */
+    fun areaNameFor(entityId: String): String? {
+        val area = _registry.value[entityId]?.areaId ?: return null
+        return _areas.value[area]
+    }
+
+    /** Entity IDs belonging to one area, useful when building room screens from the registry. */
+    fun entitiesInArea(areaId: String): List<String> =
+        _registry.value.values.filter { it.areaId == areaId }.map { it.entityId }
+
+    /* ---------------- REST ---------------- */
 
     /** Reload every entity over REST. Safe to call at any time. */
     fun refresh() {
@@ -219,6 +419,8 @@ class HomeAssistantRepository {
         }
     }
 
+    /* ---------------- service helper ---------------- */
+
     /**
      * Call a Home Assistant service.
      *
@@ -264,6 +466,57 @@ class HomeAssistantRepository {
             fetchInitialStates()
         }
     }
+
+    private fun serviceData(entityId: String, extra: JsonObjectBuilder.() -> Unit = {}): String =
+        buildJsonObject {
+            put("entity_id", entityId)
+            extra()
+        }.toString()
+
+    fun turnOn(entityId: String) =
+        callService(entityId.substringBefore('.'), "turn_on", serviceData(entityId), entityId)
+
+    fun turnOff(entityId: String) =
+        callService(entityId.substringBefore('.'), "turn_off", serviceData(entityId), entityId)
+
+    fun toggle(entityId: String) =
+        callService(entityId.substringBefore('.'), "toggle", serviceData(entityId))
+
+    fun setLightBrightness(entityId: String, percent: Int) =
+        callService("light", "turn_on", serviceData(entityId) { put("brightness_pct", percent) }, entityId)
+
+    fun setLightColorTemp(entityId: String, kelvin: Int) =
+        callService("light", "turn_on", serviceData(entityId) { put("color_temp_kelvin", kelvin) }, entityId)
+
+    fun setClimateTemperature(entityId: String, temperature: Double) =
+        callService("climate", "set_temperature", serviceData(entityId) { put("temperature", temperature) })
+
+    fun setHvacMode(entityId: String, mode: String) =
+        callService("climate", "set_hvac_mode", serviceData(entityId) { put("hvac_mode", mode) })
+
+    fun setFanMode(entityId: String, mode: String) =
+        callService("climate", "set_fan_mode", serviceData(entityId) { put("fan_mode", mode) })
+
+    fun setCoverPosition(entityId: String, position: Int) =
+        callService("cover", "set_cover_position", serviceData(entityId) { put("position", position) })
+
+    fun activateScene(entityId: String) =
+        callService("scene", "turn_on", serviceData(entityId))
+
+    fun runScript(entityId: String) =
+        callService("script", "turn_on", serviceData(entityId))
+
+    fun pressButton(entityId: String) =
+        callService("button", "press", serviceData(entityId))
+
+    fun selectOption(entityId: String, option: String) =
+        callService(entityId.substringBefore('.'), "select_option", serviceData(entityId) { put("option", option) })
+
+    fun alarmArm(entityId: String, mode: String, code: String? = null) =
+        callService("alarm_control_panel", "alarm_arm_$mode", serviceData(entityId) { if (code != null) put("code", code) })
+
+    fun alarmDisarm(entityId: String, code: String? = null) =
+        callService("alarm_control_panel", "alarm_disarm", serviceData(entityId) { if (code != null) put("code", code) })
 
     private fun applyLocalState(entityId: String, state: String) {
         val current = _entities.value[entityId] ?: return
