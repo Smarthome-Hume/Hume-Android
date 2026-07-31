@@ -8,9 +8,17 @@ Samsung does not have a separate mandatory native UI framework for third-party A
 - Android adaptive layouts
 - Android system notifications/widgets
 
-Samsung-specific additions are optional: One UI design inspiration, Samsung Remote Test Lab, SmartThings SDK if needed, and Galaxy Store assets if publishing there.
+Samsung-specific additions are optional:
+
+- One UI design language inspiration: spacing, rounded cards, large headers, bottom navigation, edge-to-edge layout.
+- Samsung Remote Test Lab for testing on Galaxy devices.
+- Samsung IAP / Health / SmartThings SDK only if the app needs those services.
+- Galaxy Store assets if publishing on Galaxy Store.
+
+For Hume on Galaxy S26 Ultra, the recommended approach is: Kotlin + Jetpack Compose + Material 3, styled to feel like One UI where useful.
 
 ## iOS to Android mapping
+
 | SwiftUI/iOS | Android |
 |---|---|
 | SwiftUI Views | Jetpack Compose Composables |
@@ -28,7 +36,16 @@ Samsung-specific additions are optional: One UI design inspiration, Samsung Remo
 | SFSpeechRecognizer | Android SpeechRecognizer |
 | AVSpeechSynthesizer | Android TextToSpeech |
 
-## Next phases
+## Current Android skeleton
+- MainActivity
+- HumeApplication
+- SettingsStore using DataStore
+- HomeAssistantRepository using REST + WebSocket
+- Login screen
+- Root navigation with Home / Energy / Security / Profile / AI
+- Basic Home dashboard with room cards and HA service toggles
+
+## Next porting phases
 1. Add ViewModels and lifecycle-aware reconnect.
 2. Port complete entity visibility/rate-limit bucket logic.
 3. Port Home UI cards and room bottom sheets.
