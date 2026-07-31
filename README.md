@@ -18,7 +18,6 @@ This is the first Android skeleton port:
 - WebSocket `/api/websocket` auth + `state_changed` subscription
 - Basic entity cache and service calls
 - Initial Compose UI matching Hume structure
-- Cleartext HTTP enabled for local Home Assistant URLs like `http://192.168.x.x:8123`
 
 ## Run
 Open in Android Studio, let Gradle sync, then run on a connected Samsung device.
