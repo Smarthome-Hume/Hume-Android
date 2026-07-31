@@ -22,6 +22,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.TimeUnit
 
 class HomeAssistantRepository {
@@ -53,6 +57,7 @@ class HomeAssistantRepository {
     fun configure(url: String, token: String) {
         baseUrl = normalizeBaseUrl(url)
         this.token = token.trim()
+        Log.d(TAG, "Configured HA baseUrl=$baseUrl tokenLength=${this.token.length}")
     }
 
     fun connect() {
@@ -64,8 +69,6 @@ class HomeAssistantRepository {
         disconnect()
         _status.value = "Đang tải entities bằng REST..."
 
-        // The app must be usable even when HA WebSocket is slow/blocked.
-        // Load entities with REST first, then start WebSocket only after REST succeeds.
         scope.launch {
             val loaded = fetchInitialStates()
             if (loaded) connectWebSocket()
@@ -99,7 +102,6 @@ class HomeAssistantRepository {
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             Log.e(TAG, "WebSocket failed", t)
             _connected.value = false
-            // Do not overwrite successful REST state with a WS error.
             _status.value = if (_entities.value.isNotEmpty()) {
                 "Đã tải ${_entities.value.size} entities; realtime chưa kết nối"
             } else {
@@ -142,39 +144,79 @@ class HomeAssistantRepository {
     }
 
     suspend fun fetchInitialStates(): Boolean {
+        val url = "$baseUrl/api/states"
+        Log.d(TAG, "Fetching HA states from $url")
+
+        val okHttpResult = fetchStatesWithOkHttp(url)
+        if (okHttpResult != null) return applyStates(okHttpResult, "OkHttp")
+
+        _status.value = "OkHttp lỗi, thử fallback..."
+        val fallbackResult = fetchStatesWithHttpUrlConnection(url)
+        if (fallbackResult != null) return applyStates(fallbackResult, "HttpURLConnection")
+
+        return false
+    }
+
+    private fun fetchStatesWithOkHttp(url: String): String? {
         return try {
             val req = Request.Builder()
-                .url("$baseUrl/api/states")
+                .url(url)
                 .header("Authorization", "Bearer $token")
                 .header("Accept", "application/json")
                 .build()
 
             restClient.newCall(req).execute().use { response ->
                 val body = response.body?.string().orEmpty()
-                Log.d(TAG, "GET /api/states -> HTTP ${response.code}, body=${body.take(300)}")
-
+                Log.d(TAG, "OkHttp GET /api/states -> HTTP ${response.code}, body=${body.take(300)}")
                 if (!response.isSuccessful) {
-                    _status.value = "REST lỗi: HTTP ${response.code}"
-                    return false
-                }
-
-                val arr = runCatching { json.decodeFromString<List<HAEntity>>(body) }
-                    .onFailure {
-                        Log.e(TAG, "Decode /api/states failed", it)
-                        _status.value = "Lỗi đọc entities: ${it.message ?: "parse failed"}"
-                    }
-                    .getOrNull() ?: return false
-
-                _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
-                _status.value = "Đã tải ${arr.size} entities bằng REST"
-                Log.d(TAG, "Loaded entities=${arr.size}")
-                true
+                    _status.value = "REST OkHttp lỗi: HTTP ${response.code}"
+                    null
+                } else body
             }
         } catch (e: Exception) {
-            Log.e(TAG, "fetchInitialStates failed", e)
-            _status.value = "REST lỗi: ${e.message ?: e.javaClass.simpleName}"
-            false
+            Log.e(TAG, "OkHttp fetchInitialStates failed", e)
+            _status.value = "REST OkHttp lỗi: ${e.message ?: e.javaClass.simpleName}"
+            null
         }
+    }
+
+    private fun fetchStatesWithHttpUrlConnection(url: String): String? {
+        return try {
+            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 30000
+                readTimeout = 30000
+                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("Accept", "application/json")
+            }
+            val code = conn.responseCode
+            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+            val body = BufferedReader(InputStreamReader(stream)).use { it.readText() }
+            conn.disconnect()
+            Log.d(TAG, "HttpURLConnection GET /api/states -> HTTP $code, body=${body.take(300)}")
+            if (code !in 200..299) {
+                _status.value = "REST fallback lỗi: HTTP $code"
+                null
+            } else body
+        } catch (e: Exception) {
+            Log.e(TAG, "HttpURLConnection fetchInitialStates failed", e)
+            _status.value = "REST fallback lỗi: ${e.message ?: e.javaClass.simpleName}"
+            null
+        }
+    }
+
+    private fun applyStates(body: String, source: String): Boolean {
+        val arr = runCatching { json.decodeFromString<List<HAEntity>>(body) }
+            .onFailure {
+                Log.e(TAG, "Decode /api/states failed via $source", it)
+                _status.value = "Lỗi đọc entities ($source): ${it.message ?: "parse failed"}"
+            }
+            .getOrNull() ?: return false
+
+        _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
+        _status.value = "Đã tải ${arr.size} entities bằng $source"
+        Log.d(TAG, "Loaded entities=${arr.size} via $source")
+        return true
     }
 
     fun callService(domain: String, service: String, dataJson: String) {
