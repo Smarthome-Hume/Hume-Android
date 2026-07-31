@@ -23,16 +23,27 @@ import com.smarthome.hume.ui.theme.HumeColors
 fun HomeScreen(ha: HomeAssistantRepository) {
     val entities by ha.entities.collectAsState()
     val connected by ha.connected.collectAsState()
+    val lastError by ha.lastError.collectAsState()
     val rooms = DefaultRooms.climateRooms + DefaultRooms.basicRooms
     Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF8F8FA), Color(0xFFEFF3F8)))).padding(16.dp)) {
         Text("Xin chào", style = MaterialTheme.typography.headlineMedium)
-        Text(if (connected) "Home Assistant đã kết nối" else "Đang kết nối Home Assistant...", color = if (connected) HumeColors.Green else HumeColors.Orange)
+        Text(
+            if (connected) "Realtime: đã kết nối" else "Realtime: chưa kết nối (đang dùng REST)",
+            color = if (connected) HumeColors.Green else HumeColors.Orange,
+        )
         Spacer(Modifier.height(16.dp))
         ElevatedCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.padding(18.dp)) {
-                Text("Tổng quan", style = MaterialTheme.typography.titleLarge)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Tổng quan", style = MaterialTheme.typography.titleLarge)
+                    TextButton(onClick = { ha.refresh() }) { Text("Làm mới") }
+                }
                 Text("${entities.size} entities đã tải")
                 Text("Alarm: ${entities["alarm_control_panel.alarm_security"]?.state ?: "unknown"}")
+                lastError?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(it, color = HumeColors.Orange, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -51,12 +62,15 @@ private fun RoomCard(room: RoomConfig, ha: HomeAssistantRepository) {
     ElevatedCard(shape = RoundedCornerShape(22.dp), onClick = {
         val domain = room.lightEntity.substringBefore('.')
         val service = if (light?.isOn == true) "turn_off" else "turn_on"
-        ha.callService(domain, service, "{\"entity_id\":\"${room.lightEntity}\"}")
+        ha.callService(domain, service, "{\"entity_id\":\"${room.lightEntity}\"}", room.lightEntity)
     }) {
         Column(Modifier.padding(16.dp)) {
             Text(room.name, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            Text("Đèn: ${light?.state ?: "unknown"}")
+            Text(
+                "Đèn: ${light?.state ?: "unknown"}",
+                color = if (light?.isOn == true) HumeColors.Green else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text("$temp°C · $hum%")
         }
     }
