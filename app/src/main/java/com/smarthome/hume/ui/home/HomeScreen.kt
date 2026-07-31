@@ -39,7 +39,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,11 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.HumeApplication
 import com.smarthome.hume.core.ha.HomeAssistantRepository
-import com.smarthome.hume.core.model.DefaultRooms
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
@@ -67,23 +69,25 @@ internal const val ALARM_ENTITY = "alarm_control_panel.alarm_security"
 /**
  * Home dashboard, ported from Hume/Views/Home/HomeView.swift.
  *
- * GreetingHeader -> AlarmLightsCard -> SolarEnergyCard -> RoomGrid -> SceneSection,
- * plus LightsBottomSheet, NotificationBottomSheet, RoomBottomSheet and ChartDialog.
+ * State lives in HomeViewModel; this file only renders it.
  */
 @Composable
 fun HomeScreen(ha: HomeAssistantRepository) {
-    val entities by ha.entities.collectAsState()
-    val connected by ha.connected.collectAsState()
-    val lastError by ha.lastError.collectAsState()
-    val rooms = remember { DefaultRooms.climateRooms + DefaultRooms.basicRooms }
+    val app = LocalContext.current.applicationContext as HumeApplication
+    val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase))
+    HomeScreen(viewModel)
+}
+
+@Composable
+fun HomeScreen(viewModel: HomeViewModel) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val entities = state.entities
+    val rooms = viewModel.rooms
 
     var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
     var lightsSheet by remember { mutableStateOf(false) }
     var notificationSheet by remember { mutableStateOf(false) }
     var chartEntityId by remember { mutableStateOf<String?>(null) }
-
-    val lightsOn = rooms.count { entities[it.lightEntity]?.isOn == true }
-    val alertCount = remember(entities) { homeAlerts(entities).size }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -94,21 +98,21 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             GreetingHeader(
-                connected = connected,
-                entityCount = entities.size,
-                error = lastError,
-                alertCount = alertCount,
-                onRefresh = { ha.refresh() },
+                connected = state.connected,
+                entityCount = state.entityCount,
+                error = state.error,
+                alertCount = state.alertCount,
+                onRefresh = { viewModel.refresh() },
                 onOpenNotifications = { notificationSheet = true },
             )
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
             AlarmLightsCard(
                 alarmState = entities[ALARM_ENTITY]?.state,
-                lightsOn = lightsOn,
+                lightsOn = state.lightsOn,
                 totalLights = rooms.size,
                 onOpenLights = { lightsSheet = true },
-                onAllOff = { setAllLights(ha, rooms, false) },
+                onAllOff = { viewModel.allLightsOff() },
             )
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -126,27 +130,42 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             RoomCard(
                 room = room,
                 entities = entities,
-                onToggle = { toggleLight(ha, room, entities) },
+                onToggle = { viewModel.toggleRoomLight(room) },
                 onOpen = { roomSheet = room },
                 onChart = { entityId -> chartEntityId = entityId },
             )
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
-            SceneSection(entities = entities, ha = ha)
+            SceneSection(entities = entities, ha = viewModel.repository)
         }
     }
 
     roomSheet?.let { room ->
-        RoomBottomSheet(room = room, ha = ha, entities = entities, onDismiss = { roomSheet = null })
+        RoomBottomSheet(
+            room = room,
+            ha = viewModel.repository,
+            entities = entities,
+            onDismiss = { roomSheet = null },
+        )
     }
     if (lightsSheet) {
-        LightsBottomSheet(rooms = rooms, ha = ha, entities = entities, onDismiss = { lightsSheet = false })
+        LightsBottomSheet(
+            rooms = rooms,
+            ha = viewModel.repository,
+            entities = entities,
+            onDismiss = { lightsSheet = false },
+        )
     }
     if (notificationSheet) {
         NotificationBottomSheet(entities = entities, onDismiss = { notificationSheet = false })
     }
     chartEntityId?.let { entityId ->
-        ChartDialog(entityId = entityId, ha = ha, entities = entities, onDismiss = { chartEntityId = null })
+        ChartDialog(
+            entityId = entityId,
+            entities = entities,
+            loadHistory = { id -> viewModel.history(id) },
+            onDismiss = { chartEntityId = null },
+        )
     }
 }
 
@@ -320,21 +339,11 @@ internal fun Metric(icon: ImageVector, value: String, modifier: Modifier = Modif
 
 internal fun toggleLight(ha: HomeAssistantRepository, room: RoomConfig, entities: Map<String, HomeEntity>) {
     val isOn = entities[room.lightEntity]?.isOn == true
-    ha.callService(
-        room.lightEntity.substringBefore('.'),
-        if (isOn) "turn_off" else "turn_on",
-        """{"entity_id":"${room.lightEntity}"}""",
-        room.lightEntity,
-    )
+    if (isOn) ha.turnOff(room.lightEntity) else ha.turnOn(room.lightEntity)
 }
 
 internal fun setLight(ha: HomeAssistantRepository, entityId: String, on: Boolean) {
-    ha.callService(
-        entityId.substringBefore('.'),
-        if (on) "turn_on" else "turn_off",
-        """{"entity_id":"$entityId"}""",
-        entityId,
-    )
+    if (on) ha.turnOn(entityId) else ha.turnOff(entityId)
 }
 
 internal fun setAllLights(ha: HomeAssistantRepository, rooms: List<RoomConfig>, on: Boolean) {

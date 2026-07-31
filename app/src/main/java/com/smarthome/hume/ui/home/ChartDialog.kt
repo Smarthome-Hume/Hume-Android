@@ -26,22 +26,24 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.ha.HistoryPoint
-import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Chart popup from HomeView.swift, drawn with Compose Canvas as planned in the stack notes. */
+/**
+ * Chart popup from HomeView.swift, drawn with Compose Canvas.
+ * History loading is injected by HomeViewModel, so this stays UI-only.
+ */
 @Composable
 fun ChartDialog(
     entityId: String,
-    ha: HomeAssistantRepository,
     entities: Map<String, HomeEntity>,
+    loadHistory: suspend (String) -> List<HistoryPoint>,
     onDismiss: () -> Unit,
 ) {
     var points by remember(entityId) { mutableStateOf<List<HistoryPoint>?>(null) }
-    LaunchedEffect(entityId) { points = ha.fetchHistory(entityId, 24) }
+    LaunchedEffect(entityId) { points = loadHistory(entityId) }
 
     val entity = entities[entityId]
     val lineColor = MaterialTheme.colorScheme.primary
