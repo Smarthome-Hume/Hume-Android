@@ -70,7 +70,7 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         Row(
             Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 16.dp, bottom = HumeSpacing.Large)
+                .padding(start = 16.dp, end = 16.dp, bottom = HumeSpacing.Large)
                 .glassPill()
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
