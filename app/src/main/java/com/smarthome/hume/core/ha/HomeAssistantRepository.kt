@@ -3,14 +3,18 @@ package com.smarthome.hume.core.ha
 import android.util.Log
 import com.smarthome.hume.core.model.HAEntity
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.model.HumeTab
 import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.toHomeEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,6 +71,14 @@ class HomeAssistantRepository {
     private val _entities = MutableStateFlow<Map<String, HomeEntity>>(emptyMap())
     val entities: StateFlow<Map<String, HomeEntity>> = _entities.asStateFlow()
 
+    /**
+     * entityUpdated in HomeAssistantManager.swift. One event per entity that
+     * really changed, so a card can listen to its own entity instead of
+     * recomposing on every change of the whole entity map (EntityReader).
+     */
+    private val _entityUpdated = MutableSharedFlow<String>(extraBufferCapacity = 256)
+    val entityUpdated: SharedFlow<String> = _entityUpdated.asSharedFlow()
+
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
@@ -89,6 +101,13 @@ class HomeAssistantRepository {
     private val pending = HashMap<String, HomeEntity>()
     private val lastFlush = HashMap<UpdateBucket, Long>()
     private val registryRequests = HashMap<Int, String>()
+
+    /**
+     * Tab the user is looking at, mirroring activeTab in
+     * HomeAssistantManager.swift. Entities that the current tab does not render
+     * are frozen: their events are queued and replayed when the tab comes back.
+     */
+    private var activeTab: HumeTab = HumeTab.Home
 
     /**
      * Room bubble currently open, mirroring activeRoomKey in
@@ -214,7 +233,7 @@ class HomeAssistantRepository {
         // Anything already queued for a watched entity should show up immediately.
         val ready = HashMap<String, HomeEntity>()
         synchronized(pending) {
-            ids.forEach { id -> if (!isFrozenByRoom(id)) pending.remove(id)?.let { ready[id] = it } }
+            ids.forEach { id -> if (isVisibleOnActiveTab(id)) pending.remove(id)?.let { ready[id] = it } }
         }
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
@@ -222,6 +241,18 @@ class HomeAssistantRepository {
     fun watchEntity(entityId: String) = setWatchedEntities(_watched.value + entityId)
 
     fun unwatchEntity(entityId: String) = setWatchedEntities(_watched.value - entityId)
+
+    /**
+     * setActiveTab() in HomeAssistantManager.swift. Switching tabs replays every
+     * queued event that the new tab actually renders, so the screen is correct
+     * the moment it appears.
+     */
+    fun setActiveTab(tab: HumeTab) {
+        if (tab == activeTab) return
+        activeTab = tab
+        Log.i(TAG, "Active tab -> $tab")
+        releaseVisiblePending()
+    }
 
     /**
      * setActiveRoom() in HomeAssistantManager.swift: pass the room key when a
@@ -232,13 +263,17 @@ class HomeAssistantRepository {
         if (key == activeRoomKey) return
         activeRoomKey = key
         Log.i(TAG, "Active room -> ${key ?: "none"}")
-        if (key == null) return
+        releaseVisiblePending()
+    }
+
+    /** reloadEntitiesFromCache(): publish whatever the new context can display. */
+    private fun releaseVisiblePending() {
         val ready = HashMap<String, HomeEntity>()
         synchronized(pending) {
             val iterator = pending.entries.iterator()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
-                if (entityRoomMap[entry.key]?.contains(key) == true) {
+                if (isVisibleOnActiveTab(entry.key)) {
                     ready[entry.key] = entry.value
                     iterator.remove()
                 }
@@ -247,11 +282,29 @@ class HomeAssistantRepository {
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
 
-    /** isVisibleOnActiveTab(), room part: entities of the other rooms are frozen. */
-    private fun isFrozenByRoom(entityId: String): Boolean {
-        val key = activeRoomKey ?: return false
-        val rooms = entityRoomMap[entityId] ?: return false
-        return !rooms.contains(key)
+    /**
+     * isVisibleOnActiveTab() in HomeAssistantManager.swift.
+     *
+     * Home    : hides the energy-only readings, and freezes the other rooms
+     *           while a room sheet is open.
+     * Energy  : does not draw lights, climate or scenes.
+     * Security: only contact/motion sensors and the alarm panel.
+     * Profile : only the person entity.
+     */
+    private fun isVisibleOnActiveTab(entityId: String): Boolean {
+        val domain = entityId.substringBefore('.')
+        return when (activeTab) {
+            HumeTab.Home -> {
+                if (ENERGY_ONLY_IDS.contains(entityId)) return false
+                val rooms = entityRoomMap[entityId]
+                val key = activeRoomKey
+                if (rooms != null && key != null) rooms.contains(key) else true
+            }
+            HumeTab.Energy -> domain !in HOME_ONLY_DOMAINS
+            HumeTab.Security -> domain == "binary_sensor" || domain == "alarm_control_panel"
+            HumeTab.Profile -> domain == "person"
+            else -> false
+        }
     }
 
     /** Pin one entity to a specific bucket, e.g. a slow outdoor sensor at ONE_HOUR. */
@@ -272,7 +325,7 @@ class HomeAssistantRepository {
     }
 
     private fun onIncomingState(entity: HomeEntity) {
-        if (isFrozenByRoom(entity.id) || bucketFor(entity.id) != UpdateBucket.REALTIME) {
+        if (!isVisibleOnActiveTab(entity.id) || bucketFor(entity.id) != UpdateBucket.REALTIME) {
             synchronized(pending) { pending[entity.id] = entity }
         } else {
             applyUpdates(mapOf(entity.id to entity))
@@ -288,7 +341,7 @@ class HomeAssistantRepository {
             val touched = HashSet<UpdateBucket>()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
-                if (isFrozenByRoom(entry.key)) continue
+                if (!isVisibleOnActiveTab(entry.key)) continue
                 val bucket = bucketFor(entry.key)
                 val last = lastFlush[bucket] ?: 0L
                 if (now - last >= bucket.intervalMs) {
@@ -303,10 +356,11 @@ class HomeAssistantRepository {
     }
 
     /**
-     * applyBatch() in HomeAssistantManager.swift. Two rules matter here:
+     * applyBatch() in HomeAssistantManager.swift. Three rules matter here:
      * an update whose state and attributes are unchanged is dropped instead of
-     * being republished, and a real event always clears the optimistic marker
-     * for that entity because reality has now spoken.
+     * being republished, a real event always clears the optimistic marker for
+     * that entity because reality has now spoken, and every entity that really
+     * changed is announced on entityUpdated.
      */
     private fun applyUpdates(updates: Map<String, HomeEntity>) {
         val current = _entities.value
@@ -323,6 +377,7 @@ class HomeAssistantRepository {
         }
         if (changed.isEmpty()) return
         _entities.value = current + changed
+        changed.keys.forEach { _entityUpdated.tryEmit(it) }
 
         val sink = sensorSink ?: return
         val watched = _watched.value
@@ -693,6 +748,7 @@ class HomeAssistantRepository {
         if (current.state == state) return
         synchronized(optimisticUntil) { optimisticUntil[entityId] = System.currentTimeMillis() }
         _entities.value = _entities.value + (entityId to current.copy(state = state))
+        _entityUpdated.tryEmit(entityId)
     }
 
     /** setClimateTemperature() in HomeAssistantManager.swift writes the attribute in place. */
@@ -702,10 +758,40 @@ class HomeAssistantRepository {
         synchronized(optimisticUntil) { optimisticUntil[entityId] = System.currentTimeMillis() }
         val attributes = current.attributes.toMutableMap().apply { this[key] = value }
         _entities.value = _entities.value + (entityId to current.copy(attributes = attributes))
+        _entityUpdated.tryEmit(entityId)
     }
 
     private companion object {
         /** How long a local flip outranks a REST snapshot. */
         const val OPTIMISTIC_WINDOW_MS = 5_000L
+
+        /** energyOnlyIds in HomeAssistantManager.swift: never drawn on Home. */
+        val ENERGY_ONLY_IDS = setOf(
+            "sensor.solis_s6_eh1p_pv_voltage_1_2", "sensor.solis_s6_eh1p_pv_voltage_2_2",
+            "sensor.solis_s6_eh1p_pv_current_1_2", "sensor.solis_s6_eh1p_pv_current_2_2",
+            "sensor.solis_s6_eh1p_battery_voltage_2",
+            "sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2",
+            "sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2",
+            "sensor.battery_current_flow",
+            "sensor.aptomat_t1_energy_daily", "sensor.aptomat_t1_power",
+            "sensor.aptomat_t2_energy_daily", "sensor.aptomat_t2_power",
+            "sensor.aptomat_t3_energy_daily", "sensor.aptomat_t3_power",
+            "sensor.grid_import_billing_2", "sensor.home_import_billing",
+            "sensor.evn_current_unit_price",
+            "sensor.grid_cost", "sensor.home_cost",
+            "number.solis_s6_eh1p_battery_max_charge_current_2",
+            "number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2",
+            "number.solis_s6_eh1p_grid_time_of_use_charge_cut_off_soc_slot_1_2",
+            "number.solis_s6_eh1p_force_charge_soc_2",
+            "number.solis_s6_eh1p_backup_soc_2",
+            "number.solis_s6_eh1p_battery_max_discharge_current_2",
+            "number.solis_s6_eh1p_off_grid_overdischarge_soc_2",
+            "number.solis_s6_eh1p_overdischarge_soc_2",
+            "switch.allow_grid_to_charge_the_battery_2",
+            "switch.grid_time_of_use_charging_period_1_2",
+        )
+
+        /** homeOnlyDomains: lights, climate and scenes are not drawn outside Home. */
+        val HOME_ONLY_DOMAINS = setOf("light", "climate", "scene")
     }
 }
