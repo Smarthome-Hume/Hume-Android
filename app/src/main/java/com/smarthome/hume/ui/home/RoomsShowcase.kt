@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,6 +44,12 @@ import com.smarthome.hume.ui.theme.glassSurface
 private val CardRadius = 34.dp
 private val CardHeight = 240.dp
 
+/** cardGrid in HomeView.swift uses 12 point gaps, not 14. */
+private val GridGap = 12.dp
+
+/** SensorPageView: two 64 point cards with a 12 point gap = 140. */
+private val SensorPageHeight = 140.dp
+
 /** Small square tile used in the staggered room area. */
 data class SmallTile(
     val icon: ImageVector,
@@ -52,8 +59,12 @@ data class SmallTile(
 )
 
 /**
- * The staggered two column area from the prototype: swipeable room cards with
- * page dots, mixed with small sensor tiles.
+ * cardGrid from HomeView.swift.
+ *
+ * Left column  : sensor pager (3 pages of 2 sensors, height 140) then the
+ *                climate room pager (height 240).
+ * Right column : the basic room pager (height 240) then the device card and
+ *                the door card, which are fixed cards, not a pager.
  */
 @Composable
 fun RoomsShowcase(
@@ -67,9 +78,13 @@ fun RoomsShowcase(
     onTileClick: (String) -> Unit,
     onAdjustTarget: (RoomConfig, Double) -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            TilePager(leftTiles, onTileClick)
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(GridGap),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GridGap)) {
+            SensorPager(leftTiles, onTileClick)
             RoomPager(
                 rooms = climateRooms,
                 entities = entities,
@@ -78,7 +93,7 @@ fun RoomsShowcase(
                 onAdjustTarget = onAdjustTarget,
             )
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GridGap)) {
             RoomPager(
                 rooms = otherRooms,
                 entities = entities,
@@ -86,54 +101,86 @@ fun RoomsShowcase(
                 onToggleLight = onToggleLight,
                 onAdjustTarget = onAdjustTarget,
             )
-            TilePager(rightTiles, onTileClick)
+            // DeviceCardView and DoorCardView: one card each, driven by the
+            // dashboard_active_card selectors, never swipeable.
+            rightTiles.forEach { tile -> WideTileCard(tile, onTileClick) }
         }
     }
 }
 
+/** SwipeCardView(pages: sensorPages, height: 140). */
 @Composable
-private fun TilePager(tiles: List<SmallTile>, onTileClick: (String) -> Unit) {
+private fun SensorPager(tiles: List<SmallTile>, onTileClick: (String) -> Unit) {
     if (tiles.isEmpty()) return
     val pages = tiles.chunked(2)
     val pagerState = rememberPagerState(pageCount = { pages.size })
     Column {
-        HorizontalPager(state = pagerState) { page ->
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                pages[page].forEach { tile -> SmallTileCard(tile, onTileClick) }
+        HorizontalPager(state = pagerState, modifier = Modifier.height(SensorPageHeight)) { page ->
+            Column(verticalArrangement = Arrangement.spacedBy(GridGap)) {
+                pages[page].forEach { tile -> SensorTileCard(tile, onTileClick) }
             }
         }
         if (pages.size > 1) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             PagerDots(pages.size, pagerState.currentPage)
         }
     }
 }
 
 /**
- * SmallSensorCardView.swift. Card height 64 with radius 32, and a 60 point
- * glass circle inside it, so the card corner peeks 2 points around the circle.
- * Value 16 medium, name 14 at 70 percent. The icon container stays 64 wide so
- * the text column always starts at the same x.
+ * SmallSensorCard: card height 64 radius 32, glass circle 60 inside a 64 wide
+ * container, icon 26. The card corner peeks 2 points around the circle.
  */
 @Composable
-private fun SmallTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
+private fun SensorTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
+    TileCard(
+        tile = tile,
+        cardHeight = 64.dp,
+        circleSize = 60.dp,
+        iconSize = 26.dp,
+        onTileClick = onTileClick,
+    )
+}
+
+/** DeviceCardView / DoorCardView: height 66 radius 33, circle 62, icon 28. */
+@Composable
+private fun WideTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
+    TileCard(
+        tile = tile,
+        cardHeight = 66.dp,
+        circleSize = 62.dp,
+        iconSize = 28.dp,
+        trailingPadding = 20.dp,
+        onTileClick = onTileClick,
+    )
+}
+
+@Composable
+private fun TileCard(
+    tile: SmallTile,
+    cardHeight: androidx.compose.ui.unit.Dp,
+    circleSize: androidx.compose.ui.unit.Dp,
+    iconSize: androidx.compose.ui.unit.Dp,
+    trailingPadding: androidx.compose.ui.unit.Dp = 8.dp,
+    onTileClick: (String) -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .glassSurface(radius = 32.dp)
+            .height(cardHeight)
+            .glassSurface(radius = cardHeight / 2)
             .clickable(enabled = tile.entityId != null) { tile.entityId?.let(onTileClick) },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.width(64.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.width(cardHeight), contentAlignment = Alignment.Center) {
             Box(
-                Modifier.size(60.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.45f)),
+                Modifier.size(circleSize).clip(CircleShape).background(Color.White.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(tile.icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(26.dp))
+                Icon(tile.icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(iconSize))
             }
         }
-        Column(Modifier.padding(start = 12.dp, end = 8.dp)) {
+        Column(Modifier.padding(start = 10.dp, end = trailingPadding)) {
             Text(tile.value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, maxLines = 1)
             Text(tile.label, fontSize = 14.sp, color = HumeColors.TextSecondary, maxLines = 1)
         }
@@ -151,7 +198,7 @@ private fun RoomPager(
     if (rooms.isEmpty()) return
     val pagerState = rememberPagerState(pageCount = { rooms.size })
     Column {
-        HorizontalPager(state = pagerState) { page ->
+        HorizontalPager(state = pagerState, modifier = Modifier.height(CardHeight)) { page ->
             RoomCardLarge(
                 room = rooms[page],
                 entities = entities,
@@ -161,7 +208,7 @@ private fun RoomPager(
             )
         }
         if (rooms.size > 1) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             PagerDots(rooms.size, pagerState.currentPage)
         }
     }
@@ -170,11 +217,10 @@ private fun RoomPager(
 /**
  * RoomCardView.swift / ClimateRoomCardView.swift.
  *
- * The card surface is always the neutral glass panel. Orange is not decoration:
- * it is the light on indicator, and it is applied exactly the way the SwiftUI
- * card applies it. A translucent orange wash at 10 percent, an orange border at
- * 40 percent, an orange glow, and an orange icon tint. Lights off means no
- * orange anywhere on the card.
+ * Orange is not decoration: it is the light on indicator. Wash 10 percent,
+ * border 40 percent, glow radius 10, orange icon. Lights off means a plain
+ * glass card with a white 8 percent hairline border. The small orange dot on
+ * the icon is the contact sensor of that room reporting open.
  */
 @Composable
 private fun RoomCardLarge(
@@ -185,6 +231,7 @@ private fun RoomCardLarge(
     onAdjustTarget: (Double) -> Unit,
 ) {
     val lightOn = entities[room.lightEntity]?.isOn == true
+    val contactOpen = room.contactEntity?.let { entities[it]?.isOn == true } == true
     val temp = entities.num(room.tempEntity, 0)
     val humidity = entities.num(room.humidityEntity, 0)
     val target = entities.attr(room.climateEntity ?: "", "temperature")
@@ -204,7 +251,11 @@ private fun RoomCardLarge(
             .glassSurface(radius = CardRadius, elevation = 0.dp)
             // The 10 percent orange wash sits on top of the glass, not instead of it.
             .then(if (lightOn) Modifier.background(HumeColors.Orange.copy(alpha = 0.10f), shape) else Modifier)
-            .then(if (lightOn) Modifier.border(1.dp, HumeColors.Orange.copy(alpha = 0.40f), shape) else Modifier)
+            .border(
+                1.dp,
+                if (lightOn) HumeColors.Orange.copy(alpha = 0.40f) else Color.White.copy(alpha = 0.08f),
+                shape,
+            )
             .clickable(onClick = onOpen)
             .padding(16.dp),
     ) {
@@ -218,20 +269,31 @@ private fun RoomCardLarge(
                     maxLines = 2,
                     modifier = Modifier.weight(1f),
                 )
-                Box(
-                    Modifier
-                        .size(55.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.35f))
-                        .clickable(onClick = onToggleLight),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        HumeIcons.room(room.icon),
-                        contentDescription = null,
-                        tint = if (lightOn) HumeColors.Orange else HumeColors.TextSecondary,
-                        modifier = Modifier.size(28.dp),
-                    )
+                Box(contentAlignment = Alignment.TopEnd) {
+                    Box(
+                        Modifier
+                            .size(55.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .clickable(onClick = onToggleLight),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            HumeIcons.room(room.icon),
+                            contentDescription = null,
+                            tint = if (lightOn) HumeColors.Orange else HumeColors.TextPrimary,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                    if (contactOpen) {
+                        Box(
+                            Modifier
+                                .offset(x = 2.dp, y = 4.dp)
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(HumeColors.Orange)
+                        )
+                    }
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
@@ -267,7 +329,7 @@ private fun TargetStepper(target: String?, onAdjustTarget: (Double) -> Unit) {
     Column(
         Modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = 0.45f))
+            .background(Color.White.copy(alpha = 0.10f))
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -292,18 +354,24 @@ private fun TargetStepper(target: String?, onAdjustTarget: (Double) -> Unit) {
     }
 }
 
+/** SwipeCardView dots: active capsule 16x6 primary, inactive 6x6 secondary 40 percent. */
 @Composable
 fun PagerDots(count: Int, current: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(start = 4.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.fillMaxWidth(), ) {
+        Spacer(Modifier.weight(1f))
         repeat(count) { index ->
             val active = index == current
             Box(
                 Modifier
                     .height(6.dp)
-                    .width(if (active) 18.dp else 6.dp)
+                    .width(if (active) 16.dp else 6.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(if (active) HumeColors.Orange else HumeColors.Divider)
+                    .background(
+                        if (active) HumeColors.TextPrimary
+                        else HumeColors.TextSecondary.copy(alpha = 0.4f)
+                    )
             )
         }
+        Spacer(Modifier.weight(1f))
     }
 }
