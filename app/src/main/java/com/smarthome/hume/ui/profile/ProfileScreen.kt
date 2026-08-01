@@ -76,8 +76,9 @@ import kotlinx.serialization.json.JsonPrimitive
  * Same three groups as the original: the orange owner card, the account rows
  * (id, name, email, phone, location) with copy and edit actions, and the
  * automation entry, followed by the connection pill and the logout button.
- * "Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb" opens the managed light list and the automation row
- * opens the managed notification list, which is what feeds the Home header.
+ * "Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb" opens the device manager, exactly like the iOS
+ * navigation link, and the automation row opens the managed notification list,
+ * which is what feeds the Home header.
  */
 @Composable
 fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: HomeAssistantRepository) {
@@ -90,6 +91,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
     var phone by remember { mutableStateOf(prefs.getString("user_phone", "").orEmpty()) }
     var editing by remember { mutableStateOf<String?>(null) }
     var manage by remember { mutableStateOf<ManagedKind?>(null) }
+    var openDeviceManager by remember { mutableStateOf(false) }
 
     val person: HomeEntity? = entities["person.hutchet"]
     val personName = person?.attr("friendly_name") ?: "H\u1ea3i H\u00e0"
@@ -108,7 +110,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
         // GroupGlassContainer(cornerRadius: 47, innerPadding: 8) { orangeCard }
         Box(Modifier.fillMaxWidth().glassSurface(radius = 47.dp).padding(8.dp)) {
-            OwnerCard(personName, avatarUrl) { manage = ManagedKind.LIGHTS }
+            OwnerCard(personName, avatarUrl) { openDeviceManager = true }
         }
 
         // Account rows
@@ -192,6 +194,10 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             Text("Tho\u00e1t t\u00e0i kho\u1ea3n", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFEF5350))
         }
         Spacer(Modifier.height(48.dp))
+    }
+
+    if (openDeviceManager) {
+        DeviceManagerSheet(ha = ha, settings = settings, onDismiss = { openDeviceManager = false })
     }
 
     manage?.let { kind ->
