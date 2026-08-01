@@ -38,6 +38,8 @@ import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.scene.ManagedListsStore
+import com.smarthome.hume.core.storage.HumeSettings
+import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.glassSurface
@@ -72,6 +74,8 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     val context = LocalContext.current
     val app = context.applicationContext as HumeApplication
     val lists = remember { ManagedListsStore.get(app) }
+    val settingsStore = remember { SettingsStore(app) }
+    val settings by settingsStore.settings.collectAsStateWithLifecycle(initialValue = HumeSettings())
     val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase, lists))
     val state by vm.uiState.collectAsStateWithLifecycle()
     val entities = state.entities
@@ -202,6 +206,9 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 connected = state.connected,
                 alertCount = state.alertCount,
                 onOpenNotifications = { notificationSheet = true },
+                // syncPerson() in GreetingHeaderView.swift: entity_picture is a
+                // relative path, so it only works once the base URL is prepended.
+                avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl),
             )
             state.error?.let { message ->
                 Box(
@@ -244,6 +251,14 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             onDismiss = { chartEntityId = null },
         )
     }
+}
+
+/** syncPerson(): absolute avatar URL built from ha_url + entity_picture. */
+private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
+    val picture = person?.attrString("entity_picture")?.takeIf { it.isNotBlank() } ?: return null
+    if (picture.startsWith("http")) return picture
+    val base = if (haUrl.startsWith("http")) haUrl else "http://$haUrl"
+    return base.trimEnd('/') + picture
 }
 
 /** GroupGlassContainer.swift: one glass panel wrapping a stack of cards. */
