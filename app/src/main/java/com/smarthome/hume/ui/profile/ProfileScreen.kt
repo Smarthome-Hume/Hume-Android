@@ -57,10 +57,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
-import com.smarthome.hume.core.scene.ManagedKind
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
-import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.glassPill
@@ -76,9 +74,8 @@ import kotlinx.serialization.json.JsonPrimitive
  * Same three groups as the original: the orange owner card, the account rows
  * (id, name, email, phone, location) with copy and edit actions, and the
  * automation entry, followed by the connection pill and the logout button.
- * "Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb" opens the device manager, exactly like the iOS
- * navigation link, and the automation row opens the managed notification list,
- * which is what feeds the Home header.
+ * "Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb" opens the device manager and "T\u1ef1 \u0111\u1ed9ng & c\u1ea3nh b\u00e1o"
+ * opens the automation settings, exactly like the two iOS navigation links.
  */
 @Composable
 fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: HomeAssistantRepository) {
@@ -90,8 +87,8 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
     var email by remember { mutableStateOf(prefs.getString("user_email", "").orEmpty()) }
     var phone by remember { mutableStateOf(prefs.getString("user_phone", "").orEmpty()) }
     var editing by remember { mutableStateOf<String?>(null) }
-    var manage by remember { mutableStateOf<ManagedKind?>(null) }
     var openDeviceManager by remember { mutableStateOf(false) }
+    var openAutomation by remember { mutableStateOf(false) }
 
     val person: HomeEntity? = entities["person.hutchet"]
     val personName = person?.attr("friendly_name") ?: "H\u1ea3i H\u00e0"
@@ -142,12 +139,12 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             )
         }
 
-        // Automation entry -> managed notification list
+        // Automation entry -> AutomationSettingsView
         Row(
             Modifier
                 .fillMaxWidth()
                 .glassSurface(radius = 47.dp)
-                .clickable { manage = ManagedKind.NOTIF }
+                .clickable { openAutomation = true }
                 .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -200,8 +197,8 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         DeviceManagerSheet(ha = ha, settings = settings, onDismiss = { openDeviceManager = false })
     }
 
-    manage?.let { kind ->
-        ManageListSheet(kind = kind, ha = ha, onDismiss = { manage = null })
+    if (openAutomation) {
+        AutomationSettingsSheet(onDismiss = { openAutomation = false })
     }
 
     // EditFieldView
