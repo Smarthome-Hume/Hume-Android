@@ -63,7 +63,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -480,6 +479,3 @@ private fun friendlyName(entity: HomeEntity): String {
     val raw = entity.attributes["friendly_name"] as? JsonPrimitive
     return raw?.content ?: entity.id.substringAfter('.').replace('_', ' ')
 }
-
-@Suppress("unused")
-private val unusedList = mutableStateListOf<String>()
