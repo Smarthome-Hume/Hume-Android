@@ -1,11 +1,11 @@
 package com.smarthome.hume.ui.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,14 +27,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.ui.theme.GlassCard
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.HumeShapes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,7 +68,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         Text("H\u1ed3 s\u01a1", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(14.dp))
 
-        Card {
+        Panel {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
@@ -97,7 +98,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         }
 
         Spacer(Modifier.height(12.dp))
-        Card {
+        Panel {
             Text("C\u1ea3m bi\u1ebfn", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
             Spacer(Modifier.height(2.dp))
             Text(
@@ -123,7 +124,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         }
 
         Spacer(Modifier.height(12.dp))
-        Card {
+        Panel {
             Text("T\u00e0i kho\u1ea3n", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
             Spacer(Modifier.height(10.dp))
             OutlinedButton(onClick = {
@@ -136,14 +137,11 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 }
 
 @Composable
-private fun Card(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color.White)
-            .border(1.dp, HumeColors.Divider, RoundedCornerShape(28.dp))
-            .padding(16.dp),
+private fun Panel(content: @Composable ColumnScope.() -> Unit) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        radius = HumeShapes.Panel,
+        padding = PaddingValues(16.dp),
         content = content,
     )
 }
