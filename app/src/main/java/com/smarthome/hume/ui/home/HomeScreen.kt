@@ -29,19 +29,28 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.HumeApplication
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import java.time.Instant
+import java.time.OffsetDateTime
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.abs
 
-internal const val ALARM_ENTITY = "alarm_control_panel.alarm_security"
 private const val USER_NAME = "H\u1ea3i H\u00e0"
 private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 
+/** Alarmo when present, alarm_security otherwise (AlarmLights.swift). */
+internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
+    if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
+
+internal const val ALARM_ENTITY = HumeConfig.ALARM_FALLBACK
+
 /**
- * Home dashboard matching the prototype recording: header, status pills,
- * solar chart, battery card, staggered room carousels and the scene grid.
+ * Home dashboard ported from HomeView.swift: header, alarm/lights pills,
+ * solar chart, Powerwall card, staggered carousels and the scene grid.
  */
 @Composable
 fun HomeScreen(ha: HomeAssistantRepository) {
@@ -49,7 +58,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase))
     val state by vm.uiState.collectAsStateWithLifecycle()
     val entities = state.entities
-    val alarmState = entities[ALARM_ENTITY]?.state
+    val alarmState = entities[alarmEntityId(entities)]?.state
 
     var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
     var lightsSheet by remember { mutableStateOf(false) }
@@ -57,45 +66,39 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     var chartEntityId by remember { mutableStateOf<String?>(null) }
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
 
-    val dailyEnergy = remember(entities.size) { EnergyDetect.dailyEnergy(entities) }
-    val solarPower = remember(entities.size) { EnergyDetect.solarPower(entities) }
-    val battery = remember(entities.size) { EnergyDetect.battery(entities) }
-    val runtime = remember(entities.size) { EnergyDetect.batteryRuntime(entities) }
-    val extraSensors = remember(entities.size) { EnergyDetect.highlightSensors(entities, 4) }
-
+    LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
     LaunchedEffect(entities.size) { vm.watchEnergySensors(entities) }
-    LaunchedEffect(dailyEnergy?.entityId) {
-        val id = dailyEnergy?.entityId
-        weekly = if (id == null) emptyList() else vm.weekly(id)
+    LaunchedEffect(Unit) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
+
+    // Six small sensor tiles, exactly the list the iOS app shows.
+    val leftTiles = HumeConfig.sensorTiles.map { tile ->
+        SmallTile(
+            icon = HumeIcons.sensor(tile.icon),
+            value = sensorValue(entities[tile.entityId], tile.unit),
+            label = tile.label,
+            entityId = tile.entityId,
+        )
     }
 
-    val leftTiles = buildList {
-        solarPower?.let {
-            add(SmallTile(HumeIcons.Solar, it.formatted() + " " + it.unit(), "\u0110i\u1ec7n m\u1eb7t tr\u1eddi", it.entityId))
-        }
-        dailyEnergy?.let {
-            add(SmallTile(HumeIcons.Solar, it.formatted() + " " + it.unit(), "S\u1ea3n l\u01b0\u1ee3ng", it.entityId))
-        }
-        extraSensors.take(2).forEach {
-            add(SmallTile(HumeIcons.Desk, it.formatted() + " " + it.unit(), it.friendly(), it.entityId))
-        }
-    }
-    val rightTiles = buildList {
-        extraSensors.drop(2).forEach {
-            add(SmallTile(HumeIcons.Desk, it.formatted() + " " + it.unit(), it.friendly(), it.entityId))
-        }
-        vm.rooms.mapNotNull { it.contactEntity }.take(2).forEach { contact ->
-            val entity = entities[contact]
-            add(
-                SmallTile(
-                    icon = if (entity?.isOn == true) HumeIcons.Door else HumeIcons.DoorClosed,
-                    value = if (entity?.isOn == true) "\u0110ang m\u1edf" else "\u0110\u00e3 \u0111\u00f3ng",
-                    label = entity?.friendly() ?: contact.substringAfter('.'),
-                    entityId = contact,
-                )
-            )
-        }
-    }
+    // Right column: the two selector-driven cards (device power + door).
+    val deviceKey = entities[HumeConfig.ACTIVE_CARD]?.state
+    val device = HumeConfig.deviceCards[deviceKey] ?: HumeConfig.deviceCards.getValue("Table")
+    val doorKey = entities[HumeConfig.ACTIVE_CARD_2]?.state
+    val door = HumeConfig.doorCards[doorKey] ?: HumeConfig.doorCards.getValue("Master")
+    val rightTiles = listOf(
+        SmallTile(
+            icon = HumeIcons.sensor(device.icon),
+            value = (entities[device.entityId]?.numericState?.toInt() ?: 0).toString() + " W",
+            label = device.label,
+            entityId = device.entityId,
+        ),
+        SmallTile(
+            icon = if (entities[door.entityId]?.isOn == true) HumeIcons.Door else HumeIcons.DoorClosed,
+            value = agoText(entities[door.entityId]?.lastChanged),
+            label = door.label,
+            entityId = door.entityId,
+        ),
+    )
 
     LazyColumn(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -104,7 +107,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     ) {
         item {
             HomeHeader(
-                userName = USER_NAME,
+                userName = entities["person.hutchet"]?.friendly() ?: USER_NAME,
                 greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...",
                 location = LOCATION,
                 connected = state.connected,
@@ -134,24 +137,22 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             )
         }
         item {
+            val today = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
             SolarChartCard(
                 title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
-                totalText = dailyEnergy?.formatted() ?: "--",
-                unitText = dailyEnergy?.unit() ?: "kWh",
+                totalText = String.format(Locale.US, "%.1f", today),
+                unitText = "kWh",
                 days = weekly,
-                emptyHint = if (dailyEnergy == null)
-                    "Ch\u01b0a d\u00f2 \u0111\u01b0\u1ee3c sensor n\u0103ng l\u01b0\u1ee3ng"
-                else
-                    "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y",
+                emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y",
             )
         }
         item {
             BatteryCard(
-                percent = battery?.numericState,
-                charging = EnergyDetect.charging(entities),
-                headline = runtime?.let { it.formatted() + " " + it.unit() } ?: (battery?.formatted()?.plus("%") ?: "--"),
-                trailingLabel = if (EnergyDetect.charging(entities)) "\u0110\u1ea6Y L\u00daC" else "K\u1ebeT TH\u00daC L\u00daC",
-                trailingValue = endTimeLabel(runtime?.numericState),
+                soc = EnergyDetect.soc(entities),
+                power = EnergyDetect.power(entities),
+                backupSoc = EnergyDetect.backupSoc(entities),
+                timeText = EnergyDetect.runtimeText(entities),
+                finishTime = endTimeLabel(EnergyDetect.runtimeHours(entities)),
             )
         }
         item {
@@ -195,13 +196,38 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     }
 }
 
+/** LiveSmallSensor formatting: one decimal below 10, none above. */
+private fun sensorValue(entity: HomeEntity?, unit: String): String {
+    val value = entity?.numericState ?: return (entity?.state ?: "--") + " " + unit
+    val text = if (abs(value) < 10.0) String.format(Locale.US, "%.1f", value)
+    else String.format(Locale.US, "%.0f", value)
+    return "$text $unit"
+}
+
+/** DoorCardView.agoText */
+private fun agoText(lastChanged: String?): String {
+    val millis = parseTimestamp(lastChanged) ?: return "\u2014"
+    val minutes = ((System.currentTimeMillis() - millis) / 60_000L).toInt()
+    return when {
+        minutes < 1 -> "V\u1eeba xong"
+        minutes < 60 -> "$minutes ph\u00fat tr\u01b0\u1edbc"
+        else -> (minutes / 60).toString() + " gi\u1edd tr\u01b0\u1edbc"
+    }
+}
+
+private fun parseTimestamp(value: String?): Long? {
+    if (value.isNullOrBlank()) return null
+    return runCatching { Instant.parse(value).toEpochMilli() }
+        .recoverCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }
+        .getOrNull()
+}
+
 private fun greeting(): String {
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     return when {
-        hour < 11 -> "Ch\u00e0o bu\u1ed5i s\u00e1ng"
-        hour < 14 -> "Ch\u00e0o bu\u1ed5i tr\u01b0a"
-        hour < 18 -> "Ch\u00e0o bu\u1ed5i chi\u1ec1u"
-        else -> "Ch\u00e0o bu\u1ed5i t\u1ed1i"
+        hour >= 18 -> "Ch\u00e0o bu\u1ed5i t\u1ed1i"
+        hour >= 12 -> "Ch\u00e0o bu\u1ed5i chi\u1ec1u"
+        else -> "Ch\u00e0o bu\u1ed5i s\u00e1ng"
     }
 }
 
@@ -241,13 +267,4 @@ internal fun Map<String, HomeEntity>.num(entityId: String, digits: Int): String 
 internal fun Map<String, HomeEntity>.attr(entityId: String, key: String): String? =
     this[entityId]?.attrString(key)
 
-internal fun alarmLabel(state: String?): String = when (state) {
-    "disarmed" -> "\u0110\u00e3 t\u1eaft"
-    "armed_home" -> "\u1ede nh\u00e0"
-    "armed_away" -> "V\u1eafng nh\u00e0"
-    "armed_night" -> "Ban \u0111\u00eam"
-    "armed_vacation" -> "K\u1ef3 ngh\u1ec9"
-    "arming", "pending" -> "\u0110ang k\u00edch ho\u1ea1t"
-    "triggered" -> "\u0110ang b\u00e1o \u0111\u1ed9ng"
-    else -> "Kh\u00f4ng r\u00f5"
-}
+internal fun alarmLabel(state: String?): String = HumeConfig.alarmLabel(state)
