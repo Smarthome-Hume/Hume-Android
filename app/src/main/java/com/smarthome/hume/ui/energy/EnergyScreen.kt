@@ -65,6 +65,9 @@ private val Brick = Color(0xFFEB5F34)
 private val Yellow = Color(0xFFFFEB3B)
 private val GreenSave = Color(0xFF3BA776)
 
+/** Bottom room for the floating navigation pill (its height plus the gesture bar). */
+private val NavBarRoom = 130.dp
+
 /** Power bars of the consumption tab, in the order of EnergyView.swift. */
 private data class PowerBarSpec(val entityId: String, val color: Color, val dynamic: Boolean = false)
 
@@ -103,10 +106,17 @@ fun EnergyScreen(ha: HomeAssistantRepository) {
             .fillMaxSize()
             .background(HumeColors.Background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp),
     ) {
-        Text("N\u0103ng l\u01b0\u1ee3ng", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
-        Spacer(Modifier.height(12.dp))
+        Text(
+            "N\u0103ng l\u01b0\u1ee3ng",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            color = HumeColors.TextPrimary,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 12.dp),
+        )
 
         // Segmented picker, the glassSegmentBG pill on iOS.
         Row(
@@ -133,6 +143,8 @@ fun EnergyScreen(ha: HomeAssistantRepository) {
                     Text(
                         label,
                         fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false,
                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (active) Color.White else HumeColors.TextSecondary,
                     )
@@ -146,7 +158,7 @@ fun EnergyScreen(ha: HomeAssistantRepository) {
             "analysis" -> AnalysisTab(entities, ha)
             else -> SolarTab(entities, ha)
         }
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(NavBarRoom))
     }
 }
 
@@ -420,7 +432,12 @@ private fun Panel(
     )
 }
 
-/** NeonGlassStat: icon circle, label, tinted value, coloured ring. */
+/**
+ * NeonGlassStat: icon circle, label, tinted value, coloured ring.
+ *
+ * The value row must never wrap: on a narrow half-width box the unit used to
+ * break into one letter per line ("V / N / D").
+ */
 @Composable
 private fun NeonStat(
     modifier: Modifier,
@@ -435,22 +452,29 @@ private fun NeonStat(
             .clip(RoundedCornerShape(25.dp))
             .background(color.copy(alpha = 0.10f))
             .border(1.dp, color.copy(alpha = 0.40f), RoundedCornerShape(25.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(42.dp).clip(CircleShape).background(HumeColors.Card),
+            Modifier.size(38.dp).clip(CircleShape).background(HumeColors.Card),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(19.dp))
         }
-        Spacer(Modifier.width(10.dp))
-        Column {
-            Text(label, fontSize = 12.sp, color = HumeColors.TextSecondary, maxLines = 1)
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(label, fontSize = 12.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(value, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+                Text(
+                    value,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = color,
+                    maxLines = 1,
+                    softWrap = false,
+                )
                 Spacer(Modifier.width(2.dp))
-                Text(unit, fontSize = 12.sp, color = HumeColors.TextSecondary)
+                Text(unit, fontSize = 11.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
             }
         }
     }
@@ -473,12 +497,12 @@ private fun PriceBox(
             .padding(horizontal = 8.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, fontSize = 10.sp, color = HumeColors.TextPrimary)
+        Text(label, fontSize = 10.sp, color = HumeColors.TextPrimary, maxLines = 1, softWrap = false)
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = color, maxLines = 1)
-            Text(unit, fontSize = 10.sp, color = HumeColors.TextSecondary)
+            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = color, maxLines = 1, softWrap = false)
+            Text(unit, fontSize = 10.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
         }
-        Text(sub, fontSize = 9.sp, color = HumeColors.TextSecondary, maxLines = 1)
+        Text(sub, fontSize = 9.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
     }
 }
 
@@ -528,6 +552,8 @@ private fun PowerBar(watts: Double?, spec: PowerBarSpec) {
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White,
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier
                     .padding(start = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
