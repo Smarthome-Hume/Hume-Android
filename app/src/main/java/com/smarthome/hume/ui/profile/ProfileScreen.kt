@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,8 +57,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.scene.ManagedKind
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.glassPill
@@ -75,8 +76,8 @@ import kotlinx.serialization.json.JsonPrimitive
  * Same three groups as the original: the orange owner card, the account rows
  * (id, name, email, phone, location) with copy and edit actions, and the
  * automation entry, followed by the connection pill and the logout button.
- * Email and phone are @AppStorage in SwiftUI, so they are plain preferences
- * here rather than Home Assistant state.
+ * "Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb" opens the managed light list and the automation row
+ * opens the managed notification list, which is what feeds the Home header.
  */
 @Composable
 fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: HomeAssistantRepository) {
@@ -88,6 +89,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
     var email by remember { mutableStateOf(prefs.getString("user_email", "").orEmpty()) }
     var phone by remember { mutableStateOf(prefs.getString("user_phone", "").orEmpty()) }
     var editing by remember { mutableStateOf<String?>(null) }
+    var manage by remember { mutableStateOf<ManagedKind?>(null) }
 
     val person: HomeEntity? = entities["person.hutchet"]
     val personName = person?.attr("friendly_name") ?: "H\u1ea3i H\u00e0"
@@ -106,7 +108,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
         // GroupGlassContainer(cornerRadius: 47, innerPadding: 8) { orangeCard }
         Box(Modifier.fillMaxWidth().glassSurface(radius = 47.dp).padding(8.dp)) {
-            OwnerCard(personName, avatarUrl)
+            OwnerCard(personName, avatarUrl) { manage = ManagedKind.LIGHTS }
         }
 
         // Account rows
@@ -138,11 +140,12 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             )
         }
 
-        // Automation entry
+        // Automation entry -> managed notification list
         Row(
             Modifier
                 .fillMaxWidth()
                 .glassSurface(radius = 47.dp)
+                .clickable { manage = ManagedKind.NOTIF }
                 .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -191,6 +194,10 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         Spacer(Modifier.height(48.dp))
     }
 
+    manage?.let { kind ->
+        ManageListSheet(kind = kind, ha = ha, onDismiss = { manage = null })
+    }
+
     // EditFieldView
     val field = editing
     if (field != null) {
@@ -220,7 +227,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
 /** orangeCard in ProfileView.swift: gradient #f9784c to #e8653a to #fac0b6, radius 35, padding 20. */
 @Composable
-private fun OwnerCard(name: String, avatarUrl: String?) {
+private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -266,6 +273,7 @@ private fun OwnerCard(name: String, avatarUrl: String?) {
                     .weight(1f)
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color.Black.copy(alpha = 0.2f))
+                    .clickable(onClick = onManageDevices)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -360,6 +368,3 @@ private fun locationName(state: String?): String = when (state?.lowercase()) {
 
 private fun HomeEntity.attr(key: String): String? =
     (attributes[key] as? JsonPrimitive)?.content?.takeIf { it.isNotBlank() }
-
-@Suppress("unused")
-private fun ColumnScope.unused() = Unit
