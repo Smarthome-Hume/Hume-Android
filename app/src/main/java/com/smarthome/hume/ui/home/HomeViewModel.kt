@@ -12,6 +12,7 @@ import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.scene.ManagedItem
 import com.smarthome.hume.core.scene.ManagedListsStore
+import com.smarthome.hume.core.storage.DailySnapshotStore
 import com.smarthome.hume.core.storage.SensorDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,7 +21,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Calendar
 
 /** Everything the home dashboard renders, in one immutable snapshot. */
 data class HomeUiState(
@@ -41,6 +41,7 @@ class HomeViewModel(
     private val ha: HomeAssistantRepository,
     private val sensors: SensorDatabase,
     private val lists: ManagedListsStore,
+    private val snapshots: DailySnapshotStore,
 ) : ViewModel() {
 
     val climateRooms: List<RoomConfig> = DefaultRooms.climateRooms
@@ -179,27 +180,44 @@ class HomeViewModel(
         }
     }
 
-    /** Seven day series for the solar card: one bar per day, highest reading wins. */
+    /**
+     * Seven day series for the solar card, following SolarEnergyCardView.swift:
+     * the six past days are immutable, so they are cached in DailySnapshotStore
+     * and only fetched from history when a day is missing. Today is not cached,
+     * the caller reads it live from the websocket state.
+     */
     suspend fun weekly(entityId: String): List<DayValue> {
-        val points = history(entityId, 24 * 7)
-        if (points.isEmpty()) return emptyList()
-        val calendar = Calendar.getInstance()
-        val buckets = LinkedHashMap<String, Pair<Double, Int>>()
-        points.forEach { point ->
-            calendar.timeInMillis = point.timeMs
-            val key = calendar.get(Calendar.YEAR).toString() + "-" + calendar.get(Calendar.DAY_OF_YEAR)
-            val weekday = calendar.get(Calendar.DAY_OF_WEEK)
-            val previous = buckets[key]?.first ?: Double.NEGATIVE_INFINITY
-            buckets[key] = maxOf(previous, point.value) to weekday
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60L * 60L * 1000L
+        val missing = (1..6)
+            .map { DailySnapshotStore.startOfDay(now, -it) }
+            .filter { snapshots.get(entityId, it) == null }
+
+        if (missing.isNotEmpty()) {
+            val points = history(entityId, 24 * 7)
+            missing.forEach { dayStart ->
+                val dayPoints = points.filter { it.timeMs in dayStart until (dayStart + dayMs) }
+                // A daily counter peaks right before midnight, so the maximum of
+                // the day is the total for that day.
+                if (dayPoints.isNotEmpty()) snapshots.set(entityId, dayStart, dayPoints.maxOf { it.value })
+            }
+            snapshots.prune()
         }
-        val today = Calendar.getInstance().let { it.get(Calendar.YEAR).toString() + "-" + it.get(Calendar.DAY_OF_YEAR) }
-        return buckets.entries.takeLast(7).map { (key, pair) ->
+
+        val past = (6 downTo 1).map { offset ->
+            val dayStart = DailySnapshotStore.startOfDay(now, -offset)
             DayValue(
-                label = HumeConfig.dayNames[pair.second - 1],
-                value = (pair.first * 10).toInt() / 10.0,
-                isToday = key == today,
+                label = DailySnapshotStore.dayLabel(dayStart),
+                value = ((snapshots.get(entityId, dayStart) ?: 0.0) * 10).toInt() / 10.0,
+                isToday = false,
             )
         }
+        val today = ha.entities.value[entityId]?.numericState ?: 0.0
+        return past + DayValue(
+            label = DailySnapshotStore.dayLabel(now),
+            value = (today * 10).toInt() / 10.0,
+            isToday = true,
+        )
     }
 }
 
@@ -207,8 +225,9 @@ class HomeViewModelFactory(
     private val ha: HomeAssistantRepository,
     private val sensors: SensorDatabase,
     private val lists: ManagedListsStore,
+    private val snapshots: DailySnapshotStore,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        HomeViewModel(ha, sensors, lists) as T
+        HomeViewModel(ha, sensors, lists, snapshots) as T
 }
