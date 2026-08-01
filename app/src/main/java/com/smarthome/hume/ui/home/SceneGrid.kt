@@ -27,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,13 +42,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.scene.LocalScene
 import com.smarthome.hume.core.scene.LocalSceneStore
+import com.smarthome.hume.ui.scenes.ScenesSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.glassSurface
 
 // Port of the scene cluster in HomeView.swift + Views/Home/4_Scenes/SceneCardView.swift.
 // Scenes come from LocalSceneStore, never from scene.* entities: exactly one can be
 // active, tapping an active card turns it back off, and the alarm state is mirrored
-// in both directions.
+// in both directions. Tapping the header opens ScenesView.
 
 private val SceneRadius = 25.dp
 
@@ -59,6 +62,7 @@ fun SceneGridSection(
     val context = LocalContext.current
     val store = remember { LocalSceneStore.get(context) }
     val scenes by store.scenes.collectAsStateWithLifecycle()
+    var showScenes by remember { mutableStateOf(false) }
 
     // Alarm changed outside the app -> reflect it locally, but skip the echo of
     // a scene we just activated ourselves.
@@ -69,13 +73,19 @@ fun SceneGridSection(
         }
     }
 
+    if (showScenes) {
+        ScenesSheet(ha = ha, onDismiss = { showScenes = false })
+    }
+
     val visible = store.pinnedVisible(scenes).take(4)
-    if (visible.isEmpty()) return
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { onOpenScenes() },
+            modifier = Modifier.clickable {
+                showScenes = true
+                onOpenScenes()
+            },
         ) {
             Text(
                 "K\u1ecbch b\u1ea3n",
