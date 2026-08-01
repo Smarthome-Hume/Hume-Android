@@ -7,6 +7,7 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * EntityReader in Core/EntityObservation.swift.
@@ -48,10 +49,16 @@ fun rememberEntityOn(ha: HomeAssistantRepository, entityId: String): Boolean =
 fun rememberEntityValue(ha: HomeAssistantRepository, entityId: String): Double? =
     rememberEntity(ha, entityId)?.numericState
 
+/** Plain text of one attribute, e.g. the climate target temperature. */
+fun HomeEntity.attrText(key: String): String? {
+    val raw = attributes[key] ?: return null
+    return (raw as? JsonPrimitive)?.content ?: raw.toString()
+}
+
 /** One attribute of one entity, e.g. the climate target temperature. */
 @Composable
 fun rememberEntityAttribute(
     ha: HomeAssistantRepository,
     entityId: String,
     key: String,
-): String? = rememberEntity(ha, entityId)?.attrString(key)
+): String? = rememberEntity(ha, entityId)?.attrText(key)
