@@ -2,12 +2,17 @@ package com.smarthome.hume.ui.root
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,15 +42,17 @@ import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import com.smarthome.hume.ui.theme.HumeSpacing
-import com.smarthome.hume.ui.theme.glassPill
 
 /** The only tabs the app ships with. The AI butler tab was removed. */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 
 /**
- * Root shell. The navigation bar is a floating glass pill, which is how One UI
- * 8.5 renders in app toolbars: lifted off the bottom edge, never docked.
+ * Root shell.
+ *
+ * Android 15 (compileSdk 35) always draws edge to edge, so every screen is
+ * inset by the status bar here instead of each screen guessing a top padding.
+ * The navigation bar is a floating One UI pill: opaque so scrolling content
+ * never bleeds through it, lifted above the gesture bar.
  */
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
@@ -60,20 +67,26 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
     LaunchedEffect(tab) { ha.setActiveTab(tab) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        when (tab) {
-            HumeTab.Energy -> EnergyScreen(ha)
-            HumeTab.Security -> SecurityScreen(ha)
-            HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
-            else -> HomeScreen(ha)
+        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            when (tab) {
+                HumeTab.Energy -> EnergyScreen(ha)
+                HumeTab.Security -> SecurityScreen(ha)
+                HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
+                else -> HomeScreen(ha)
+            }
         }
 
         Row(
             Modifier
                 .align(Alignment.BottomCenter)
-                .padding(start = 16.dp, end = 16.dp, bottom = HumeSpacing.Large)
-                .glassPill()
-                .padding(horizontal = 6.dp, vertical = 6.dp),
+                .navigationBarsPadding()
+                .padding(start = 14.dp, end = 14.dp, bottom = 10.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .background(HumeColors.Card)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             navTabs.forEach { item ->
                 NavItem(item = item, selected = tab == item, onClick = { tab = item })
@@ -84,25 +97,29 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
 
 @Composable
 private fun NavItem(item: HumeTab, selected: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
     Column(
         Modifier
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(if (selected) HumeColors.ChipPink else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             HumeIcons.tab(item),
             contentDescription = item.label,
             tint = if (selected) HumeColors.OrangeDeep else HumeColors.TextSecondary,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(24.dp),
         )
         Text(
             item.label,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             maxLines = 1,
+            softWrap = false,
             textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 2.dp),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) HumeColors.OrangeDeep else HumeColors.TextSecondary,
         )
