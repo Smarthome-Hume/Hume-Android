@@ -52,6 +52,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -78,6 +79,9 @@ import java.util.Locale
 
 /** FRIGATE in SecurityView.swift */
 private const val FRIGATE = "http://192.168.102.64:5000"
+
+/** Floating nav pill plus gesture bar: nothing may scroll under it. */
+private val NavBarRoom = 140.dp
 
 private data class SecurityCamera(val key: String, val name: String)
 
@@ -143,7 +147,7 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
             .fillMaxSize()
             .background(HumeColors.Background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
     ) {
         Text("An ninh", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(12.dp))
@@ -165,6 +169,8 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
                         cam.name,
                         fontSize = 12.sp,
                         maxLines = 1,
+                        softWrap = false,
+                        textAlign = TextAlign.Center,
                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (active) Color.White else HumeColors.TextSecondary,
                     )
@@ -191,7 +197,7 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
             SensorSection("Chuy\u1ec3n \u0111\u1ed9ng", motionSensors, entities)
             SensorSection("M\u00f4i tr\u01b0\u1eddng", envSensors, entities)
         }
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(NavBarRoom))
     }
 }
 
@@ -282,6 +288,8 @@ private fun CameraCard(camera: SecurityCamera) {
                 camera.name,
                 fontSize = 12.sp,
                 color = Color.White,
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(10.dp)
@@ -339,7 +347,7 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
                 Icons.Rounded.Videocam,
                 contentDescription = null,
                 tint = HumeColors.Orange,
-                modifier = Modifier.size(12.dp),
+                modifier = Modifier.size(14.dp),
             )
             Spacer(Modifier.width(6.dp))
             Text(
@@ -347,6 +355,8 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = HumeColors.TextPrimary,
+                maxLines = 1,
+                softWrap = false,
             )
             Spacer(Modifier.weight(1f))
             if (busy) {
@@ -466,13 +476,13 @@ private fun RecordingThumb(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 3.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             if (rec.label.isNotEmpty()) {
-                Text(rec.label, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.Orange)
+                Text(rec.label, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.Orange, maxLines = 1, softWrap = false)
             }
-            Text(clipTime(rec), fontSize = 8.sp, color = HumeColors.TextSecondary)
+            Text(clipTime(rec), fontSize = 9.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
         }
     }
 }
@@ -527,6 +537,8 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = HumeColors.TextSecondary,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier
                 .clip(RoundedCornerShape(HumeShapes.Element))
                 .background(Color.White.copy(alpha = 0.55f))
@@ -562,7 +574,7 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            .heightIn(min = 68.dp)
             .glassSurface(radius = HumeShapes.Tile)
             .background(if (isOn) accent.copy(alpha = 0.10f) else Color.Transparent)
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -580,20 +592,21 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                     sensor.icon,
                     contentDescription = null,
                     tint = if (isOn) accent else HumeColors.TextPrimary,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(18.dp),
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(
                     sensor.name,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (isOn) accent else HumeColors.TextPrimary,
                     maxLines = 1,
+                    softWrap = false,
                 )
                 if (minutes != null) {
-                    Text(agoLabel(minutes), fontSize = 9.sp, color = HumeColors.TextSecondary)
+                    Text(agoLabel(minutes), fontSize = 10.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -603,6 +616,8 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                 fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isOn) accent else HumeColors.TextSecondary,
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (isOn) accent.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.55f))
