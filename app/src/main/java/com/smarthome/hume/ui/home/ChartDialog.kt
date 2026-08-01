@@ -1,6 +1,10 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,11 +12,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,19 +31,42 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HistoryPoint
 import com.smarthome.hume.core.model.HomeEntity
-import java.text.SimpleDateFormat
-import java.util.Date
+import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.glassSurface
+import java.util.Calendar
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.max
+
+/** One hourly bucket, the HourPoint struct of ChartPopupView. */
+private data class HourPoint(val hour: Int, val label: String, val value: Double)
+
+/** ChartPopupView.titles: the six sensors that can open the popup. */
+private val ChartTitles: Map<String, Pair<String, String>> = mapOf(
+    "sensor.battery_power_flow" to ("C\u00f4ng su\u1ea5t Pin" to "W"),
+    "sensor.solis_s6_eh1p_total_pv_power_2" to ("\u0110i\u1ec7n m\u1eb7t tr\u1eddi" to "W"),
+    "sensor.solis_s6_eh1p_pv_today_energy_generation_2" to ("S\u1ea3n l\u01b0\u1ee3ng" to "kWh"),
+    "sensor.solis_s6_eh1p_battery_soc_2" to ("Dung l\u01b0\u1ee3ng Pin" to "%"),
+    "sensor.aptomat_tong_daily" to ("\u0110i\u1ec7n l\u01b0\u1edbi" to "kWh"),
+    "sensor.energy_home_daily" to ("\u0110i\u1ec7n ti\u00eau th\u1ee5" to "kWh"),
+)
 
 /**
- * Chart popup from HomeView.swift, drawn with Compose Canvas.
- * History loading is injected by HomeViewModel, so this stays UI-only.
+ * 24 hour popup of one sensor, ported from ChartPopupView in HomeView.swift.
+ *
+ * The history is averaged per local hour, drawn as bars that are green when the
+ * value is positive and orange when it is negative, with a label every four
+ * hours and no Y axis, inside a sheet 360dp tall.
  */
 @Composable
 fun ChartDialog(
@@ -42,66 +75,143 @@ fun ChartDialog(
     loadHistory: suspend (String) -> List<HistoryPoint>,
     onDismiss: () -> Unit,
 ) {
-    var points by remember(entityId) { mutableStateOf<List<HistoryPoint>?>(null) }
-    LaunchedEffect(entityId) { points = loadHistory(entityId) }
+    var points by remember(entityId) { mutableStateOf<List<HourPoint>?>(null) }
+    LaunchedEffect(entityId) { points = hourly(loadHistory(entityId)) }
 
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val entity = entities[entityId]
-    val lineColor = MaterialTheme.colorScheme.primary
-    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val config = ChartTitles[entityId]
+    val title = config?.first ?: entity?.friendly() ?: "Th\u00f4ng s\u1ed1"
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Đóng") } },
-        title = {
-            Column {
-                Text(entity?.friendly() ?: entityId, style = MaterialTheme.typography.titleMedium)
-                Text("24 giờ qua", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(Modifier.fillMaxWidth().padding(20.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HumeColors.TextPrimary,
+                    modifier = Modifier.weight(1f),
+                )
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .glassSurface(radius = 18.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "\u0110\u00f3ng",
+                        tint = HumeColors.TextPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
-        },
-        text = {
+
             val data = points
             when {
-                data == null -> Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                data == null -> Box(
+                    Modifier.fillMaxWidth().height(240.dp),
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator(color = HumeColors.Orange) }
+
+                data.size < 2 -> Box(
+                    Modifier.fillMaxWidth().height(240.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Kh\u00f4ng c\u00f3 d\u1eef li\u1ec7u chi ti\u1ebft",
+                        fontSize = 14.sp,
+                        color = HumeColors.TextSecondary,
+                    )
                 }
-                data.size < 2 -> Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-                    Text("Không có dữ liệu lịch sử cho entity này.", style = MaterialTheme.typography.bodySmall)
-                }
+
                 else -> {
-                    val min = data.minOf { it.value }
-                    val max = data.maxOf { it.value }
-                    val unit = entity?.unit().orEmpty()
-                    Column {
-                        Canvas(Modifier.fillMaxWidth().height(170.dp)) {
-                            val span = (max - min).takeIf { it > 0.0001 } ?: 1.0
-                            val stepX = size.width / (data.size - 1).toFloat()
-                            val path = Path()
-                            data.forEachIndexed { index, point ->
-                                val x = stepX * index
-                                val y = size.height - ((point.value - min) / span).toFloat() * size.height
-                                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                            }
-                            drawLine(gridColor, Offset(0f, size.height), Offset(size.width, size.height), 2f)
-                            drawLine(gridColor, Offset(0f, 0f), Offset(size.width, 0f), 2f)
-                            drawPath(path, lineColor, style = Stroke(width = 5f))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Thấp " + format(min) + " " + unit, style = MaterialTheme.typography.bodySmall)
-                            Text("Cao " + format(max) + " " + unit, style = MaterialTheme.typography.bodySmall)
-                        }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(timeLabel(data.first().timeMs), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(timeLabel(data.last().timeMs), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                    HourBars(data)
+                    Spacer(Modifier.height(6.dp))
+                    HourAxis(data)
                 }
             }
-        },
-    )
+            Spacer(Modifier.height(24.dp))
+        }
+    }
 }
 
-private fun format(value: Double): String = String.format(Locale.US, "%.1f", value)
+@Composable
+private fun HourBars(data: List<HourPoint>) {
+    val positive = HumeColors.Green
+    val negative = HumeColors.Orange
+    Canvas(Modifier.fillMaxWidth().height(240.dp)) {
+        val slot = size.width / data.size
+        val barWidth = slot * 0.62f
+        val maxAbs = max(data.maxOf { abs(it.value) }, 0.001)
+        // Keep zero in the middle only when the sensor actually goes negative.
+        val hasNegative = data.any { it.value < 0.0 }
+        val zeroY = if (hasNegative) size.height / 2f else size.height
+        val scale = (if (hasNegative) size.height / 2f else size.height) / maxAbs.toFloat()
+        val corner = CornerRadius(3.dp.toPx(), 3.dp.toPx())
 
-private fun timeLabel(millis: Long): String =
-    SimpleDateFormat("HH:mm", Locale.US).format(Date(millis))
+        data.forEachIndexed { index, point ->
+            val height = max(abs(point.value).toFloat() * scale, 2f)
+            val left = index * slot + (slot - barWidth) / 2f
+            val top = if (point.value >= 0.0) zeroY - height else zeroY
+            drawRoundRect(
+                color = if (point.value >= 0.0) positive else negative,
+                topLeft = Offset(left, top),
+                size = Size(barWidth, height),
+                cornerRadius = corner,
+            )
+        }
+        if (hasNegative) {
+            drawLine(
+                HumeColors.TextSecondary.copy(alpha = 0.35f),
+                Offset(0f, zeroY),
+                Offset(size.width, zeroY),
+                strokeWidth = 1.dp.toPx(),
+            )
+        }
+    }
+}
+
+/** AxisMarks: only 00, 04, 08, 12, 16 and 20 get a label. */
+@Composable
+private fun HourAxis(data: List<HourPoint>) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+        data.forEach { point ->
+            Text(
+                if (point.hour % 4 == 0) String.format(Locale.US, "%02d", point.hour) else "",
+                fontSize = 10.sp,
+                color = HumeColors.TextSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/** load(): average every history point into its local hour bucket. */
+private fun hourly(raw: List<HistoryPoint>): List<HourPoint> {
+    if (raw.isEmpty()) return emptyList()
+    val sums = HashMap<Int, Double>()
+    val counts = HashMap<Int, Int>()
+    val calendar = Calendar.getInstance()
+    raw.forEach { point ->
+        calendar.timeInMillis = point.timeMs
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        sums[hour] = (sums[hour] ?: 0.0) + point.value
+        counts[hour] = (counts[hour] ?: 0) + 1
+    }
+    return (0 until 24).mapNotNull { hour ->
+        val count = counts[hour] ?: return@mapNotNull null
+        val average = (sums.getValue(hour) / count * 100.0).let { Math.round(it) / 100.0 }
+        HourPoint(hour, String.format(Locale.US, "%02d:00", hour), average)
+    }
+}
+
+/** Kept so callers that only want a colour band still compile. */
+private fun Modifier.chartRow() = background(HumeColors.Card)
