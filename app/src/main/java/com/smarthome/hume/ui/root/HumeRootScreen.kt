@@ -36,11 +36,16 @@ import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.HumeSpacing
+import com.smarthome.hume.ui.theme.glassPill
 
 /** The only tabs the app ships with. The AI butler tab was removed. */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 
-/** Root shell with the floating white pill navigation from the prototype. */
+/**
+ * Root shell. The navigation bar is a floating glass pill, which is how One UI
+ * 8.5 renders in app toolbars: lifted off the bottom edge, never docked.
+ */
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
     if (!settings.hasToken) {
@@ -60,9 +65,8 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         Row(
             Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 16.dp, bottom = 18.dp)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Color.White)
+                .padding(horizontal = 16.dp, bottom = HumeSpacing.Large)
+                .glassPill()
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
