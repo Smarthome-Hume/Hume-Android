@@ -7,6 +7,7 @@ import com.smarthome.hume.core.ha.HistoryPoint
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.DefaultRooms
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.storage.SensorDatabase
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,9 @@ class HomeViewModel(
     val basicRooms: List<RoomConfig> = DefaultRooms.basicRooms
     val rooms: List<RoomConfig> = climateRooms + basicRooms
 
+    /** Extra entity IDs the UI asked for at runtime. */
+    private var extraWatched: Set<String> = emptySet()
+
     /** Exposed for the bottom sheets, which still issue their own service calls. */
     val repository: HomeAssistantRepository get() = ha
 
@@ -63,7 +67,7 @@ class HomeViewModel(
 
     /** Only these entities get realtime updates; the other ~1580 are throttled. */
     private fun watchedIds(): Set<String> {
-        val ids = mutableSetOf(ALARM_ENTITY)
+        val ids = mutableSetOf(HumeConfig.ALARM_PRIMARY, HumeConfig.ALARM_FALLBACK)
         rooms.forEach { room ->
             ids += room.lightEntity
             ids += room.tempEntity
@@ -71,20 +75,22 @@ class HomeViewModel(
             room.contactEntity?.let { ids += it }
             room.climateEntity?.let { ids += it }
         }
+        ids += EnergyDetect.watchedIds()
+        ids += extraWatched
         return ids
     }
 
-    /** Add the detected energy sensors to the realtime set once they are known. */
+    /** Register additional realtime entities (energy cards, popups, charts). */
+    fun watchEntities(ids: Set<String>) {
+        if (ids.isEmpty() || extraWatched.containsAll(ids)) return
+        extraWatched = extraWatched + ids
+        ha.setWatchedEntities(watchedIds())
+    }
+
+    /** Kept for the sensor tiles: everything they render must be realtime. */
     fun watchEnergySensors(entities: Map<String, HomeEntity>) {
-        val extra = listOfNotNull(
-            EnergyDetect.solarPower(entities)?.entityId,
-            EnergyDetect.dailyEnergy(entities)?.entityId,
-            EnergyDetect.gridPower(entities)?.entityId,
-            EnergyDetect.loadPower(entities)?.entityId,
-            EnergyDetect.battery(entities)?.entityId,
-        )
-        if (extra.isEmpty()) return
-        ha.setWatchedEntities(watchedIds() + extra)
+        val present = EnergyDetect.watchedIds().filter { entities.containsKey(it) }.toSet()
+        watchEntities(present)
     }
 
     override fun onCleared() {
@@ -106,7 +112,7 @@ class HomeViewModel(
     /** Step the air conditioner target temperature from the room card. */
     fun adjustTarget(room: RoomConfig, delta: Double) {
         val climate = room.climateEntity ?: return
-        val current = uiState.value.entities.attr(climate, "temperature")?.toDoubleOrNull() ?: return
+        val current = uiState.value.entities.attr(climate, "temperature")?.toDoubleOrNull() ?: 26.0
         ha.setClimateTemperature(climate, (current + delta).coerceIn(16.0, 32.0))
     }
 
@@ -134,18 +140,12 @@ class HomeViewModel(
         }
         val today = Calendar.getInstance().let { it.get(Calendar.YEAR).toString() + "-" + it.get(Calendar.DAY_OF_YEAR) }
         return buckets.entries.takeLast(7).map { (key, pair) ->
-            DayValue(label = weekdayLabel(pair.second), value = pair.first, isToday = key == today)
+            DayValue(
+                label = HumeConfig.dayNames[pair.second - 1],
+                value = (pair.first * 10).toInt() / 10.0,
+                isToday = key == today,
+            )
         }
-    }
-
-    private fun weekdayLabel(dayOfWeek: Int): String = when (dayOfWeek) {
-        Calendar.MONDAY -> "T2"
-        Calendar.TUESDAY -> "T3"
-        Calendar.WEDNESDAY -> "T4"
-        Calendar.THURSDAY -> "T5"
-        Calendar.FRIDAY -> "T6"
-        Calendar.SATURDAY -> "T7"
-        else -> "CN"
     }
 }
 
