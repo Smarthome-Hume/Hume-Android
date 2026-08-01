@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
@@ -87,6 +88,14 @@ class HomeAssistantRepository {
     private val pending = HashMap<String, HomeEntity>()
     private val lastFlush = HashMap<UpdateBucket, Long>()
     private val registryRequests = HashMap<Int, String>()
+
+    /**
+     * Entities the user just acted on, with the moment the optimistic value was
+     * written. HomeAssistantManager.swift flips state locally and lets the real
+     * event overwrite it later; this map is what stops a stale REST snapshot
+     * from undoing that flip in the meantime.
+     */
+    private val optimisticUntil = HashMap<String, Long>()
 
     /** Set by HumeApplication so numeric readings land in the local sensor database. */
     var sensorSink: ((String, Double, Long) -> Unit)? = null
@@ -237,11 +246,31 @@ class HomeAssistantRepository {
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
 
+    /**
+     * applyBatch() in HomeAssistantManager.swift. Two rules matter here:
+     * an update whose state and attributes are unchanged is dropped instead of
+     * being republished, and a real event always clears the optimistic marker
+     * for that entity because reality has now spoken.
+     */
     private fun applyUpdates(updates: Map<String, HomeEntity>) {
-        _entities.value = _entities.value + updates
+        val current = _entities.value
+        val changed = HashMap<String, HomeEntity>(updates.size)
+        updates.forEach { (id, entity) ->
+            val previous = current[id]
+            synchronized(optimisticUntil) { optimisticUntil.remove(id) }
+            if (previous == null ||
+                previous.state != entity.state ||
+                previous.attributes != entity.attributes
+            ) {
+                changed[id] = entity
+            }
+        }
+        if (changed.isEmpty()) return
+        _entities.value = current + changed
+
         val sink = sensorSink ?: return
         val watched = _watched.value
-        updates.values.forEach { entity ->
+        changed.values.forEach { entity ->
             val value = entity.numericState
             if (value != null && watched.contains(entity.id)) {
                 sink(entity.id, value, System.currentTimeMillis())
@@ -375,13 +404,59 @@ class HomeAssistantRepository {
                     return@use
                 }
                 val arr = json.decodeFromString<List<HAEntity>>(body)
-                _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
+                val snapshot = arr.associate { it.entityId to it.toHomeEntity() }
+                _entities.value = mergeSnapshot(snapshot)
                 _lastError.value = null
                 Log.i(TAG, "Loaded ${arr.size} entities")
             }
         } catch (t: Throwable) {
             Log.e(TAG, "fetchInitialStates failed for $url", t)
             _lastError.value = "REST: ${t.message}"
+        }
+    }
+
+    /**
+     * A full REST snapshot is older than an optimistic flip the user just made,
+     * so entities inside the optimistic window keep the local value. Everything
+     * else takes the server value. Unchanged rows keep their previous instance
+     * so Compose can skip them.
+     */
+    private fun mergeSnapshot(snapshot: Map<String, HomeEntity>): Map<String, HomeEntity> {
+        val current = _entities.value
+        if (current.isEmpty()) return snapshot
+        val now = System.currentTimeMillis()
+        val merged = HashMap<String, HomeEntity>(snapshot.size)
+        snapshot.forEach { (id, fresh) ->
+            val previous = current[id]
+            val pendingSince = synchronized(optimisticUntil) { optimisticUntil[id] }
+            val keepLocal = previous != null &&
+                pendingSince != null &&
+                now - pendingSince < OPTIMISTIC_WINDOW_MS &&
+                previous.state != fresh.state
+            merged[id] = when {
+                keepLocal -> previous!!
+                previous != null && previous.state == fresh.state &&
+                    previous.attributes == fresh.attributes -> previous
+                else -> fresh
+            }
+        }
+        return merged
+    }
+
+    /** Re-read a single entity instead of pulling the whole state table. */
+    private suspend fun fetchEntityState(entityId: String) = withContext(Dispatchers.IO) {
+        val url = "$baseUrl/api/states/$entityId"
+        try {
+            val req = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) return@use
+                val body = resp.body?.string().orEmpty()
+                val entity = json.decodeFromString(HAEntity.serializer(), body).toHomeEntity()
+                synchronized(optimisticUntil) { optimisticUntil.remove(entityId) }
+                applyUpdates(mapOf(entity.id to entity))
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "fetchEntityState failed for $url", t)
         }
     }
 
@@ -426,7 +501,8 @@ class HomeAssistantRepository {
      *
      * [optimisticEntityId] lets the UI flip immediately instead of waiting for a
      * state_changed event, which never arrives while the WebSocket is down.
-     * A REST refresh always follows so the displayed state converges on reality.
+     * Only the touched entity is re-read afterwards; pulling the entire state
+     * table on every tap was both wasteful and able to resurrect a stale value.
      */
     fun callService(
         domain: String,
@@ -444,6 +520,7 @@ class HomeAssistantRepository {
         }
         scope.launch {
             val url = "$baseUrl/api/services/$domain/$service"
+            var accepted = false
             try {
                 val body = dataJson.toRequestBody("application/json".toMediaType())
                 val req = Request.Builder().url(url)
@@ -453,6 +530,7 @@ class HomeAssistantRepository {
                 client.newCall(req).execute().use { resp ->
                     val text = resp.body?.string().orEmpty()
                     Log.i(TAG, "POST /api/services/$domain/$service -> HTTP ${resp.code}, body=${text.take(200)}")
+                    accepted = resp.isSuccessful
                     if (!resp.isSuccessful) {
                         _lastError.value = "Service ${resp.code}: ${text.take(200)}"
                     }
@@ -461,9 +539,18 @@ class HomeAssistantRepository {
                 Log.e(TAG, "callService failed for $url", t)
                 _lastError.value = "Service: ${t.message}"
             }
+            // Home Assistant refused the call, so roll the optimistic value back at once.
+            if (!accepted && optimisticEntityId != null) {
+                fetchEntityState(optimisticEntityId)
+                return@launch
+            }
             // Give Home Assistant a moment to apply the change, then resync.
             delay(400)
-            fetchInitialStates()
+            when {
+                optimisticEntityId != null -> fetchEntityState(optimisticEntityId)
+                // No socket means no state_changed event, so a full pull is the only way back.
+                !_connected.value -> fetchInitialStates()
+            }
         }
     }
 
@@ -479,8 +566,15 @@ class HomeAssistantRepository {
     fun turnOff(entityId: String) =
         callService(entityId.substringBefore('.'), "turn_off", serviceData(entityId), entityId)
 
-    fun toggle(entityId: String) =
-        callService(entityId.substringBefore('.'), "toggle", serviceData(entityId))
+    /**
+     * toggle() in HomeAssistantManager.swift flips the cached state before the
+     * request leaves the device, so the card reacts on the same frame as the tap.
+     */
+    fun toggle(entityId: String) {
+        val flipped = if (_entities.value[entityId]?.isOn == true) "off" else "on"
+        applyLocalState(entityId, flipped)
+        callService(entityId.substringBefore('.'), "toggle", serviceData(entityId), entityId)
+    }
 
     fun setLightBrightness(entityId: String, percent: Int) =
         callService("light", "turn_on", serviceData(entityId) { put("brightness_pct", percent) }, entityId)
@@ -488,17 +582,24 @@ class HomeAssistantRepository {
     fun setLightColorTemp(entityId: String, kelvin: Int) =
         callService("light", "turn_on", serviceData(entityId) { put("color_temp_kelvin", kelvin) }, entityId)
 
-    fun setClimateTemperature(entityId: String, temperature: Double) =
-        callService("climate", "set_temperature", serviceData(entityId) { put("temperature", temperature) })
+    /** The stepper must move on the tap, so write the target attribute locally first. */
+    fun setClimateTemperature(entityId: String, temperature: Double) {
+        applyLocalAttribute(entityId, "temperature", JsonPrimitive(temperature))
+        callService("climate", "set_temperature", serviceData(entityId) { put("temperature", temperature) }, entityId)
+    }
 
-    fun setHvacMode(entityId: String, mode: String) =
-        callService("climate", "set_hvac_mode", serviceData(entityId) { put("hvac_mode", mode) })
+    fun setHvacMode(entityId: String, mode: String) {
+        applyLocalState(entityId, mode)
+        callService("climate", "set_hvac_mode", serviceData(entityId) { put("hvac_mode", mode) }, entityId)
+    }
 
-    fun setFanMode(entityId: String, mode: String) =
-        callService("climate", "set_fan_mode", serviceData(entityId) { put("fan_mode", mode) })
+    fun setFanMode(entityId: String, mode: String) {
+        applyLocalAttribute(entityId, "fan_mode", JsonPrimitive(mode))
+        callService("climate", "set_fan_mode", serviceData(entityId) { put("fan_mode", mode) }, entityId)
+    }
 
     fun setCoverPosition(entityId: String, position: Int) =
-        callService("cover", "set_cover_position", serviceData(entityId) { put("position", position) })
+        callService("cover", "set_cover_position", serviceData(entityId) { put("position", position) }, entityId)
 
     fun activateScene(entityId: String) =
         callService("scene", "turn_on", serviceData(entityId))
@@ -509,17 +610,46 @@ class HomeAssistantRepository {
     fun pressButton(entityId: String) =
         callService("button", "press", serviceData(entityId))
 
-    fun selectOption(entityId: String, option: String) =
-        callService(entityId.substringBefore('.'), "select_option", serviceData(entityId) { put("option", option) })
+    fun selectOption(entityId: String, option: String) {
+        applyLocalState(entityId, option)
+        callService(entityId.substringBefore('.'), "select_option", serviceData(entityId) { put("option", option) }, entityId)
+    }
 
     fun alarmArm(entityId: String, mode: String, code: String? = null) =
-        callService("alarm_control_panel", "alarm_arm_$mode", serviceData(entityId) { if (code != null) put("code", code) })
+        callService(
+            "alarm_control_panel",
+            "alarm_arm_$mode",
+            serviceData(entityId) { if (code != null) put("code", code) },
+            entityId,
+        )
 
     fun alarmDisarm(entityId: String, code: String? = null) =
-        callService("alarm_control_panel", "alarm_disarm", serviceData(entityId) { if (code != null) put("code", code) })
+        callService(
+            "alarm_control_panel",
+            "alarm_disarm",
+            serviceData(entityId) { if (code != null) put("code", code) },
+            entityId,
+        )
 
+    /** optimistic() in HomeAssistantManager.swift. */
     private fun applyLocalState(entityId: String, state: String) {
         val current = _entities.value[entityId] ?: return
+        if (current.state == state) return
+        synchronized(optimisticUntil) { optimisticUntil[entityId] = System.currentTimeMillis() }
         _entities.value = _entities.value + (entityId to current.copy(state = state))
+    }
+
+    /** setClimateTemperature() in HomeAssistantManager.swift writes the attribute in place. */
+    private fun applyLocalAttribute(entityId: String, key: String, value: JsonElement) {
+        val current = _entities.value[entityId] ?: return
+        if (current.attributes[key] == value) return
+        synchronized(optimisticUntil) { optimisticUntil[entityId] = System.currentTimeMillis() }
+        val attributes = current.attributes.toMutableMap().apply { this[key] = value }
+        _entities.value = _entities.value + (entityId to current.copy(attributes = attributes))
+    }
+
+    private companion object {
+        /** How long a local flip outranks a REST snapshot. */
+        const val OPTIMISTIC_WINDOW_MS = 5_000L
     }
 }
