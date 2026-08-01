@@ -1,20 +1,27 @@
 package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -23,16 +30,37 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.glassSurface
+import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
-/** One bar of the weekly solar chart. */
+/** One bar of the weekly chart (SolarDayData in SolarEnergyCardView.swift). */
 data class DayValue(val label: String, val value: Double, val isToday: Boolean = false)
 
-/** Weekly production card: salmon bars with a dark trend line on top. */
+/** WeekBarLineChart geometry, verbatim from the original. */
+private val BarSpacing = 4.dp
+private val PlotHeight = 165.dp // chartH 220 * 0.75
+private val BarColor = Color(0xFFF9784C)
+
+/**
+ * "\u0110i\u1ec7n m\u1eb7t tr\u1eddi" card: header with today's live total, then the week chart.
+ *
+ * The chart is the SwiftUI WeekBarLineChart: rounded bars in salmon, today
+ * solid and the past days translucent with diagonal stripes, a Catmull-Rom
+ * trend line through the bar tops, hollow dots on every point, and a tooltip
+ * while a finger is down on the chart.
+ */
 @Composable
 fun SolarChartCard(
     title: String,
@@ -41,89 +69,202 @@ fun SolarChartCard(
     days: List<DayValue>,
     emptyHint: String? = null,
 ) {
-    Card(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .glassSurface(radius = 32.dp)
+            .padding(start = 12.dp, end = 8.dp, top = 16.dp, bottom = 16.dp)
     ) {
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary)
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(totalText, fontSize = 22.sp, color = HumeColors.TextPrimary)
+                Spacer(Modifier.width(2.dp))
+                Text(unitText, fontSize = 14.sp, color = HumeColors.TextSecondary)
+            }
+        }
+        if (days.isEmpty()) {
+            Box(
+                Modifier.fillMaxWidth().height(PlotHeight),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(totalText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
-                    Spacer(Modifier.padding(horizontal = 2.dp))
-                    Text(unitText, fontSize = 11.sp, color = HumeColors.TextSecondary)
-                }
+                Text(
+                    emptyHint ?: "\u0110ang t\u1ea3i...",
+                    fontSize = 13.sp,
+                    color = HumeColors.TextSecondary,
+                )
             }
-            Spacer(Modifier.height(14.dp))
-            if (days.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        emptyHint ?: "Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = HumeColors.TextSecondary,
-                    )
-                }
-            } else {
-                WeeklyBars(days)
-                Spacer(Modifier.height(6.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    days.forEach { day ->
-                        Text(
-                            day.label,
-                            fontSize = 10.sp,
-                            color = HumeColors.TextSecondary,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+        } else {
+            WeekBarLineChart(
+                days = days,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun WeeklyBars(days: List<DayValue>) {
-    val bar = HumeColors.SalmonSoft
-    val barToday = HumeColors.Orange
-    val line = Color(0xFF5B5350)
-    Canvas(Modifier.fillMaxWidth().height(120.dp)) {
+private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier) {
+    var selected by remember(days.size) { mutableStateOf<Int?>(null) }
+    val density = LocalDensity.current
+
+    BoxWithConstraints(modifier.fillMaxWidth()) {
         val count = days.size
-        if (count == 0) return@Canvas
-        val slot = size.width / count
-        val barWidth = slot * 0.62f
-        val max = days.maxOf { it.value }.takeIf { it > 0.0 } ?: 1.0
-        val top = size.height * 0.22f
-        val points = ArrayList<Offset>(count)
+        val totalWidth = maxWidth
+        // barW = (w - spacing * (n - 1)) / n * 0.95, then the row is centred.
+        val barWidth: Dp = (totalWidth - BarSpacing * (count - 1)) / count * 0.95f
+        val rowWidth = barWidth * count + BarSpacing * (count - 1)
+        val rowOffset = max(0f, (totalWidth - rowWidth).value / 2f).dp
+        val maxValue = max(days.maxOf { it.value }, 5.0)
 
-        days.forEachIndexed { index, day ->
-            val ratio = (day.value / max).coerceIn(0.12, 1.0).toFloat()
-            val barHeight = (size.height - top) * ratio
-            val left = index * slot + (slot - barWidth) / 2f
-            val barTop = size.height - barHeight
-            drawRoundRect(
-                color = if (day.isToday) barToday else bar,
-                topLeft = Offset(left, barTop),
-                size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(barWidth / 2.6f, barWidth / 2.6f),
-            )
-            points += Offset(left + barWidth / 2f, barTop - top * 0.30f)
+        /** Bar height in dp, using the original 1.15 head room. */
+        fun barHeight(value: Double): Dp =
+            if (value > 0.0) max(4f, (value / (maxValue * 1.15) * PlotHeight.value).toFloat()).dp else 2.dp
+
+        /** Index under a horizontal touch position, in pixels. */
+        fun indexAt(x: Float): Int {
+            val step = with(density) { (barWidth + BarSpacing).toPx() }
+            val start = with(density) { rowOffset.toPx() }
+            val raw = ((x - start) / step).roundToInt()
+            return min(max(raw, 0), count - 1)
         }
 
-        val path = Path()
-        points.forEachIndexed { index, point ->
-            if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
-        }
-        drawPath(path, line, style = Stroke(width = 2.5f))
-        points.forEach { point ->
-            drawCircle(Color.White, radius = 6f, center = point)
-            drawCircle(line, radius = 6f, center = point, style = Stroke(width = 2.5f))
+        Column {
+            Box(Modifier.fillMaxWidth().height(PlotHeight)) {
+                Canvas(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(PlotHeight)
+                        .pointerInput(days) {
+                            detectTapGestures(onPress = { offset -> selected = indexAt(offset.x) })
+                        }
+                        .pointerInput(days) {
+                            detectDragGestures(
+                                onDragStart = { offset -> selected = indexAt(offset.x) },
+                                onDragEnd = { selected = null },
+                                onDragCancel = { selected = null },
+                            ) { change, _ -> selected = indexAt(change.position.x) }
+                        }
+                ) {
+                    val barW = barWidth.toPx()
+                    val spacing = BarSpacing.toPx()
+                    val start = rowOffset.toPx()
+                    val plot = size.height
+                    val corner = CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                    val points = ArrayList<Offset>(count)
+
+                    days.forEachIndexed { index, day ->
+                        val h = barHeight(day.value).toPx()
+                        val left = start + index * (barW + spacing)
+                        val top = plot - h
+                        drawRoundRect(
+                            color = if (day.isToday) BarColor else BarColor.copy(alpha = 0.38f),
+                            topLeft = Offset(left, top),
+                            size = Size(barW, h),
+                            cornerRadius = corner,
+                        )
+                        // Past days carry the diagonal hatch; today stays solid.
+                        if (!day.isToday) {
+                            clipRect(left = left, top = top, right = left + barW, bottom = plot) {
+                                var x = left - h
+                                while (x < left + barW + h) {
+                                    drawLine(
+                                        color = BarColor.copy(alpha = 0.25f),
+                                        start = Offset(x, top),
+                                        end = Offset(x + h, plot),
+                                        strokeWidth = 1.dp.toPx(),
+                                    )
+                                    x += 5.dp.toPx()
+                                }
+                            }
+                        }
+                        // The line rides the value, not the clamped bar height.
+                        val lineH = if (day.value > 0.0) {
+                            (day.value / (maxValue * 1.15) * plot).toFloat()
+                        } else 0f
+                        points += Offset(left + barW / 2f, plot - lineH)
+                    }
+
+                    if (points.size >= 2) {
+                        drawPath(
+                            smoothPath(points),
+                            HumeColors.TextPrimary.copy(alpha = 0.45f),
+                            style = Stroke(width = 1.5.dp.toPx()),
+                        )
+                    }
+                    points.forEachIndexed { index, point ->
+                        val radius = if (selected == index) 3.5.dp.toPx() * 1.6f else 3.5.dp.toPx()
+                        drawCircle(Color.White.copy(alpha = 0.25f), radius = radius, center = point)
+                        drawCircle(
+                            HumeColors.TextPrimary,
+                            radius = radius,
+                            center = point,
+                            style = Stroke(width = 2.dp.toPx()),
+                        )
+                    }
+                }
+
+                selected?.let { index ->
+                    val day = days[index]
+                    val centre = rowOffset + barWidth * index + BarSpacing * index + barWidth / 2f
+                    val lineH = if (day.value > 0.0) {
+                        (day.value / (maxValue * 1.15) * PlotHeight.value).toFloat().dp
+                    } else 0.dp
+                    val tipX = min(max(centre.value, 60f), max(totalWidth.value - 60f, 60f)).dp - 50.dp
+                    val tipY = max((PlotHeight - lineH).value - 30f, 0f).dp
+                    Box(
+                        Modifier
+                            .offset(x = tipX, y = tipY)
+                            .glassSurface(radius = 12.dp)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            day.label + ": " + String.format(Locale.US, "%.1f", day.value) + " kWh",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = HumeColors.TextPrimary,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Row(Modifier.fillMaxWidth().padding(start = rowOffset)) {
+                days.forEachIndexed { index, day ->
+                    if (index > 0) Spacer(Modifier.width(BarSpacing))
+                    Text(
+                        day.label,
+                        fontSize = 11.sp,
+                        color = HumeColors.TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(barWidth),
+                    )
+                }
+            }
         }
     }
 }
+
+/** SmoothLine in SolarEnergyCardView.swift: Catmull-Rom with tension 0.5. */
+private fun smoothPath(points: List<Offset>, tension: Float = 0.5f): Path {
+    val path = Path()
+    if (points.size < 2) return path
+    path.moveTo(points[0].x, points[0].y)
+    for (i in 0 until points.size - 1) {
+        val p0 = points[max(0, i - 1)]
+        val p1 = points[i]
+        val p2 = points[i + 1]
+        val p3 = points[min(points.size - 1, i + 2)]
+        val c1 = Offset(p1.x + (p2.x - p0.x) * tension / 3f, p1.y + (p2.y - p0.y) * tension / 3f)
+        val c2 = Offset(p2.x - (p3.x - p1.x) * tension / 3f, p2.y - (p3.y - p1.y) * tension / 3f)
+        path.cubicTo(c1.x, c1.y, c2.x, c2.y, p2.x, p2.y)
+    }
+    return path
+}
+
+/** Unused placeholder kept so the card keeps compiling if a caller passes a background. */
+private fun Modifier.chartBackground(color: Color) = background(color, RoundedCornerShape(12.dp))
