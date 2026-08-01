@@ -37,9 +37,11 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
+import com.smarthome.hume.core.scene.ManagedKind
 import com.smarthome.hume.core.scene.ManagedListsStore
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.glassSurface
@@ -85,6 +87,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
     var lightsSheet by remember { mutableStateOf(false) }
     var notificationSheet by remember { mutableStateOf(false) }
+    var manageNotif by remember { mutableStateOf(false) }
     var chartEntityId by remember { mutableStateOf<String?>(null) }
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
     var headerHeight by remember { mutableStateOf(0.dp) }
@@ -209,6 +212,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 // syncPerson() in GreetingHeaderView.swift: entity_picture is a
                 // relative path, so it only works once the base URL is prepended.
                 avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl),
+                onManageNotifications = { manageNotif = true },
             )
             state.error?.let { message ->
                 Box(
@@ -242,6 +246,9 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     }
     if (notificationSheet) {
         NotificationBottomSheet(entities = entities, onDismiss = { notificationSheet = false })
+    }
+    if (manageNotif) {
+        ManageListSheet(kind = ManagedKind.NOTIF, ha = ha, onDismiss = { manageNotif = false })
     }
     chartEntityId?.let { id ->
         ChartDialog(
