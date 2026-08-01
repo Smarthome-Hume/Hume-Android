@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.SoupKitchen
 import androidx.compose.material.icons.rounded.Stairs
 import androidx.compose.material.icons.rounded.ToggleOn
 import androidx.compose.material.icons.rounded.TouchApp
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -72,7 +73,9 @@ import com.smarthome.hume.core.model.DeviceConfig
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.RoomConfig
+import com.smarthome.hume.core.scene.ManagedKind
 import com.smarthome.hume.core.scene.ManagedListsStore
+import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.glassSurface
@@ -556,7 +559,8 @@ private val LightsPopupYellow = Color(0xFFFFC107)
  * LightsPopupView from HomeView.swift. The source of truth is the managed light
  * list (24 seeded entities), not the eight room cards, and only the ones that
  * are currently on are listed. Each row has a power button that turns that
- * single light off, which is what the iOS popup does.
+ * single light off, which is what the iOS popup does. The gear in the header
+ * opens ManagedListView for the light list.
  */
 @Composable
 fun LightsBottomSheet(
@@ -569,6 +573,7 @@ fun LightsBottomSheet(
     val store = remember { ManagedListsStore.get(LocalContext.current) }
     val lights by store.lights.collectAsStateWithLifecycle()
     val active = lights.filter { !it.hidden && entities[it.id]?.isOn == true }
+    var manage by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -598,6 +603,15 @@ fun LightsBottomSheet(
                             color = Color.Black,
                         )
                     }
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { manage = true }) {
+                    Icon(
+                        Icons.Rounded.Tune,
+                        contentDescription = "Qu\u1ea3n l\u00fd \u0111\u00e8n",
+                        tint = HumeColors.Orange,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -661,5 +675,9 @@ fun LightsBottomSheet(
                 }
             }
         }
+    }
+
+    if (manage) {
+        ManageListSheet(kind = ManagedKind.LIGHTS, ha = ha, onDismiss = { manage = false })
     }
 }
