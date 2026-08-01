@@ -80,6 +80,21 @@ object HumeIcons {
         else -> Power
     }
 
+    /**
+     * Icon for an entity id, used by the energy power bars where SwiftUI passes
+     * battery-charging / sun / plug / house per bar.
+     */
+    fun forEntity(entityId: String): ImageVector {
+        val id = entityId.lowercase()
+        return when {
+            id.contains("battery") -> Battery
+            id.contains("pv") || id.contains("solar") -> Solar
+            id.contains("aptomat") || id.contains("grid") -> Plug
+            id.contains("nha") || id.contains("home") -> House
+            else -> Power
+        }
+    }
+
     fun tab(tab: HumeTab): ImageVector = when (tab) {
         HumeTab.Home -> Icons.Rounded.Home
         HumeTab.Energy -> Icons.Rounded.Bolt
