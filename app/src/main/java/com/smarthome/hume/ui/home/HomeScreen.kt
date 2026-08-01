@@ -67,7 +67,10 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
 
     LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
-    LaunchedEffect(entities.size) { vm.watchEnergySensors(entities) }
+    // Keyed on "do we have a snapshot yet", never on the entity count: the count
+    // changes whenever Home Assistant adds or drops an entity, which would restart
+    // the subscription for no reason.
+    LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
     LaunchedEffect(Unit) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
 
     // Six small sensor tiles, exactly the list the iOS app shows.
@@ -93,7 +96,9 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             entityId = device.entityId,
         ),
         SmallTile(
-            icon = if (entities[door.entityId]?.isOn == true) HumeIcons.Door else HumeIcons.DoorClosed,
+            // DoorCardView.swift always draws the same "door" glyph; only the
+            // timestamp underneath changes when the contact opens or closes.
+            icon = HumeIcons.Door,
             value = agoText(entities[door.entityId]?.lastChanged),
             label = door.label,
             entityId = door.entityId,
@@ -169,11 +174,8 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             )
         }
         item {
-            SceneGridSection(
-                scenes = sceneItems(entities),
-                alarmState = alarmState,
-                onRun = { vm.activateScene(it) },
-            )
+            // Scenes live in LocalSceneStore, not in scene.* entities.
+            SceneGridSection(ha = ha, alarmState = alarmState)
         }
     }
 
