@@ -570,7 +570,8 @@ fun LightsBottomSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val store = remember { ManagedListsStore.get(LocalContext.current) }
+    val context = LocalContext.current
+    val store = remember(context) { ManagedListsStore.get(context) }
     val lights by store.lights.collectAsStateWithLifecycle()
     val active = lights.filter { !it.hidden && entities[it.id]?.isOn == true }
     var manage by remember { mutableStateOf(false) }
