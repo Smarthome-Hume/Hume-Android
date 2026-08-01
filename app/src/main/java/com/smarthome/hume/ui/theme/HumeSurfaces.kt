@@ -43,12 +43,18 @@ object HumeSurfaces {
     val shadow = Color(0x14000000)
 }
 
-/** Corner radii used across the app, matching the SwiftUI card sizes. */
+/**
+ * Corner radii, taken from HumeTheme.swift rather than invented:
+ * Radius.card 34, Radius.element 12, Radius.sheet 28, popups 35, scene tiles 25,
+ * and the group containers 37 (GroupGlassContainer default).
+ */
 object HumeShapes {
-    val Tile: Dp = 24.dp
-    val Card: Dp = 30.dp
+    val Element: Dp = 12.dp
+    val Tile: Dp = 25.dp
+    val Sheet: Dp = 28.dp
+    val Card: Dp = 34.dp
+    val Popup: Dp = 35.dp
     val Panel: Dp = 37.dp
-    val Sheet: Dp = 44.dp
     val Pill: Dp = 30.dp
 }
 
