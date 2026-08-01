@@ -1,7 +1,6 @@
 package com.smarthome.hume.ui.security
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DirectionsWalk
@@ -45,6 +43,9 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.HumeShapes
+import com.smarthome.hume.ui.theme.glassSurface
+import com.smarthome.hume.ui.theme.tintedGlass
 
 private data class SensorDef(val id: String, val name: String, val icon: ImageVector, val alert: Color? = null)
 
@@ -99,12 +100,12 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
                 Column(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (active) HumeColors.SceneGreenBg else Color.White)
-                        .border(
-                            1.dp,
-                            if (active) HumeColors.SceneGreen else HumeColors.Divider,
-                            RoundedCornerShape(20.dp),
+                        .then(
+                            if (active) {
+                                Modifier.tintedGlass(HumeColors.SceneGreen, radius = HumeShapes.Tile)
+                            } else {
+                                Modifier.glassSurface(radius = HumeShapes.Tile)
+                            },
                         )
                         .clickable {
                             if (service == "disarm") {
@@ -165,9 +166,13 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
         Modifier
             .fillMaxWidth()
             .height(76.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(if (isOn) accent.copy(alpha = 0.10f) else Color.White)
-            .border(1.dp, if (isOn) accent.copy(alpha = 0.40f) else HumeColors.Divider, RoundedCornerShape(24.dp))
+            .then(
+                if (isOn) {
+                    Modifier.tintedGlass(accent, radius = HumeShapes.Tile)
+                } else {
+                    Modifier.glassSurface(radius = HumeShapes.Tile)
+                },
+            )
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
