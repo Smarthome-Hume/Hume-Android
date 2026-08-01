@@ -4,6 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,10 +25,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.DoorFront
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material.icons.rounded.Whatshot
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,16 +54,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.smarthome.hume.core.frigate.FrigateRecording
+import com.smarthome.hume.core.frigate.FrigateStore
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.storage.HumeSettings
+import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.glassSurface
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** FRIGATE in SecurityView.swift */
 private const val FRIGATE = "http://192.168.102.64:5000"
@@ -112,9 +128,9 @@ private val envSensors = listOf(
 
 /**
  * Security tab, laid out exactly like SecurityView.swift: a camera picker, one
- * glass group holding the camera, and one glass group holding the three sensor
- * sections. The alarm mode buttons are not on this screen in the original; they
- * live in the home header.
+ * glass group holding the camera plus its recorded clips, and one glass group
+ * holding the three sensor sections. The alarm mode buttons are not on this
+ * screen in the original; they live in the home header.
  */
 @Composable
 fun SecurityScreen(ha: HomeAssistantRepository) {
@@ -158,8 +174,12 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
         Spacer(Modifier.height(14.dp))
 
         // GroupGlassContainer(cornerRadius: 37, innerPadding: 10)
-        Box(Modifier.fillMaxWidth().glassSurface(radius = HumeShapes.Panel).padding(10.dp)) {
+        Column(
+            Modifier.fillMaxWidth().glassSurface(radius = HumeShapes.Panel).padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             CameraCard(camera)
+            FrigateEventsSection(camera)
         }
         Spacer(Modifier.height(14.dp))
 
@@ -280,6 +300,219 @@ private fun CameraCard(camera: SecurityCamera) {
                     Text("LIVE", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
                 }
             }
+        }
+    }
+}
+
+/* ------------------------- frigate clips ------------------------- */
+
+/**
+ * FrigateEventsSection in SecurityView.swift. Clips are downloaded to app
+ * storage first and played from file, exactly like the iOS build; the download
+ * button re-pulls the ten newest events for this camera.
+ */
+@Composable
+private fun FrigateEventsSection(camera: SecurityCamera) {
+    val context = LocalContext.current
+    val store = remember { FrigateStore.get(context) }
+    val settingsStore = remember { SettingsStore(context) }
+    val settings by settingsStore.settings.collectAsState(initial = HumeSettings())
+    val byCamera by store.byCamera.collectAsState()
+    val downloading by store.downloading.collectAsState()
+    val errors by store.lastError.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    val recordings = byCamera[camera.key].orEmpty()
+    val busy = downloading.contains(camera.key)
+    var playing by remember { mutableStateOf<FrigateRecording?>(null) }
+
+    // .task(id: camera) — pull once per camera when nothing is cached yet.
+    LaunchedEffect(camera.key, settings.haToken) {
+        if (recordings.isEmpty() && settings.haToken.isNotBlank()) {
+            store.refresh(camera.key, settings.haUrl, settings.haToken)
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Rounded.Videocam,
+                contentDescription = null,
+                tint = HumeColors.Orange,
+                modifier = Modifier.size(12.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "Video ghi h\u00ecnh g\u1ea7n \u0111\u00e2y",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HumeColors.TextPrimary,
+            )
+            Spacer(Modifier.weight(1f))
+            if (busy) {
+                CircularProgressIndicator(
+                    color = HumeColors.TextSecondary,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(16.dp),
+                )
+            } else {
+                Icon(
+                    Icons.Rounded.Download,
+                    contentDescription = "T\u1ea3i video m\u1edbi nh\u1ea5t",
+                    tint = HumeColors.Orange,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clickable {
+                            scope.launch {
+                                store.refresh(camera.key, settings.haUrl, settings.haToken)
+                            }
+                        },
+                )
+            }
+        }
+
+        when {
+            busy && recordings.isEmpty() -> Row(
+                Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(
+                    color = HumeColors.TextSecondary,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "\u0110ang t\u1ea3i 10 video m\u1edbi nh\u1ea5t\u2026",
+                    fontSize = 12.sp,
+                    color = HumeColors.TextSecondary,
+                )
+            }
+
+            recordings.isEmpty() -> Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+                Text(
+                    "Ch\u01b0a c\u00f3 video offline",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HumeColors.TextPrimary,
+                )
+                Text(
+                    errors[camera.key]
+                        ?: "Nh\u1ea5n n\u00fat t\u1ea3i \u0111\u1ec3 l\u1ea5y 10 video m\u1edbi nh\u1ea5t t\u1eeb Frigate v\u1ec1 m\u00e1y.",
+                    fontSize = 11.sp,
+                    color = HumeColors.TextSecondary,
+                )
+            }
+
+            else -> {
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    recordings.forEach { rec ->
+                        RecordingThumb(rec, store) { playing = rec }
+                    }
+                }
+                errors[camera.key]?.let {
+                    Text(it, fontSize = 10.sp, color = HumeColors.Orange)
+                }
+            }
+        }
+    }
+
+    playing?.let { rec ->
+        ClipPlayerDialog(store.clipFile(rec).absolutePath) { playing = null }
+    }
+}
+
+/** RecordingThumb: 150dp wide, 86dp image, 8sp label row, 10dp corners. */
+@Composable
+private fun RecordingThumb(
+    rec: FrigateRecording,
+    store: FrigateStore,
+    onTap: () -> Unit,
+) {
+    val shape = RoundedCornerShape(10.dp)
+    Column(
+        Modifier
+            .width(150.dp)
+            .clip(shape)
+            .background(Color.White.copy(alpha = 0.55f))
+            .clickable(onClick = onTap),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(86.dp)
+                .background(Color.Black),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = store.thumbFile(rec),
+                contentDescription = rec.label,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                Modifier.size(24.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (rec.label.isNotEmpty()) {
+                Text(rec.label, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.Orange)
+            }
+            Text(clipTime(rec), fontSize = 8.sp, color = HumeColors.TextSecondary)
+        }
+    }
+}
+
+/** DateFormatter "HH:mm dd/MM" */
+private fun clipTime(rec: FrigateRecording): String {
+    if (rec.startTime <= 0.0) return rec.label
+    val format = SimpleDateFormat("HH:mm dd/MM", Locale("vi"))
+    return format.format(Date((rec.startTime * 1000).toLong()))
+}
+
+/** VideoPlayer(player:) sheet — plays the downloaded file full screen. */
+@Composable
+private fun ClipPlayerDialog(path: String, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+            AndroidView(
+                modifier = Modifier.fillMaxWidth(),
+                factory = { context ->
+                    android.widget.VideoView(context).apply {
+                        setVideoPath(path)
+                        setOnPreparedListener { player ->
+                            player.isLooping = true
+                            start()
+                        }
+                    }
+                },
+            )
+            Text(
+                "\u0110\u00f3ng",
+                fontSize = 13.sp,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(18.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.18f))
+                    .clickable(onClick = onDismiss)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
     }
 }
