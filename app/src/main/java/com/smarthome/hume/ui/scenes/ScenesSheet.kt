@@ -68,7 +68,8 @@ import kotlinx.serialization.json.JsonPrimitive
 // Port of Views/Home/4_Scenes/ScenesView.swift.
 // Two sections: local scenes (LocalSceneStore, exactly one active) and Home
 // Assistant automations. Long press opens the same menu the context menu has
-// on iOS: run, pin, hide, edit, delete.
+// on iOS: run, pin, hide, edit, delete. The plus on the automation header
+// opens CreateAutomationView.
 
 private const val PREFS = "hume_scenes"
 private const val KEY_HIDDEN_AUTO = "scenes_hidden_auto"
@@ -85,6 +86,7 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
     var hiddenAutos by remember { mutableStateOf(loadHiddenAutos(context)) }
     var editing by remember { mutableStateOf<LocalScene?>(null) }
     var creating by remember { mutableStateOf(false) }
+    var creatingAutomation by remember { mutableStateOf(false) }
 
     val visibleScenes = (if (showHidden) scenes else scenes.filterNot { it.isHidden })
         .sortedBy { it.sortIndex }
@@ -117,7 +119,7 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                 IconButton(onClick = { creating = true }) {
                     Icon(
                         Icons.Rounded.Add,
-                        contentDescription = null,
+                        contentDescription = "T\u1ea1o k\u1ecbch b\u1ea3n",
                         tint = HumeColors.Orange,
                         modifier = Modifier.size(22.dp),
                     )
@@ -156,7 +158,12 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                 }
             }
 
-            SectionHeader("T\u1ef1 \u0111\u1ed9ng ho\u00e1", automations.size, Icons.Rounded.Bolt)
+            SectionHeader(
+                title = "T\u1ef1 \u0111\u1ed9ng ho\u00e1",
+                count = automations.size,
+                icon = Icons.Rounded.Bolt,
+                onAdd = { creatingAutomation = true },
+            )
             if (automations.isEmpty()) {
                 EmptyHint("Ch\u01b0a c\u00f3 t\u1ef1 \u0111\u1ed9ng ho\u00e1")
             } else {
@@ -190,6 +197,9 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
     }
     editing?.let { scene ->
         SceneEditorSheet(scene = scene, ha = ha, onDismiss = { editing = null })
+    }
+    if (creatingAutomation) {
+        CreateAutomationSheet(ha = ha, onDismiss = { creatingAutomation = false })
     }
 }
 
@@ -405,14 +415,31 @@ private fun AutomationRow(
 }
 
 @Composable
-private fun SectionHeader(title: String, count: Int, icon: ImageVector) {
+private fun SectionHeader(
+    title: String,
+    count: Int,
+    icon: ImageVector,
+    onAdd: (() -> Unit)? = null,
+) {
     Row(
+        Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(icon, contentDescription = null, tint = HumeColors.Orange, modifier = Modifier.size(15.dp))
         Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
         Text("(" + count + ")", fontSize = 14.sp, color = HumeColors.TextSecondary)
+        if (onAdd != null) {
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onAdd) {
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = "T\u1ea1o t\u1ef1 \u0111\u1ed9ng ho\u00e1",
+                    tint = HumeColors.Orange,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
     }
 }
 
