@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -46,12 +47,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.AutomationApi
 import com.smarthome.hume.core.ha.HomeAssistantRepository
+import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.glassSurface
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 /** TrigOp in ScenesView.swift */
 private enum class TrigOp(val label: String) {
@@ -70,6 +74,12 @@ private val triggerDomains = listOf(
 private val actionDomains = listOf(
     "light.", "switch.", "fan.", "climate.", "input_boolean.", "scene.", "script.", "media_player.", "cover.",
 )
+
+/** HomeEntity.friendlyName in Models.swift */
+private fun HomeEntity?.friendly(fallback: String): String {
+    val raw = (this?.attributes?.get("friendly_name") as? JsonPrimitive)?.contentOrNull
+    return if (raw.isNullOrBlank()) fallback else raw
+}
 
 /**
  * CreateAutomationView in ScenesView.swift. Two sections, KHI (the trigger) and
@@ -101,25 +111,23 @@ fun CreateAutomationSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
     val canSave = name.isNotBlank() && trigEntity.isNotEmpty() && actEntity.isNotEmpty() &&
         (!needsValue || trigValue.toDoubleOrNull() != null)
 
-    fun nameOf(id: String): String =
-        entities[id]?.friendlyName?.takeIf { it.isNotBlank() } ?: id
+    fun nameOf(id: String): String = entities[id].friendly(id)
 
     fun save() {
         saving = true
         resultMsg = null
-        val q = AutomationApi::quote
         val trigger = when (trigOp) {
-            TrigOp.Above -> "{\"platform\":\"numeric_state\",\"entity_id\":" + q(trigEntity) +
+            TrigOp.Above -> "{\"platform\":\"numeric_state\",\"entity_id\":" + AutomationApi.quote(trigEntity) +
                 ",\"above\":" + (trigValue.toDoubleOrNull() ?: 0.0) + "}"
-            TrigOp.Below -> "{\"platform\":\"numeric_state\",\"entity_id\":" + q(trigEntity) +
+            TrigOp.Below -> "{\"platform\":\"numeric_state\",\"entity_id\":" + AutomationApi.quote(trigEntity) +
                 ",\"below\":" + (trigValue.toDoubleOrNull() ?: 0.0) + "}"
-            TrigOp.TurnsOn -> "{\"platform\":\"state\",\"entity_id\":" + q(trigEntity) + ",\"to\":\"on\"}"
-            TrigOp.TurnsOff -> "{\"platform\":\"state\",\"entity_id\":" + q(trigEntity) + ",\"to\":\"off\"}"
+            TrigOp.TurnsOn -> "{\"platform\":\"state\",\"entity_id\":" + AutomationApi.quote(trigEntity) + ",\"to\":\"on\"}"
+            TrigOp.TurnsOff -> "{\"platform\":\"state\",\"entity_id\":" + AutomationApi.quote(trigEntity) + ",\"to\":\"off\"}"
         }
         val domain = actEntity.substringBefore('.', "homeassistant")
         val service = domain + "." + (if (actOn) "turn_on" else "turn_off")
-        val action = "{\"service\":" + q(service) +
-            ",\"target\":{\"entity_id\":" + q(actEntity) + "}}"
+        val action = "{\"service\":" + AutomationApi.quote(service) +
+            ",\"target\":{\"entity_id\":" + AutomationApi.quote(actEntity) + "}}"
 
         scope.launch {
             val ok = AutomationApi.createAutomation(
@@ -157,16 +165,16 @@ fun CreateAutomationSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                     color = HumeColors.TextPrimary,
                 )
                 Spacer(Modifier.weight(1f))
-                if (canSave && !saving) {
-                    TextButton(onClick = { save() }) {
-                        Text("L\u01b0u", color = HumeColors.Orange, fontWeight = FontWeight.SemiBold)
-                    }
-                } else if (saving) {
+                if (saving) {
                     Text(
                         "\u0110ang l\u01b0u\u2026",
                         fontSize = 13.sp,
                         color = HumeColors.TextSecondary,
                     )
+                } else if (canSave) {
+                    TextButton(onClick = { save() }) {
+                        Text("L\u01b0u", color = HumeColors.Orange, fontWeight = FontWeight.SemiBold)
+                    }
                 }
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Rounded.Close, contentDescription = "\u0110\u00f3ng", tint = HumeColors.TextSecondary)
@@ -250,19 +258,19 @@ fun CreateAutomationSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                 ) { picking = "action" }
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(true to "B\u1eadt", false to "T\u1eaft").forEach { (on, label) ->
-                        val active = on == actOn
+                    listOf(true to "B\u1eadt", false to "T\u1eaft").forEach { pair ->
+                        val active = pair.first == actOn
                         Box(
                             Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(if (active) HumeColors.Orange else Color.White.copy(alpha = 0.55f))
-                                .clickable { actOn = on }
+                                .clickable { actOn = pair.first }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                label,
+                                pair.second,
                                 fontSize = 13.sp,
                                 fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                                 color = if (active) Color.White else HumeColors.TextSecondary,
@@ -366,7 +374,7 @@ private fun AutomationEntityPicker(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(HumeShapes.Element),
                 )
-                Spacer(Modifier.padding(top = 8.dp))
+                Spacer(Modifier.size(8.dp))
                 LazyColumn(Modifier.heightIn(max = 320.dp)) {
                     items(filtered, key = { it }) { id ->
                         Column(
