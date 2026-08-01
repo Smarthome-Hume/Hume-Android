@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -39,6 +42,8 @@ class FrigateStore private constructor(context: Context) {
     private val dir = File(context.filesDir, "frigate").apply { mkdirs() }
     private val indexFile = File(dir, "index.json")
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val indexSerializer =
+        MapSerializer(String.serializer(), ListSerializer(FrigateRecording.serializer()))
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
@@ -62,12 +67,12 @@ class FrigateStore private constructor(context: Context) {
     private fun load(): Map<String, List<FrigateRecording>> {
         if (!indexFile.exists()) return emptyMap()
         return runCatching {
-            json.decodeFromString<Map<String, List<FrigateRecording>>>(indexFile.readText())
+            json.decodeFromString(indexSerializer, indexFile.readText())
         }.getOrElse { emptyMap() }
     }
 
     private fun save() {
-        runCatching { indexFile.writeText(json.encodeToString(_byCamera.value)) }
+        runCatching { indexFile.writeText(json.encodeToString(indexSerializer, _byCamera.value)) }
     }
 
     /**
