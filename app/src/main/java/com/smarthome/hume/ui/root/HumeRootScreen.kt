@@ -37,6 +37,9 @@ import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
+/** The only tabs the app ships with. The AI butler tab was removed. */
+private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
+
 /** Root shell with the floating white pill navigation from the prototype. */
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
@@ -48,10 +51,10 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (tab) {
-            HumeTab.Home -> HomeScreen(ha)
             HumeTab.Energy -> EnergyScreen(ha)
             HumeTab.Security -> SecurityScreen(ha)
             HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
+            else -> HomeScreen(ha)
         }
 
         Row(
@@ -63,7 +66,7 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            HumeTab.entries.forEach { item ->
+            navTabs.forEach { item ->
                 NavItem(item = item, selected = tab == item, onClick = { tab = item })
             }
         }
