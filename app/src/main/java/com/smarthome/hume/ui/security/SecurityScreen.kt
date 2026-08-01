@@ -74,8 +74,6 @@ private val envSensors = listOf(
     SensorDef("binary_sensor.cam_bien_nuoc_water_leak", "R\u00f2 r\u1ec9 n\u01b0\u1edbc", Icons.Rounded.WaterDrop, Color(0xFF2196F3)),
 )
 
-private val allSecuritySensors = doorSensors + motionSensors + envSensors
-
 @Composable
 fun SecurityScreen(ha: HomeAssistantRepository) {
     val entities by ha.entities.collectAsState()
@@ -96,8 +94,8 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
 
         // Five alarm modes, same order and payload as AlarmLights.swift.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            HumeConfig.alarmModes.forEach { mode ->
-                val active = alarmState == mode.activeState
+            HumeConfig.alarmModes.forEach { (service, label, activeState) ->
+                val active = alarmState == activeState
                 Column(
                     Modifier
                         .weight(1f)
@@ -108,19 +106,25 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
                             if (active) HumeColors.SceneGreen else HumeColors.Divider,
                             RoundedCornerShape(20.dp),
                         )
-                        .clickable { ha.alarmArm(alarmId, mode.service, HumeConfig.ALARM_CODE) }
+                        .clickable {
+                            if (service == "disarm") {
+                                ha.alarmDisarm(alarmId, HumeConfig.ALARM_CODE)
+                            } else {
+                                ha.alarmArm(alarmId, service.removePrefix("arm_"), HumeConfig.ALARM_CODE)
+                            }
+                        }
                         .padding(vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
-                        alarmModeIcon(mode.service),
+                        alarmModeIcon(service),
                         contentDescription = null,
                         tint = if (active) HumeColors.SceneGreen else HumeColors.TextSecondary,
                         modifier = Modifier.size(20.dp),
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        mode.label,
+                        label,
                         fontSize = 11.sp,
                         color = if (active) HumeColors.SceneGreen else HumeColors.TextSecondary,
                     )
