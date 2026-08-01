@@ -63,6 +63,54 @@ object HumeSpacing {
 }
 
 /**
+ * Glass panel as a modifier, for rows, boxes and anything that is not a column.
+ * Prefer this over hand rolling `background(Color.White)`.
+ */
+fun Modifier.glassSurface(
+    radius: Dp = HumeShapes.Card,
+    elevation: Dp = 4.dp,
+    strong: Boolean = false,
+): Modifier {
+    val shape = RoundedCornerShape(radius)
+    return this
+        .then(
+            if (elevation > 0.dp) {
+                Modifier.shadow(elevation, shape, ambientColor = HumeSurfaces.shadow, spotColor = HumeSurfaces.shadow)
+            } else {
+                Modifier
+            },
+        )
+        .clip(shape)
+        .background(if (strong) HumeSurfaces.glassFillStrong else HumeSurfaces.glassFill)
+        .border(1.dp, HumeSurfaces.glassEdge, shape)
+}
+
+/** Accented glass, for active or alerting elements. */
+fun Modifier.tintedGlass(
+    tint: Color,
+    radius: Dp = HumeShapes.Card,
+    elevation: Dp = 4.dp,
+): Modifier {
+    val shape = RoundedCornerShape(radius)
+    return this
+        .then(
+            if (elevation > 0.dp) {
+                Modifier.shadow(elevation, shape, ambientColor = HumeSurfaces.shadow, spotColor = HumeSurfaces.shadow)
+            } else {
+                Modifier
+            },
+        )
+        .clip(shape)
+        .background(tint.copy(alpha = 0.16f))
+        .background(
+            Brush.verticalGradient(
+                listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.28f)),
+            ),
+        )
+        .border(1.dp, tint.copy(alpha = 0.35f), shape)
+}
+
+/**
  * The standard glass panel. Use this instead of hand rolling
  * `background(Color.White)` so the whole app changes together.
  */
@@ -75,13 +123,9 @@ fun GlassCard(
     elevated: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(radius)
     Column(
         modifier
-            .then(if (elevated) Modifier.shadow(6.dp, shape, ambientColor = HumeSurfaces.shadow, spotColor = HumeSurfaces.shadow) else Modifier)
-            .clip(shape)
-            .background(if (strong) HumeSurfaces.glassFillStrong else HumeSurfaces.glassFill)
-            .border(1.dp, HumeSurfaces.glassEdge, shape)
+            .glassSurface(radius = radius, elevation = if (elevated) 6.dp else 0.dp, strong = strong)
             .padding(padding),
         content = content,
     )
@@ -99,19 +143,8 @@ fun TintedGlassCard(
     padding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(radius)
     Column(
-        modifier
-            .shadow(6.dp, shape, ambientColor = HumeSurfaces.shadow, spotColor = HumeSurfaces.shadow)
-            .clip(shape)
-            .background(tint.copy(alpha = 0.16f))
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.28f)),
-                ),
-            )
-            .border(1.dp, tint.copy(alpha = 0.35f), shape)
-            .padding(padding),
+        modifier.tintedGlass(tint = tint, radius = radius, elevation = 6.dp).padding(padding),
         content = content,
     )
 }
@@ -120,11 +153,5 @@ fun TintedGlassCard(
  * Floating pill used by the bottom navigation and by in app toolbars. One UI
  * 8.5 lifts these off the bottom edge instead of docking them.
  */
-fun Modifier.glassPill(radius: Dp = HumeShapes.Pill): Modifier {
-    val shape = RoundedCornerShape(radius)
-    return this
-        .shadow(10.dp, shape, ambientColor = HumeSurfaces.shadow, spotColor = HumeSurfaces.shadow)
-        .clip(shape)
-        .background(HumeSurfaces.glassFillStrong)
-        .border(1.dp, HumeSurfaces.glassEdge, shape)
-}
+fun Modifier.glassPill(radius: Dp = HumeShapes.Pill): Modifier =
+    glassSurface(radius = radius, elevation = 10.dp, strong = true)
