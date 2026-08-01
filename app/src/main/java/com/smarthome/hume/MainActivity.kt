@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.storage.HumeSettings
+import com.smarthome.hume.ui.login.LoginScreen
 import com.smarthome.hume.ui.root.HumeRootScreen
 import com.smarthome.hume.ui.theme.HumeTheme
 
@@ -37,7 +38,16 @@ class MainActivity : ComponentActivity() {
                         app.haRepository.connect()
                     }
                 }
-                HumeRootScreen(settingsStore = app.settingsStore, ha = app.haRepository, settings = settings)
+                // Same gate as HumeApp.swift: no token means the login screen.
+                if (settings.hasToken) {
+                    HumeRootScreen(
+                        settingsStore = app.settingsStore,
+                        ha = app.haRepository,
+                        settings = settings,
+                    )
+                } else {
+                    LoginScreen(settingsStore = app.settingsStore, settings = settings)
+                }
             }
         }
     }
