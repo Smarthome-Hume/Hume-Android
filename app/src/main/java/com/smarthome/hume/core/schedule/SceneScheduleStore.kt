@@ -98,10 +98,10 @@ class SceneScheduleStore private constructor(private val context: Context) {
     fun toggle(id: String, enabled: Boolean) =
         commit(_schedules.value.map { if (it.id == id) it.copy(enabled = enabled) else it })
 
-    /** Called on every change and from HumeApplication at startup. */
+    /** Called on every change, from the receiver after a run, and at startup. */
     fun rescheduleAll() {
-        _schedules.value.forEach { schedule ->
-            if (schedule.enabled) schedule(schedule) else cancel(schedule.id)
+        _schedules.value.forEach { item ->
+            if (item.enabled) arm(item) else cancel(item.id)
         }
     }
 
@@ -120,18 +120,18 @@ class SceneScheduleStore private constructor(private val context: Context) {
         return PendingIntent.getBroadcast(context, id.hashCode(), intent, flags)
     }
 
-    private fun schedule(schedule: SceneSchedule) {
-        val triggerAt = nextTrigger(schedule) ?: return
-        val pending = intentFor(schedule.id)
+    private fun arm(item: SceneSchedule) {
+        val triggerAt = nextTrigger(item) ?: return
+        val pending = intentFor(item.id)
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
             } else {
                 alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pending)
             }
-            Log.i(TAG, "Schedule " + schedule.id + " armed for " + triggerAt)
+            Log.i(TAG, "Schedule " + item.id + " armed for " + triggerAt)
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to arm schedule " + schedule.id, t)
+            Log.e(TAG, "Failed to arm schedule " + item.id, t)
         }
     }
 
@@ -140,19 +140,18 @@ class SceneScheduleStore private constructor(private val context: Context) {
     }
 
     /** Next matching weekday at hour:minute, searching up to eight days ahead. */
-    fun nextTrigger(schedule: SceneSchedule, from: Long = System.currentTimeMillis()): Long? {
-        val days = if (schedule.weekdays.isEmpty()) listOf(1, 2, 3, 4, 5, 6, 7) else schedule.weekdays
-        val calendar = Calendar.getInstance().apply { timeInMillis = from }
+    fun nextTrigger(item: SceneSchedule, from: Long = System.currentTimeMillis()): Long? {
+        val days = if (item.weekdays.isEmpty()) listOf(1, 2, 3, 4, 5, 6, 7) else item.weekdays
         for (offset in 0..8) {
             val candidate = Calendar.getInstance().apply {
                 timeInMillis = from
                 add(Calendar.DAY_OF_YEAR, offset)
-                set(Calendar.HOUR_OF_DAY, schedule.hour)
-                set(Calendar.MINUTE, schedule.minute)
+                set(Calendar.HOUR_OF_DAY, item.hour)
+                set(Calendar.MINUTE, item.minute)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
-            if (candidate.timeInMillis <= calendar.timeInMillis) continue
+            if (candidate.timeInMillis <= from) continue
             // Calendar.SUNDAY == 1, so shift into the iOS numbering where Monday is 1.
             val isoDay = ((candidate.get(Calendar.DAY_OF_WEEK) + 5) % 7) + 1
             if (days.contains(isoDay)) return candidate.timeInMillis
