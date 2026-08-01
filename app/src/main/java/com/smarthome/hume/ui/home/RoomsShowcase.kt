@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.HomeEntity
@@ -142,14 +143,14 @@ private fun SensorTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
     )
 }
 
-/** DeviceCardView / DoorCardView: height 66 radius 33, circle 62, icon 28. */
+/** DeviceCardView / DoorCardView: height 66 radius 33, circle 62, icon 26. */
 @Composable
 private fun WideTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
     TileCard(
         tile = tile,
         cardHeight = 66.dp,
         circleSize = 62.dp,
-        iconSize = 28.dp,
+        iconSize = 26.dp,
         trailingPadding = 20.dp,
         onTileClick = onTileClick,
     )
@@ -158,10 +159,10 @@ private fun WideTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
 @Composable
 private fun TileCard(
     tile: SmallTile,
-    cardHeight: androidx.compose.ui.unit.Dp,
-    circleSize: androidx.compose.ui.unit.Dp,
-    iconSize: androidx.compose.ui.unit.Dp,
-    trailingPadding: androidx.compose.ui.unit.Dp = 8.dp,
+    cardHeight: Dp,
+    circleSize: Dp,
+    iconSize: Dp,
+    trailingPadding: Dp = 8.dp,
     onTileClick: (String) -> Unit,
 ) {
     Row(
@@ -180,9 +181,15 @@ private fun TileCard(
                 Icon(tile.icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(iconSize))
             }
         }
-        Column(Modifier.padding(start = 10.dp, end = trailingPadding)) {
+        // .padding(.leading, 12) on the text stack in SmallSensorCard.
+        Column(Modifier.padding(start = 12.dp, end = trailingPadding)) {
             Text(tile.value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, maxLines = 1)
-            Text(tile.label, fontSize = 14.sp, color = HumeColors.TextSecondary, maxLines = 1)
+            Text(
+                tile.label,
+                fontSize = 14.sp,
+                color = HumeColors.TextPrimary.copy(alpha = 0.7f),
+                maxLines = 1,
+            )
         }
     }
 }
@@ -231,6 +238,7 @@ private fun RoomCardLarge(
     onAdjustTarget: (Double) -> Unit,
 ) {
     val lightOn = entities[room.lightEntity]?.isOn == true
+    // climateOn in ClimateRoomCardView: an air conditioner counts as activity too.
     val contactOpen = room.contactEntity?.let { entities[it]?.isOn == true } == true
     val temp = entities.num(room.tempEntity, 0)
     val humidity = entities.num(room.humidityEntity, 0)
@@ -297,21 +305,21 @@ private fun RoomCardLarge(
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                // "28°" at 44 ultra light with "76%" at 14 light on the same baseline.
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
                     Text(
-                        temp,
-                        fontSize = 46.sp,
+                        "$temp\u00b0",
+                        fontSize = 44.sp,
                         fontWeight = FontWeight.ExtraLight,
                         color = HumeColors.TextPrimary,
                         maxLines = 1,
                     )
-                    Text("\u00b0", fontSize = 34.sp, fontWeight = FontWeight.ExtraLight, color = HumeColors.TextPrimary)
                     Spacer(Modifier.width(4.dp))
                     Text(
                         "$humidity%",
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Light,
-                        color = HumeColors.TextSecondary,
+                        color = HumeColors.TextPrimary,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
@@ -323,41 +331,53 @@ private fun RoomCardLarge(
     }
 }
 
-/** tempStepper() in ClimateRoomCardView.swift, element radius 18. */
+/** tempStepper() in ClimateRoomCardView.swift: 50 wide, arrows 30 tall, value 40. */
 @Composable
 private fun TargetStepper(target: String?, onAdjustTarget: (Double) -> Unit) {
     Column(
         Modifier
+            .width(50.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = 0.10f))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .background(Color.White.copy(alpha = 0.10f)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            Icons.Rounded.KeyboardArrowUp,
-            contentDescription = "T\u0103ng",
-            tint = HumeColors.TextPrimary,
-            modifier = Modifier.size(22.dp).clickable { onAdjustTarget(1.0) },
-        )
-        Text(
-            if (target == null) "--" else "$target\u00b0",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = HumeColors.TextPrimary,
-        )
-        Icon(
-            Icons.Rounded.KeyboardArrowDown,
-            contentDescription = "Gi\u1ea3m",
-            tint = HumeColors.TextPrimary,
-            modifier = Modifier.size(22.dp).clickable { onAdjustTarget(-1.0) },
-        )
+        Box(
+            Modifier.fillMaxWidth().height(30.dp).clickable { onAdjustTarget(1.0) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.KeyboardArrowUp,
+                contentDescription = "T\u0103ng",
+                tint = HumeColors.TextPrimary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Box(Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) {
+            Text(
+                if (target == null) "--" else "$target\u00b0",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = HumeColors.TextPrimary,
+            )
+        }
+        Box(
+            Modifier.fillMaxWidth().height(30.dp).clickable { onAdjustTarget(-1.0) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.KeyboardArrowDown,
+                contentDescription = "Gi\u1ea3m",
+                tint = HumeColors.TextPrimary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
 /** SwipeCardView dots: active capsule 16x6 primary, inactive 6x6 secondary 40 percent. */
 @Composable
 fun PagerDots(count: Int, current: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.fillMaxWidth(), ) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.fillMaxWidth()) {
         Spacer(Modifier.weight(1f))
         repeat(count) { index ->
             val active = index == current
