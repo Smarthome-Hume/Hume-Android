@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -67,6 +68,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
+
+/** Floating nav pill plus gesture bar: nothing may scroll under it. */
+private val NavBarRoom = 140.dp
 
 /**
  * Profile tab, rebuilt from ProfileView.swift.
@@ -100,7 +104,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             .fillMaxSize()
             .background(HumeColors.Background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text("Th\u00f4ng tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
@@ -168,29 +172,41 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
                 if (connected) "\u0110\u00e3 k\u1ebft n\u1ed1i" else "M\u1ea5t k\u1ebft n\u1ed1i",
                 fontSize = 13.sp,
                 color = if (connected) Color(0xFF22C55E) else Color(0xFFEF4444),
+                maxLines = 1,
+                softWrap = false,
             )
             Spacer(Modifier.width(6.dp))
             Text(
                 "\u00b7 " + entities.size + " th\u1ef1c th\u1ec3",
                 fontSize = 13.sp,
                 color = HumeColors.TextSecondary,
+                maxLines = 1,
+                softWrap = false,
             )
         }
 
         // Logout
         Box(
             Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFF44336).copy(alpha = 0.12f))
                 .clickable {
                     ha.disconnect()
                     CoroutineScope(Dispatchers.IO).launch { settingsStore.logout() }
                 }
-                .padding(horizontal = 24.dp, vertical = 9.dp),
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Text("Tho\u00e1t t\u00e0i kho\u1ea3n", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFEF5350))
+            Text(
+                "Tho\u00e1t t\u00e0i kho\u1ea3n",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFEF5350),
+                textAlign = TextAlign.Center,
+            )
         }
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(NavBarRoom))
     }
 
     if (openDeviceManager) {
@@ -282,7 +298,7 @@ private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> U
             ) {
                 Icon(Icons.Rounded.PhoneIphone, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, modifier = Modifier.weight(1f))
+                Text("Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, maxLines = 1, softWrap = false, modifier = Modifier.weight(1f))
                 Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
             }
             Box(
@@ -315,20 +331,21 @@ private fun ProfileRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(50.dp).clip(CircleShape).background(HumeColors.Background),
+            Modifier.size(46.dp).clip(CircleShape).background(HumeColors.Background),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = HumeColors.TextSecondary, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.width(15.dp))
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 13.sp, color = HumeColors.TextSecondary)
+            Text(label, fontSize = 13.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
             Text(
                 value.ifEmpty { "\u2014" },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = HumeColors.TextPrimary,
                 maxLines = 1,
+                softWrap = false,
             )
         }
         Box(
@@ -345,7 +362,7 @@ private fun ProfileRow(
             contentAlignment = Alignment.Center,
         ) {
             if (copy && copied) {
-                Text("\u0110\u00e3 copy", fontSize = 11.sp, color = HumeColors.TextSecondary)
+                Text("\u0110\u00e3 copy", fontSize = 11.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
             } else {
                 Icon(
                     if (copy) Icons.Rounded.ContentCopy else Icons.Rounded.Edit,
