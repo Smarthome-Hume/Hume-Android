@@ -31,6 +31,7 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
+import com.smarthome.hume.core.scene.ManagedListsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import java.time.Instant
@@ -54,8 +55,10 @@ internal const val ALARM_ENTITY = HumeConfig.ALARM_FALLBACK
  */
 @Composable
 fun HomeScreen(ha: HomeAssistantRepository) {
-    val app = LocalContext.current.applicationContext as HumeApplication
-    val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase))
+    val context = LocalContext.current
+    val app = context.applicationContext as HumeApplication
+    val lists = remember { ManagedListsStore.get(app) }
+    val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase, lists))
     val state by vm.uiState.collectAsStateWithLifecycle()
     val entities = state.entities
     val alarmState = entities[alarmEntityId(entities)]?.state
@@ -207,7 +210,7 @@ private fun sensorValue(entity: HomeEntity?, unit: String): String {
 }
 
 /** DoorCardView.agoText */
-private fun agoText(lastChanged: String?): String {
+internal fun agoText(lastChanged: String?): String {
     val millis = parseTimestamp(lastChanged) ?: return "\u2014"
     val minutes = ((System.currentTimeMillis() - millis) / 60_000L).toInt()
     return when {
@@ -217,7 +220,7 @@ private fun agoText(lastChanged: String?): String {
     }
 }
 
-private fun parseTimestamp(value: String?): Long? {
+internal fun parseTimestamp(value: String?): Long? {
     if (value.isNullOrBlank()) return null
     return runCatching { Instant.parse(value).toEpochMilli() }
         .recoverCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }
