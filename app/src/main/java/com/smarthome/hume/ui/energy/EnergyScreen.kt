@@ -51,6 +51,7 @@ import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.ui.theme.GlassCard
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.glassPill
 import java.text.DecimalFormat
@@ -65,6 +66,8 @@ private val Yellow = Color(0xFFFFEB3B)
 private val GreenSave = Color(0xFF3BA776)
 
 /** Power bars of the consumption tab, in the order of EnergyView.swift. */
+private data class PowerBarSpec(val entityId: String, val color: Color, val dynamic: Boolean = false)
+
 private val powerBars = listOf(
     PowerBarSpec("sensor.battery_power_flow", HumeColors.Green, dynamic = true),
     PowerBarSpec(HumeConfig.PV_POWER, Yellow),
@@ -72,9 +75,7 @@ private val powerBars = listOf(
     PowerBarSpec("sensor.cong_suat_nha", Brick),
 )
 
-private data class PowerBarSpec(val entityId: String, val color: Color, val dynamic: Boolean = false)
-
-/** chargeIds in EnergyView.swift, in the same order. */
+/** chargeIds in EnergyView.swift, in the same order and with the same labels. */
 private val chargeControls = listOf(
     Triple("switch.allow_grid_to_charge_the_battery_2", "B\u1eadt/ T\u1eaft s\u1ea1c AC", "switch"),
     Triple("number.solis_s6_eh1p_battery_max_charge_current_2", "S\u1ea1c DC", "number"),
@@ -269,29 +270,14 @@ private fun SolarTab(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
     ExpanderGroup("X\u1ea3 Pin", dischargeControls, entities, ha)
     Spacer(Modifier.height(12.dp))
 
-    // SunsynkStaticCard: the live inverter readings.
+    // humeCard(cornerRadius: 44) around the animated flow diagram.
     Panel(radius = 44.dp) {
-        Text("Th\u00f4ng s\u1ed1 inverter", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
-        Spacer(Modifier.height(8.dp))
-        listOf(
-            HumeConfig.PV_POWER to "C\u00f4ng su\u1ea5t PV",
-            HumeConfig.PV_TODAY to "S\u1ea3n l\u01b0\u1ee3ng h\u00f4m nay",
-            HumeConfig.BATTERY_SOC to "Dung l\u01b0\u1ee3ng pin",
-            HumeConfig.BATTERY_POWER to "C\u00f4ng su\u1ea5t pin",
-            "sensor.aptomat_tong_power" to "C\u00f4ng su\u1ea5t l\u01b0\u1edbi",
-            "sensor.cong_suat_nha" to "C\u00f4ng su\u1ea5t nh\u00e0",
-            HumeConfig.BATTERY_TIME_LEFT to "Th\u1eddi gian c\u00f2n l\u1ea1i",
-        ).forEach { (id, label) ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text(label, fontSize = 13.sp, color = HumeColors.TextSecondary, modifier = Modifier.weight(1f))
-                Text(
-                    fmt(entities.value(id)) + " " + (entities[id]?.attr("unit_of_measurement").orEmpty()),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = HumeColors.TextPrimary,
-                )
-            }
-        }
+        SunsynkAnimatedFlowCard(ha)
+    }
+    Spacer(Modifier.height(12.dp))
+
+    Panel(radius = 24.dp, padding = PaddingValues(20.dp)) {
+        SunsynkStaticCard(entities)
     }
 }
 
@@ -303,6 +289,7 @@ private fun ExpanderGroup(
     entities: Map<String, HomeEntity>,
     ha: HomeAssistantRepository,
 ) {
+    // isAvailable(id) on iOS: hide the whole group when nothing reports a state.
     val available = controls.filter { (id, _, _) ->
         val state = entities[id]?.state
         state != null && state != "unavailable" && state != "unknown"
@@ -328,7 +315,7 @@ private fun ExpanderGroup(
         }
         if (open) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(HumeColors.Divider))
-            Column(Modifier.padding(horizontal = 16.dp, bottom = 14.dp)) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                 available.forEach { (id, label, kind) ->
                     if (kind == "switch") {
                         ToggleRow(label, entities[id]?.isOn == true) { ha.toggle(id) }
@@ -514,7 +501,7 @@ private fun PowerBar(watts: Double?, spec: PowerBarSpec) {
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                com.smarthome.hume.ui.theme.HumeIcons.forEntity(spec.entityId),
+                HumeIcons.forEntity(spec.entityId),
                 contentDescription = null,
                 tint = color,
                 modifier = Modifier.size(22.dp),
