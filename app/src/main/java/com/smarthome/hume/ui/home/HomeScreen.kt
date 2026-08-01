@@ -39,6 +39,7 @@ import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.scene.ManagedKind
 import com.smarthome.hume.core.scene.ManagedListsStore
+import com.smarthome.hume.core.storage.DailySnapshotStore
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.manage.ManageListSheet
@@ -76,9 +77,10 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     val context = LocalContext.current
     val app = context.applicationContext as HumeApplication
     val lists = remember { ManagedListsStore.get(app) }
+    val snapshots = remember { DailySnapshotStore.get(app) }
     val settingsStore = remember { SettingsStore(app) }
     val settings by settingsStore.settings.collectAsStateWithLifecycle(initialValue = HumeSettings())
-    val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase, lists))
+    val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase, lists, snapshots))
     val state by vm.uiState.collectAsStateWithLifecycle()
     val entities = state.entities
     val alarmEntity = alarmEntityId(entities)
@@ -92,13 +94,15 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
     var headerHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
+    val todayPv = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
 
     LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
     // Keyed on "do we have a snapshot yet", never on the entity count: the count
     // changes whenever Home Assistant adds or drops an entity, which would restart
     // the subscription for no reason.
     LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
-    LaunchedEffect(Unit) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
+    // Today's bar follows the live sensor, the six past days come from the cache.
+    LaunchedEffect(todayPv.toInt()) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
     // HomeView.onChange(of: activeSheet?.id) -> ha.setActiveRoom(key): every
     // device of the open room becomes realtime, and closing the sheet releases
     // them again.
@@ -151,10 +155,9 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             item {
                 // Cluster 1: solar chart and Powerwall card.
                 GlassGroup(radius = 37.dp, spacing = 14.dp) {
-                    val today = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
                     SolarChartCard(
                         title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
-                        totalText = String.format(Locale.US, "%.1f", today),
+                        totalText = String.format(Locale.US, "%.1f", todayPv),
                         unitText = "kWh",
                         days = weekly,
                         emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y",
