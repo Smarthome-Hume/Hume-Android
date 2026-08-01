@@ -1,6 +1,7 @@
 package com.smarthome.hume.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -9,29 +10,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** Palette taken from the HTML prototype screenshots. */
+/** Palette sampled from the prototype recording. */
 object HumeColors {
     val Orange = Color(0xFFF9784C)
     val OrangeDeep = Color(0xFFE8542A)
-    val OrangeSoft = Color(0xFFFFE3D8)
-    val OrangeSofter = Color(0xFFFFF0E9)
-    val RoomOnStart = Color(0xFFFFB59B)
-    val RoomOnEnd = Color(0xFFF9784C)
-    val ChipBlue = Color(0xFFE3EAF6)
-    val ChipBlueIcon = Color(0xFF6B7FA3)
+    val OrangeSoft = Color(0xFFFCE3D9)
+    val OrangeSofter = Color(0xFFFDF0EA)
+    val Salmon = Color(0xFFF5A18C)
+    val SalmonSoft = Color(0xFFF8BCAB)
+    val RoomOnStart = Color(0xFFFBDCCD)
+    val RoomOnEnd = Color(0xFFF7C9B4)
+    val ChipPink = Color(0xFFFDE9E2)
+    val ChipYellow = Color(0xFFFFF4DA)
+    val ChipYellowIcon = Color(0xFFF2B33D)
+    val SceneGreenBg = Color(0xFFE9F7EF)
+    val SceneGreen = Color(0xFF3BA776)
+    val Green = Color(0xFF3ED598)
+    val Blue = Color(0xFF73B9F2)
     val Amber = Color(0xFFFFC46B)
     val AmberBar = Color(0xFFFFE08A)
     val BarGrey = Color(0xFFD9D5D2)
-    val Green = Color(0xFF3ED598)
-    val Blue = Color(0xFF73B9F2)
     val Purple = Color(0xFFAD99E6)
     val Red = Color(0xFFE5484D)
-    val Background = Color(0xFFF6F3F1)
+    val Background = Color(0xFFF7F4F2)
     val Card = Color(0xFFFFFFFF)
-    val TextPrimary = Color(0xFF1F1B19)
-    val TextSecondary = Color(0xFF8A817C)
-    val Divider = Color(0xFFE9E3DF)
-    /** Dark pill used by the bottom navigation. */
+    val TextPrimary = Color(0xFF211D1B)
+    val TextSecondary = Color(0xFF938A85)
+    val Divider = Color(0xFFEDE7E3)
     val Ink = Color(0xFF16130F)
 }
 
@@ -40,23 +45,23 @@ private val LightScheme = lightColorScheme(
     onPrimary = Color.White,
     primaryContainer = HumeColors.OrangeSoft,
     onPrimaryContainer = HumeColors.TextPrimary,
-    secondary = HumeColors.ChipBlueIcon,
+    secondary = HumeColors.Salmon,
     onSecondary = Color.White,
-    secondaryContainer = HumeColors.ChipBlue,
+    secondaryContainer = HumeColors.ChipPink,
     onSecondaryContainer = HumeColors.TextPrimary,
     tertiary = HumeColors.Amber,
     background = HumeColors.Background,
     onBackground = HumeColors.TextPrimary,
     surface = HumeColors.Background,
     onSurface = HumeColors.TextPrimary,
-    surfaceVariant = Color(0xFFF0EAE6),
+    surfaceVariant = Color(0xFFF1EBE7),
     onSurfaceVariant = HumeColors.TextSecondary,
     surfaceContainerLowest = Color.White,
     surfaceContainerLow = Color.White,
     surfaceContainer = Color.White,
     surfaceContainerHigh = Color(0xFFFBF8F6),
-    surfaceContainerHighest = Color(0xFFF2ECE9),
-    outline = Color(0xFFD8D1CC),
+    surfaceContainerHighest = Color(0xFFF3EDEA),
+    outline = Color(0xFFDCD5D0),
     outlineVariant = HumeColors.Divider,
     error = HumeColors.Red,
 )
@@ -86,13 +91,12 @@ private val DarkScheme = darkColorScheme(
     error = Color(0xFFFF6B6F),
 )
 
-/** Large, soft corners like the prototype cards. */
 val HumeShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(26.dp),
+    extraLarge = RoundedCornerShape(30.dp),
 )
 
 @Composable

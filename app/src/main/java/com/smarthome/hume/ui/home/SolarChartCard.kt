@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.ui.theme.HumeColors
@@ -31,10 +32,7 @@ import com.smarthome.hume.ui.theme.HumeColors
 /** One bar of the weekly solar chart. */
 data class DayValue(val label: String, val value: Double, val isToday: Boolean = false)
 
-/**
- * Weekly solar production card from the prototype: rounded grey bars with the
- * current day highlighted, plus a thin line and dots across the bar tops.
- */
+/** Weekly production card: salmon bars with a dark trend line on top. */
 @Composable
 fun SolarChartCard(
     title: String,
@@ -45,48 +43,43 @@ fun SolarChartCard(
 ) {
     Card(
         Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(Modifier.padding(22.dp)) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = HumeColors.TextPrimary,
-                )
+                Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(totalText, fontSize = 26.sp, fontWeight = FontWeight.Normal, color = HumeColors.TextPrimary)
+                    Text(totalText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
                     Spacer(Modifier.padding(horizontal = 2.dp))
-                    Text(unitText, fontSize = 14.sp, color = HumeColors.TextSecondary)
+                    Text(unitText, fontSize = 11.sp, color = HumeColors.TextSecondary)
                 }
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(14.dp))
             if (days.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                     Text(
                         emptyHint ?: "Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = HumeColors.TextSecondary,
                     )
                 }
             } else {
                 WeeklyBars(days)
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.fillMaxWidth()) {
                     days.forEach { day ->
                         Text(
                             day.label,
-                            fontSize = 13.sp,
+                            fontSize = 10.sp,
                             color = HumeColors.TextSecondary,
                             modifier = Modifier.weight(1f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -97,40 +90,40 @@ fun SolarChartCard(
 
 @Composable
 private fun WeeklyBars(days: List<DayValue>) {
-    val barColor = HumeColors.BarGrey
-    val todayColor = HumeColors.AmberBar
-    val lineColor = Color(0xFF9A928C)
-    Canvas(Modifier.fillMaxWidth().height(150.dp)) {
+    val bar = HumeColors.SalmonSoft
+    val barToday = HumeColors.Orange
+    val line = Color(0xFF5B5350)
+    Canvas(Modifier.fillMaxWidth().height(120.dp)) {
         val count = days.size
         if (count == 0) return@Canvas
-        val gap = size.width * 0.02f
-        val barWidth = (size.width - gap * (count - 1)) / count
+        val slot = size.width / count
+        val barWidth = slot * 0.62f
         val max = days.maxOf { it.value }.takeIf { it > 0.0 } ?: 1.0
-        val topPadding = size.height * 0.18f
-        val centers = ArrayList<Offset>(count)
+        val top = size.height * 0.22f
+        val points = ArrayList<Offset>(count)
 
         days.forEachIndexed { index, day ->
-            val ratio = (day.value / max).coerceIn(0.25, 1.0).toFloat()
-            val barHeight = (size.height - topPadding) * ratio
-            val left = index * (barWidth + gap)
-            val top = size.height - barHeight
+            val ratio = (day.value / max).coerceIn(0.12, 1.0).toFloat()
+            val barHeight = (size.height - top) * ratio
+            val left = index * slot + (slot - barWidth) / 2f
+            val barTop = size.height - barHeight
             drawRoundRect(
-                color = if (day.isToday) todayColor else barColor,
-                topLeft = Offset(left, top),
+                color = if (day.isToday) barToday else bar,
+                topLeft = Offset(left, barTop),
                 size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(barWidth / 2.4f, barWidth / 2.4f),
+                cornerRadius = CornerRadius(barWidth / 2.6f, barWidth / 2.6f),
             )
-            centers += Offset(left + barWidth / 2f, top - topPadding * 0.35f)
+            points += Offset(left + barWidth / 2f, barTop - top * 0.30f)
         }
 
         val path = Path()
-        centers.forEachIndexed { index, point ->
+        points.forEachIndexed { index, point ->
             if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
         }
-        drawPath(path, lineColor, style = Stroke(width = 3f))
-        centers.forEach { point ->
-            drawCircle(Color.White, radius = 8f, center = point)
-            drawCircle(lineColor, radius = 8f, center = point, style = Stroke(width = 3f))
+        drawPath(path, line, style = Stroke(width = 2.5f))
+        points.forEach { point ->
+            drawCircle(Color.White, radius = 6f, center = point)
+            drawCircle(line, radius = 6f, center = point, style = Stroke(width = 2.5f))
         }
     }
 }
