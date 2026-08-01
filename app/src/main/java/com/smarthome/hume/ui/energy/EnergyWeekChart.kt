@@ -17,12 +17,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
@@ -60,7 +63,6 @@ fun EnergyWeekChart(
 
     LaunchedEffect(entityId) {
         val now = System.currentTimeMillis()
-        val todayStart = DailySnapshotStore.startOfDay(now)
         val missing = (1..6).map { DailySnapshotStore.startOfDay(now, -it) }
             .filter { store.get(entityId, it) == null }
         if (missing.isNotEmpty()) {
@@ -86,27 +88,49 @@ fun EnergyWeekChart(
     val data = past + WeekDay(DailySnapshotStore.dayLabel(System.currentTimeMillis()), todayLive, true)
 
     Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.Bottom) {
+            Text(
+                title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = HumeColors.TextPrimary,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.weight(1f),
+            )
             Text(
                 String.format(Locale.US, "%.1f", todayLive),
                 fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = HumeColors.TextPrimary,
+                maxLines = 1,
+                softWrap = false,
             )
             Spacer(Modifier.padding(horizontal = 1.dp))
-            Text(unit, fontSize = 14.sp, color = HumeColors.TextSecondary)
+            Text(
+                unit,
+                fontSize = 13.sp,
+                color = HumeColors.TextSecondary,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.padding(bottom = 2.dp),
+            )
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
         WeekBars(data)
         Row(
-            Modifier.fillMaxWidth().padding(top = 4.dp, start = 4.dp, end = 4.dp),
+            Modifier.fillMaxWidth().padding(top = 6.dp, start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             data.forEach { day ->
                 Text(
                     day.name,
                     fontSize = 11.sp,
-                    color = HumeColors.TextSecondary,
+                    color = if (day.isToday) HumeColors.Orange else HumeColors.TextSecondary,
+                    fontWeight = if (day.isToday) FontWeight.SemiBold else FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -117,35 +141,51 @@ fun EnergyWeekChart(
 /** Bars + smoothed line + dots, the WeekBarLineChart drawing on iOS. */
 @Composable
 private fun WeekBars(data: List<WeekDay>) {
-    val maxVal = max(data.maxOfOrNull { it.value } ?: 5.0, 5.0)
+    // Never let the tallest bar touch the ceiling: the iOS chart keeps ~20%
+    // headroom above the peak so the marker dot stays inside the plot area.
+    val peak = data.maxOfOrNull { it.value } ?: 0.0
+    val scale = max(peak * 1.2, 1.0)
     Canvas(
         Modifier
             .fillMaxWidth()
-            .height(184.dp)
+            .height(176.dp)
             .padding(horizontal = 4.dp),
     ) {
         if (data.isEmpty()) return@Canvas
-        val spacing = 4.dp.toPx()
+        val spacing = 6.dp.toPx()
         val count = data.size
         val barW = (size.width - spacing * (count - 1)) / count
-        val plotH = size.height * 0.92f
+        val baseline = size.height - 2.dp.toPx()
+        val plotH = baseline - 8.dp.toPx()
         val radius = 8.dp.toPx()
 
+        // Faint baseline so empty days read as "no data" instead of a broken axis.
+        drawLine(
+            color = HumeColors.Divider,
+            start = Offset(0f, baseline),
+            end = Offset(size.width, baseline),
+            strokeWidth = 1.dp.toPx(),
+        )
+
         val tops = data.mapIndexed { index, day ->
-            val ratio = (day.value / (maxVal * 1.15)).toFloat().coerceIn(0f, 1f)
-            val barH = if (day.value > 0) max(4.dp.toPx(), ratio * plotH) else 2.dp.toPx()
+            val ratio = (day.value / scale).toFloat().coerceIn(0f, 1f)
+            val barH = if (day.value > 0) max(6.dp.toPx(), ratio * plotH) else 0f
             val left = index * (barW + spacing)
-            val top = plotH - barH
-            drawRoundRect(
-                color = if (day.isToday) HumeColors.Orange else HumeColors.Orange.copy(alpha = 0.38f),
-                topLeft = Offset(left, top),
-                size = androidx.compose.ui.geometry.Size(barW, barH),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
-            )
+            val top = baseline - barH
+            if (barH > 0f) {
+                drawRoundRect(
+                    color = if (day.isToday) HumeColors.Orange else HumeColors.Orange.copy(alpha = 0.32f),
+                    topLeft = Offset(left, top),
+                    size = Size(barW, barH),
+                    cornerRadius = CornerRadius(radius, radius),
+                )
+            }
             Offset(left + barW / 2f, top)
         }
 
-        if (tops.size >= 2) {
+        // The trend line only makes sense once at least two days carry a value.
+        val filled = data.count { it.value > 0 }
+        if (filled >= 2) {
             val path = Path()
             path.moveTo(tops[0].x, tops[0].y)
             for (i in 0 until tops.size - 1) {
@@ -157,11 +197,14 @@ private fun WeekBars(data: List<WeekDay>) {
                 val c2 = Offset(p2.x - (p3.x - p1.x) / 6f, p2.y - (p3.y - p1.y) / 6f)
                 path.cubicTo(c1.x, c1.y, c2.x, c2.y, p2.x, p2.y)
             }
-            drawPath(path, color = HumeColors.Ink.copy(alpha = 0.45f), style = Stroke(width = 1.5.dp.toPx()))
+            drawPath(path, color = HumeColors.Orange.copy(alpha = 0.55f), style = Stroke(width = 2.dp.toPx()))
         }
-        tops.forEach { point ->
-            drawCircle(Color.White, radius = 3.5.dp.toPx(), center = point)
-            drawCircle(HumeColors.Ink, radius = 3.5.dp.toPx(), center = point, style = Stroke(width = 2.dp.toPx()))
+        // A dot on a zero day would sit on the axis and look like a data point.
+        data.forEachIndexed { index, day ->
+            if (day.value <= 0) return@forEachIndexed
+            val point = tops[index]
+            drawCircle(Color.White, radius = 4.dp.toPx(), center = point)
+            drawCircle(HumeColors.Orange, radius = 4.dp.toPx(), center = point, style = Stroke(width = 2.dp.toPx()))
         }
     }
 }
