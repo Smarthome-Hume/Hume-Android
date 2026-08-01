@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Bolt
@@ -67,7 +68,7 @@ import kotlinx.serialization.json.JsonPrimitive
 // Port of Views/Home/4_Scenes/ScenesView.swift.
 // Two sections: local scenes (LocalSceneStore, exactly one active) and Home
 // Assistant automations. Long press opens the same menu the context menu has
-// on iOS: run, pin, hide, delete.
+// on iOS: run, pin, hide, edit, delete.
 
 private const val PREFS = "hume_scenes"
 private const val KEY_HIDDEN_AUTO = "scenes_hidden_auto"
@@ -82,6 +83,8 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
 
     var showHidden by remember { mutableStateOf(false) }
     var hiddenAutos by remember { mutableStateOf(loadHiddenAutos(context)) }
+    var editing by remember { mutableStateOf<LocalScene?>(null) }
+    var creating by remember { mutableStateOf(false) }
 
     val visibleScenes = (if (showHidden) scenes else scenes.filterNot { it.isHidden })
         .sortedBy { it.sortIndex }
@@ -111,6 +114,14 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                     color = HumeColors.TextPrimary,
                 )
                 Spacer(Modifier.weight(1f))
+                IconButton(onClick = { creating = true }) {
+                    Icon(
+                        Icons.Rounded.Add,
+                        contentDescription = null,
+                        tint = HumeColors.Orange,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
                 IconButton(onClick = { showHidden = !showHidden }) {
                     Icon(
                         if (showHidden) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
@@ -135,7 +146,12 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     visibleScenes.forEach { scene ->
-                        SceneRow(scene = scene, store = store, ha = ha)
+                        SceneRow(
+                            scene = scene,
+                            store = store,
+                            ha = ha,
+                            onEdit = { editing = scene },
+                        )
                     }
                 }
             }
@@ -168,11 +184,23 @@ fun ScenesSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
             )
         }
     }
+
+    if (creating) {
+        SceneEditorSheet(scene = null, ha = ha, onDismiss = { creating = false })
+    }
+    editing?.let { scene ->
+        SceneEditorSheet(scene = scene, ha = ha, onDismiss = { editing = null })
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SceneRow(scene: LocalScene, store: LocalSceneStore, ha: HomeAssistantRepository) {
+private fun SceneRow(
+    scene: LocalScene,
+    store: LocalSceneStore,
+    ha: HomeAssistantRepository,
+    onEdit: () -> Unit,
+) {
     val accent = sceneColor(scene.colorHex)
     val active = scene.isActive
     var menu by remember { mutableStateOf(false) }
@@ -244,6 +272,10 @@ private fun SceneRow(scene: LocalScene, store: LocalSceneStore, ha: HomeAssistan
             DropdownMenuItem(
                 text = { Text(if (active) "T\u1eaft" else "B\u1eadt") },
                 onClick = { menu = false; store.activate(scene.id, ha) },
+            )
+            DropdownMenuItem(
+                text = { Text("S\u1eeda k\u1ecbch b\u1ea3n") },
+                onClick = { menu = false; onEdit() },
             )
             DropdownMenuItem(
                 text = {
