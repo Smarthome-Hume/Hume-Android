@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
@@ -42,6 +43,7 @@ class LocalSceneStore private constructor(context: Context) {
 
     private val prefs = context.getSharedPreferences("hume_local_scenes", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val listSerializer = ListSerializer(LocalScene.serializer())
 
     private val _scenes = MutableStateFlow(load())
     val scenes: StateFlow<List<LocalScene>> = _scenes.asStateFlow()
@@ -61,12 +63,12 @@ class LocalSceneStore private constructor(context: Context) {
 
     private fun load(): List<LocalScene> {
         val raw = prefs.getString(KEY, null) ?: return defaultScenes.also { persist(it) }
-        return runCatching { json.decodeFromString<List<LocalScene>>(raw) }
+        return runCatching { json.decodeFromString(listSerializer, raw) }
             .getOrElse { defaultScenes }
     }
 
     private fun persist(list: List<LocalScene>) {
-        prefs.edit().putString(KEY, json.encodeToString(list)).apply()
+        prefs.edit().putString(KEY, json.encodeToString(listSerializer, list)).apply()
     }
 
     private fun commit(list: List<LocalScene>) {
