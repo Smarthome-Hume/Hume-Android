@@ -1,6 +1,7 @@
 package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +37,11 @@ import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.glassSurface
+
+/** Card geometry from HumeTheme.swift: Radius.card = 34, room card height 240. */
+private val CardRadius = 34.dp
+private val CardHeight = 240.dp
 
 /** Small square tile used in the staggered room area. */
 data class SmallTile(
@@ -67,7 +73,6 @@ fun RoomsShowcase(
             RoomPager(
                 rooms = climateRooms,
                 entities = entities,
-                highlighted = true,
                 onOpenRoom = onOpenRoom,
                 onToggleLight = onToggleLight,
                 onAdjustTarget = onAdjustTarget,
@@ -77,7 +82,6 @@ fun RoomsShowcase(
             RoomPager(
                 rooms = otherRooms,
                 entities = entities,
-                highlighted = false,
                 onOpenRoom = onOpenRoom,
                 onToggleLight = onToggleLight,
                 onAdjustTarget = onAdjustTarget,
@@ -110,8 +114,7 @@ private fun SmallTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color.White)
+            .glassSurface(radius = 24.dp)
             .clickable(enabled = tile.entityId != null) { tile.entityId?.let(onTileClick) }
             .padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -134,7 +137,6 @@ private fun SmallTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
 private fun RoomPager(
     rooms: List<RoomConfig>,
     entities: Map<String, HomeEntity>,
-    highlighted: Boolean,
     onOpenRoom: (RoomConfig) -> Unit,
     onToggleLight: (RoomConfig) -> Unit,
     onAdjustTarget: (RoomConfig, Double) -> Unit,
@@ -146,7 +148,6 @@ private fun RoomPager(
             RoomCardLarge(
                 room = rooms[page],
                 entities = entities,
-                highlighted = highlighted,
                 onOpen = { onOpenRoom(rooms[page]) },
                 onToggleLight = { onToggleLight(rooms[page]) },
                 onAdjustTarget = { delta -> onAdjustTarget(rooms[page], delta) },
@@ -159,57 +160,70 @@ private fun RoomPager(
     }
 }
 
+/**
+ * RoomCardView.swift / ClimateRoomCardView.swift.
+ *
+ * The card surface is always the neutral glass panel. Orange is not decoration:
+ * it is the light on indicator, and it is applied exactly the way the SwiftUI
+ * card applies it. A translucent orange wash at 10 percent, an orange border at
+ * 40 percent, an orange glow, and an orange icon tint. Lights off means no
+ * orange anywhere on the card.
+ */
 @Composable
 private fun RoomCardLarge(
     room: RoomConfig,
     entities: Map<String, HomeEntity>,
-    highlighted: Boolean,
     onOpen: () -> Unit,
     onToggleLight: () -> Unit,
     onAdjustTarget: (Double) -> Unit,
 ) {
     val lightOn = entities[room.lightEntity]?.isOn == true
-    val useAccent = highlighted && lightOn
-    val background: Brush = if (useAccent) {
-        Brush.verticalGradient(listOf(HumeColors.RoomOnStart, HumeColors.RoomOnEnd))
-    } else {
-        Brush.verticalGradient(listOf(Color.White, Color.White))
-    }
     val temp = entities.num(room.tempEntity, 0)
     val humidity = entities.num(room.humidityEntity, 0)
     val target = entities.attr(room.climateEntity ?: "", "temperature")
+    val shape = RoundedCornerShape(CardRadius)
 
     Box(
         Modifier
             .fillMaxWidth()
-            .height(230.dp)
-            .clip(RoundedCornerShape(30.dp))
-            .background(background)
+            .height(CardHeight)
+            // Orange glow only while the light is on, radius 10 like the original.
+            .shadow(
+                elevation = if (lightOn) 10.dp else 4.dp,
+                shape = shape,
+                ambientColor = if (lightOn) HumeColors.Orange.copy(alpha = 0.27f) else Color(0x14000000),
+                spotColor = if (lightOn) HumeColors.Orange.copy(alpha = 0.27f) else Color(0x14000000),
+            )
+            .glassSurface(radius = CardRadius, elevation = 0.dp)
+            // The 10 percent orange wash sits on top of the glass, not instead of it.
+            .then(if (lightOn) Modifier.background(HumeColors.Orange.copy(alpha = 0.10f), shape) else Modifier)
+            .then(if (lightOn) Modifier.border(1.dp, HumeColors.Orange.copy(alpha = 0.40f), shape) else Modifier)
             .clickable(onClick = onOpen)
-            .padding(18.dp)
+            .padding(16.dp),
     ) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     room.name,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = HumeColors.TextPrimary,
+                    maxLines = 2,
                     modifier = Modifier.weight(1f),
                 )
                 Box(
                     Modifier
-                        .size(42.dp)
+                        .size(55.dp)
                         .clip(CircleShape)
-                        .background(if (useAccent) Color.White.copy(alpha = 0.35f) else HumeColors.Background)
+                        .background(Color.White.copy(alpha = 0.35f))
                         .clickable(onClick = onToggleLight),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         HumeIcons.room(room.icon),
                         contentDescription = null,
-                        tint = if (lightOn) HumeColors.OrangeDeep else HumeColors.TextSecondary,
-                        modifier = Modifier.size(22.dp),
+                        tint = if (lightOn) HumeColors.Orange else HumeColors.TextSecondary,
+                        modifier = Modifier.size(28.dp),
                     )
                 }
             }
@@ -218,32 +232,35 @@ private fun RoomCardLarge(
                     Text(
                         temp,
                         fontSize = 46.sp,
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight.ExtraLight,
                         color = HumeColors.TextPrimary,
+                        maxLines = 1,
                     )
-                    Text("\u00b0", fontSize = 34.sp, color = HumeColors.TextPrimary)
-                    Spacer(Modifier.width(6.dp))
+                    Text("\u00b0", fontSize = 34.sp, fontWeight = FontWeight.ExtraLight, color = HumeColors.TextPrimary)
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         "$humidity%",
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Light,
                         color = HumeColors.TextSecondary,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
                 if (room.hasClimate && room.climateEntity != null) {
-                    TargetStepper(target = target, accent = useAccent, onAdjustTarget = onAdjustTarget)
+                    TargetStepper(target = target, onAdjustTarget = onAdjustTarget)
                 }
             }
         }
     }
 }
 
+/** tempStepper() in ClimateRoomCardView.swift, element radius 18. */
 @Composable
-private fun TargetStepper(target: String?, accent: Boolean, onAdjustTarget: (Double) -> Unit) {
+private fun TargetStepper(target: String?, onAdjustTarget: (Double) -> Unit) {
     Column(
         Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (accent) Color.White.copy(alpha = 0.35f) else HumeColors.Background)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White.copy(alpha = 0.45f))
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -255,7 +272,7 @@ private fun TargetStepper(target: String?, accent: Boolean, onAdjustTarget: (Dou
         )
         Text(
             if (target == null) "--" else "$target\u00b0",
-            fontSize = 17.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = HumeColors.TextPrimary,
         )
