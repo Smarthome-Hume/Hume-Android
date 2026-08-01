@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,12 +22,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.House
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -46,7 +46,10 @@ import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
+import com.smarthome.hume.ui.theme.GlassCard
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.HumeShapes
+import com.smarthome.hume.ui.theme.glassPill
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -113,11 +116,11 @@ fun EnergyScreen(ha: HomeAssistantRepository) {
         Text("N\u0103ng l\u01b0\u1ee3ng", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(12.dp))
 
+        // Segmented control on a floating glass pill, One UI 8.5 style.
         Row(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
-                .background(Color.White)
+                .glassPill(22.dp)
                 .padding(4.dp),
         ) {
             listOf(
@@ -197,7 +200,7 @@ private fun ConsumptionTab(entities: Map<String, HomeEntity>) {
     }
     Spacer(Modifier.height(14.dp))
 
-    Card {
+    Panel {
         Text("C\u00f4ng su\u1ea5t ho\u1ea1t \u0111\u1ed9ng", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(10.dp))
         powerBars.forEach { (id, label, color) ->
@@ -237,7 +240,7 @@ private fun AnalysisTab(entities: Map<String, HomeEntity>) {
         .sortedByDescending { it.second }
     val total = readings.sumOf { it.second }
 
-    Card {
+    Panel {
         Text("Ph\u00e2n b\u1ed5 t\u1ea3i", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(10.dp))
         if (readings.isEmpty()) {
@@ -290,7 +293,7 @@ private fun SolarTab(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
     ControlGroup("X\u1ea3 Pin", dischargeControls, entities, ha)
     Spacer(Modifier.height(12.dp))
 
-    Card {
+    Panel {
         Text("Th\u00f4ng s\u1ed1 inverter", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(8.dp))
         listOf(
@@ -326,7 +329,7 @@ private fun ControlGroup(
         state != null && state != "unavailable" && state != "unknown"
     }
     if (available.isEmpty()) return
-    Card {
+    Panel {
         Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(6.dp))
         available.forEach { (id, label, kind) ->
@@ -380,15 +383,13 @@ private fun RoundIconButton(icon: ImageVector, onClick: () -> Unit) {
 
 /* ------------------------- shared atoms ------------------------- */
 
+/** Every panel on this screen is the shared glass surface. */
 @Composable
-private fun Card(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color.White)
-            .border(1.dp, HumeColors.Divider, RoundedCornerShape(28.dp))
-            .padding(16.dp),
+private fun Panel(content: @Composable ColumnScope.() -> Unit) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        radius = HumeShapes.Panel,
+        padding = PaddingValues(16.dp),
         content = content,
     )
 }
@@ -402,13 +403,7 @@ private fun StatCard(
     unit: String,
     color: Color,
 ) {
-    Column(
-        modifier
-            .clip(RoundedCornerShape(26.dp))
-            .background(Color.White)
-            .border(1.dp, HumeColors.Divider, RoundedCornerShape(26.dp))
-            .padding(14.dp),
-    ) {
+    GlassCard(modifier = modifier, radius = HumeShapes.Card, padding = PaddingValues(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(30.dp).clip(CircleShape).background(color.copy(alpha = 0.14f)),
