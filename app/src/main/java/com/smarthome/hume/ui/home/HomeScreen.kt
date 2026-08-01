@@ -37,9 +37,10 @@ import java.util.Locale
 
 internal const val ALARM_ENTITY = "alarm_control_panel.alarm_security"
 private const val USER_NAME = "H\u1ea3i H\u00e0"
+private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 
 /**
- * Home dashboard rebuilt to match the HTML prototype: header, status pills,
+ * Home dashboard matching the prototype recording: header, status pills,
  * solar chart, battery card, staggered room carousels and the scene grid.
  */
 @Composable
@@ -48,6 +49,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase))
     val state by vm.uiState.collectAsStateWithLifecycle()
     val entities = state.entities
+    val alarmState = entities[ALARM_ENTITY]?.state
 
     var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
     var lightsSheet by remember { mutableStateOf(false) }
@@ -97,13 +99,14 @@ fun HomeScreen(ha: HomeAssistantRepository) {
 
     LazyColumn(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 130.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 130.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
             HomeHeader(
                 userName = USER_NAME,
                 greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...",
+                location = LOCATION,
                 connected = state.connected,
                 alertCount = state.alertCount,
                 onOpenNotifications = { notificationSheet = true },
@@ -124,7 +127,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
         }
         item {
             StatusChipRow(
-                alarmState = entities[ALARM_ENTITY]?.state,
+                alarmState = alarmState,
                 lightsOn = state.lightsOn,
                 onOpenAlarm = { notificationSheet = true },
                 onOpenLights = { lightsSheet = true },
@@ -152,13 +155,6 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             )
         }
         item {
-            Text(
-                "Ph\u00f2ng",
-                style = MaterialTheme.typography.headlineSmall,
-                color = HumeColors.TextPrimary,
-            )
-        }
-        item {
             RoomsShowcase(
                 climateRooms = vm.climateRooms,
                 otherRooms = vm.basicRooms,
@@ -172,7 +168,11 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             )
         }
         item {
-            SceneGridSection(scenes = sceneItems(entities), onRun = { vm.activateScene(it) })
+            SceneGridSection(
+                scenes = sceneItems(entities),
+                alarmState = alarmState,
+                onRun = { vm.activateScene(it) },
+            )
         }
     }
 
@@ -244,7 +244,7 @@ internal fun Map<String, HomeEntity>.attr(entityId: String, key: String): String
 internal fun alarmLabel(state: String?): String = when (state) {
     "disarmed" -> "\u0110\u00e3 t\u1eaft"
     "armed_home" -> "\u1ede nh\u00e0"
-    "armed_away" -> "\u0110i v\u1eafng"
+    "armed_away" -> "V\u1eafng nh\u00e0"
     "armed_night" -> "Ban \u0111\u00eam"
     "armed_vacation" -> "K\u1ef3 ngh\u1ec9"
     "arming", "pending" -> "\u0110ang k\u00edch ho\u1ea1t"
