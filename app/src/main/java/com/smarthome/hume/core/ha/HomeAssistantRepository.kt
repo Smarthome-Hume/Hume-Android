@@ -3,6 +3,7 @@ package com.smarthome.hume.core.ha
 import android.util.Log
 import com.smarthome.hume.core.model.HAEntity
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.toHomeEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,6 +89,29 @@ class HomeAssistantRepository {
     private val pending = HashMap<String, HomeEntity>()
     private val lastFlush = HashMap<UpdateBucket, Long>()
     private val registryRequests = HashMap<Int, String>()
+
+    /**
+     * Room bubble currently open, mirroring activeRoomKey in
+     * HomeAssistantManager.swift. While a room sheet is open the entities that
+     * belong to the other rooms are frozen: their events are queued instead of
+     * being published, so the open sheet is the only thing repainting.
+     */
+    private var activeRoomKey: String? = null
+
+    /** entityId -> room keys, built once from RoomBubbleConfig like entityRoomMap. */
+    private val entityRoomMap: Map<String, Set<String>> by lazy {
+        val map = HashMap<String, MutableSet<String>>()
+        RoomBubbleConfig.all.forEach { config ->
+            listOfNotNull(config.tempEntity, config.humidityEntity).forEach { id ->
+                map.getOrPut(id) { HashSet() }.add(config.key)
+            }
+            config.devices.forEach { device ->
+                map.getOrPut(device.entity) { HashSet() }.add(config.key)
+                device.powerEntity?.let { map.getOrPut(it) { HashSet() }.add(config.key) }
+            }
+        }
+        map
+    }
 
     /**
      * Entities the user just acted on, with the moment the optimistic value was
@@ -190,7 +214,7 @@ class HomeAssistantRepository {
         // Anything already queued for a watched entity should show up immediately.
         val ready = HashMap<String, HomeEntity>()
         synchronized(pending) {
-            ids.forEach { id -> pending.remove(id)?.let { ready[id] = it } }
+            ids.forEach { id -> if (!isFrozenByRoom(id)) pending.remove(id)?.let { ready[id] = it } }
         }
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
@@ -198,6 +222,37 @@ class HomeAssistantRepository {
     fun watchEntity(entityId: String) = setWatchedEntities(_watched.value + entityId)
 
     fun unwatchEntity(entityId: String) = setWatchedEntities(_watched.value - entityId)
+
+    /**
+     * setActiveRoom() in HomeAssistantManager.swift: pass the room key when a
+     * room sheet opens and null when it closes. Opening a room immediately
+     * releases everything queued for that room.
+     */
+    fun setActiveRoom(key: String?) {
+        if (key == activeRoomKey) return
+        activeRoomKey = key
+        Log.i(TAG, "Active room -> ${key ?: "none"}")
+        if (key == null) return
+        val ready = HashMap<String, HomeEntity>()
+        synchronized(pending) {
+            val iterator = pending.entries.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                if (entityRoomMap[entry.key]?.contains(key) == true) {
+                    ready[entry.key] = entry.value
+                    iterator.remove()
+                }
+            }
+        }
+        if (ready.isNotEmpty()) applyUpdates(ready)
+    }
+
+    /** isVisibleOnActiveTab(), room part: entities of the other rooms are frozen. */
+    private fun isFrozenByRoom(entityId: String): Boolean {
+        val key = activeRoomKey ?: return false
+        val rooms = entityRoomMap[entityId] ?: return false
+        return !rooms.contains(key)
+    }
 
     /** Pin one entity to a specific bucket, e.g. a slow outdoor sensor at ONE_HOUR. */
     fun setBucket(entityId: String, bucket: UpdateBucket) {
@@ -217,10 +272,10 @@ class HomeAssistantRepository {
     }
 
     private fun onIncomingState(entity: HomeEntity) {
-        if (bucketFor(entity.id) == UpdateBucket.REALTIME) {
-            applyUpdates(mapOf(entity.id to entity))
-        } else {
+        if (isFrozenByRoom(entity.id) || bucketFor(entity.id) != UpdateBucket.REALTIME) {
             synchronized(pending) { pending[entity.id] = entity }
+        } else {
+            applyUpdates(mapOf(entity.id to entity))
         }
     }
 
@@ -233,6 +288,7 @@ class HomeAssistantRepository {
             val touched = HashSet<UpdateBucket>()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
+                if (isFrozenByRoom(entry.key)) continue
                 val bucket = bucketFor(entry.key)
                 val last = lastFlush[bucket] ?: 0L
                 if (now - last >= bucket.intervalMs) {
