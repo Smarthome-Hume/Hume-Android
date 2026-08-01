@@ -10,8 +10,11 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Desk
 import androidx.compose.material.icons.rounded.DoorFront
+import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Kitchen
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.LocalLaundryService
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.MeetingRoom
@@ -19,6 +22,8 @@ import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.SoupKitchen
+import androidx.compose.material.icons.rounded.Stairs
 import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material.icons.rounded.WbSunny
@@ -27,6 +32,7 @@ import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.smarthome.hume.core.model.HumeTab
 
+/** SF Symbol -> Material icon mapping, mirroring IconMapper.swift. */
 object HumeIcons {
     val Light = Icons.Rounded.Lightbulb
     val Temperature = Icons.Rounded.Thermostat
@@ -43,6 +49,9 @@ object HumeIcons {
     val Sunrise = Icons.Rounded.WbTwilight
     val Leaving = Icons.Rounded.Logout
     val Coming = Icons.Rounded.Home
+    val Power = Icons.Rounded.Bolt
+    val Plug = Icons.Rounded.ElectricalServices
+    val House = Icons.Rounded.Home
 
     fun room(key: String): ImageVector = when (key) {
         "bed" -> Icons.Rounded.Bed
@@ -51,7 +60,24 @@ object HumeIcons {
         "sofa" -> Icons.Rounded.Weekend
         "bath" -> Icons.Rounded.Bathtub
         "kitchen" -> Icons.Rounded.Kitchen
+        "washer" -> Icons.Rounded.LocalLaundryService
+        "hallway" -> Icons.Rounded.Stairs
         else -> Icons.Rounded.Home
+    }
+
+    /** Icon keys used by the SwiftUI sensor/device cards. */
+    fun sensor(key: String): ImageVector = when (key) {
+        "sun" -> Solar
+        "battery-full", "battery-charging" -> Battery
+        "plug" -> Plug
+        "house" -> House
+        "desk" -> Desk
+        "door" -> DoorClosed
+        "snowflake" -> Climate
+        "fire" -> Icons.Rounded.LocalFireDepartment
+        "cooking" -> Icons.Rounded.SoupKitchen
+        "dishwasher", "washer", "dryer" -> Icons.Rounded.LocalLaundryService
+        else -> Power
     }
 
     fun tab(tab: HumeTab): ImageVector = when (tab) {

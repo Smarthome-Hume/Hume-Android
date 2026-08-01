@@ -1,83 +1,71 @@
 package com.smarthome.hume.ui.home
 
 import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.model.HumeConfig
 
 /**
- * Best-effort detection of the energy related sensors in a Home Assistant
- * instance. Everything here is heuristic: the user can override later.
+ * Energy readings resolved from the exact entity IDs used by the SwiftUI app.
+ * Nothing here guesses by device_class any more.
  */
 internal object EnergyDetect {
 
-    private fun HomeEntity.idText(): String = entityId.lowercase()
+    fun solarPower(entities: Map<String, HomeEntity>): HomeEntity? = entities[HumeConfig.PV_POWER]
 
-    private fun candidates(entities: Map<String, HomeEntity>, deviceClass: String): List<HomeEntity> =
-        entities.values.filter { it.entityId.startsWith("sensor.") && it.deviceClass() == deviceClass }
+    fun dailyEnergy(entities: Map<String, HomeEntity>): HomeEntity? = entities[HumeConfig.PV_TODAY]
 
-    /** Instantaneous PV production in W. Negative values are ignored, they are grid export. */
-    fun solarPower(entities: Map<String, HomeEntity>): HomeEntity? =
-        candidates(entities, "power").firstOrNull { e ->
-            val id = e.idText()
-            (id.contains("solar") || id.contains("pv_power") || id.contains("pv1") ||
-                id.contains("inverter") || id.contains("mat_troi")) && !id.contains("grid")
-        }
+    fun battery(entities: Map<String, HomeEntity>): HomeEntity? = entities[HumeConfig.BATTERY_SOC]
 
-    /** Daily produced energy in kWh. */
-    fun dailyEnergy(entities: Map<String, HomeEntity>): HomeEntity? {
-        val energy = candidates(entities, "energy")
-        return energy.firstOrNull { e ->
-            val id = e.idText()
-            (id.contains("today") || id.contains("daily") || id.contains("hom_nay")) &&
-                (id.contains("solar") || id.contains("pv") || id.contains("production") || id.contains("yield"))
-        } ?: energy.firstOrNull { e ->
-            val id = e.idText()
-            id.contains("today") || id.contains("daily") || id.contains("hom_nay")
-        } ?: energy.firstOrNull()
+    fun batteryPower(entities: Map<String, HomeEntity>): HomeEntity? = entities[HumeConfig.BATTERY_POWER]
+
+    fun soc(entities: Map<String, HomeEntity>): Double = battery(entities)?.numericState ?: 0.0
+
+    fun power(entities: Map<String, HomeEntity>): Double = batteryPower(entities)?.numericState ?: 0.0
+
+    /** number.solis_s6_eh1p_backup_soc_2, defaults to 20% like the iOS card. */
+    fun backupSoc(entities: Map<String, HomeEntity>): Double =
+        entities[HumeConfig.BACKUP_SOC]?.numericState ?: 20.0
+
+    fun resting(entities: Map<String, HomeEntity>): Boolean {
+        val p = power(entities)
+        return p in 0.0..5.0
     }
 
-    fun gridPower(entities: Map<String, HomeEntity>): HomeEntity? =
-        candidates(entities, "power").firstOrNull { it.idText().contains("grid") }
+    fun discharging(entities: Map<String, HomeEntity>): Boolean = power(entities) < 0.0
 
-    fun loadPower(entities: Map<String, HomeEntity>): HomeEntity? =
-        candidates(entities, "power").firstOrNull { e ->
-            val id = e.idText()
-            id.contains("load") || id.contains("house") || id.contains("consumption") || id.contains("tieu_thu")
-        }
+    fun charging(entities: Map<String, HomeEntity>): Boolean =
+        !resting(entities) && !discharging(entities)
 
-    /** Storage battery state of charge in percent. */
-    fun battery(entities: Map<String, HomeEntity>): HomeEntity? =
-        candidates(entities, "battery").firstOrNull { e ->
-            val id = e.idText()
-            id.contains("powerwall") || id.contains("battery_soc") || id.contains("pin") ||
-                id.contains("storage") || id.contains("ess")
-        } ?: candidates(entities, "battery").maxByOrNull { it.numericState ?: -1.0 }
-
-    /** Remaining runtime, if the inverter publishes one. */
-    fun batteryRuntime(entities: Map<String, HomeEntity>): HomeEntity? =
-        entities.values.firstOrNull { e ->
-            val id = e.idText()
-            e.entityId.startsWith("sensor.") &&
-                (id.contains("runtime") || id.contains("time_remaining") || id.contains("time_to_full") ||
-                    id.contains("backup_time"))
-        }
-
-    /** True when the storage battery is charging rather than discharging. */
-    fun charging(entities: Map<String, HomeEntity>): Boolean {
-        val flag = entities.values.firstOrNull {
-            it.entityId.startsWith("binary_sensor.") && it.idText().contains("charging")
-        }
-        if (flag != null) return flag.isOn
-        val batteryPower = candidates(entities, "power").firstOrNull { e ->
-            val id = e.idText()
-            id.contains("battery") || id.contains("powerwall")
-        }
-        val value = batteryPower?.numericState ?: return false
-        return value > 0
+    /** Time-remaining sensor depends on direction, exactly like PowerwallCardView. */
+    fun batteryRuntime(entities: Map<String, HomeEntity>): HomeEntity? {
+        val id = if (discharging(entities)) HumeConfig.BATTERY_TIME_LEFT else HumeConfig.BATTERY_TIME_TO_FULL
+        return entities[id]
     }
 
-    /** Extra tiles shown next to the room cards. */
-    fun highlightSensors(entities: Map<String, HomeEntity>, limit: Int = 4): List<HomeEntity> =
-        entities.values
-            .filter { it.entityId.startsWith("sensor.") && it.deviceClass() == "power" && (it.numericState ?: 0.0) > 0 }
-            .sortedByDescending { it.numericState ?: 0.0 }
-            .take(limit)
+    /** friendly_time attribute first, raw state as fallback. */
+    fun runtimeText(entities: Map<String, HomeEntity>): String {
+        val entity = batteryRuntime(entities) ?: return "--"
+        return entity.attrString("friendly_time") ?: entity.state
+    }
+
+    /** Hours remaining, used to compute the finish clock time. */
+    fun runtimeHours(entities: Map<String, HomeEntity>): Double? = batteryRuntime(entities)?.numericState
+
+    /** Entity IDs the home screen needs pushed into the realtime bucket. */
+    fun watchedIds(): Set<String> = buildSet {
+        add(HumeConfig.PV_POWER)
+        add(HumeConfig.PV_TODAY)
+        add(HumeConfig.BATTERY_SOC)
+        add(HumeConfig.BATTERY_POWER)
+        add(HumeConfig.BACKUP_SOC)
+        add(HumeConfig.BATTERY_TIME_LEFT)
+        add(HumeConfig.BATTERY_TIME_TO_FULL)
+        add(HumeConfig.GRID_DAILY)
+        add(HumeConfig.HOME_DAILY)
+        add(HumeConfig.ACTIVE_CARD)
+        add(HumeConfig.ACTIVE_CARD_2)
+        add(HumeConfig.ALARM_PRIMARY)
+        add(HumeConfig.ALARM_FALLBACK)
+        HumeConfig.deviceCards.values.forEach { add(it.entityId) }
+        HumeConfig.doorCards.values.forEach { add(it.entityId) }
+    }
 }

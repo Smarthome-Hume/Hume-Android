@@ -2,6 +2,7 @@ package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,31 +21,52 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
-/** "Hi\u1ec7u n\u0103ng Pin" card with the two segment bar and its legend. */
+/**
+ * "Hi\u1ec7u n\u0103ng Pin" card ported from PowerwallCardView.swift:
+ * reserve segment solid, usable segment diagonally striped, three states.
+ */
 @Composable
 fun BatteryCard(
-    percent: Double?,
-    charging: Boolean,
-    headline: String,
-    trailingLabel: String,
-    trailingValue: String,
+    soc: Double,
+    power: Double,
+    backupSoc: Double,
+    timeText: String,
+    finishTime: String,
+    onClick: () -> Unit = {},
 ) {
-    val value = percent ?: 0.0
+    val resting = power in 0.0..5.0
+    val discharging = power < 0.0
+    val charging = !resting && !discharging
+    val status = when {
+        resting -> "NGH\u1ec8"
+        discharging -> "\u0110ANG X\u1ea2"
+        else -> "\u0110ANG S\u1ea0C"
+    }
+    val accent = when {
+        charging -> HumeColors.Green
+        discharging -> HumeColors.Orange
+        else -> HumeColors.TextSecondary
+    }
+
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
-            .background(HumeColors.OrangeSofter)
-            .padding(18.dp)
+            .clip(RoundedCornerShape(30.dp))
+            .background(if (resting) Color.White else accent.copy(alpha = 0.10f))
+            .border(1.dp, if (resting) HumeColors.Divider else accent.copy(alpha = 0.40f), RoundedCornerShape(30.dp))
+            .padding(horizontal = 18.dp, vertical = 16.dp)
     ) {
         Column(Modifier.fillMaxWidth()) {
             Row(
@@ -54,93 +76,115 @@ fun BatteryCard(
             ) {
                 Text(
                     "Hi\u1ec7u n\u0103ng Pin",
-                    fontSize = 16.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = HumeColors.TextPrimary,
                 )
                 Box(
-                    Modifier.size(34.dp).clip(CircleShape).background(HumeColors.Ink),
+                    Modifier.size(44.dp).clip(CircleShape).background(HumeColors.Background),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(HumeIcons.Battery, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    Icon(HumeIcons.Battery, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(22.dp))
                 }
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        if (charging) "\u0110ANG S\u1ea0C" else "\u0110ANG X\u1ea2",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = HumeColors.TextSecondary,
-                    )
-                    Text(headline, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
+                    Text(status, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextSecondary)
+                    if (!resting) {
+                        Text(timeText, fontSize = 36.sp, color = HumeColors.TextPrimary)
+                    }
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(trailingLabel, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextSecondary)
-                    Text(trailingValue, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
+                if (!resting && finishTime.isNotBlank() && finishTime != "--:--") {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            if (charging) "\u0110\u1ea6Y L\u00daC" else "K\u1ebeT TH\u00daC L\u00daC",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = HumeColors.TextSecondary,
+                        )
+                        Text(finishTime, fontSize = 19.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary)
+                    }
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            SegmentedBar(value)
+            Spacer(Modifier.height(14.dp))
+            DualBar(soc = soc, backupSoc = backupSoc, tint = accent)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                LegendDot(HumeColors.Orange, "D\u1ef1 tr\u1eef " + percentText(value))
-                LegendDot(HumeColors.SalmonSoft, "S\u1eed d\u1ee5ng " + percentText(100.0 - value))
+                LegendDot(
+                    color = if (charging) HumeColors.Green else HumeColors.TextSecondary,
+                    label = "D\u1ef1 tr\u1eef " + backupSoc.toInt() + "%",
+                )
+                LegendDot(
+                    color = when {
+                        charging -> HumeColors.Blue
+                        discharging -> HumeColors.Orange
+                        else -> HumeColors.TextSecondary
+                    },
+                    label = "S\u1eed d\u1ee5ng " + max(0.0, soc - backupSoc).toInt() + "%",
+                )
             }
         }
     }
 }
 
-private fun percentText(value: Double): String = String.format(Locale.US, "%.0f%%", value.coerceIn(0.0, 100.0))
-
 @Composable
-private fun SegmentedBar(percent: Double) {
-    val fraction = (percent / 100.0).coerceIn(0.0, 1.0).toFloat()
-    val hatch = HumeColors.SalmonSoft
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(22.dp)
-            .clip(RoundedCornerShape(11.dp))
-            .background(Color.White)
-    ) {
-        Canvas(Modifier.fillMaxWidth().height(22.dp)) {
-            val filled = size.width * fraction
+private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
+    val height = 28.dp
+    Canvas(Modifier.fillMaxWidth().height(height)) {
+        val w = size.width
+        val h = size.height
+        val radius = CornerRadius(h / 2f, h / 2f)
+        val reserveWidth = (w * min(soc, backupSoc) / 100.0).toFloat().coerceAtLeast(0f)
+        val usableWidth = (w * max(0.0, soc - backupSoc) / 100.0).toFloat().coerceAtLeast(0f)
+        val grayReserve = (w * backupSoc / 100.0).toFloat()
+        val grayUsable = (w * (100.0 - backupSoc) / 100.0).toFloat()
+        val track = HumeColors.TextSecondary.copy(alpha = 0.25f)
+
+        drawRoundRect(track, size = Size(grayReserve, h), cornerRadius = radius)
+        drawRoundRect(track, topLeft = Offset(grayReserve, 0f), size = Size(grayUsable, h), cornerRadius = radius)
+
+        if (reserveWidth > 0f) {
+            drawRoundRect(tint, size = Size(reserveWidth, h), cornerRadius = radius)
+        }
+        if (usableWidth > 0f) {
             drawRoundRect(
-                color = HumeColors.Orange,
-                size = androidx.compose.ui.geometry.Size(filled, size.height),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2f, size.height / 2f),
+                color = tint.copy(alpha = 0.30f),
+                topLeft = Offset(reserveWidth, 0f),
+                size = Size(usableWidth, h),
+                cornerRadius = radius,
             )
-            // Hatched "in use" segment right after the solid one.
-            val hatchWidth = (size.width - filled) * 0.55f
-            if (hatchWidth > 4f) {
-                drawRoundRect(
-                    color = hatch.copy(alpha = 0.55f),
-                    topLeft = Offset(filled, 0f),
-                    size = androidx.compose.ui.geometry.Size(hatchWidth, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2f, size.height / 2f),
-                )
-                var x = filled + 6f
-                while (x < filled + hatchWidth) {
+            clipRect(reserveWidth, 0f, reserveWidth + usableWidth, h) {
+                var x = reserveWidth - h
+                while (x < reserveWidth + usableWidth + h) {
                     drawLine(
-                        color = Color.White,
-                        start = Offset(x, size.height),
-                        end = Offset(x + size.height * 0.7f, 0f),
-                        strokeWidth = 3f,
+                        color = tint.copy(alpha = 0.75f),
+                        start = Offset(x, h),
+                        end = Offset(x + h, 0f),
+                        strokeWidth = 2.5f,
                     )
-                    x += 14f
+                    x += 7.5f
                 }
             }
         }
     }
+}
+
+private inline fun androidx.compose.ui.graphics.drawscope.DrawScope.clipRect(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    block: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit,
+) {
+    androidx.compose.ui.graphics.drawscope.clipRect(left, top, right, bottom) { block() }
 }
 
 @Composable
 private fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(5.dp))
+        Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(4.dp))
         Text(label, fontSize = 10.sp, color = HumeColors.TextSecondary)
     }
 }
