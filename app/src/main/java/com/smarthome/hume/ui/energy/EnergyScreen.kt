@@ -341,15 +341,30 @@ private fun ControlGroup(
                 } else {
                     val current = entities.value(id) ?: 0.0
                     val step = entities[id]?.attrString("step")?.toDoubleOrNull() ?: 1.0
+                    val min = entities[id]?.attrString("min")?.toDoubleOrNull() ?: 0.0
+                    val max = entities[id]?.attrString("max")?.toDoubleOrNull() ?: Double.MAX_VALUE
                     StepperRow(
                         value = fmt(current),
-                        onMinus = { ha.setNumberValue(id, current - step) },
-                        onPlus = { ha.setNumberValue(id, current + step) },
+                        onMinus = { setNumber(ha, id, (current - step).coerceAtLeast(min)) },
+                        onPlus = { setNumber(ha, id, (current + step).coerceAtMost(max)) },
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * number.set_value, exactly the call EnergyView.swift makes. Values are sent as
+ * plain numbers, and the touched entity is re-read by callService afterwards.
+ */
+private fun setNumber(ha: HomeAssistantRepository, entityId: String, value: Double) {
+    ha.callService(
+        "number",
+        "set_value",
+        "{\"entity_id\":\"" + entityId + "\",\"value\":" + value + "}",
+        entityId,
+    )
 }
 
 @Composable
