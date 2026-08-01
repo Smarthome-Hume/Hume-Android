@@ -15,7 +15,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,13 +76,10 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     // the subscription for no reason.
     LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
     LaunchedEffect(Unit) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
-
-    // HomeView.onChange(of: activeSheet?.id): while a room sheet is open only
-    // that room keeps repainting, every other room is frozen.
-    DisposableEffect(roomSheet?.rawKey) {
-        ha.setActiveRoom(roomSheet?.rawKey)
-        onDispose { }
-    }
+    // HomeView.onChange(of: activeSheet?.id) -> ha.setActiveRoom(key): every
+    // device of the open room becomes realtime, and closing the sheet releases
+    // them again.
+    LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
 
     // Six small sensor tiles, exactly the list the iOS app shows.
     val leftTiles = HumeConfig.sensorTiles.map { tile ->
