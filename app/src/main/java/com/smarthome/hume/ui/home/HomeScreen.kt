@@ -59,6 +59,9 @@ private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 private val PagePadding = 16.dp
 private val GroupSpacing = 14.dp
 
+/** Height of the floating nav pill plus the gesture bar, so nothing hides under it. */
+private val NavBarRoom = 150.dp
+
 /** Alarmo when present, alarm_security otherwise (AlarmLights.swift). */
 internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
     if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
@@ -147,8 +150,8 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 start = PagePadding,
                 end = PagePadding,
                 // HomeView.swift: .padding(.top, headerHeight + 15)
-                top = headerHeight + 15.dp,
-                bottom = 130.dp,
+                top = headerHeight + 12.dp,
+                bottom = NavBarRoom,
             ),
             verticalArrangement = Arrangement.spacedBy(GroupSpacing),
         ) {
@@ -202,8 +205,8 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 .fillMaxWidth()
                 .onSizeChanged { size -> headerHeight = with(density) { size.height.toDp() } }
                 .background(MaterialTheme.colorScheme.background)
-                .padding(start = PagePadding, end = PagePadding, top = 12.dp, bottom = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(start = PagePadding, end = PagePadding, top = 4.dp, bottom = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             HomeHeader(
                 userName = entities["person.hutchet"]?.friendly() ?: USER_NAME,
