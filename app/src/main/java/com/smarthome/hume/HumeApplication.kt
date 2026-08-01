@@ -2,6 +2,7 @@ package com.smarthome.hume
 
 import android.app.Application
 import com.smarthome.hume.core.ha.HomeAssistantRepository
+import com.smarthome.hume.core.schedule.SceneScheduleStore
 import com.smarthome.hume.core.storage.SensorDatabase
 import com.smarthome.hume.core.storage.SettingsStore
 
@@ -20,5 +21,9 @@ class HumeApplication : Application() {
         haRepository.sensorSink = { entityId, value, timeMs ->
             sensorDatabase.record(entityId, value, timeMs)
         }
+        // Android drops pending alarms when the app is killed or updated, so the
+        // scene schedules are re-armed on every cold start (same net effect as the
+        // iOS side re-registering its notifications).
+        runCatching { SceneScheduleStore.get(this).rescheduleAll() }
     }
 }
