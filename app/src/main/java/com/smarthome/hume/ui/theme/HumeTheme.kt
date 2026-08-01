@@ -91,7 +91,11 @@ private val DarkScheme = darkColorScheme(
     error = Color(0xFFFF6B6F),
 )
 
-val HumeShapes = Shapes(
+/**
+ * Material shape scale for the theme. The app's own corner radii live in the
+ * HumeShapes object in HumeSurfaces.kt, so this one keeps a different name.
+ */
+private val HumeMaterialShapes = Shapes(
     extraSmall = RoundedCornerShape(10.dp),
     small = RoundedCornerShape(14.dp),
     medium = RoundedCornerShape(20.dp),
@@ -103,7 +107,7 @@ val HumeShapes = Shapes(
 fun HumeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkScheme else LightScheme,
-        shapes = HumeShapes,
+        shapes = HumeMaterialShapes,
         content = content,
     )
 }
