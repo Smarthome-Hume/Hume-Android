@@ -8,6 +8,7 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.DefaultRooms
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
+import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.scene.ManagedItem
 import com.smarthome.hume.core.scene.ManagedListsStore
@@ -48,6 +49,10 @@ class HomeViewModel(
 
     /** Extra entity IDs the UI asked for at runtime. */
     private var extraWatched: Set<String> = emptySet()
+
+    /** Entities of the room sheet that is open right now, if any. */
+    private var activeRoomKey: String? = null
+    private var roomWatched: Set<String> = emptySet()
 
     /** Exposed for the bottom sheets, which still issue their own service calls. */
     val repository: HomeAssistantRepository get() = ha
@@ -92,7 +97,37 @@ class HomeViewModel(
         ids += EnergyDetect.watchedIds()
         // The header pills read these, so they must be realtime too.
         ids += lists.watchedIds()
+        ids += roomWatched
         ids += extraWatched
+        return ids
+    }
+
+    /**
+     * setActiveRoom() in HomeAssistantManager.swift. While a room sheet is open
+     * every device inside that room is realtime; closing the sheet releases them
+     * again, so the throttling buckets keep protecting the other ~1580 entities.
+     */
+    fun setActiveRoom(room: RoomConfig?) {
+        val key = room?.rawKey
+        if (key == activeRoomKey) return
+        activeRoomKey = key
+        roomWatched = if (room == null) emptySet() else roomEntityIds(room)
+        ha.setWatchedEntities(watchedIds())
+    }
+
+    /** Every entity BubbleRoomView renders for one room. */
+    private fun roomEntityIds(room: RoomConfig): Set<String> {
+        val ids = mutableSetOf(room.lightEntity, room.tempEntity, room.humidityEntity)
+        room.contactEntity?.let { ids += it }
+        room.climateEntity?.let { ids += it }
+        RoomBubbleConfig.find(room.rawKey)?.let { config ->
+            config.tempEntity?.let { ids += it }
+            config.humidityEntity?.let { ids += it }
+            config.devices.forEach { device ->
+                ids += device.entity
+                device.powerEntity?.let { ids += it }
+            }
+        }
         return ids
     }
 
