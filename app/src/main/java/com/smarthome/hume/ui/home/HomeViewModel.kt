@@ -9,6 +9,8 @@ import com.smarthome.hume.core.model.DefaultRooms
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
+import com.smarthome.hume.core.scene.ManagedItem
+import com.smarthome.hume.core.scene.ManagedListsStore
 import com.smarthome.hume.core.storage.SensorDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +39,7 @@ data class HomeUiState(
 class HomeViewModel(
     private val ha: HomeAssistantRepository,
     private val sensors: SensorDatabase,
+    private val lists: ManagedListsStore,
 ) : ViewModel() {
 
     val climateRooms: List<RoomConfig> = DefaultRooms.climateRooms
@@ -50,15 +53,26 @@ class HomeViewModel(
     val repository: HomeAssistantRepository get() = ha
 
     val uiState: StateFlow<HomeUiState> =
-        combine(ha.entities, ha.connected, ha.lastError) { entities, connected, error ->
+        combine(
+            ha.entities,
+            ha.connected,
+            ha.lastError,
+            lists.lights,
+            lists.notif,
+        ) { entities, connected, error, lights, notif ->
             HomeUiState(
                 entities = entities,
                 connected = connected,
                 error = error,
-                lightsOn = rooms.count { entities[it.lightEntity]?.isOn == true },
-                alertCount = homeAlerts(entities).size,
+                // AlarmLights.swift counts the managed light list, not the rooms.
+                lightsOn = countOn(lights, entities),
+                // GreetingHeaderView counts the managed notification list only.
+                alertCount = countOn(notif, entities),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+
+    private fun countOn(items: List<ManagedItem>, entities: Map<String, HomeEntity>): Int =
+        items.count { !it.hidden && entities[it.id]?.isOn == true }
 
     init {
         ha.setWatchedEntities(watchedIds())
@@ -76,6 +90,8 @@ class HomeViewModel(
             room.climateEntity?.let { ids += it }
         }
         ids += EnergyDetect.watchedIds()
+        // The header pills read these, so they must be realtime too.
+        ids += lists.watchedIds()
         ids += extraWatched
         return ids
     }
@@ -106,8 +122,6 @@ class HomeViewModel(
     fun setLight(entityId: String, on: Boolean) = setLight(ha, entityId, on)
 
     fun allLightsOff() = setAllLights(ha, rooms, false)
-
-    fun activateScene(item: SceneItem) = runScene(ha, item)
 
     /** Step the air conditioner target temperature from the room card. */
     fun adjustTarget(room: RoomConfig, delta: Double) {
@@ -152,7 +166,9 @@ class HomeViewModel(
 class HomeViewModelFactory(
     private val ha: HomeAssistantRepository,
     private val sensors: SensorDatabase,
+    private val lists: ManagedListsStore,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = HomeViewModel(ha, sensors) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        HomeViewModel(ha, sensors, lists) as T
 }
