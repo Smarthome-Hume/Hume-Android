@@ -104,15 +104,19 @@ class HomeViewModel(
 
     /**
      * setActiveRoom() in HomeAssistantManager.swift. While a room sheet is open
-     * every device inside that room is realtime; closing the sheet releases them
-     * again, so the throttling buckets keep protecting the other ~1580 entities.
+     * every device inside that room is realtime and every other room is frozen;
+     * closing the sheet releases both sides, so the throttling buckets keep
+     * protecting the other ~1580 entities.
      */
     fun setActiveRoom(room: RoomConfig?) {
         val key = room?.rawKey
         if (key == activeRoomKey) return
         activeRoomKey = key
         roomWatched = if (room == null) emptySet() else roomEntityIds(room)
+        // Watch first, then freeze: the open room must already be realtime when
+        // the repository replays whatever it queued for that room.
         ha.setWatchedEntities(watchedIds())
+        ha.setActiveRoom(key)
     }
 
     /** Every entity BubbleRoomView renders for one room. */
@@ -145,6 +149,7 @@ class HomeViewModel(
     }
 
     override fun onCleared() {
+        ha.setActiveRoom(null)
         ha.setWatchedEntities(emptySet())
         super.onCleared()
     }
