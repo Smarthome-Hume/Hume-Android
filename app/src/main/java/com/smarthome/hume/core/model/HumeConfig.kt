@@ -2,12 +2,12 @@ package com.smarthome.hume.core.model
 
 /**
  * Hardcoded Home Assistant entity IDs ported 1:1 from the SwiftUI app
- * (Hume/Core/Models.swift, Views/Home/*). Do not guess these values;
+ * (Hume/Core/Models.swift, Views/Home). Do not guess these values;
  * they mirror the real installation.
  */
 object HumeConfig {
 
-    // ---- Energy (SolarEnergyCardView.swift / PowerwallCardView.swift) ----
+    // ---- Energy (SolarEnergyCardView.swift, PowerwallCardView.swift) ----
     const val PV_POWER = "sensor.solis_s6_eh1p_total_pv_power_2"
     const val PV_TODAY = "sensor.solis_s6_eh1p_pv_today_energy_generation_2"
     const val BATTERY_SOC = "sensor.solis_s6_eh1p_battery_soc_2"
@@ -83,7 +83,7 @@ object HumeConfig {
         "Batchroom Door" to DoorCard("binary_sensor.cam_bien_cua_phong_tam_contact", "C\u1eeda ph\u00f2ng t\u1eafm"),
     )
 
-    /** Climate modes that count as "running" (ClimateRoomCardView.swift). */
+    /** Climate modes that count as running (ClimateRoomCardView.swift). */
     val activeClimateModes = setOf("heat_cool", "cool", "heat", "fan_only", "dry")
 
     /** Weekday labels indexed like Calendar.DAY_OF_WEEK (1 = Sunday). */
