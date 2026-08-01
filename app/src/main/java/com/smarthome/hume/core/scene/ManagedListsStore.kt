@@ -22,16 +22,17 @@ data class ManagedItem(
 
 enum class ManagedKind { LIGHTS, NOTIF }
 
-class ManagedListsStore private constructor(context: Context) {
+@Serializable
+internal data class ManagedListsSnapshot(
+    val lights: List<ManagedItem> = emptyList(),
+    val notif: List<ManagedItem> = emptyList(),
+)
 
-    @Serializable
-    private data class Snapshot(
-        val lights: List<ManagedItem> = emptyList(),
-        val notif: List<ManagedItem> = emptyList(),
-    )
+class ManagedListsStore private constructor(context: Context) {
 
     private val prefs = context.getSharedPreferences("hume_managed_lists", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val snapshotSerializer = ManagedListsSnapshot.serializer()
 
     private val _lights = MutableStateFlow<List<ManagedItem>>(emptyList())
     private val _notif = MutableStateFlow<List<ManagedItem>>(emptyList())
@@ -41,7 +42,7 @@ class ManagedListsStore private constructor(context: Context) {
     init {
         val raw = prefs.getString(KEY, null)
         val snapshot = raw?.let { text ->
-            runCatching { json.decodeFromString<Snapshot>(text) }.getOrNull()
+            runCatching { json.decodeFromString(snapshotSerializer, text) }.getOrNull()
         }
         if (snapshot == null) {
             _lights.value = defaultLights.map { ManagedItem(id = it) }
@@ -54,7 +55,10 @@ class ManagedListsStore private constructor(context: Context) {
     }
 
     private fun persist() {
-        val text = json.encodeToString(Snapshot(_lights.value, _notif.value))
+        val text = json.encodeToString(
+            snapshotSerializer,
+            ManagedListsSnapshot(_lights.value, _notif.value),
+        )
         prefs.edit().putString(KEY, text).apply()
     }
 
