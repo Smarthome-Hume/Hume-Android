@@ -26,33 +26,37 @@ import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.LocalLaundryService
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.SoupKitchen
 import androidx.compose.material.icons.rounded.Stairs
 import androidx.compose.material.icons.rounded.ToggleOn
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.DeviceConfig
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.RoomConfig
+import com.smarthome.hume.core.scene.ManagedListsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import java.util.Locale
@@ -314,7 +318,7 @@ private fun SensorBigCard(name: String, entity: HomeEntity?, icon: ImageVector, 
 
 /** IconMapper.swift equivalents for the device list. */
 private fun deviceIcon(key: String): ImageVector = when (key) {
-    "bulb" -> Icons.Rounded.Lightbulb
+    "bulb", "lightbulb" -> Icons.Rounded.Lightbulb
     "sun" -> Icons.Rounded.WbSunny
     "desk" -> Icons.Rounded.Desk
     "switch" -> Icons.Rounded.ToggleOn
@@ -328,7 +332,14 @@ private fun deviceIcon(key: String): ImageVector = when (key) {
     else -> Icons.Rounded.ToggleOn
 }
 
-/** Lights popup from HomeView.swift. */
+private val LightsPopupYellow = Color(0xFFFFC107)
+
+/**
+ * LightsPopupView from HomeView.swift. The source of truth is the managed light
+ * list (24 seeded entities), not the eight room cards, and only the ones that
+ * are currently on are listed. Each row has a power button that turns that
+ * single light off, which is what the iOS popup does.
+ */
 @Composable
 fun LightsBottomSheet(
     rooms: List<RoomConfig>,
@@ -337,6 +348,10 @@ fun LightsBottomSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val store = remember { ManagedListsStore.get(LocalContext.current) }
+    val lights by store.lights.collectAsStateWithLifecycle()
+    val active = lights.filter { !it.hidden && entities[it.id]?.isOn == true }
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             Modifier
@@ -344,39 +359,88 @@ fun LightsBottomSheet(
                 .verticalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("T\u1ea5t c\u1ea3 \u0111\u00e8n", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { setAllLights(ha, rooms, true) }) { Text("B\u1eadt h\u1ebft") }
-                    OutlinedButton(onClick = { setAllLights(ha, rooms, false) }) { Text("T\u1eaft h\u1ebft") }
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-            rooms.forEach { room ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(HumeIcons.room(room.icon), contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(room.name, style = MaterialTheme.typography.bodyLarge)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "\u0110\u00e8n \u0111ang s\u00e1ng",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HumeColors.TextPrimary,
+                )
+                if (active.isNotEmpty()) {
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        Modifier
+                            .background(HumeColors.Orange, RoundedCornerShape(50))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
                         Text(
-                            if (entities[room.lightEntity]?.isOn == true) "B\u1eadt" else "T\u1eaft",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            active.size.toString(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
                         )
                     }
-                    Switch(
-                        checked = entities[room.lightEntity]?.isOn == true,
-                        onCheckedChange = { setLight(ha, room.lightEntity, it) },
-                    )
                 }
-                HorizontalDivider()
+            }
+            Spacer(Modifier.height(16.dp))
+
+            if (active.isEmpty()) {
+                Text(
+                    "Kh\u00f4ng c\u00f3 \u0111\u00e8n n\u00e0o \u0111ang s\u00e1ng",
+                    fontSize = 14.sp,
+                    color = HumeColors.TextSecondary,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    active.forEach { item ->
+                        val entity = entities[item.id]
+                        val roomName = rooms.firstOrNull { it.lightEntity == item.id }?.name.orEmpty()
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(HumeColors.Background)
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(LightsPopupYellow.copy(alpha = 0.18f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    deviceIcon(item.icon),
+                                    contentDescription = null,
+                                    tint = LightsPopupYellow,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    item.name.ifEmpty { entity?.friendly() ?: item.id },
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = HumeColors.TextPrimary,
+                                    maxLines = 2,
+                                )
+                                if (roomName.isNotEmpty()) {
+                                    Text(roomName, fontSize = 10.sp, color = HumeColors.TextSecondary)
+                                }
+                            }
+                            IconButton(onClick = { setLight(ha, item.id, false) }) {
+                                Icon(
+                                    Icons.Rounded.PowerSettingsNew,
+                                    contentDescription = "T\u1eaft",
+                                    tint = HumeColors.TextSecondary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
