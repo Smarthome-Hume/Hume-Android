@@ -109,26 +109,33 @@ private fun TilePager(tiles: List<SmallTile>, onTileClick: (String) -> Unit) {
     }
 }
 
+/**
+ * SmallSensorCardView.swift. Card height 64 with radius 32, and a 60 point
+ * glass circle inside it, so the card corner peeks 2 points around the circle.
+ * Value 16 medium, name 14 at 70 percent. The icon container stays 64 wide so
+ * the text column always starts at the same x.
+ */
 @Composable
 private fun SmallTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .glassSurface(radius = 24.dp)
-            .clickable(enabled = tile.entityId != null) { tile.entityId?.let(onTileClick) }
-            .padding(horizontal = 14.dp, vertical = 14.dp),
+            .height(64.dp)
+            .glassSurface(radius = 32.dp)
+            .clickable(enabled = tile.entityId != null) { tile.entityId?.let(onTileClick) },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(38.dp).clip(CircleShape).background(HumeColors.Background),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(tile.icon, contentDescription = null, tint = HumeColors.TextSecondary, modifier = Modifier.size(20.dp))
+        Box(Modifier.width(64.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.size(60.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(tile.icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(26.dp))
+            }
         }
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(tile.value, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary, maxLines = 1)
-            Text(tile.label, fontSize = 13.sp, color = HumeColors.TextSecondary, maxLines = 1)
+        Column(Modifier.padding(start = 12.dp, end = 8.dp)) {
+            Text(tile.value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, maxLines = 1)
+            Text(tile.label, fontSize = 14.sp, color = HumeColors.TextSecondary, maxLines = 1)
         }
     }
 }
