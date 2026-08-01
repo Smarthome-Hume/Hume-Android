@@ -61,7 +61,8 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase, lists))
     val state by vm.uiState.collectAsStateWithLifecycle()
     val entities = state.entities
-    val alarmState = entities[alarmEntityId(entities)]?.state
+    val alarmEntity = alarmEntityId(entities)
+    val alarmState = entities[alarmEntity]?.state
 
     var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
     var lightsSheet by remember { mutableStateOf(false) }
@@ -137,10 +138,13 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             }
         }
         item {
+            // Tapping the alarm card swaps the row for the five mode buttons,
+            // exactly like AlarmLightsView does on iOS.
             StatusChipRow(
                 alarmState = alarmState,
                 lightsOn = state.lightsOn,
-                onOpenAlarm = { notificationSheet = true },
+                ha = ha,
+                alarmEntity = alarmEntity,
                 onOpenLights = { lightsSheet = true },
             )
         }
