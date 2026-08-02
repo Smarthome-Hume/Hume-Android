@@ -86,6 +86,9 @@ private fun HomeEntity?.friendly(fallback: String): String {
  * TH\u00cc (the action), then a POST to the Home Assistant config API. Numeric
  * comparisons send a numeric_state trigger; the on / off options send a state
  * trigger, matching the Swift `save()` switch one for one.
+ *
+ * Unselected option chips use the theme fill so they stay legible in dark mode;
+ * only the selected chip is solid orange with white text.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -213,7 +216,7 @@ fun CreateAutomationSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                             Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(if (active) HumeColors.Orange else Color.White.copy(alpha = 0.55f))
+                                .background(if (active) HumeColors.Orange else HumeColors.FillTertiary)
                                 .clickable { trigOp = op }
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             contentAlignment = Alignment.Center,
@@ -264,7 +267,7 @@ fun CreateAutomationSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
                             Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(if (active) HumeColors.Orange else Color.White.copy(alpha = 0.55f))
+                                .background(if (active) HumeColors.Orange else HumeColors.FillTertiary)
                                 .clickable { actOn = pair.first }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center,
