@@ -62,6 +62,9 @@ import kotlinx.coroutines.launch
  * The QR / photo paths are iOS-only (Vision framework) and are left out; the
  * rest behaves the same, writing straight into SettingsStore, which is what
  * triggers configure() + connect() in MainActivity.
+ *
+ * The idle segment and the reveal button use tertiarySystemFill like the
+ * SwiftUI original, so the login screen reads correctly in dark mode.
  */
 @Composable
 fun LoginScreen(settingsStore: SettingsStore, settings: HumeSettings = HumeSettings()) {
@@ -173,7 +176,7 @@ fun LoginScreen(settingsStore: SettingsStore, settings: HumeSettings = HumeSetti
                             Modifier
                                 .size(50.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White.copy(alpha = 0.55f))
+                                .background(HumeColors.FillTertiary)
                                 .clickable { showToken = !showToken },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -247,7 +250,7 @@ private fun Segment(
         modifier
             .height(42.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (active) HumeColors.OrangeSoft else Color.White.copy(alpha = 0.55f))
+            .background(if (active) HumeColors.OrangeSoft else HumeColors.FillTertiary)
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
