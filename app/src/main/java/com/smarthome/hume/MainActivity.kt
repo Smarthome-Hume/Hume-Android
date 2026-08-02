@@ -18,13 +18,13 @@ import com.smarthome.hume.ui.theme.HumeTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Android 15 always draws edge to edge. Declaring both bars as "light"
-        // with a transparent scrim keeps the clock and gesture bar icons dark on
-        // the app's cream background, even when the phone is in dark mode; the
-        // padding for those bars is applied in HumeRootScreen.
+        // Android 15 always draws edge to edge. SystemBarStyle.auto flips the
+        // bar icons with the system appearance, which is what the SwiftUI app
+        // gets for free from UIKit; the padding for those bars is applied in
+        // HumeRootScreen.
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
         val app = application as HumeApplication
