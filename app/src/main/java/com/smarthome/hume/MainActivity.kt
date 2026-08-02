@@ -1,8 +1,11 @@
 package com.smarthome.hume
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,6 +18,14 @@ import com.smarthome.hume.ui.theme.HumeTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Android 15 always draws edge to edge. Declaring both bars as "light"
+        // with a transparent scrim keeps the clock and gesture bar icons dark on
+        // the app's cream background, even when the phone is in dark mode; the
+        // padding for those bars is applied in HumeRootScreen.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         super.onCreate(savedInstanceState)
         val app = application as HumeApplication
 
