@@ -3,6 +3,7 @@ package com.smarthome.hume.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.ha.HistoryPoint
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.DefaultRooms
@@ -15,6 +16,9 @@ import com.smarthome.hume.core.scene.ManagedListsStore
 import com.smarthome.hume.core.storage.DailySnapshotStore
 import com.smarthome.hume.core.storage.SensorDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -184,14 +188,13 @@ class HomeViewModel(
      * Seven day series for the solar / consumption cards, following
      * SolarEnergyCardView.swift.
      *
-     * SUA LOI MAT DATA 7 NGAY:
-     *  - Truoc day mot ngay da ghi snapshot = 0.0 (vi luc do history chua ve kip)
-     *    se bi coi la "da co" vinh vien -> bieu do dung yen o 0. Nay 0.0 duoc coi
-     *    la CHUA CO nen moi lan mo lai app deu thu lay lai.
-     *  - Neu Home Assistant tra ve rong (recorder da purge / query nang) thi
-     *    history() tu dong fallback sang SensorDatabase cuc bo.
-     *  - Neu mot ngay khong co diem nao thi lay diem cuoi cung TRUOC nua dem hom
-     *    do (bo dem hang ngay giu nguyen gia tri cho toi khi reset).
+     * SUA LOI MAT DATA 7 NGAY (lan 3):
+     *  - Truoc day mot request keo ca 168 gio, readTimeout 20s -> HA cham la
+     *    huy -> ca 6 ngay bang 0. Nay hoi TUNG NGAY MOT qua HistoryFetcher
+     *    (start_time + end_time, no_attributes, timeout 60s), chay song song.
+     *  - Ngay nao HA khong tra ve gi thi moi dung den fallback: mot request 7
+     *    ngay qua repository, roi den SensorDatabase cuc bo.
+     *  - Snapshot 0.0 van bi coi la CHUA CO nen lan mo app sau con thu lai.
      */
     suspend fun weekly(entityId: String): List<DayValue> {
         val now = System.currentTimeMillis()
@@ -201,22 +204,42 @@ class HomeViewModel(
         val resolved = HashMap<Long, Double>()
 
         if (missing.isNotEmpty()) {
-            val points = history(entityId, 24 * 7)
-            if (points.isNotEmpty()) {
-                missing.forEach { dayStart ->
-                    val dayEnd = dayStart + dayMs
-                    // Bo dem hang ngay dat dinh ngay truoc nua dem -> max cua ngay la tong ngay do.
-                    val inDay = points.filter { it.timeMs in dayStart until dayEnd }
-                    val value = inDay.maxOfOrNull { it.value }
-                        ?: points.filter { it.timeMs < dayEnd }.maxByOrNull { it.timeMs }?.value
-                        ?: 0.0
-                    if (value > 0.0) {
-                        snapshots.set(entityId, dayStart, value)
-                        resolved[dayStart] = value
+            // Buoc 1: moi ngay thieu = mot truy van nho, chay song song.
+            val perDay: Map<Long, Double> = coroutineScope {
+                missing.map { dayStart ->
+                    async(Dispatchers.IO) {
+                        val points = HistoryFetcher.fetchRange(entityId, dayStart, dayStart + dayMs)
+                        // Bo dem hang ngay dat dinh ngay truoc nua dem -> max = tong ngay do.
+                        dayStart to (points.maxOfOrNull { it.value } ?: 0.0)
+                    }
+                }.awaitAll()
+            }.toMap()
+            perDay.forEach { (dayStart, value) ->
+                if (value > 0.0) {
+                    snapshots.set(entityId, dayStart, value)
+                    resolved[dayStart] = value
+                }
+            }
+
+            // Buoc 2: ngay nao van trong thi thu mot lan keo ca tuan.
+            val stillMissing = missing.filter { resolved[it] == null }
+            if (stillMissing.isNotEmpty()) {
+                val points = history(entityId, 24 * 7)
+                if (points.isNotEmpty()) {
+                    stillMissing.forEach { dayStart ->
+                        val dayEnd = dayStart + dayMs
+                        val inDay = points.filter { it.timeMs in dayStart until dayEnd }
+                        val value = inDay.maxOfOrNull { it.value }
+                            ?: points.filter { it.timeMs < dayEnd }.maxByOrNull { it.timeMs }?.value
+                            ?: 0.0
+                        if (value > 0.0) {
+                            snapshots.set(entityId, dayStart, value)
+                            resolved[dayStart] = value
+                        }
                     }
                 }
-                snapshots.prune()
             }
+            snapshots.prune()
         }
 
         val past = (6 downTo 1).map { offset ->
