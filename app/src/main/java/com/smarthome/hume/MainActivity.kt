@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.ui.login.LoginScreen
 import com.smarthome.hume.ui.root.HumeRootScreen
@@ -46,6 +47,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(settings.haUrl, settings.haToken) {
                     if (settings.hasToken) {
                         app.haRepository.configure(settings.haUrl, settings.haToken)
+                        // Duong lay lich su rieng (timeout dai) cho bieu do 7 ngay.
+                        HistoryFetcher.configure(settings.haUrl, settings.haToken)
                         app.haRepository.connect()
                     }
                 }
