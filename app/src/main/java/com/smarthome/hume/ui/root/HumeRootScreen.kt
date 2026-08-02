@@ -17,12 +17,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -48,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HomeAssistantRepository
@@ -64,23 +61,22 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
 /*
- * Navbar theo dung floating tab bar cua One UI (doi chieu anh chup thanh nav
- * cua app Dien thoai Samsung).
+ * Navbar One UI - doi chieu 2 anh chup thanh nav app Dien thoai (light + dark).
  *
- * KHONG dung thu vien ngoai (da go Haze vi may build khong tai duoc artifact).
- * Trong anh One UI that, thanh nav gan nhu DAC - chi lech mot bac xam so voi
- * nen - nen nen ban trong suot 94% cho ket qua giong het ma khong can backdrop
- * blur.
+ * NHUNG DIEU ANH GOC CHO THAY:
+ *  1. Thanh KHONG keo het be ngang. No la mot vien thuoc NGAN, chi rong bang
+ *     tong cac o tab, va CAN GIUA - hai ben van thay noi dung phia sau.
+ *  2. KHONG co blur. Nen chi la mot bac xam so voi nen man hinh:
+ *     dark -> #2B2B2B tren nen den, light -> #F2F2F2 tren nen trang.
+ *  3. Pill tab chon chi lech mot bac nua: dark #3C3C3C, light #E0E0E0. Khong vien.
+ *  4. Chu tab chon dam va sang; tab thuong xam nhat.
  *
- *  - Nen thanh bam theo theme: toi #2B2B2B, sang #F7F7F7.
- *  - Pill tab chon: xam mem, KHONG vien, lech mot bac so voi nen thanh.
- *  - Chu/icon: chon -> Gray1000, thuong -> Gray500. Icon chon dac, khong chon outline.
- *  - Ti le: thanh 60, pill 44, inset 8, le ngoai 16, icon 22, nhan 11.
+ * => bar width = itemWidth * so tab + inset*2, wrapContentWidth + canh giua.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
-private val BarHeight = 60.dp
-private val BarSideMargin = 16.dp
-private val BarInset = 8.dp
+private val BarHeight = 56.dp
+private val BarInset = 6.dp
+private val ItemWidth = 76.dp
 private val PillHeight = 44.dp
 
 @Composable
@@ -130,58 +126,49 @@ private fun AiPlaceholder() {
 private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val dark = HumeColors.isDark
-    val barColor = if (dark) Color(0xFF2B2B2B).copy(alpha = 0.94f) else Color(0xFFF7F7F7).copy(alpha = 0.94f)
-    val barEdge = if (dark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.05f)
-    val pillColor = if (dark) Color(0xFF3C3C3C) else Color(0xFFE3E3E3)
+    val barColor = if (dark) Color(0xFF2B2B2B) else Color(0xFFF2F2F2)
+    val barEdge = if (dark) Color.White.copy(alpha = 0.07f) else Color.Black.copy(alpha = 0.06f)
+    val pillColor = if (dark) Color(0xFF3C3C3C) else Color(0xFFE0E0E0)
+    val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
+    val pillX by animateDpAsState(
+        targetValue = BarInset + ItemWidth * activeIndex,
+        animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow),
+        label = "pillX",
+    )
 
     Box(
         Modifier
-            .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = BarSideMargin, end = BarSideMargin, bottom = 12.dp),
+            .padding(bottom = 12.dp)
+            // Thanh NGAN: chi rong bang tong cac o tab, khong fillMaxWidth.
+            .width(ItemWidth * navTabs.size + BarInset * 2)
+            .height(BarHeight)
+            .shadow(10.dp, shape, spotColor = Color.Black.copy(alpha = 0.4f))
+            .clip(shape)
+            .background(barColor)
+            .border(0.5.dp, barEdge, shape),
     ) {
-        BoxWithConstraints(
+        Box(
             Modifier
-                .fillMaxWidth()
-                .height(BarHeight)
-                .shadow(12.dp, shape, spotColor = Color.Black.copy(alpha = 0.45f))
-                .clip(shape)
-                .background(barColor)
-                .border(0.5.dp, barEdge, shape)
+                .align(Alignment.CenterStart)
+                .offset(x = pillX)
+                .width(ItemWidth)
+                .height(PillHeight)
+                .clip(RoundedCornerShape(PillHeight / 2))
+                .background(pillColor)
+        )
+
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = BarInset),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val itemWidth: Dp = (this.maxWidth - BarInset * 2) / navTabs.size
-            val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
-            val pillX by animateDpAsState(
-                targetValue = BarInset + itemWidth * activeIndex,
-                animationSpec = spring(
-                    dampingRatio = 0.82f,
-                    stiffness = Spring.StiffnessMediumLow,
-                ),
-                label = "pillX",
-            )
-
-            Box(
-                Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = pillX)
-                    .width(itemWidth)
-                    .height(PillHeight)
-                    .clip(RoundedCornerShape(PillHeight / 2))
-                    .background(pillColor)
-            )
-
-            Row(
-                Modifier.fillMaxSize().padding(horizontal = BarInset),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                navTabs.forEach { item ->
-                    NavItem(
-                        item = item,
-                        active = selected == item,
-                        onClick = { onSelect(item) },
-                        modifier = Modifier.width(itemWidth).fillMaxHeight(),
-                    )
-                }
+            navTabs.forEach { item ->
+                NavItem(
+                    item = item,
+                    active = selected == item,
+                    onClick = { onSelect(item) },
+                    modifier = Modifier.width(ItemWidth).fillMaxHeight(),
+                )
             }
         }
     }
@@ -213,12 +200,12 @@ private fun NavItem(
             HumeIcons.tab(item, active),
             contentDescription = item.label,
             tint = contentColor,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(21.dp),
         )
         Text(
             item.label,
-            fontSize = 11.sp,
-            lineHeight = 13.sp,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
             fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
             color = contentColor,
             maxLines = 1,
