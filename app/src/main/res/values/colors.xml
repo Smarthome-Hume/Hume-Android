@@ -1,0 +1,5 @@
+<resources>
+    <!-- Same value as HumeColors.Background, used for the window background so
+         the first frame before Compose draws is already the app colour. -->
+    <color name="hume_background">#F7F4F2</color>
+</resources>
