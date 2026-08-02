@@ -62,8 +62,7 @@ import kotlin.math.absoluteValue
  *   cot phai : the phong (cardHeight) -> dots -> khoi tile (tileBlock)          -> dots
  * => tong chieu cao hai cot LUON bang nhau, chi khac thu tu.
  *
- * Ty le lay tu ban goc: the phong = be rong cot * 1.30 (~240dp tren S26U),
- * khoi tile = 0.583 * the phong (~140dp) -> moi tile 65dp, vong icon 55dp.
+ * Page indicator can GIUA be ngang cua the (Alignment.Center), khong don ve trai.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -152,7 +151,7 @@ private fun SensorPager(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(DotsRow), contentAlignment = Alignment.CenterStart) {
+        Box(Modifier.fillMaxWidth().height(DotsRow), contentAlignment = Alignment.Center) {
             if (pages.size > 1) PagerDots(pages.size, pagerState.currentPage)
         }
     }
@@ -242,7 +241,7 @@ private fun RoomPager(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(DotsRow), contentAlignment = Alignment.CenterStart) {
+        Box(Modifier.fillMaxWidth().height(DotsRow), contentAlignment = Alignment.Center) {
             if (rooms.size > 1) PagerDots(rooms.size, pagerState.currentPage)
         }
     }
