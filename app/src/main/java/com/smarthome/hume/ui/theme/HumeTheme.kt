@@ -1,6 +1,5 @@
 package com.smarthome.hume.ui.theme
 
-import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -17,9 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 object HumeColors {
@@ -149,26 +146,6 @@ private val HumeMaterialShapes = Shapes(
     extraLarge = RoundedCornerShape(30.dp),
 )
 
-/**
- * Swift dùng Montserrat (Fonts/Montserrat-*.ttf) qua .appFont().
- * Trên Android, font được nạp từ res/font theo tên; nếu chưa có file thì fallback SansSerif
- * để app vẫn build và chạy.
- */
-private fun montserratFamily(context: Context): FontFamily {
-    val weights = listOf(
-        "montserrat_light" to FontWeight.Light,
-        "montserrat_regular" to FontWeight.Normal,
-        "montserrat_medium" to FontWeight.Medium,
-        "montserrat_semibold" to FontWeight.SemiBold,
-        "montserrat_bold" to FontWeight.Bold,
-    )
-    val fonts = weights.mapNotNull { (name, weight) ->
-        val id = context.resources.getIdentifier(name, "font", context.packageName)
-        if (id != 0) Font(id, weight) else null
-    }
-    return if (fonts.isEmpty()) FontFamily.SansSerif else FontFamily(fonts)
-}
-
 private fun typographyFor(family: FontFamily): Typography {
     fun TextStyle.withHumeFont() = copy(fontFamily = family)
     val t = Typography()
@@ -195,7 +172,7 @@ private fun typographyFor(family: FontFamily): Typography {
 fun HumeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     SideEffect { HumeColors.isDark = darkTheme }
     val context = LocalContext.current
-    val typography = remember(context) { typographyFor(montserratFamily(context)) }
+    val typography = remember(context) { typographyFor(humeFontFamily(context)) }
     MaterialTheme(
         colorScheme = schemeFor(darkTheme),
         typography = typography,
