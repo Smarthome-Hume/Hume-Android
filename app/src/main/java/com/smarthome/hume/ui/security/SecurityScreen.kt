@@ -135,6 +135,10 @@ private val envSensors = listOf(
  * glass group holding the camera plus its recorded clips, and one glass group
  * holding the three sensor sections. The alarm mode buttons are not on this
  * screen in the original; they live in the home header.
+ *
+ * Note on colours: white is only used on top of the camera image and the video
+ * player, where the backdrop is always dark. Every chrome surface uses the
+ * theme tokens so the screen stays readable in dark mode.
  */
 @Composable
 fun SecurityScreen(ha: HomeAssistantRepository) {
@@ -447,7 +451,7 @@ private fun RecordingThumb(
         Modifier
             .width(150.dp)
             .clip(shape)
-            .background(Color.White.copy(alpha = 0.55f))
+            .background(HumeColors.FillTertiary)
             .clickable(onClick = onTap),
     ) {
         Box(
@@ -541,7 +545,7 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
             softWrap = false,
             modifier = Modifier
                 .clip(RoundedCornerShape(HumeShapes.Element))
-                .background(Color.White.copy(alpha = 0.55f))
+                .background(HumeColors.FillTertiary)
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         )
         sensors.chunked(2).forEach { row ->
@@ -558,6 +562,9 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
 /**
  * BinarySensorCardView: 25dp glass card, 36dp icon circle, name over an ago
  * line, and a status chip whose wording depends on the sensor kind.
+ *
+ * The idle icon well and idle status chip use tertiarySystemFill, matching the
+ * SwiftUI original, so they do not turn into white slabs on a dark background.
  */
 @Composable
 private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
@@ -585,7 +592,7 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                 Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.Background),
+                    .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.FillTertiary),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -620,7 +627,7 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                 softWrap = false,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (isOn) accent.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.55f))
+                    .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.FillTertiary)
                     .padding(horizontal = 10.dp, vertical = 2.dp),
             )
         }
