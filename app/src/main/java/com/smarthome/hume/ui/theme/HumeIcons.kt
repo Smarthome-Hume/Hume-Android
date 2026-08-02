@@ -1,6 +1,11 @@
 package com.smarthome.hume.ui.theme
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.rounded.AcUnit
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Bathtub
@@ -95,6 +100,7 @@ object HumeIcons {
         }
     }
 
+    /** Bo icon DAC - dung cho tab dang chon (tuong duong SF Symbol .fill / .semibold). */
     fun tab(tab: HumeTab): ImageVector = when (tab) {
         HumeTab.Home -> Icons.Rounded.Home
         HumeTab.Energy -> Icons.Rounded.Bolt
@@ -102,6 +108,19 @@ object HumeIcons {
         HumeTab.Profile -> Icons.Rounded.Person
         HumeTab.AI -> Icons.Rounded.AutoAwesome
     }
+
+    /** Bo icon VIEN MANH - dung cho tab khong chon (tuong duong SF Symbol .thin). */
+    fun tabOutline(tab: HumeTab): ImageVector = when (tab) {
+        HumeTab.Home -> Icons.Outlined.Home
+        HumeTab.Energy -> Icons.Outlined.Bolt
+        HumeTab.Security -> Icons.Outlined.Shield
+        HumeTab.Profile -> Icons.Outlined.Person
+        HumeTab.AI -> Icons.Outlined.AutoAwesome
+    }
+
+    /** Chon bo icon theo trang thai tab: chon -> dac, khong chon -> vien manh. */
+    fun tab(tab: HumeTab, selected: Boolean): ImageVector =
+        if (selected) tab(tab) else tabOutline(tab)
 
     /** Icon for a scene, guessed from its name. */
     fun scene(label: String): ImageVector {

@@ -18,8 +18,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,27 +63,28 @@ import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 
 /*
- * Port tu Components/LiquidNavBar.swift.
+ * Port tu Components/LiquidNavBar.swift, nay co BLUR NEN THAT.
  *
- * QUAN TRONG: PillGlass cua iOS 26 la KINH MO SANG NHE tren nen toi
- * (glassEffect(.clear) + stroke trang 0.35), KHONG PHAI mang trang duc.
- * Vi vay noi dung tab dang chon van la mau SANG (trang), khong phai mau den.
+ *  - Noi dung man hinh = hazeSource -> Haze chup lai va blur phia sau thanh nav
+ *    (dung GraphicsLayer/RenderNode, tuong duong glassEffect cua iOS 26).
+ *    API < 31 khong blur duoc phan cung -> Haze tu dong fallback sang tint.
+ *  - Thanh nav = hazeEffect: blur 24dp + tint den 26% + vien trang 18%.
+ *  - Pill = kinh sang nhe (trang 18% -> 10%) + vien trang 35%, truot bang spring.
+ *  - Icon: tab chon dung bo DAC, tab khong chon dung bo VIEN MANH (.thin -> .semibold).
  *
- *   barHeight 66 / insetH 21 / itemW = W/4
- *   pill      (itemW - 12) x (barHeight - 14), nam gon trong thanh
- *   chon      : trang 100%, chu semibold, scale 1.0
- *   thuong    : gray1000 @ 55%, scale 0.96
- *   icon 21 / nhan 10 / spacing 3
- *   spring(damping 0.78) -> pill truot giua cac tab
+ *  barHeight 66 / insetH 21 / itemW = W/4 / pill = (itemW-12) x (barHeight-14)
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 66.dp
 private val InsetH = 21.dp
 private val PillInsetX = 12.dp
 private val PillInsetY = 14.dp
-private val ScrimHeight = 30.dp
 
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
@@ -93,10 +94,17 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
     }
     var tab by remember { mutableStateOf(HumeTab.Home) }
     var navHidden by remember { mutableStateOf(false) }
+    val hazeState = remember { HazeState() }
     LaunchedEffect(tab) { ha.setActiveTab(tab) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+        // hazeSource: day la lop noi dung se bi blur khi nam duoi thanh nav.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .hazeSource(state = hazeState)
+                .statusBarsPadding()
+        ) {
             when (tab) {
                 HumeTab.Energy -> EnergyScreen(ha)
                 HumeTab.Security -> SecurityScreen(ha)
@@ -111,7 +119,7 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
             exit = slideOutVertically(animationSpec = tween(360)) { it * 2 } + fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            HumeNavBar(selected = tab, onSelect = { tab = it })
+            HumeNavBar(selected = tab, hazeState = hazeState, onSelect = { tab = it })
         }
     }
 }
@@ -129,81 +137,74 @@ private fun AiPlaceholder() {
 }
 
 @Composable
-private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
+private fun HumeNavBar(selected: HumeTab, hazeState: HazeState, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val background = MaterialTheme.colorScheme.background
-    Column(Modifier.fillMaxWidth()) {
-        Box(
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(start = InsetH, end = InsetH, bottom = 14.dp),
+    ) {
+        BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .height(ScrimHeight)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(background.copy(alpha = 0f), background.copy(alpha = 0.9f))
-                    )
-                )
-        )
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(background.copy(alpha = 0.9f))
-                .navigationBarsPadding()
-                .padding(start = InsetH, end = InsetH, bottom = 14.dp, top = 2.dp),
+                .height(BarHeight)
+                .shadow(18.dp, shape, spotColor = Color.Black.copy(alpha = 0.55f))
+                .clip(shape)
+                // Blur nen that: lay noi dung tu hazeSource, lam mo va phu tint toi.
+                .hazeEffect(state = hazeState) {
+                    blurRadius = 24.dp
+                    backgroundColor = background
+                    tints = listOf(HazeTint(Color.Black.copy(alpha = 0.26f)))
+                    noiseFactor = 0f
+                }
+                .border(0.5.dp, Color.White.copy(alpha = 0.18f), shape)
         ) {
-            BoxWithConstraints(
-                Modifier
-                    .fillMaxWidth()
-                    .height(BarHeight)
-                    .shadow(18.dp, shape, spotColor = Color.Black.copy(alpha = 0.55f))
-                    .clip(shape)
-                    .background(HumeColors.Card)
-                    .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
-            ) {
-                val itemWidth: Dp = maxWidth / navTabs.size
-                val pillWidth: Dp = itemWidth - PillInsetX
-                val pillHeight: Dp = BarHeight - PillInsetY
-                val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
-                val pillX by animateDpAsState(
-                    targetValue = itemWidth * activeIndex + PillInsetX / 2,
-                    animationSpec = spring(
-                        dampingRatio = 0.78f,
-                        stiffness = Spring.StiffnessMediumLow,
-                    ),
-                    label = "pillX",
-                )
+            val itemWidth: Dp = maxWidth / navTabs.size
+            val pillWidth: Dp = itemWidth - PillInsetX
+            val pillHeight: Dp = BarHeight - PillInsetY
+            val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
+            val pillX by animateDpAsState(
+                targetValue = itemWidth * activeIndex + PillInsetX / 2,
+                animationSpec = spring(
+                    dampingRatio = 0.78f,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+                label = "pillX",
+            )
 
-                // PillGlass: kinh mo SANG NHE (khong phai trang duc, khong mau cam).
-                Box(
-                    Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = pillX)
-                        .width(pillWidth)
-                        .height(pillHeight)
-                        .clip(RoundedCornerShape(pillHeight / 2))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.18f),
-                                    Color.White.copy(alpha = 0.10f),
-                                )
+            // PillGlass: kinh sang nhe tren nen da blur.
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = pillX)
+                    .width(pillWidth)
+                    .height(pillHeight)
+                    .clip(RoundedCornerShape(pillHeight / 2))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.20f),
+                                Color.White.copy(alpha = 0.10f),
                             )
                         )
-                        .border(
-                            0.5.dp,
-                            Color.White.copy(alpha = 0.35f),
-                            RoundedCornerShape(pillHeight / 2),
-                        )
-                )
+                    )
+                    .border(
+                        0.5.dp,
+                        Color.White.copy(alpha = 0.35f),
+                        RoundedCornerShape(pillHeight / 2),
+                    )
+            )
 
-                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                    navTabs.forEach { item ->
-                        NavItem(
-                            item = item,
-                            active = selected == item,
-                            onClick = { onSelect(item) },
-                            modifier = Modifier.width(itemWidth).fillMaxHeight(),
-                        )
-                    }
+            Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                navTabs.forEach { item ->
+                    NavItem(
+                        item = item,
+                        active = selected == item,
+                        onClick = { onSelect(item) },
+                        modifier = Modifier.width(itemWidth).fillMaxHeight(),
+                    )
                 }
             }
         }
@@ -219,7 +220,7 @@ private fun NavItem(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val contentColor by animateColorAsState(
-        if (active) HumeColors.Gray1000 else HumeColors.Gray1000.copy(alpha = 0.55f),
+        if (active) Color.White else Color.White.copy(alpha = 0.55f),
         tween(220),
         label = "navContent",
     )
@@ -233,7 +234,7 @@ private fun NavItem(
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            HumeIcons.tab(item),
+            HumeIcons.tab(item, active),
             contentDescription = item.label,
             tint = contentColor,
             modifier = Modifier.size(21.dp),
