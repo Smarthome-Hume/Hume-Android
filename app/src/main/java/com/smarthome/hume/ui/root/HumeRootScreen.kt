@@ -1,7 +1,6 @@
 package com.smarthome.hume.ui.root
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,10 +51,8 @@ import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.glassPill
 
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
-
 private val BarHeight = 66.dp
 private val BarHorizontalInset = 21.dp
-private val IndicatorHeight = 54.dp
 private val IconSize = 22.dp
 
 @Composable
@@ -66,7 +62,6 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         return
     }
     var tab by remember { mutableStateOf(HumeTab.Home) }
-
     LaunchedEffect(tab) { ha.setActiveTab(tab) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -78,12 +73,7 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
                 else -> HomeScreen(ha)
             }
         }
-
-        HumeNavBar(
-            selected = tab,
-            onSelect = { tab = it },
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
+        HumeNavBar(selected = tab, onSelect = { tab = it }, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
@@ -99,7 +89,7 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit, modifier:
             Modifier
                 .fillMaxWidth()
                 .height(BarHeight)
-                .shadow(18.dp, RoundedCornerShape(36.dp), ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
+                .shadow(18.dp, RoundedCornerShape(36.dp), ambientColor = Color.Black.copy(alpha = 0.14f), spotColor = Color.Black.copy(alpha = 0.14f))
                 .glassPill(radius = 36.dp)
                 .padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -115,44 +105,28 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit, modifier:
 @Composable
 private fun RowScope.NavItem(item: HumeTab, selected: Boolean, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
-    val indicator by animateColorAsState(
+    val pillColor by animateColorAsState(
         targetValue = if (selected) Color.White.copy(alpha = if (HumeColors.isDark) 0.18f else 0.72f) else Color.Transparent,
         animationSpec = tween(180),
-        label = "navIndicator",
+        label = "navPill",
     )
     val content by animateColorAsState(
         targetValue = if (selected) HumeColors.Ink else HumeColors.Ink.copy(alpha = 0.55f),
         animationSpec = tween(180),
         label = "navContent",
     )
-    val indicatorWidth by animateDpAsState(
-        targetValue = if (selected) 76.dp else 54.dp,
-        animationSpec = tween(180),
-        label = "navIndicatorWidth",
-    )
 
     Box(
         Modifier
             .weight(1f)
             .fillMaxSize()
+            .clip(RoundedCornerShape(30.dp))
+            .background(pillColor)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            Modifier
-                .width(indicatorWidth)
-                .height(IndicatorHeight)
-                .clip(RoundedCornerShape(28.dp))
-                .background(indicator),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                HumeIcons.tab(item),
-                contentDescription = item.label,
-                tint = content,
-                modifier = Modifier.size(IconSize),
-            )
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(HumeIcons.tab(item), contentDescription = item.label, tint = content, modifier = Modifier.size(IconSize))
             Spacer(Modifier.height(3.dp))
             Text(
                 item.label,

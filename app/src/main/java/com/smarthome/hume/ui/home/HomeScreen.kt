@@ -94,81 +94,36 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
 
     val leftTiles = HumeConfig.sensorTiles.map { tile ->
-        SmallTile(
-            icon = HumeIcons.sensor(tile.icon),
-            value = sensorValue(entities[tile.entityId], tile.unit),
-            label = tile.label,
-            entityId = tile.entityId,
-        )
+        SmallTile(icon = HumeIcons.sensor(tile.icon), value = sensorValue(entities[tile.entityId], tile.unit), label = tile.label, entityId = tile.entityId)
     }
-
     val deviceKey = entities[HumeConfig.ACTIVE_CARD]?.state
     val device = HumeConfig.deviceCards[deviceKey] ?: HumeConfig.deviceCards.getValue("Table")
     val doorKey = entities[HumeConfig.ACTIVE_CARD_2]?.state
     val door = HumeConfig.doorCards[doorKey] ?: HumeConfig.doorCards.getValue("Master")
     val rightTiles = listOf(
-        SmallTile(
-            icon = HumeIcons.sensor(device.icon),
-            value = (entities[device.entityId]?.numericState?.toInt() ?: 0).toString() + " W",
-            label = device.label,
-            entityId = device.entityId,
-        ),
-        SmallTile(
-            icon = HumeIcons.Door,
-            value = agoText(entities[door.entityId]?.lastChanged),
-            label = door.label,
-            entityId = door.entityId,
-        ),
+        SmallTile(icon = HumeIcons.sensor(device.icon), value = (entities[device.entityId]?.numericState?.toInt() ?: 0).toString() + " W", label = device.label, entityId = device.entityId),
+        SmallTile(icon = HumeIcons.Door, value = agoText(entities[door.entityId]?.lastChanged), label = door.label, entityId = door.entityId),
     )
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = PagePadding,
-                end = PagePadding,
-                top = headerHeight + 15.dp,
-                bottom = NavBarRoom,
-            ),
+            contentPadding = PaddingValues(start = PagePadding, end = PagePadding, top = headerHeight + 15.dp, bottom = NavBarRoom),
             verticalArrangement = Arrangement.spacedBy(GroupSpacing),
         ) {
             item {
                 GlassGroup(radius = 37.dp, spacing = 14.dp) {
-                    SolarChartCard(
-                        title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
-                        totalText = String.format(Locale.US, "%.1f", todayPv),
-                        unitText = "kWh",
-                        days = weekly,
-                        emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y",
-                    )
-                    BatteryCard(
-                        soc = EnergyDetect.soc(entities),
-                        power = EnergyDetect.power(entities),
-                        backupSoc = EnergyDetect.backupSoc(entities),
-                        timeText = EnergyDetect.runtimeText(entities),
-                        finishTime = endTimeLabel(EnergyDetect.runtimeHours(entities)),
-                    )
+                    SolarChartCard(title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi", totalText = String.format(Locale.US, "%.1f", todayPv), unitText = "kWh", days = weekly, emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y")
+                    BatteryCard(soc = EnergyDetect.soc(entities), power = EnergyDetect.power(entities), backupSoc = EnergyDetect.backupSoc(entities), timeText = EnergyDetect.runtimeText(entities), finishTime = endTimeLabel(EnergyDetect.runtimeHours(entities)))
                 }
             }
             item {
                 GlassGroup(radius = 45.dp, spacing = 12.dp) {
-                    RoomsShowcase(
-                        climateRooms = vm.climateRooms,
-                        otherRooms = vm.basicRooms,
-                        entities = entities,
-                        leftTiles = leftTiles,
-                        rightTiles = rightTiles,
-                        onOpenRoom = { roomSheet = it },
-                        onToggleLight = { vm.toggleRoomLight(it) },
-                        onTileClick = { chartEntityId = it },
-                        onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) },
-                    )
+                    RoomsShowcase(climateRooms = vm.climateRooms, otherRooms = vm.basicRooms, entities = entities, leftTiles = leftTiles, rightTiles = rightTiles, onOpenRoom = { roomSheet = it }, onToggleLight = { vm.toggleRoomLight(it) }, onTileClick = { chartEntityId = it }, onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) })
                 }
             }
             item {
-                GlassGroup(radius = 37.dp, spacing = 10.dp) {
-                    SceneGridSection(ha = ha, alarmState = alarmState)
-                }
+                GlassGroup(radius = 37.dp, spacing = 10.dp) { SceneGridSection(ha = ha, alarmState = alarmState) }
             }
         }
 
@@ -177,58 +132,27 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .onSizeChanged { size -> headerHeight = with(density) { size.height.toDp() } }
-                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(start = PagePadding, end = PagePadding, top = 6.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            HomeHeader(
-                userName = entities["person.hutchet"]?.friendly() ?: USER_NAME,
-                greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...",
-                location = LOCATION,
-                connected = state.connected,
-                alertCount = state.alertCount,
-                onOpenNotifications = { notificationSheet = true },
-                avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl),
-                onManageNotifications = { manageNotif = true },
-            )
+            HomeHeader(userName = entities["person.hutchet"]?.friendly() ?: USER_NAME, greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...", location = LOCATION, connected = state.connected, alertCount = state.alertCount, onOpenNotifications = { notificationSheet = true }, avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl), onManageNotifications = { manageNotif = true })
             state.error?.let { message ->
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(HumeColors.Red.copy(alpha = 0.12f))
-                        .padding(14.dp)
-                ) {
+                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(HumeColors.Red.copy(alpha = 0.12f)).padding(14.dp)) {
                     Text(message, style = MaterialTheme.typography.bodySmall, color = HumeColors.Red)
                 }
             }
             GlassGroup(radius = 34.dp, padding = 8.dp, spacing = 8.dp) {
-                StatusChipRow(
-                    alarmState = alarmState,
-                    lightsOn = state.lightsOn,
-                    ha = ha,
-                    alarmEntity = alarmEntity,
-                    onOpenLights = { lightsSheet = true },
-                )
+                StatusChipRow(alarmState = alarmState, lightsOn = state.lightsOn, ha = ha, alarmEntity = alarmEntity, onOpenLights = { lightsSheet = true })
             }
         }
     }
 
-    roomSheet?.let { room ->
-        RoomBottomSheet(room = room, ha = ha, entities = entities, onDismiss = { roomSheet = null })
-    }
-    if (lightsSheet) {
-        LightsBottomSheet(rooms = vm.rooms, ha = ha, entities = entities, onDismiss = { lightsSheet = false })
-    }
-    if (notificationSheet) {
-        NotificationBottomSheet(entities = entities, onDismiss = { notificationSheet = false })
-    }
-    if (manageNotif) {
-        ManageListSheet(kind = ManagedKind.NOTIF, ha = ha, onDismiss = { manageNotif = false })
-    }
-    chartEntityId?.let { id ->
-        ChartDialog(entityId = id, entities = entities, loadHistory = { vm.history(it) }, onDismiss = { chartEntityId = null })
-    }
+    roomSheet?.let { room -> RoomBottomSheet(room = room, ha = ha, entities = entities, onDismiss = { roomSheet = null }) }
+    if (lightsSheet) LightsBottomSheet(rooms = vm.rooms, ha = ha, entities = entities, onDismiss = { lightsSheet = false })
+    if (notificationSheet) NotificationBottomSheet(entities = entities, onDismiss = { notificationSheet = false })
+    if (manageNotif) ManageListSheet(kind = ManagedKind.NOTIF, ha = ha, onDismiss = { manageNotif = false })
+    chartEntityId?.let { id -> ChartDialog(entityId = id, entities = entities, loadHistory = { vm.history(it) }, onDismiss = { chartEntityId = null }) }
 }
 
 private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
@@ -239,26 +163,13 @@ private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
 }
 
 @Composable
-private fun GlassGroup(
-    radius: Dp,
-    padding: Dp = 12.dp,
-    spacing: Dp = 14.dp,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .glassSurface(radius = radius, elevation = 2.dp)
-            .padding(padding),
-        verticalArrangement = Arrangement.spacedBy(spacing),
-        content = content,
-    )
+private fun GlassGroup(radius: Dp, padding: Dp = 12.dp, spacing: Dp = 14.dp, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().glassSurface(radius = radius, elevation = 2.dp).padding(padding), verticalArrangement = Arrangement.spacedBy(spacing), content = content)
 }
 
 private fun sensorValue(entity: HomeEntity?, unit: String): String {
     val value = entity?.numericState ?: return (entity?.state ?: "--") + " " + unit
-    val text = if (abs(value) < 10.0) String.format(Locale.US, "%.1f", value)
-    else String.format(Locale.US, "%.0f", value)
+    val text = if (abs(value) < 10.0) String.format(Locale.US, "%.1f", value) else String.format(Locale.US, "%.0f", value)
     return "$text $unit"
 }
 
@@ -274,18 +185,12 @@ internal fun agoText(lastChanged: String?): String {
 
 internal fun parseTimestamp(value: String?): Long? {
     if (value.isNullOrBlank()) return null
-    return runCatching { Instant.parse(value).toEpochMilli() }
-        .recoverCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }
-        .getOrNull()
+    return runCatching { Instant.parse(value).toEpochMilli() }.recoverCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }.getOrNull()
 }
 
 private fun greeting(): String {
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-    return when {
-        hour >= 18 -> "Ch\u00e0o bu\u1ed5i t\u1ed1i"
-        hour >= 12 -> "Ch\u00e0o bu\u1ed5i chi\u1ec1u"
-        else -> "Ch\u00e0o bu\u1ed5i s\u00e1ng"
-    }
+    return when { hour >= 18 -> "Ch\u00e0o bu\u1ed5i t\u1ed1i"; hour >= 12 -> "Ch\u00e0o bu\u1ed5i chi\u1ec1u"; else -> "Ch\u00e0o bu\u1ed5i s\u00e1ng" }
 }
 
 private fun endTimeLabel(hoursRemaining: Double?): String {
@@ -295,24 +200,9 @@ private fun endTimeLabel(hoursRemaining: Double?): String {
     return String.format(Locale.US, "%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
 }
 
-internal fun toggleLight(ha: HomeAssistantRepository, room: RoomConfig, entities: Map<String, HomeEntity>) {
-    val on = entities[room.lightEntity]?.isOn == true
-    setLight(ha, room.lightEntity, !on)
-}
-
-internal fun setLight(ha: HomeAssistantRepository, entityId: String, on: Boolean) {
-    if (on) ha.turnOn(entityId) else ha.turnOff(entityId)
-}
-
-internal fun setAllLights(ha: HomeAssistantRepository, rooms: List<RoomConfig>, on: Boolean) {
-    rooms.forEach { setLight(ha, it.lightEntity, on) }
-}
-
-internal fun Map<String, HomeEntity>.num(entityId: String, digits: Int): String {
-    val value = this[entityId]?.numericState ?: return "--"
-    return String.format(Locale.US, "%.${digits}f", value)
-}
-
+internal fun toggleLight(ha: HomeAssistantRepository, room: RoomConfig, entities: Map<String, HomeEntity>) { setLight(ha, room.lightEntity, entities[room.lightEntity]?.isOn != true) }
+internal fun setLight(ha: HomeAssistantRepository, entityId: String, on: Boolean) { if (on) ha.turnOn(entityId) else ha.turnOff(entityId) }
+internal fun setAllLights(ha: HomeAssistantRepository, rooms: List<RoomConfig>, on: Boolean) { rooms.forEach { setLight(ha, it.lightEntity, on) } }
+internal fun Map<String, HomeEntity>.num(entityId: String, digits: Int): String = this[entityId]?.numericState?.let { String.format(Locale.US, "%.${digits}f", it) } ?: "--"
 internal fun Map<String, HomeEntity>.attr(entityId: String, key: String): String? = this[entityId]?.attrString(key)
-
 internal fun alarmLabel(state: String?): String = HumeConfig.alarmLabel(state)
