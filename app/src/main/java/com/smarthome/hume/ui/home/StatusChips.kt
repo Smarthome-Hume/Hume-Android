@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,18 +45,20 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.humeMarquee
 
 /*
- * Hai chip trang thai. Da THU NHO cho can doi voi khung hinh S26U:
- *  - chieu cao 42 (truoc 48), bo goc 21
- *  - vong tron icon 30 (truoc 36), icon 17 (truoc 20)
- *  - chu 13 (truoc 14)
+ * Hai chip trang thai. Truoc day moi chip an weight(1f) nen LUON dai bang nua
+ * man hinh du chu ngan. Nay chip CHI DAI BANG NOI DUNG (wrap content), toi da
+ * 180dp; chu nao dai hon thi tu CHAY (marquee) dung nhu ban HTML.
+ *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
  */
 private val LightsGold = Color(0xFFB8860B)
 private val AlarmGreen = Color(0xFF4CAF50)
-private val PillHeight = 42.dp
-private val PillRadius = 21.dp
-private val IconCircle = 30.dp
+private val PillHeight = 40.dp
+private val PillRadius = 20.dp
+private val IconCircle = 28.dp
+private val PillMaxWidth = 180.dp
 
 @Composable
 fun StatusChipRow(
@@ -109,7 +112,6 @@ fun StatusChipRow(
                     label = if (pendingState != null) "\u0110ang b\u1eadt..." else alarmLabel(alarmState),
                     tint = AlarmGreen,
                     active = armed,
-                    modifier = Modifier.weight(1f),
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         picking = true
@@ -120,7 +122,6 @@ fun StatusChipRow(
                     label = if (lightsOn == 0) "T\u1eaft h\u1ebft" else "$lightsOn b\u00f3ng \u0111\u00e8n",
                     tint = LightsGold,
                     active = lightsOn > 0,
-                    modifier = Modifier.weight(1f),
                     onClick = onOpenLights,
                 )
             }
@@ -140,6 +141,7 @@ private fun BigPill(
     Row(
         modifier
             .height(PillHeight)
+            .widthIn(max = PillMaxWidth)
             .clip(RoundedCornerShape(PillRadius))
             .background(if (active) tint.copy(alpha = 0.08f) else HumeColors.Card)
             .border(
@@ -148,7 +150,7 @@ private fun BigPill(
                 RoundedCornerShape(PillRadius),
             )
             .clickable(onClick = onClick)
-            .padding(start = 6.dp, end = 10.dp),
+            .padding(start = 6.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -159,7 +161,7 @@ private fun BigPill(
                 icon,
                 contentDescription = null,
                 tint = if (active) tint else HumeColors.Gray1000,
-                modifier = Modifier.size(17.dp),
+                modifier = Modifier.size(16.dp),
             )
         }
         Spacer(Modifier.width(7.dp))
@@ -170,7 +172,8 @@ private fun BigPill(
             color = if (active) tint else HumeColors.Gray1000,
             maxLines = 1,
             softWrap = false,
-            overflow = TextOverflow.Ellipsis,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.humeMarquee(),
         )
     }
 }
@@ -207,7 +210,8 @@ private fun ModePill(
                 color = if (selected) Color.White else HumeColors.Gray1000,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.humeMarquee(),
             )
         }
     }

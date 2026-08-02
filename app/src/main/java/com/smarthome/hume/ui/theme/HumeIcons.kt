@@ -1,78 +1,79 @@
 package com.smarthome.hume.ui.theme
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AcUnit
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Bathtub
-import androidx.compose.material.icons.outlined.BatteryChargingFull
-import androidx.compose.material.icons.outlined.Bed
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.ChildCare
-import androidx.compose.material.icons.outlined.Desk
-import androidx.compose.material.icons.outlined.DoorFront
-import androidx.compose.material.icons.outlined.ElectricalServices
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Kitchen
-import androidx.compose.material.icons.outlined.Lightbulb
-import androidx.compose.material.icons.outlined.LocalFireDepartment
-import androidx.compose.material.icons.outlined.LocalLaundryService
-import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material.icons.outlined.MeetingRoom
-import androidx.compose.material.icons.outlined.NightsStay
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.SoupKitchen
-import androidx.compose.material.icons.outlined.Stairs
-import androidx.compose.material.icons.outlined.Thermostat
-import androidx.compose.material.icons.outlined.WaterDrop
-import androidx.compose.material.icons.outlined.WbSunny
-import androidx.compose.material.icons.outlined.WbTwilight
-import androidx.compose.material.icons.outlined.Weekend
+import androidx.compose.material.icons.rounded.AcUnit
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bathtub
+import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.Bed
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.ChildCare
+import androidx.compose.material.icons.rounded.Desk
+import androidx.compose.material.icons.rounded.DoorFront
+import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Kitchen
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.LocalLaundryService
+import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.MeetingRoom
+import androidx.compose.material.icons.rounded.NightsStay
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.SoupKitchen
+import androidx.compose.material.icons.rounded.Stairs
+import androidx.compose.material.icons.rounded.Thermostat
+import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material.icons.rounded.WbTwilight
+import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.smarthome.hume.core.model.HumeTab
 
 /*
- * Bo icon THONG NHAT theo Material Design kieu OUTLINE - dung net mong giong
- * bo icon (lucide) cua ban HTML cocopi da gui, thay cho bo Rounded dac truoc day.
- * Chi rieng tab dang chon tren navbar moi dung ban DAC (Rounded) de tao tuong
- * phan .thin -> .semibold nhu iOS.
+ * TOAN BO icon noi dung dung Material Design ban ROUNDED (Icons.Rounded.*) -
+ * dong bo mot phong cach bo tron, khong con tron lan Filled/Outlined.
+ *
+ * Ngoai le duy nhat: tab KHONG duoc chon tren navbar dung ban Outlined de giu
+ * tuong phan net manh -> net dam khi chon (hieu ung .thin -> .semibold cua iOS).
  */
 object HumeIcons {
-    val Light = Icons.Outlined.Lightbulb
-    val Temperature = Icons.Outlined.Thermostat
-    val Humidity = Icons.Outlined.WaterDrop
-    val Climate = Icons.Outlined.AcUnit
-    val Door = Icons.Outlined.MeetingRoom
-    val DoorClosed = Icons.Outlined.DoorFront
-    val Alarm = Icons.Outlined.Shield
-    val Bell = Icons.Outlined.Notifications
-    val Night = Icons.Outlined.NightsStay
-    val Solar = Icons.Outlined.WbSunny
-    val Battery = Icons.Outlined.BatteryChargingFull
-    val Desk = Icons.Outlined.Desk
-    val Sunrise = Icons.Outlined.WbTwilight
-    val Leaving = Icons.Outlined.Logout
-    val Coming = Icons.Outlined.Home
-    val Power = Icons.Outlined.Bolt
-    val Plug = Icons.Outlined.ElectricalServices
-    val House = Icons.Outlined.Home
+    val Light = Icons.Rounded.Lightbulb
+    val Temperature = Icons.Rounded.Thermostat
+    val Humidity = Icons.Rounded.WaterDrop
+    val Climate = Icons.Rounded.AcUnit
+    val Door = Icons.Rounded.MeetingRoom
+    val DoorClosed = Icons.Rounded.DoorFront
+    val Alarm = Icons.Rounded.Shield
+    val Bell = Icons.Rounded.Notifications
+    val Night = Icons.Rounded.NightsStay
+    val Solar = Icons.Rounded.WbSunny
+    val Battery = Icons.Rounded.BatteryChargingFull
+    val Desk = Icons.Rounded.Desk
+    val Sunrise = Icons.Rounded.WbTwilight
+    val Leaving = Icons.Rounded.Logout
+    val Coming = Icons.Rounded.Home
+    val Power = Icons.Rounded.Bolt
+    val Plug = Icons.Rounded.ElectricalServices
+    val House = Icons.Rounded.Home
 
     fun room(key: String): ImageVector = when (key) {
-        "bed" -> Icons.Outlined.Bed
-        "child" -> Icons.Outlined.ChildCare
-        "sparkles" -> Icons.Outlined.AutoAwesome
-        "sofa" -> Icons.Outlined.Weekend
-        "bath" -> Icons.Outlined.Bathtub
-        "kitchen" -> Icons.Outlined.Kitchen
-        "washer" -> Icons.Outlined.LocalLaundryService
-        "hallway" -> Icons.Outlined.Stairs
-        else -> Icons.Outlined.Home
+        "bed" -> Icons.Rounded.Bed
+        "child" -> Icons.Rounded.ChildCare
+        "sparkles" -> Icons.Rounded.AutoAwesome
+        "sofa" -> Icons.Rounded.Weekend
+        "bath" -> Icons.Rounded.Bathtub
+        "kitchen" -> Icons.Rounded.Kitchen
+        "washer" -> Icons.Rounded.LocalLaundryService
+        "hallway" -> Icons.Rounded.Stairs
+        else -> Icons.Rounded.Home
     }
 
     /** Icon keys used by the SwiftUI sensor/device cards. */
@@ -84,9 +85,9 @@ object HumeIcons {
         "desk" -> Desk
         "door" -> DoorClosed
         "snowflake" -> Climate
-        "fire" -> Icons.Outlined.LocalFireDepartment
-        "cooking" -> Icons.Outlined.SoupKitchen
-        "dishwasher", "washer", "dryer" -> Icons.Outlined.LocalLaundryService
+        "fire" -> Icons.Rounded.LocalFireDepartment
+        "cooking" -> Icons.Rounded.SoupKitchen
+        "dishwasher", "washer", "dryer" -> Icons.Rounded.LocalLaundryService
         else -> Power
     }
 
@@ -105,7 +106,7 @@ object HumeIcons {
         }
     }
 
-    /** Bo icon DAC - dung cho tab dang chon (tuong duong SF Symbol .fill / .semibold). */
+    /** Bo icon ROUNDED dac - tab dang chon. */
     fun tab(tab: HumeTab): ImageVector = when (tab) {
         HumeTab.Home -> Icons.Rounded.Home
         HumeTab.Energy -> Icons.Rounded.Bolt
@@ -114,7 +115,7 @@ object HumeIcons {
         HumeTab.AI -> Icons.Rounded.AutoAwesome
     }
 
-    /** Bo icon VIEN MANH - dung cho tab khong chon (tuong duong SF Symbol .thin). */
+    /** Bo icon vien manh - tab khong chon. */
     fun tabOutline(tab: HumeTab): ImageVector = when (tab) {
         HumeTab.Home -> Icons.Outlined.Home
         HumeTab.Energy -> Icons.Outlined.Bolt
@@ -123,7 +124,6 @@ object HumeIcons {
         HumeTab.AI -> Icons.Outlined.AutoAwesome
     }
 
-    /** Chon bo icon theo trang thai tab: chon -> dac, khong chon -> vien manh. */
     fun tab(tab: HumeTab, selected: Boolean): ImageVector =
         if (selected) tab(tab) else tabOutline(tab)
 
@@ -135,7 +135,7 @@ object HumeIcons {
             text.contains("ng\u1ee7") || text.contains("night") || text.contains("sleep") -> Night
             text.contains("ra kh\u1ecfi") || text.contains("away") || text.contains("leave") -> Leaving
             text.contains("v\u1ec1 nh\u00e0") || text.contains("home") || text.contains("arrive") -> Coming
-            else -> Icons.Outlined.AutoAwesome
+            else -> Icons.Rounded.AutoAwesome
         }
     }
 }
