@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -61,22 +62,20 @@ import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 
 /*
- * Navbar theo dung floating tab bar cua One UI (doi chieu anh chup thanh nav app Dien thoai).
+ * Navbar theo dung floating tab bar cua One UI (doi chieu anh chup thanh nav
+ * cua app Dien thoai Samsung).
  *
- *  - Nen thanh: BAM THEO THEME. Toi -> xam #2B2B2B, sang -> #F7F7F7.
- *  - Pill tab chon: mang XAM MEM, KHONG VIEN, chi lech mot bac so voi nen thanh.
- *  - Mau chu/icon: chon -> Gray1000, thuong -> Gray500.
+ * KHONG dung thu vien ngoai (da go Haze vi may build khong tai duoc artifact).
+ * Trong anh One UI that, thanh nav gan nhu DAC - chi lech mot bac xam so voi
+ * nen - nen nen ban trong suot 94% cho ket qua giong het ma khong can backdrop
+ * blur.
+ *
+ *  - Nen thanh bam theo theme: toi #2B2B2B, sang #F7F7F7.
+ *  - Pill tab chon: xam mem, KHONG vien, lech mot bac so voi nen thanh.
+ *  - Chu/icon: chon -> Gray1000, thuong -> Gray500. Icon chon dac, khong chon outline.
  *  - Ti le: thanh 60, pill 44, inset 8, le ngoai 16, icon 22, nhan 11.
- *
- * LUU Y BUILD: lambda cua hazeEffect { } KHONG phai @Composable scope (no chay
- * o thoi diem ve), nen moi gia tri lay tu MaterialTheme/CompositionLocal phai
- * duoc doc SAN ra bien ben ngoai roi moi dung trong lambda.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 60.dp
@@ -92,16 +91,10 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
     }
     var tab by remember { mutableStateOf(HumeTab.Home) }
     var navHidden by remember { mutableStateOf(false) }
-    val hazeState = remember { HazeState() }
     LaunchedEffect(tab) { ha.setActiveTab(tab) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .hazeSource(state = hazeState)
-                .statusBarsPadding()
-        ) {
+        Box(Modifier.fillMaxSize().statusBarsPadding()) {
             when (tab) {
                 HumeTab.Energy -> EnergyScreen(ha)
                 HumeTab.Security -> SecurityScreen(ha)
@@ -116,7 +109,7 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
             exit = slideOutVertically(animationSpec = tween(360)) { it * 2 } + fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            HumeNavBar(selected = tab, hazeState = hazeState, onSelect = { tab = it })
+            HumeNavBar(selected = tab, onSelect = { tab = it })
         }
     }
 }
@@ -134,12 +127,11 @@ private fun AiPlaceholder() {
 }
 
 @Composable
-private fun HumeNavBar(selected: HumeTab, hazeState: HazeState, onSelect: (HumeTab) -> Unit) {
+private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val dark = HumeColors.isDark
-    // Doc san moi mau o day - trong lambda hazeEffect khong goi duoc @Composable.
-    val surfaceColor = MaterialTheme.colorScheme.background
-    val barTint = if (dark) Color(0xFF2B2B2B).copy(alpha = 0.86f) else Color(0xFFF7F7F7).copy(alpha = 0.88f)
+    val barColor = if (dark) Color(0xFF2B2B2B).copy(alpha = 0.94f) else Color(0xFFF7F7F7).copy(alpha = 0.94f)
+    val barEdge = if (dark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.05f)
     val pillColor = if (dark) Color(0xFF3C3C3C) else Color(0xFFE3E3E3)
 
     Box(
@@ -154,14 +146,10 @@ private fun HumeNavBar(selected: HumeTab, hazeState: HazeState, onSelect: (HumeT
                 .height(BarHeight)
                 .shadow(12.dp, shape, spotColor = Color.Black.copy(alpha = 0.45f))
                 .clip(shape)
-                .hazeEffect(state = hazeState) {
-                    blurRadius = 28.dp
-                    backgroundColor = surfaceColor
-                    tints = listOf(HazeTint(barTint))
-                    noiseFactor = 0f
-                }
+                .background(barColor)
+                .border(0.5.dp, barEdge, shape)
         ) {
-            val itemWidth: Dp = (maxWidth - BarInset * 2) / navTabs.size
+            val itemWidth: Dp = (this.maxWidth - BarInset * 2) / navTabs.size
             val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
             val pillX by animateDpAsState(
                 targetValue = BarInset + itemWidth * activeIndex,

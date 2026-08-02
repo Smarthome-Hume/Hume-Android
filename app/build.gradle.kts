@@ -38,9 +38,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.6")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    // Haze: blur nen that (backdrop blur) cho navbar kieu Liquid Glass.
-    // 1.2.1 la ban dung GraphicsLayer cua Compose 1.7 -> khop compose-bom 2024.12.01.
-    implementation("dev.chrisbanes.haze:haze:1.2.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
