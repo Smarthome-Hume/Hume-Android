@@ -1,5 +1,6 @@
 package com.smarthome.hume.ui.home
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -7,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -57,12 +59,12 @@ import com.smarthome.hume.ui.theme.HumeIcons
 import kotlin.math.absoluteValue
 
 /*
- * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots:
- *   cot trai : khoi tile (tileBlock) -> dots -> the phong dieu hoa (cardHeight) -> dots
- *   cot phai : the phong (cardHeight) -> dots -> khoi tile (tileBlock)          -> dots
- * => tong chieu cao hai cot LUON bang nhau, chi khac thu tu.
+ * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots.
+ * Page indicator can GIUA be ngang cua the.
  *
- * Page indicator can GIUA be ngang cua the (Alignment.Center), khong don ve trai.
+ * HIEU UNG NEON (da khoi phuc):
+ *  - Cham bao cua/cua so mo: loi do nhap nhay + vong song lan toa lien tuc.
+ *  - The phong dang bat den: vien neon cam tho dan theo nhip + do bong tang giam.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -270,19 +272,33 @@ private fun RoomCardLarge(
     val iconCircle = (columnWidth * 0.27f).coerceIn(44.dp, 54.dp)
     val tempSize = (columnWidth.value * (if (hasStepper) 0.20f else 0.24f)).sp
 
+    // Nhip neon dung chung cho vien va bong khi den dang bat.
+    val neon = rememberInfiniteTransition(label = "cardNeon")
+    val glow by neon.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse),
+        label = "cardGlow",
+    )
+
     Box(
         Modifier
             .fillMaxWidth()
             .height(cardHeight)
             .pressScale(interaction)
             .shadow(
-                elevation = if (lightOn) 16.dp else 0.dp,
+                elevation = if (lightOn) (10 + 12 * glow).dp else 0.dp,
                 shape = shape,
                 spotColor = HumeColors.Orange,
                 ambientColor = HumeColors.Orange,
             )
             .clip(shape)
             .then(if (lightOn) Modifier.background(ActiveGradient) else Modifier.background(HumeColors.Card))
+            // Vien neon nhap nhay cho may khong ho tro bong mau (API < 31).
+            .then(
+                if (lightOn) Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f + 0.45f * glow), shape)
+                else Modifier
+            )
             .clickable(interactionSource = interaction, indication = null, onClick = onOpen)
             .padding(14.dp),
     ) {
@@ -305,7 +321,7 @@ private fun RoomCardLarge(
                     ) {
                         Icon(HumeIcons.room(room.icon), contentDescription = null, tint = fg, modifier = Modifier.size(iconCircle * 0.48f))
                     }
-                    if (contactOpen) NeonDot(Modifier.offset(x = 1.dp, y = 3.dp))
+                    if (contactOpen) NeonDot(Modifier.offset(x = 6.dp, y = (-6).dp))
                 }
             }
 
@@ -343,29 +359,55 @@ private fun RoomCardLarge(
     }
 }
 
+/**
+ * Cham neon canh bao: loi do NHAP NHAY + mot vong song lan toa ra ngoai lien tuc.
+ * Truoc day cham nay bi thu nho va dat lot vao goc vong icon nen gan nhu khong
+ * thay hieu ung; nay to hon va nam han ra ngoai goc.
+ */
 @Composable
 private fun NeonDot(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "neon")
-    val glow by transition.animateFloat(
-        initialValue = 0.35f,
+    val blink by transition.animateFloat(
+        initialValue = 0.3f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-        label = "neonGlow",
+        animationSpec = infiniteRepeatable(tween(620), RepeatMode.Reverse),
+        label = "neonBlink",
     )
-    Box(modifier.size(18.dp), contentAlignment = Alignment.Center) {
+    val ripple by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing)),
+        label = "neonRipple",
+    )
+    Box(modifier.size(24.dp), contentAlignment = Alignment.Center) {
+        // Vong song lan toa
         Box(
             Modifier
-                .size(18.dp)
+                .size(24.dp)
+                .graphicsLayer {
+                    val s = 0.45f + ripple * 0.85f
+                    scaleX = s
+                    scaleY = s
+                    alpha = (1f - ripple) * 0.6f
+                }
+                .clip(CircleShape)
+                .background(NeonRed)
+        )
+        // Quang neon mem
+        Box(
+            Modifier
+                .size(20.dp)
                 .clip(CircleShape)
                 .background(
-                    Brush.radialGradient(listOf(NeonRed.copy(alpha = 0.55f * glow), Color.Transparent))
+                    Brush.radialGradient(listOf(NeonRed.copy(alpha = 0.55f * blink), Color.Transparent))
                 )
         )
+        // Loi do nhap nhay
         Box(
             Modifier
-                .size(8.dp)
+                .size(10.dp)
                 .clip(CircleShape)
-                .background(NeonRed.copy(alpha = 0.55f + 0.45f * glow))
+                .background(NeonRed.copy(alpha = 0.5f + 0.5f * blink))
         )
     }
 }
