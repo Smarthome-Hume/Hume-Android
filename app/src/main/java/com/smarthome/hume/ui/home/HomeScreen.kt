@@ -25,9 +25,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.HumeApplication
@@ -52,10 +50,10 @@ import kotlin.math.abs
 private const val USER_NAME = "H\u1ea3i H\u00e0"
 private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 
-/* page-container cua ban HTML: padding ngang 15, khoang cach nhom 14, chua cho nav 100. */
+/* page-container: padding ngang 15, khoang cach nhom 14, chua cho navbar 96. */
 private val PagePadding = 15.dp
 private val GroupSpacing = 14.dp
-private val NavBarRoom = 100.dp
+private val NavBarRoom = 96.dp
 
 internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
     if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
@@ -90,7 +88,7 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
     LaunchedEffect(todayPv.toInt()) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
     LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
 
-    // Cuon xuong an nav, cuon len hien lai - giong ban HTML.
+    // Cuon xuong an navbar, cuon len hien lai.
     LaunchedEffect(listState) {
         var previous = 0
         snapshotFlow { listState.firstVisibleItemIndex * 3000 + listState.firstVisibleItemScrollOffset }
@@ -176,15 +174,7 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
                     onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) },
                 )
             }
-            item {
-                Text(
-                    "K\u1ecbch b\u1ea3n",
-                    fontSize = 21.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = HumeColors.Gray1000,
-                    modifier = Modifier.padding(top = 1.dp),
-                )
-            }
+            // SceneGridSection tu ve tieu de "Kich ban" nen o day khong them tieu de nua.
             item { SceneGridSection(ha = ha, alarmState = alarmState) }
         }
     }

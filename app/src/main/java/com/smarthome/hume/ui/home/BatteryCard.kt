@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.ui.theme.HumeColors
@@ -38,12 +39,15 @@ import com.smarthome.hume.ui.theme.glassSurface
 import kotlin.math.max
 import kotlin.math.min
 
-/** PowerwallCardView.swift: height 210, corner radius 36, bar height 28. */
-private val BatteryCardHeight = 210.dp
+/*
+ * PowerwallCardView.swift -> Android.
+ * Chieu cao KHONG fix cung nua: dung heightIn(min) + wrap noi dung,
+ * neu khong hai dong chu thich "Du tru / Su dung" se bi cat o day the.
+ */
+private val BatteryCardMinHeight = 196.dp
 private val BatteryCardRadius = 36.dp
-private val BarHeight = 28.dp
+private val BarHeight = 26.dp
 
-/** Bar and legend palette, taken verbatim from PowerwallCardView.swift. */
 private val BarGreen = Color(0xFF22C55E)
 private val BarOrange = Color(0xFFF97316)
 private val BarSlate = Color(0xFF64748B)
@@ -51,15 +55,6 @@ private val LegendBlue = Color(0xFF3B82F6)
 private val LegendGrey = Color(0xFF94A3B8)
 private val DischargeAccent = Color(0xFFF9784C)
 
-/**
- * "Hi\u1ec7u n\u0103ng Pin" card ported from PowerwallCardView.swift.
- *
- * Three states drive everything: resting (power between 0 and 5 W) draws a
- * plain card with no accent at all, discharging turns the accent orange and
- * charging turns it green. The bar is the Live Activity bar: the reserve part
- * is solid and the usable part is diagonally striped, both in the bar tint,
- * over a grey track split at the reserve percentage.
- */
 @Composable
 fun BatteryCard(
     soc: Double,
@@ -77,7 +72,6 @@ fun BatteryCard(
         discharging -> "\u0110ANG X\u1ea2"
         else -> "\u0110ANG S\u1ea0C"
     }
-    // accent tints the card itself; barTint is a separate palette in the original.
     val accent = if (discharging) DischargeAccent else HumeColors.Green
     val barTint = when {
         charging -> BarGreen
@@ -88,7 +82,7 @@ fun BatteryCard(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(BatteryCardHeight)
+            .heightIn(min = BatteryCardMinHeight)
             .glassSurface(radius = BatteryCardRadius)
             .then(
                 if (resting) Modifier
@@ -97,9 +91,9 @@ fun BatteryCard(
                     .border(1.dp, accent.copy(alpha = 0.40f), RoundedCornerShape(BatteryCardRadius))
             )
             .clickable(onClick = onClick)
-            .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 16.dp)
+            .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 16.dp)
     ) {
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -113,7 +107,7 @@ fun BatteryCard(
                 )
                 Box(
                     Modifier
-                        .size(54.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.10f)),
                     contentAlignment = Alignment.Center,
@@ -122,22 +116,29 @@ fun BatteryCard(
                         HumeIcons.Battery,
                         contentDescription = null,
                         tint = HumeColors.TextPrimary,
-                        modifier = Modifier.size(26.dp),
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         status,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = HumeColors.TextPrimary.copy(alpha = 0.9f),
                     )
-                    // Resting hides the countdown entirely, exactly like the original.
                     if (!resting) {
-                        Text(timeText, fontSize = 40.sp, color = HumeColors.TextPrimary)
+                        Text(
+                            timeText,
+                            fontSize = 36.sp,
+                            lineHeight = 40.sp,
+                            color = HumeColors.TextPrimary,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
                 if (!resting && finishTime.isNotBlank() && finishTime != "--:--") {
@@ -145,18 +146,19 @@ fun BatteryCard(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        // The label never changes wording in PowerwallCardView.swift.
                         Text(
                             "K\u1ebeT TH\u00daC L\u00daC",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = HumeColors.TextPrimary.copy(alpha = 0.5f),
+                            maxLines = 1,
                         )
                         Text(
                             finishTime,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
                             color = HumeColors.TextPrimary,
+                            maxLines = 1,
                         )
                     }
                 }
@@ -164,7 +166,7 @@ fun BatteryCard(
 
             Column {
                 DualBar(soc = soc, backupSoc = backupSoc, tint = barTint)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     LegendDot(
                         color = if (charging) BarGreen else BarSlate,
@@ -184,11 +186,6 @@ fun BatteryCard(
     }
 }
 
-/**
- * The dual bar. Grey track is split in two rounded segments at the reserve
- * mark, then the live value is drawn on top: solid up to the reserve level and
- * striped beyond it.
- */
 @Composable
 private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
     Canvas(Modifier.fillMaxWidth().height(BarHeight)) {
@@ -224,7 +221,6 @@ private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
     }
 }
 
-/** Canvas stripes of PowerwallCardView: 2.5pt lines, 5pt gaps, 45 degrees. */
 private fun DrawScope.drawStripes(left: Float, right: Float, height: Float, color: Color) {
     clipRect(left = left, top = 0f, right = right, bottom = height) {
         var x = left - height
@@ -245,6 +241,12 @@ private fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(6.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(4.dp))
-        Text(label, fontSize = 10.sp, color = HumeColors.TextPrimary.copy(alpha = 0.6f))
+        Text(
+            label,
+            fontSize = 11.sp,
+            color = HumeColors.TextPrimary.copy(alpha = 0.6f),
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
