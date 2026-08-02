@@ -55,11 +55,11 @@ import com.smarthome.hume.ui.theme.HumeIcons
 /*
  * Nav bar theo ban HTML cocopi-home:
  *  - thanh noi o day man hinh, cach le duoi 20dp
- *  - nen toi (gray1000), cac nut tron 56, tab dang chon la vong tron 68 gradient cam
+ *  - nut tron 56 nen Gray00, tab dang chon la vong tron 68 gradient cam
  *  - cuon xuong thi ca thanh truot xuong khoi man hinh
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
-private val BarHeight = 68.dp
+private val BarHeight = 80.dp
 private val ItemSize = 56.dp
 private val ActiveSize = 68.dp
 
@@ -122,9 +122,9 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
         Row(
             Modifier
                 .height(BarHeight)
-                .shadow(18.dp, RoundedCornerShape(BarHeight / 2), spotColor = Color.Black.copy(alpha = 0.45f))
+                .shadow(16.dp, RoundedCornerShape(BarHeight / 2), spotColor = Color.Black.copy(alpha = 0.35f))
                 .clip(RoundedCornerShape(BarHeight / 2))
-                .background(HumeColors.Gray1000)
+                .background(HumeColors.Card)
                 .padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -145,7 +145,7 @@ private fun NavCircle(item: HumeTab, active: Boolean, onClick: () -> Unit) {
             .clip(CircleShape)
             .then(
                 if (active) Modifier.background(ActiveGradient)
-                else Modifier.background(HumeColors.Gray900.copy(alpha = 0.22f))
+                else Modifier.background(HumeColors.Gray00)
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
