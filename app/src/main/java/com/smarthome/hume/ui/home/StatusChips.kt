@@ -136,7 +136,13 @@ fun StatusChipRow(
     }
 }
 
-/** 48dp pill with a 34dp icon circle, the shared shape of both header cards. */
+/**
+ * 48dp pill with a 34dp icon circle, the shared shape of both header cards.
+ *
+ * The inactive fill used to be a hardcoded white, which turned into a glaring
+ * white slab in dark mode. SwiftUI paints this pill with the card surface and
+ * the icon well with tertiarySystemFill, so both follow the theme here too.
+ */
 @Composable
 private fun BigPill(
     icon: ImageVector,
@@ -150,7 +156,7 @@ private fun BigPill(
         modifier
             .height(PillHeight)
             .clip(RoundedCornerShape(PillRadius))
-            .background(if (active) circleTint.copy(alpha = 0.10f) else Color.White)
+            .background(if (active) circleTint.copy(alpha = 0.10f) else HumeColors.Card)
             .border(
                 1.dp,
                 if (active) circleTint.copy(alpha = 0.40f) else HumeColors.Divider,
@@ -164,7 +170,7 @@ private fun BigPill(
             Modifier
                 .size(34.dp)
                 .clip(CircleShape)
-                .background(if (active) circleTint.copy(alpha = 0.22f) else HumeColors.Background),
+                .background(if (active) circleTint.copy(alpha = 0.22f) else HumeColors.FillTertiary),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -199,7 +205,7 @@ private fun ModePill(
         modifier
             .height(PillHeight)
             .clip(RoundedCornerShape(PillRadius))
-            .background(if (selected) tint.copy(alpha = 0.18f) else Color.White)
+            .background(if (selected) tint.copy(alpha = 0.18f) else HumeColors.Card)
             .border(
                 1.dp,
                 if (selected) tint.copy(alpha = 0.55f) else HumeColors.Divider,
