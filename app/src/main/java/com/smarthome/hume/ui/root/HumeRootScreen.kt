@@ -2,8 +2,10 @@ package com.smarthome.hume.ui.root
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,9 +25,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HomeAssistantRepository
@@ -58,19 +64,24 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
 /*
- * Navbar One UI 8.5 - floating tab bar.
- *  - MOT pill lien khoi, NEN DAC (Compose khong blur duoc nen backdrop; de trong suot
- *    thi noi dung phia sau loi qua nhin rat ban -> dung mau dac + scrim mo dan phia tren).
- *  - Le trai/phai 14dp, le duoi 14dp, cao 58dp, bo tron nua chieu cao.
- *  - 4 tab chia deu, CHI ICON, tab chon = capsule highlighter cung co.
+ * Navbar theo dung nguyen tac cua iOS 26 Liquid Glass tab bar / One UI 8.5 floating tab bar:
+ *
+ *  1. MOT pill lien khoi noi tren noi dung, le trai/phai/duoi bang nhau (16dp).
+ *  2. Be ngang pill chia thanh N O BANG NHAU tuyet doi (itemWidth = (W - 2*inset)/N).
+ *     Icon nam chinh giua o cua no -> khoang cach giua cac icon luon deu.
+ *  3. Tab dang chon co LOP NEN DANG VIEN THUOC (capsule) nam duoi icon, cung kich thuoc
+ *     cho moi tab, va TRUOT (spring) tu o cu sang o moi khi doi tab - day la dac trung
+ *     cua ca hai he dieu hanh, khong phai vong tron phong to.
+ *  4. Chi icon, khong nhan chu (One UI 8.5 da bo nhan).
+ *  5. Nen pill DAC + scrim mo dan phia tren (Compose khong blur duoc backdrop that).
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
-private val BarHeight = 58.dp
-private val BarSideMargin = 14.dp
-private val BarBottomMargin = 14.dp
-private val CapsuleHeight = 40.dp
-private val CapsuleWidth = 58.dp
-private val ScrimHeight = 28.dp
+private val BarHeight = 64.dp
+private val BarMargin = 16.dp
+private val BarInset = 6.dp
+private val CapsuleHeight = 48.dp
+private val CapsuleMaxWidth = 68.dp
+private val ScrimHeight = 30.dp
 
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
@@ -120,41 +131,73 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val background = MaterialTheme.colorScheme.background
     Column(Modifier.fillMaxWidth()) {
-        // Scrim: noi dung cuon toi day mo dan vao nen, khong dam sam vao thanh nav.
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(ScrimHeight)
                 .background(
                     Brush.verticalGradient(
-                        listOf(background.copy(alpha = 0f), background.copy(alpha = 0.85f))
+                        listOf(background.copy(alpha = 0f), background.copy(alpha = 0.9f))
                     )
                 )
         )
         Box(
             Modifier
                 .fillMaxWidth()
-                .background(background.copy(alpha = 0.85f))
+                .background(background.copy(alpha = 0.9f))
                 .navigationBarsPadding()
-                .padding(start = BarSideMargin, end = BarSideMargin, bottom = BarBottomMargin, top = 2.dp),
+                .padding(start = BarMargin, end = BarMargin, bottom = BarMargin, top = 2.dp),
         ) {
-            Row(
+            BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
                     .height(BarHeight)
-                    .shadow(12.dp, shape, spotColor = Color.Black.copy(alpha = 0.6f))
+                    .shadow(14.dp, shape, spotColor = Color.Black.copy(alpha = 0.6f))
                     .clip(shape)
                     .background(HumeColors.Card)
-                    .border(1.dp, HumeColors.Gray1000.copy(alpha = 0.07f), shape),
-                verticalAlignment = Alignment.CenterVertically,
+                    .border(1.dp, HumeColors.Gray1000.copy(alpha = 0.08f), shape)
             ) {
-                navTabs.forEach { item ->
-                    NavItem(
-                        item = item,
-                        active = selected == item,
-                        onClick = { onSelect(item) },
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                    )
+                // Chia o bang nhau tuyet doi -> khoang cach giua cac icon deu nhau.
+                val itemWidth: Dp = (maxWidth - BarInset * 2) / navTabs.size
+                val capsuleWidth: Dp = minOf(itemWidth - 6.dp, CapsuleMaxWidth)
+                val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
+                val capsuleX by animateDpAsState(
+                    targetValue = BarInset + itemWidth * activeIndex + (itemWidth - capsuleWidth) / 2,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                    label = "capsuleX",
+                )
+
+                // Lop nen dang vien thuoc cua tab dang chon, truot giua cac o.
+                Box(
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = capsuleX)
+                        .width(capsuleWidth)
+                        .height(CapsuleHeight)
+                        .clip(RoundedCornerShape(CapsuleHeight / 2))
+                        .background(HumeColors.Orange.copy(alpha = 0.22f))
+                        .border(
+                            1.dp,
+                            HumeColors.Orange.copy(alpha = 0.35f),
+                            RoundedCornerShape(CapsuleHeight / 2),
+                        )
+                )
+
+                Row(
+                    Modifier.fillMaxSize().padding(horizontal = BarInset),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    navTabs.forEach { item ->
+                        NavItem(
+                            item = item,
+                            active = selected == item,
+                            onClick = { onSelect(item) },
+                            modifier = Modifier.width(itemWidth).fillMaxHeight(),
+                        )
+                    }
                 }
             }
         }
@@ -170,34 +213,24 @@ private fun NavItem(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.9f else 1f, tween(140), label = "navPress")
-    val capsuleColor by animateColorAsState(
-        if (active) HumeColors.Orange.copy(alpha = 0.16f) else Color.Transparent,
-        tween(240),
-        label = "navCapsule",
-    )
+    val press by animateFloatAsState(if (pressed) 0.88f else 1f, tween(140), label = "navPress")
     val iconColor by animateColorAsState(
         if (active) HumeColors.Orange else HumeColors.Gray500,
         tween(240),
         label = "navIcon",
     )
-    val capsuleW by animateDpAsState(if (active) CapsuleWidth else 0.dp, tween(260), label = "navCapsuleW")
 
     Box(
         modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier
-                .size(width = capsuleW, height = CapsuleHeight)
-                .clip(RoundedCornerShape(CapsuleHeight / 2))
-                .background(capsuleColor)
-        )
         Icon(
             HumeIcons.tab(item),
             contentDescription = item.label,
             tint = iconColor,
-            modifier = Modifier.size(23.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer { scaleX = press; scaleY = press },
         )
     }
 }
