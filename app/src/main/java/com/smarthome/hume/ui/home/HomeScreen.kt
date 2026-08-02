@@ -41,6 +41,7 @@ import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.Calendar
@@ -85,7 +86,20 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
 
     LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
     LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
-    LaunchedEffect(todayPv.toInt()) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
+    // Chuoi 7 ngay: tai ngay khi websocket ket noi (truoc day chi chay theo
+    // todayPv nen sang som - luc PV con 0 - bieu do khong bao gio duoc nap lai),
+    // roi tu lam moi moi 5 phut de bat kip du lieu history ve muon.
+    LaunchedEffect(state.connected) {
+        if (!state.connected) return@LaunchedEffect
+        while (true) {
+            weekly = vm.weekly(HumeConfig.PV_TODAY)
+            delay(300_000L)
+        }
+    }
+    // Gia tri hom nay cap nhat theo thoi gian thuc.
+    LaunchedEffect(todayPv.toInt()) {
+        if (weekly.isNotEmpty()) weekly = vm.weekly(HumeConfig.PV_TODAY)
+    }
     LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
 
     // Cuon xuong an navbar, cuon len hien lai.
@@ -149,7 +163,7 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
                     totalText = String.format(Locale.US, "%.1f", todayPv),
                     unitText = "kWh",
                     days = weekly,
-                    emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y",
+                    emptyHint = if (state.connected) "\u0110ang t\u1ea3i l\u1ecbch s\u1eed 7 ng\u00e0y..." else "Ch\u01b0a k\u1ebft n\u1ed1i Home Assistant",
                 )
             }
             item {
