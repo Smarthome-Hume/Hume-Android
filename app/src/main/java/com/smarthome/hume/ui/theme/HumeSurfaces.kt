@@ -17,30 +17,58 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * One UI 8.5 surface language, in one place.
+ * Glass surfaces, ported from Theme/HumeTheme.swift.
  *
- * Samsung's 8.5 look is translucent multi layered glass: a light frosted panel,
- * a bright hairline on the edge, soft depth, and heavy corner rounding. True
- * backdrop blur needs a blur library, so the panels here approximate it with a
- * translucent gradient fill plus the highlight edge. Swapping in real backdrop
- * blur later only means changing this file.
+ * HumeCardModifier fills a card with .regularMaterial and strokes it with
+ * white at 14% opacity; HumeElementModifier falls back to
+ * Color(.tertiarySystemFill). UIKit materials resolve differently per
+ * appearance, so every value here is read through a getter that asks
+ * HumeColors.isDark instead of being frozen at class-load time.
  */
 object HumeSurfaces {
-    /** Frosted panel fill, brighter at the top like a lit pane of glass. */
-    val glassFill = Brush.verticalGradient(
-        listOf(Color.White.copy(alpha = 0.92f), Color.White.copy(alpha = 0.74f)),
-    )
+    /** .regularMaterial: a frosted pane, brighter at the top. */
+    val glassFill: Brush
+        get() = if (HumeColors.isDark) {
+            Brush.verticalGradient(
+                listOf(Color(0xFF161616).copy(alpha = 0.92f), Color(0xFF161616).copy(alpha = 0.78f)),
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(Color.White.copy(alpha = 0.92f), Color.White.copy(alpha = 0.74f)),
+            )
+        }
 
-    /** Same panel for elements sitting on top of coloured content. */
-    val glassFillStrong = Brush.verticalGradient(
-        listOf(Color.White.copy(alpha = 0.98f), Color.White.copy(alpha = 0.88f)),
-    )
+    /** Same pane, more opaque, for elements over coloured content. */
+    val glassFillStrong: Brush
+        get() = if (HumeColors.isDark) {
+            Brush.verticalGradient(
+                listOf(Color(0xFF1C1C1C), Color(0xFF161616)),
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(Color.White.copy(alpha = 0.98f), Color.White.copy(alpha = 0.88f)),
+            )
+        }
 
-    /** The bright hairline One UI draws along the edge of every glass panel. */
-    val glassEdge = Color.White.copy(alpha = 0.65f)
+    /** Specular edge. Swift strokes .white.opacity(0.14) on the glass. */
+    val glassEdge: Color
+        get() = if (HumeColors.isDark) Color.White.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.65f)
 
-    /** Very soft ambient shadow. One UI keeps depth subtle. */
-    val shadow = Color(0x14000000)
+    /** Ambient shadow. Barely visible in dark mode, as on iOS. */
+    val shadow: Color
+        get() = if (HumeColors.isDark) Color(0x33000000) else Color(0x14000000)
+
+    /** Overlay that lifts a tinted panel, the frost sitting over the tint. */
+    val tintFrost: Brush
+        get() = if (HumeColors.isDark) {
+            Brush.verticalGradient(
+                listOf(Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.02f)),
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.28f)),
+            )
+        }
 }
 
 /**
@@ -58,7 +86,7 @@ object HumeShapes {
     val Pill: Dp = 30.dp
 }
 
-/** Spacing scale. Keep every gap on this scale. */
+/** Spacing scale, from HumeTheme.Spacing in Swift. */
 object HumeSpacing {
     val Hairline: Dp = 4.dp
     val Tight: Dp = 8.dp
@@ -107,12 +135,8 @@ fun Modifier.tintedGlass(
             },
         )
         .clip(shape)
-        .background(tint.copy(alpha = 0.16f))
-        .background(
-            Brush.verticalGradient(
-                listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.28f)),
-            ),
-        )
+        .background(tint.copy(alpha = if (HumeColors.isDark) 0.24f else 0.16f))
+        .background(HumeSurfaces.tintFrost)
         .border(1.dp, tint.copy(alpha = 0.35f), shape)
 }
 
@@ -155,9 +179,6 @@ fun TintedGlassCard(
     )
 }
 
-/**
- * Floating pill used by the bottom navigation and by in app toolbars. One UI
- * 8.5 lifts these off the bottom edge instead of docking them.
- */
+/** Capsule surface, the humeCapsule modifier in Swift. */
 fun Modifier.glassPill(radius: Dp = HumeShapes.Pill): Modifier =
     glassSurface(radius = radius, elevation = 10.dp, strong = true)
