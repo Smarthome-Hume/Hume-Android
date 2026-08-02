@@ -5,8 +5,6 @@ package com.smarthome.hume.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,14 +22,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.HumeApplication
@@ -47,7 +43,6 @@ import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import com.smarthome.hume.ui.theme.glassSurface
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.Calendar
@@ -57,9 +52,10 @@ import kotlin.math.abs
 private const val USER_NAME = "H\u1ea3i H\u00e0"
 private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 
-private val PagePadding = 16.dp
+/* page-container cua ban HTML: padding ngang 15, khoang cach nhom 14, chua cho nav 100. */
+private val PagePadding = 15.dp
 private val GroupSpacing = 14.dp
-private val NavBarRoom = 108.dp
+private val NavBarRoom = 100.dp
 
 internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
     if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
@@ -86,8 +82,6 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
     var manageNotif by remember { mutableStateOf(false) }
     var chartEntityId by remember { mutableStateOf<String?>(null) }
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
-    var headerHeight by remember { mutableStateOf(0.dp) }
-    val density = LocalDensity.current
     val listState = rememberLazyListState()
     val todayPv = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
 
@@ -96,15 +90,15 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
     LaunchedEffect(todayPv.toInt()) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
     LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
 
-    // LiquidNavBar minimize-on-scroll-down, like .tabBarMinimizeBehavior(.onScrollDown) in Swift.
+    // Cuon xuong an nav, cuon len hien lai - giong ban HTML.
     LaunchedEffect(listState) {
         var previous = 0
         snapshotFlow { listState.firstVisibleItemIndex * 3000 + listState.firstVisibleItemScrollOffset }
             .collect { position ->
                 when {
                     position <= 8 -> onNavMinimize(false)
-                    position - previous > 14 -> onNavMinimize(true)
-                    previous - position > 14 -> onNavMinimize(false)
+                    position - previous > 12 -> onNavMinimize(true)
+                    previous - position > 12 -> onNavMinimize(false)
                 }
                 previous = position
             }
@@ -126,43 +120,72 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
         LazyColumn(
             Modifier.fillMaxSize(),
             state = listState,
-            contentPadding = PaddingValues(start = PagePadding, end = PagePadding, top = headerHeight + 15.dp, bottom = NavBarRoom),
+            contentPadding = PaddingValues(start = PagePadding, end = PagePadding, top = 6.dp, bottom = NavBarRoom),
             verticalArrangement = Arrangement.spacedBy(GroupSpacing),
         ) {
             item {
-                GlassGroup(radius = 37.dp, spacing = 14.dp) {
-                    SolarChartCard(title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi", totalText = String.format(Locale.US, "%.1f", todayPv), unitText = "kWh", days = weekly, emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y")
-                    BatteryCard(soc = EnergyDetect.soc(entities), power = EnergyDetect.power(entities), backupSoc = EnergyDetect.backupSoc(entities), timeText = EnergyDetect.runtimeText(entities), finishTime = endTimeLabel(EnergyDetect.runtimeHours(entities)))
-                }
+                HomeHeader(
+                    userName = entities["person.hutchet"]?.friendly() ?: USER_NAME,
+                    greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...",
+                    location = LOCATION,
+                    connected = state.connected,
+                    alertCount = state.alertCount,
+                    onOpenNotifications = { notificationSheet = true },
+                    avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl),
+                    onManageNotifications = { manageNotif = true },
+                )
             }
-            item {
-                GlassGroup(radius = 45.dp, spacing = 12.dp) {
-                    RoomsShowcase(climateRooms = vm.climateRooms, otherRooms = vm.basicRooms, entities = entities, leftTiles = leftTiles, rightTiles = rightTiles, onOpenRoom = { roomSheet = it }, onToggleLight = { vm.toggleRoomLight(it) }, onTileClick = { chartEntityId = it }, onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) })
-                }
-            }
-            item {
-                GlassGroup(radius = 37.dp, spacing = 10.dp) { SceneGridSection(ha = ha, alarmState = alarmState) }
-            }
-        }
-
-        Column(
-            Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .onSizeChanged { size -> headerHeight = with(density) { size.height.toDp() } }
-                .background(MaterialTheme.colorScheme.background)
-                .padding(start = PagePadding, end = PagePadding, top = 6.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            HomeHeader(userName = entities["person.hutchet"]?.friendly() ?: USER_NAME, greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...", location = LOCATION, connected = state.connected, alertCount = state.alertCount, onOpenNotifications = { notificationSheet = true }, avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl), onManageNotifications = { manageNotif = true })
             state.error?.let { message ->
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(HumeColors.Red.copy(alpha = 0.12f)).padding(14.dp)) {
-                    Text(message, style = MaterialTheme.typography.bodySmall, color = HumeColors.Red)
+                item {
+                    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(HumeColors.Red.copy(alpha = 0.12f)).padding(14.dp)) {
+                        Text(message, style = MaterialTheme.typography.bodySmall, color = HumeColors.Red)
+                    }
                 }
             }
-            GlassGroup(radius = 34.dp, padding = 8.dp, spacing = 8.dp) {
+            item {
                 StatusChipRow(alarmState = alarmState, lightsOn = state.lightsOn, ha = ha, alarmEntity = alarmEntity, onOpenLights = { lightsSheet = true })
             }
+            item {
+                SolarChartCard(
+                    title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
+                    totalText = String.format(Locale.US, "%.1f", todayPv),
+                    unitText = "kWh",
+                    days = weekly,
+                    emptyHint = "Ch\u01b0a c\u00f3 l\u1ecbch s\u1eed 7 ng\u00e0y",
+                )
+            }
+            item {
+                BatteryCard(
+                    soc = EnergyDetect.soc(entities),
+                    power = EnergyDetect.power(entities),
+                    backupSoc = EnergyDetect.backupSoc(entities),
+                    timeText = EnergyDetect.runtimeText(entities),
+                    finishTime = endTimeLabel(EnergyDetect.runtimeHours(entities)),
+                )
+            }
+            item {
+                RoomsShowcase(
+                    climateRooms = vm.climateRooms,
+                    otherRooms = vm.basicRooms,
+                    entities = entities,
+                    leftTiles = leftTiles,
+                    rightTiles = rightTiles,
+                    onOpenRoom = { roomSheet = it },
+                    onToggleLight = { vm.toggleRoomLight(it) },
+                    onTileClick = { chartEntityId = it },
+                    onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) },
+                )
+            }
+            item {
+                Text(
+                    "K\u1ecbch b\u1ea3n",
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HumeColors.Gray1000,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            }
+            item { SceneGridSection(ha = ha, alarmState = alarmState) }
         }
     }
 
@@ -178,11 +201,6 @@ private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
     if (picture.startsWith("http")) return picture
     val base = if (haUrl.startsWith("http")) haUrl else "http://$haUrl"
     return base.trimEnd('/') + picture
-}
-
-@Composable
-private fun GlassGroup(radius: Dp, padding: Dp = 12.dp, spacing: Dp = 14.dp, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().glassSurface(radius = radius, elevation = 2.dp).padding(padding), verticalArrangement = Arrangement.spacedBy(spacing), content = content)
 }
 
 private fun sensorValue(entity: HomeEntity?, unit: String): String {
