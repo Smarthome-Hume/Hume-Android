@@ -57,13 +57,13 @@ import com.smarthome.hume.ui.theme.HumeIcons
 import kotlin.math.absoluteValue
 
 /*
- * Luoi 2 cot DOI XUNG TUYET DOI. Ca hai cot deu co cau truc:
- *      khoi A (cao blockHeight) -> hang dots (14dp) -> khoi B (cao blockHeight) -> hang dots (14dp)
- * Cot trai : A = pager tile, B = the phong dieu hoa
- * Cot phai : A = the phong thuong, B = pager tile
- * => hai cot LUON cao bang nhau, khong con lech.
+ * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots:
+ *   cot trai : khoi tile (tileBlock) -> dots -> the phong dieu hoa (cardHeight) -> dots
+ *   cot phai : the phong (cardHeight) -> dots -> khoi tile (tileBlock)          -> dots
+ * => tong chieu cao hai cot LUON bang nhau, chi khac thu tu.
  *
- * Kich thuoc tinh theo be ngang thuc te cua may (S26U ~411dp), khong fix cung theo iPhone.
+ * Ty le lay tu ban goc: the phong = be rong cot * 1.30 (~240dp tren S26U),
+ * khoi tile = 0.583 * the phong (~140dp) -> moi tile 65dp, vong icon 55dp.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -71,6 +71,7 @@ private val DotsRow = 14.dp
 private val CardRadius = 30.dp
 private val TileRadius = 30.dp
 private const val CardAspect = 1.30f
+private const val TileBlockRatio = 0.583f
 private val NeonRed = Color(0xFFFF5252)
 
 private val ActiveGradient
@@ -108,8 +109,9 @@ fun RoomsShowcase(
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val columnWidth = (maxWidth - GridGap) / 2
-        val blockHeight = columnWidth * CardAspect
-        val tileHeight = (blockHeight - TileGap) / 2
+        val cardHeight = columnWidth * CardAspect
+        val tileBlock = cardHeight * TileBlockRatio
+        val tileHeight = (tileBlock - TileGap) / 2
 
         Row(
             Modifier.fillMaxWidth(),
@@ -117,12 +119,12 @@ fun RoomsShowcase(
             verticalAlignment = Alignment.Top,
         ) {
             Column(Modifier.weight(1f)) {
-                SensorPager(leftTiles, blockHeight, tileHeight, onTileClick)
-                RoomPager(climateRooms, entities, columnWidth, blockHeight, onOpenRoom, onToggleLight, onAdjustTarget)
+                SensorPager(leftTiles, tileBlock, tileHeight, onTileClick)
+                RoomPager(climateRooms, entities, columnWidth, cardHeight, onOpenRoom, onToggleLight, onAdjustTarget)
             }
             Column(Modifier.weight(1f)) {
-                RoomPager(otherRooms, entities, columnWidth, blockHeight, onOpenRoom, onToggleLight, onAdjustTarget)
-                SensorPager(rightTiles, blockHeight, tileHeight, onTileClick)
+                RoomPager(otherRooms, entities, columnWidth, cardHeight, onOpenRoom, onToggleLight, onAdjustTarget)
+                SensorPager(rightTiles, tileBlock, tileHeight, onTileClick)
             }
         }
     }
@@ -189,10 +191,10 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
         ) {
             Icon(tile.icon, contentDescription = null, tint = HumeColors.Gray1000, modifier = Modifier.size(circle * 0.44f))
         }
-        Column(Modifier.weight(1f).padding(start = 8.dp, end = 10.dp)) {
+        Column(Modifier.weight(1f).padding(start = 7.dp, end = 8.dp)) {
             Text(
                 tile.value,
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = HumeColors.Gray1000,
                 maxLines = 1,
@@ -201,7 +203,7 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
             )
             Text(
                 tile.label,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = HumeColors.Gray1000.copy(alpha = 0.7f),
                 maxLines = 1,
                 softWrap = false,
@@ -216,14 +218,14 @@ private fun RoomPager(
     rooms: List<RoomConfig>,
     entities: Map<String, HomeEntity>,
     columnWidth: Dp,
-    blockHeight: Dp,
+    cardHeight: Dp,
     onOpenRoom: (RoomConfig) -> Unit,
     onToggleLight: (RoomConfig) -> Unit,
     onAdjustTarget: (RoomConfig, Double) -> Unit,
 ) {
     val pagerState = rememberPagerState(pageCount = { maxOf(rooms.size, 1) })
     Column {
-        Box(Modifier.height(blockHeight)) {
+        Box(Modifier.height(cardHeight)) {
             if (rooms.isNotEmpty()) {
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                     Box(Modifier.pageTransition(pagerState.currentPage, pagerState.currentPageOffsetFraction, page)) {
@@ -231,7 +233,7 @@ private fun RoomPager(
                             room = rooms[page],
                             entities = entities,
                             columnWidth = columnWidth,
-                            cardHeight = blockHeight,
+                            cardHeight = cardHeight,
                             onOpen = { onOpenRoom(rooms[page]) },
                             onToggleLight = { onToggleLight(rooms[page]) },
                             onAdjustTarget = { delta -> onAdjustTarget(rooms[page], delta) },
@@ -266,8 +268,7 @@ private fun RoomCardLarge(
     val fg = if (lightOn) Color(0xFF000000) else HumeColors.Gray1000
     val chipBg = if (lightOn) Color.White.copy(alpha = 0.22f) else HumeColors.Gray00
     val interaction = remember { MutableInteractionSource() }
-    val iconCircle = (columnWidth * 0.27f).coerceIn(44.dp, 56.dp)
-    // Co chu ty le theo be ngang cot, khong fix cung.
+    val iconCircle = (columnWidth * 0.27f).coerceIn(44.dp, 54.dp)
     val tempSize = (columnWidth.value * (if (hasStepper) 0.20f else 0.24f)).sp
 
     Box(
@@ -312,7 +313,6 @@ private fun RoomCardLarge(
             Spacer(Modifier.weight(1f))
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                // Nhiet do + do am nam CUNG MOT HANG, chi hien so % (khong co chu "Do am").
                 Row(
                     Modifier.weight(1f).padding(end = 4.dp),
                     verticalAlignment = Alignment.Bottom,
@@ -344,7 +344,6 @@ private fun RoomCardLarge(
     }
 }
 
-/** Cham do neon nhap nhay (thay cho neon-blink cua ban goc). */
 @Composable
 private fun NeonDot(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "neon")
@@ -417,4 +416,5 @@ fun PagerDots(count: Int, current: Int) {
             )
         }
     }
+}
 }
