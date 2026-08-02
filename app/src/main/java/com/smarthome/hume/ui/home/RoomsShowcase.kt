@@ -56,15 +56,21 @@ import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.humeMarquee
 import kotlin.math.absoluteValue
 
 /*
  * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots.
- * Page indicator can GIUA be ngang cua the.
  *
- * HIEU UNG NEON (da khoi phuc):
- *  - Cham bao cua/cua so mo: loi do nhap nhay + vong song lan toa lien tuc.
- *  - The phong dang bat den: vien neon cam tho dan theo nhip + do bong tang giam.
+ * HIEU UNG NEON - lam RO HAN (truoc day gan nhu khong thay):
+ *  1. The phong dang BAT DEN: vien neon CAM nhap nhay day 2dp (alpha 0.15 -> 0.95)
+ *     + quang sang chay doc mep the, cong bong do mau tho theo nhip.
+ *     Truoc day vien mau TRANG tren nen gradient cam nhat nen chim hoan toan.
+ *  2. Cua/cua so mo: cham do nhap nhay + vong song lan toa, nam han ra ngoai
+ *     goc vong icon.
+ *
+ * CHAY CHU: gia tri/nhan cua tile va ten phong dung humeMarquee() - port tu
+ * `animation: marquee 8s linear infinite` cua ban HTML, chi chay khi chu tran.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -74,6 +80,7 @@ private val TileRadius = 30.dp
 private const val CardAspect = 1.30f
 private const val TileBlockRatio = 0.583f
 private val NeonRed = Color(0xFFFF5252)
+private val NeonOrange = Color(0xFFFF6A2C)
 
 private val ActiveGradient
     get() = Brush.linearGradient(
@@ -200,7 +207,8 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
                 color = HumeColors.Gray1000,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.humeMarquee(),
             )
             Text(
                 tile.label,
@@ -208,7 +216,8 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
                 color = HumeColors.Gray1000.copy(alpha = 0.7f),
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.humeMarquee(),
             )
         }
     }
@@ -275,9 +284,9 @@ private fun RoomCardLarge(
     // Nhip neon dung chung cho vien va bong khi den dang bat.
     val neon = rememberInfiniteTransition(label = "cardNeon")
     val glow by neon.animateFloat(
-        initialValue = 0.35f,
+        initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
         label = "cardGlow",
     )
 
@@ -287,17 +296,28 @@ private fun RoomCardLarge(
             .height(cardHeight)
             .pressScale(interaction)
             .shadow(
-                elevation = if (lightOn) (10 + 12 * glow).dp else 0.dp,
+                elevation = if (lightOn) (8 + 16 * glow).dp else 0.dp,
                 shape = shape,
-                spotColor = HumeColors.Orange,
-                ambientColor = HumeColors.Orange,
+                spotColor = NeonOrange,
+                ambientColor = NeonOrange,
             )
             .clip(shape)
             .then(if (lightOn) Modifier.background(ActiveGradient) else Modifier.background(HumeColors.Card))
-            // Vien neon nhap nhay cho may khong ho tro bong mau (API < 31).
+            // VIEN NEON CAM nhap nhay - thay cho vien trang cu (bi chim tren nen cam).
             .then(
-                if (lightOn) Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f + 0.45f * glow), shape)
-                else Modifier
+                if (lightOn) {
+                    Modifier.border(
+                        width = 2.dp,
+                        brush = Brush.linearGradient(
+                            listOf(
+                                NeonOrange.copy(alpha = 0.15f + 0.8f * glow),
+                                Color.White.copy(alpha = 0.20f + 0.6f * glow),
+                                NeonOrange.copy(alpha = 0.15f + 0.8f * glow),
+                            )
+                        ),
+                        shape = shape,
+                    )
+                } else Modifier
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onOpen)
             .padding(14.dp),
@@ -310,9 +330,10 @@ private fun RoomCardLarge(
                     lineHeight = 21.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = fg,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).padding(end = 6.dp),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.weight(1f).padding(end = 6.dp).humeMarquee(),
                 )
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
@@ -347,7 +368,7 @@ private fun RoomCardLarge(
                         color = fg.copy(alpha = 0.6f),
                         maxLines = 1,
                         softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
                         modifier = Modifier.padding(start = 5.dp, bottom = 5.dp),
                     )
                 }
@@ -361,8 +382,6 @@ private fun RoomCardLarge(
 
 /**
  * Cham neon canh bao: loi do NHAP NHAY + mot vong song lan toa ra ngoai lien tuc.
- * Truoc day cham nay bi thu nho va dat lot vao goc vong icon nen gan nhu khong
- * thay hieu ung; nay to hon va nam han ra ngoai goc.
  */
 @Composable
 private fun NeonDot(modifier: Modifier = Modifier) {
@@ -380,7 +399,6 @@ private fun NeonDot(modifier: Modifier = Modifier) {
         label = "neonRipple",
     )
     Box(modifier.size(24.dp), contentAlignment = Alignment.Center) {
-        // Vong song lan toa
         Box(
             Modifier
                 .size(24.dp)
@@ -393,7 +411,6 @@ private fun NeonDot(modifier: Modifier = Modifier) {
                 .clip(CircleShape)
                 .background(NeonRed)
         )
-        // Quang neon mem
         Box(
             Modifier
                 .size(20.dp)
@@ -402,7 +419,6 @@ private fun NeonDot(modifier: Modifier = Modifier) {
                     Brush.radialGradient(listOf(NeonRed.copy(alpha = 0.55f * blink), Color.Transparent))
                 )
         )
-        // Loi do nhap nhay
         Box(
             Modifier
                 .size(10.dp)
