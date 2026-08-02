@@ -1,9 +1,18 @@
 package com.smarthome.hume.ui.home
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,34 +33,46 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import kotlin.math.absoluteValue
 
 /*
- * Layout theo ban HTML cocopi-home:
- *  - the phong: height 240, radius 30, padding 16, nen gradient #f9784c -> #fac0b6 khi den bat
- *  - tile cam bien: height 65, radius 30, vong tron 58 (gray00), icon 30
- *  - dot pager: active 20x6 mau cam, inactive 6x6
+ * Luoi 2 cot CAN DOI: moi cot cao bang nhau, kich thuoc tinh theo be ngang thuc te
+ * cua man hinh (S26U ~411dp) chu khong fix cung theo iPhone.
+ *
+ *   cot trai : pager tile (2 tile) -> dots -> the phong dieu hoa -> dots
+ *   cot phai : the phong thuong  -> dots -> 2 tile               -> dots gia
+ *
+ * cardHeight = be rong cot * 1.30 ; tile = (cardHeight * 0.583 - gap) / 2
  */
-private val CardHeight = 240.dp
-private val CardRadius = 30.dp
-private val TileHeight = 65.dp
-private val TileRadius = 30.dp
 private val GridGap = 12.dp
 private val TileGap = 10.dp
+private val DotsRow = 14.dp
+private val CardRadius = 30.dp
+private val TileRadius = 30.dp
+private const val CardAspect = 1.30f
+private const val TileBlockRatio = 0.583f
+private val NeonRed = Color(0xFFFF5252)
 
 private val ActiveGradient
     get() = Brush.linearGradient(
@@ -67,6 +88,14 @@ data class SmallTile(
     val entityId: String? = null,
 )
 
+/** Nhan giu -> thu nho nhe, giong .ios-press cua ban web. */
+@Composable
+private fun Modifier.pressScale(interaction: MutableInteractionSource): Modifier {
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(140), label = "press")
+    return this.graphicsLayer { scaleX = scale; scaleY = scale }
+}
+
 @Composable
 fun RoomsShowcase(
     climateRooms: List<RoomConfig>,
@@ -79,63 +108,91 @@ fun RoomsShowcase(
     onTileClick: (String) -> Unit,
     onAdjustTarget: (RoomConfig, Double) -> Unit,
 ) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(GridGap),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GridGap)) {
-            SensorPager(leftTiles, onTileClick)
-            RoomPager(climateRooms, entities, onOpenRoom, onToggleLight, onAdjustTarget)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GridGap)) {
-            RoomPager(otherRooms, entities, onOpenRoom, onToggleLight, onAdjustTarget)
-            rightTiles.forEach { tile -> TileCard(tile, onTileClick) }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columnWidth = (maxWidth - GridGap) / 2
+        val cardHeight = columnWidth * CardAspect
+        val tileHeight = (cardHeight * TileBlockRatio - TileGap) / 2
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(GridGap),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GridGap)) {
+                SensorPager(leftTiles, tileHeight, onTileClick)
+                RoomPager(climateRooms, entities, cardHeight, onOpenRoom, onToggleLight, onAdjustTarget)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GridGap)) {
+                RoomPager(otherRooms, entities, cardHeight, onOpenRoom, onToggleLight, onAdjustTarget)
+                Column(verticalArrangement = Arrangement.spacedBy(TileGap)) {
+                    rightTiles.forEach { tile -> TileCard(tile, tileHeight, onTileClick) }
+                }
+                Spacer(Modifier.height(DotsRow))
+            }
         }
     }
 }
 
 @Composable
-private fun SensorPager(tiles: List<SmallTile>, onTileClick: (String) -> Unit) {
+private fun SensorPager(tiles: List<SmallTile>, tileHeight: Dp, onTileClick: (String) -> Unit) {
     if (tiles.isEmpty()) return
     val pages = tiles.chunked(2)
     val pagerState = rememberPagerState(pageCount = { pages.size })
     Column {
-        HorizontalPager(state = pagerState, modifier = Modifier.height(TileHeight * 2 + TileGap)) { page ->
-            Column(verticalArrangement = Arrangement.spacedBy(TileGap)) {
-                pages[page].forEach { tile -> TileCard(tile, onTileClick) }
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.height(tileHeight * 2 + TileGap),
+        ) { page ->
+            Column(
+                Modifier.pageTransition(pagerState.currentPage, pagerState.currentPageOffsetFraction, page),
+                verticalArrangement = Arrangement.spacedBy(TileGap),
+            ) {
+                pages[page].forEach { tile -> TileCard(tile, tileHeight, onTileClick) }
             }
         }
-        if (pages.size > 1) {
-            Spacer(Modifier.height(4.dp))
-            PagerDots(pages.size, pagerState.currentPage)
+        Box(Modifier.height(DotsRow), contentAlignment = Alignment.Center) {
+            if (pages.size > 1) PagerDots(pages.size, pagerState.currentPage)
         }
     }
 }
 
-/** Tile 65dp: vong tron icon 58 ben trai, gia tri o tren, ten o duoi. */
+/** Hieu ung chuyen trang: scale + mo dan giong pager cua ban web. */
+private fun Modifier.pageTransition(currentPage: Int, offset: Float, page: Int): Modifier =
+    this.graphicsLayer {
+        val distance = ((currentPage - page) + offset).absoluteValue.coerceAtMost(1f)
+        val s = lerp(0.94f, 1f, 1f - distance)
+        scaleX = s
+        scaleY = s
+        alpha = lerp(0.55f, 1f, 1f - distance)
+    }
+
 @Composable
-private fun TileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
+private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val circle = tileHeight - 8.dp
     Row(
         Modifier
             .fillMaxWidth()
-            .height(TileHeight)
+            .height(tileHeight)
+            .pressScale(interaction)
             .clip(RoundedCornerShape(TileRadius))
             .background(HumeColors.Card)
-            .clickable(enabled = tile.entityId != null) { tile.entityId?.let(onTileClick) },
+            .clickable(interactionSource = interaction, indication = null, enabled = tile.entityId != null) {
+                tile.entityId?.let(onTileClick)
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.width(4.dp))
         Box(
-            Modifier.size(58.dp).clip(CircleShape).background(HumeColors.Gray00),
+            Modifier.size(circle).clip(CircleShape).background(HumeColors.Gray00),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(tile.icon, contentDescription = null, tint = HumeColors.Gray1000, modifier = Modifier.size(28.dp))
+            Icon(tile.icon, contentDescription = null, tint = HumeColors.Gray1000, modifier = Modifier.size(circle * 0.46f))
         }
-        Column(Modifier.weight(1f).padding(start = 10.dp, end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(start = 8.dp, end = 10.dp)) {
             Text(
                 tile.value,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = HumeColors.Gray1000,
                 maxLines = 1,
@@ -144,7 +201,7 @@ private fun TileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
             )
             Text(
                 tile.label,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 color = HumeColors.Gray1000.copy(alpha = 0.7f),
                 maxLines = 1,
                 softWrap = false,
@@ -158,6 +215,7 @@ private fun TileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
 private fun RoomPager(
     rooms: List<RoomConfig>,
     entities: Map<String, HomeEntity>,
+    cardHeight: Dp,
     onOpenRoom: (RoomConfig) -> Unit,
     onToggleLight: (RoomConfig) -> Unit,
     onAdjustTarget: (RoomConfig, Double) -> Unit,
@@ -165,18 +223,20 @@ private fun RoomPager(
     if (rooms.isEmpty()) return
     val pagerState = rememberPagerState(pageCount = { rooms.size })
     Column {
-        HorizontalPager(state = pagerState, modifier = Modifier.height(CardHeight)) { page ->
-            RoomCardLarge(
-                room = rooms[page],
-                entities = entities,
-                onOpen = { onOpenRoom(rooms[page]) },
-                onToggleLight = { onToggleLight(rooms[page]) },
-                onAdjustTarget = { delta -> onAdjustTarget(rooms[page], delta) },
-            )
+        HorizontalPager(state = pagerState, modifier = Modifier.height(cardHeight)) { page ->
+            Box(Modifier.pageTransition(pagerState.currentPage, pagerState.currentPageOffsetFraction, page)) {
+                RoomCardLarge(
+                    room = rooms[page],
+                    entities = entities,
+                    cardHeight = cardHeight,
+                    onOpen = { onOpenRoom(rooms[page]) },
+                    onToggleLight = { onToggleLight(rooms[page]) },
+                    onAdjustTarget = { delta -> onAdjustTarget(rooms[page], delta) },
+                )
+            }
         }
-        if (rooms.size > 1) {
-            Spacer(Modifier.height(4.dp))
-            PagerDots(rooms.size, pagerState.currentPage)
+        Box(Modifier.height(DotsRow), contentAlignment = Alignment.Center) {
+            if (rooms.size > 1) PagerDots(rooms.size, pagerState.currentPage)
         }
     }
 }
@@ -185,6 +245,7 @@ private fun RoomPager(
 private fun RoomCardLarge(
     room: RoomConfig,
     entities: Map<String, HomeEntity>,
+    cardHeight: Dp,
     onOpen: () -> Unit,
     onToggleLight: () -> Unit,
     onAdjustTarget: (Double) -> Unit,
@@ -197,23 +258,34 @@ private fun RoomCardLarge(
     val hasStepper = room.hasClimate && room.climateEntity != null
     val shape = RoundedCornerShape(CardRadius)
     val fg = if (lightOn) Color(0xFF000000) else HumeColors.Gray1000
-    val chipBg = if (lightOn) Color.White.copy(alpha = 0.2f) else HumeColors.Gray00
+    val chipBg = if (lightOn) Color.White.copy(alpha = 0.22f) else HumeColors.Gray00
+    val interaction = remember { MutableInteractionSource() }
+    val iconCircle = (cardHeight * 0.23f).coerceIn(46.dp, 58.dp)
+    val tempSize = (cardHeight.value * (if (hasStepper) 0.155f else 0.185f)).sp
 
     Box(
         Modifier
             .fillMaxWidth()
-            .height(CardHeight)
+            .height(cardHeight)
+            .pressScale(interaction)
+            // Neon glow khi den dang bat.
+            .shadow(
+                elevation = if (lightOn) 18.dp else 0.dp,
+                shape = shape,
+                spotColor = HumeColors.Orange,
+                ambientColor = HumeColors.Orange,
+            )
             .clip(shape)
             .then(if (lightOn) Modifier.background(ActiveGradient) else Modifier.background(HumeColors.Card))
-            .clickable(onClick = onOpen)
-            .padding(16.dp),
+            .clickable(interactionSource = interaction, indication = null, onClick = onOpen)
+            .padding(14.dp),
     ) {
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     room.name,
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp,
+                    fontSize = 17.sp,
+                    lineHeight = 21.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = fg,
                     maxLines = 2,
@@ -222,59 +294,75 @@ private fun RoomCardLarge(
                 )
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
-                        Modifier.size(55.dp).clip(CircleShape).background(chipBg).clickable(onClick = onToggleLight),
+                        Modifier.size(iconCircle).clip(CircleShape).background(chipBg).clickable(onClick = onToggleLight),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(HumeIcons.room(room.icon), contentDescription = null, tint = fg, modifier = Modifier.size(28.dp))
+                        Icon(HumeIcons.room(room.icon), contentDescription = null, tint = fg, modifier = Modifier.size(iconCircle * 0.5f))
                     }
-                    if (contactOpen) {
-                        Box(
-                            Modifier.offset(x = 0.dp, y = 6.dp).size(8.dp).clip(CircleShape).background(Color(0xFFFF5252))
-                        )
-                    }
+                    if (contactOpen) NeonDot(Modifier.offset(x = 1.dp, y = 4.dp))
                 }
             }
 
             Spacer(Modifier.weight(1f))
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = if (hasStepper) Alignment.CenterVertically else Alignment.Bottom,
-            ) {
-                Row(
-                    Modifier.weight(1f).padding(end = 6.dp),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.weight(1f).padding(end = 6.dp)) {
                     Text(
                         "$temp\u00b0",
-                        fontSize = if (hasStepper) 40.sp else 46.sp,
-                        lineHeight = if (hasStepper) 42.sp else 48.sp,
+                        fontSize = tempSize,
+                        lineHeight = tempSize * 1.05f,
                         fontWeight = FontWeight.Light,
                         color = fg,
                         maxLines = 1,
                         softWrap = false,
                     )
-                    Spacer(Modifier.width(2.dp))
                     Text(
-                        "$humidity%",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
+                        "\u0110\u1ed9 \u1ea9m $humidity%",
+                        fontSize = 12.sp,
                         color = fg.copy(alpha = 0.6f),
                         maxLines = 1,
                         softWrap = false,
-                        modifier = Modifier.padding(bottom = 6.dp),
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (hasStepper) {
                     TargetStepper(target = target, background = chipBg, foreground = fg, onAdjustTarget = onAdjustTarget)
                 }
             }
-            if (hasStepper) Spacer(Modifier.height(4.dp))
         }
     }
 }
 
-/** Stepper 44dp: nut tang 26, so 34, nut giam 26 - dung nhu ban HTML. */
+/** Cham do neon nhap nhay - thay cho animation neon-blink cua ban web. */
+@Composable
+private fun NeonDot(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "neon")
+    val glow by transition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "neonGlow",
+    )
+    Box(modifier.size(18.dp), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        listOf(NeonRed.copy(alpha = 0.55f * glow), Color.Transparent)
+                    )
+                )
+        )
+        Box(
+            Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(NeonRed.copy(alpha = 0.55f + 0.45f * glow))
+        )
+    }
+}
+
 @Composable
 private fun TargetStepper(
     target: String?,
@@ -283,45 +371,41 @@ private fun TargetStepper(
     onAdjustTarget: (Double) -> Unit,
 ) {
     Column(
-        Modifier.width(44.dp).clip(RoundedCornerShape(18.dp)).background(background),
+        Modifier.width(42.dp).clip(RoundedCornerShape(18.dp)).background(background),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().height(26.dp).clickable { onAdjustTarget(1.0) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(20.dp))
+        Box(Modifier.fillMaxWidth().height(24.dp).clickable { onAdjustTarget(1.0) }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(18.dp))
         }
-        Box(Modifier.fillMaxWidth().height(34.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(30.dp), contentAlignment = Alignment.Center) {
             Text(
                 if (target == null) "--" else "$target\u00b0",
-                fontSize = 17.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = foreground,
                 maxLines = 1,
                 softWrap = false,
             )
         }
-        Box(Modifier.fillMaxWidth().height(26.dp).clickable { onAdjustTarget(-1.0) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(20.dp))
+        Box(Modifier.fillMaxWidth().height(24.dp).clickable { onAdjustTarget(-1.0) }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(18.dp))
         }
     }
 }
 
 @Composable
 fun PagerDots(count: Int, current: Int) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-    ) {
-        Spacer(Modifier.weight(1f))
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         repeat(count) { index ->
             val active = index == current
+            val width by animateFloatAsState(if (active) 20f else 6f, tween(260), label = "dot")
             Box(
                 Modifier
                     .height(6.dp)
-                    .width(if (active) 20.dp else 6.dp)
+                    .width(width.dp)
                     .clip(RoundedCornerShape(3.dp))
                     .background(if (active) HumeColors.Orange else HumeColors.Gray100)
             )
         }
-        Spacer(Modifier.weight(1f))
     }
 }
