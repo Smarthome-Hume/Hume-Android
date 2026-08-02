@@ -1,79 +1,46 @@
 package com.smarthome.hume.ui.theme
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.rounded.AcUnit
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Bathtub
-import androidx.compose.material.icons.rounded.BatteryChargingFull
-import androidx.compose.material.icons.rounded.Bed
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.ChildCare
-import androidx.compose.material.icons.rounded.Desk
-import androidx.compose.material.icons.rounded.DoorFront
-import androidx.compose.material.icons.rounded.ElectricalServices
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Kitchen
-import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material.icons.rounded.LocalLaundryService
-import androidx.compose.material.icons.rounded.Logout
-import androidx.compose.material.icons.rounded.MeetingRoom
-import androidx.compose.material.icons.rounded.NightsStay
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.SoupKitchen
-import androidx.compose.material.icons.rounded.Stairs
-import androidx.compose.material.icons.rounded.Thermostat
-import androidx.compose.material.icons.rounded.WaterDrop
-import androidx.compose.material.icons.rounded.WbSunny
-import androidx.compose.material.icons.rounded.WbTwilight
-import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.smarthome.hume.core.model.HumeTab
 
 /*
- * TOAN BO icon noi dung dung Material Design ban ROUNDED (Icons.Rounded.*) -
- * dong bo mot phong cach bo tron, khong con tron lan Filled/Outlined.
+ * TOAN BO icon lay tu ban HTML (Phosphor), khong con dung Material Icons.
+ * Xem HumePhosphorIcons.kt: khung 256, ve bang net, khong co icon dac.
  *
- * Ngoai le duy nhat: tab KHONG duoc chon tren navbar dung ban Outlined de giu
- * tuong phan net manh -> net dam khi chon (hieu ung .thin -> .semibold cua iOS).
+ * Tab dang chon dung ban net day (bold), tab thuong dung net thuong - dung
+ * cach navbar One UI / iOS 26 tang do day thay vi doi sang icon to dac.
  */
 object HumeIcons {
-    val Light = Icons.Rounded.Lightbulb
-    val Temperature = Icons.Rounded.Thermostat
-    val Humidity = Icons.Rounded.WaterDrop
-    val Climate = Icons.Rounded.AcUnit
-    val Door = Icons.Rounded.MeetingRoom
-    val DoorClosed = Icons.Rounded.DoorFront
-    val Alarm = Icons.Rounded.Shield
-    val Bell = Icons.Rounded.Notifications
-    val Night = Icons.Rounded.NightsStay
-    val Solar = Icons.Rounded.WbSunny
-    val Battery = Icons.Rounded.BatteryChargingFull
-    val Desk = Icons.Rounded.Desk
-    val Sunrise = Icons.Rounded.WbTwilight
-    val Leaving = Icons.Rounded.Logout
-    val Coming = Icons.Rounded.Home
-    val Power = Icons.Rounded.Bolt
-    val Plug = Icons.Rounded.ElectricalServices
-    val House = Icons.Rounded.Home
+    val Light = Ph.Lightbulb
+    val Temperature = Ph.Thermometer
+    val Humidity = Ph.Drop
+    val Climate = Ph.Snowflake
+    val Door = Ph.DoorOpen
+    val DoorClosed = Ph.Door
+    val Alarm = Ph.Shield
+    val AlarmOk = Ph.ShieldCheck
+    val Bell = Ph.Bell
+    val Night = Ph.Moon
+    val Solar = Ph.Sun
+    val Battery = Ph.Battery
+    val Desk = Ph.Desk
+    val Sunrise = Ph.SunHorizon
+    val Leaving = Ph.SignOut
+    val Coming = Ph.House
+    val Power = Ph.Lightning
+    val Plug = Ph.Plug
+    val House = Ph.House
 
     fun room(key: String): ImageVector = when (key) {
-        "bed" -> Icons.Rounded.Bed
-        "child" -> Icons.Rounded.ChildCare
-        "sparkles" -> Icons.Rounded.AutoAwesome
-        "sofa" -> Icons.Rounded.Weekend
-        "bath" -> Icons.Rounded.Bathtub
-        "kitchen" -> Icons.Rounded.Kitchen
-        "washer" -> Icons.Rounded.LocalLaundryService
-        "hallway" -> Icons.Rounded.Stairs
-        else -> Icons.Rounded.Home
+        "bed" -> Ph.Bed
+        "child" -> Ph.Baby
+        "sparkles" -> Ph.Sparkle
+        "sofa" -> Ph.Couch
+        "bath" -> Ph.Bathtub
+        "kitchen" -> Ph.CookingPot
+        "washer" -> Ph.Washer
+        "hallway" -> Ph.Stairs
+        else -> Ph.House
     }
 
     /** Icon keys used by the SwiftUI sensor/device cards. */
@@ -85,9 +52,9 @@ object HumeIcons {
         "desk" -> Desk
         "door" -> DoorClosed
         "snowflake" -> Climate
-        "fire" -> Icons.Rounded.LocalFireDepartment
-        "cooking" -> Icons.Rounded.SoupKitchen
-        "dishwasher", "washer", "dryer" -> Icons.Rounded.LocalLaundryService
+        "fire" -> Ph.Fire
+        "cooking" -> Ph.CookingPot
+        "dishwasher", "washer", "dryer" -> Ph.Washer
         else -> Power
     }
 
@@ -106,22 +73,22 @@ object HumeIcons {
         }
     }
 
-    /** Bo icon ROUNDED dac - tab dang chon. */
+    /** Tab dang chon: cung hinh, net day hon. */
     fun tab(tab: HumeTab): ImageVector = when (tab) {
-        HumeTab.Home -> Icons.Rounded.Home
-        HumeTab.Energy -> Icons.Rounded.Bolt
-        HumeTab.Security -> Icons.Rounded.Shield
-        HumeTab.Profile -> Icons.Rounded.Person
-        HumeTab.AI -> Icons.Rounded.AutoAwesome
+        HumeTab.Home -> Ph.HouseBold
+        HumeTab.Energy -> Ph.LightningBold
+        HumeTab.Security -> Ph.ShieldBold
+        HumeTab.Profile -> Ph.UserBold
+        HumeTab.AI -> Ph.SparkleBold
     }
 
-    /** Bo icon vien manh - tab khong chon. */
+    /** Tab khong chon: net thuong. */
     fun tabOutline(tab: HumeTab): ImageVector = when (tab) {
-        HumeTab.Home -> Icons.Outlined.Home
-        HumeTab.Energy -> Icons.Outlined.Bolt
-        HumeTab.Security -> Icons.Outlined.Shield
-        HumeTab.Profile -> Icons.Outlined.Person
-        HumeTab.AI -> Icons.Outlined.AutoAwesome
+        HumeTab.Home -> Ph.House
+        HumeTab.Energy -> Ph.Lightning
+        HumeTab.Security -> Ph.Shield
+        HumeTab.Profile -> Ph.User
+        HumeTab.AI -> Ph.Sparkle
     }
 
     fun tab(tab: HumeTab, selected: Boolean): ImageVector =
@@ -135,7 +102,7 @@ object HumeIcons {
             text.contains("ng\u1ee7") || text.contains("night") || text.contains("sleep") -> Night
             text.contains("ra kh\u1ecfi") || text.contains("away") || text.contains("leave") -> Leaving
             text.contains("v\u1ec1 nh\u00e0") || text.contains("home") || text.contains("arrive") -> Coming
-            else -> Icons.Rounded.AutoAwesome
+            else -> Ph.Sparkle
         }
     }
 }
