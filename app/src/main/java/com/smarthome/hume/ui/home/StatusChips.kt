@@ -46,15 +46,16 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
 /*
- * Hai chip theo ban HTML cocopi:
- *  - chieu cao 48, bo goc 24, nen gray000
- *  - vong tron icon 36 (bo goc 18), chu 14 weight 500
- *  - chip den sang mau #b8860b khi co bong dang bat
+ * Hai chip trang thai. Da THU NHO cho can doi voi khung hinh S26U:
+ *  - chieu cao 42 (truoc 48), bo goc 21
+ *  - vong tron icon 30 (truoc 36), icon 17 (truoc 20)
+ *  - chu 13 (truoc 14)
  */
 private val LightsGold = Color(0xFFB8860B)
 private val AlarmGreen = Color(0xFF4CAF50)
-private val PillHeight = 48.dp
-private val PillRadius = 24.dp
+private val PillHeight = 42.dp
+private val PillRadius = 21.dp
+private val IconCircle = 30.dp
 
 @Composable
 fun StatusChipRow(
@@ -116,7 +117,7 @@ fun StatusChipRow(
                 )
                 BigPill(
                     icon = HumeIcons.Light,
-                    label = if (lightsOn == 0) "Kh\u00f4ng b\u00f3ng n\u00e0o b\u1eadt" else "$lightsOn b\u00f3ng \u0111\u00e8n",
+                    label = if (lightsOn == 0) "T\u1eaft h\u1ebft" else "$lightsOn b\u00f3ng \u0111\u00e8n",
                     tint = LightsGold,
                     active = lightsOn > 0,
                     modifier = Modifier.weight(1f),
@@ -147,24 +148,24 @@ private fun BigPill(
                 RoundedCornerShape(PillRadius),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 4.dp),
+            .padding(start = 6.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(36.dp).clip(CircleShape).background(HumeColors.Gray00),
+            Modifier.size(IconCircle).clip(CircleShape).background(HumeColors.Gray00),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 tint = if (active) tint else HumeColors.Gray1000,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(17.dp),
             )
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(7.dp))
         Text(
             label,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = if (active) tint else HumeColors.Gray1000,
             maxLines = 1,
@@ -185,8 +186,8 @@ private fun ModePill(
 ) {
     Box(
         modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .height(34.dp)
+            .clip(RoundedCornerShape(17.dp))
             .background(if (selected) tint else HumeColors.Gray00)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -196,12 +197,12 @@ private fun ModePill(
                 icon,
                 contentDescription = label,
                 tint = if (selected) Color.White else HumeColors.Gray1000,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(15.dp),
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
             Text(
                 label,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = if (selected) Color.White else HumeColors.Gray1000,
                 maxLines = 1,

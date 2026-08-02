@@ -181,34 +181,50 @@ class HomeViewModel(
     }
 
     /**
-     * Seven day series for the solar card, following SolarEnergyCardView.swift:
-     * the six past days are immutable, so they are cached in DailySnapshotStore
-     * and only fetched from history when a day is missing. Today is not cached,
-     * the caller reads it live from the websocket state.
+     * Seven day series for the solar / consumption cards, following
+     * SolarEnergyCardView.swift.
+     *
+     * SUA LOI MAT DATA 7 NGAY:
+     *  - Truoc day mot ngay da ghi snapshot = 0.0 (vi luc do history chua ve kip)
+     *    se bi coi la "da co" vinh vien -> bieu do dung yen o 0. Nay 0.0 duoc coi
+     *    la CHUA CO nen moi lan mo lai app deu thu lay lai.
+     *  - Neu Home Assistant tra ve rong (recorder da purge / query nang) thi
+     *    history() tu dong fallback sang SensorDatabase cuc bo.
+     *  - Neu mot ngay khong co diem nao thi lay diem cuoi cung TRUOC nua dem hom
+     *    do (bo dem hang ngay giu nguyen gia tri cho toi khi reset).
      */
     suspend fun weekly(entityId: String): List<DayValue> {
         val now = System.currentTimeMillis()
         val dayMs = 24L * 60L * 60L * 1000L
-        val missing = (1..6)
-            .map { DailySnapshotStore.startOfDay(now, -it) }
-            .filter { snapshots.get(entityId, it) == null }
+        val dayStarts = (1..6).map { DailySnapshotStore.startOfDay(now, -it) }
+        val missing = dayStarts.filter { (snapshots.get(entityId, it) ?: 0.0) <= 0.0 }
+        val resolved = HashMap<Long, Double>()
 
         if (missing.isNotEmpty()) {
             val points = history(entityId, 24 * 7)
-            missing.forEach { dayStart ->
-                val dayPoints = points.filter { it.timeMs in dayStart until (dayStart + dayMs) }
-                // A daily counter peaks right before midnight, so the maximum of
-                // the day is the total for that day.
-                if (dayPoints.isNotEmpty()) snapshots.set(entityId, dayStart, dayPoints.maxOf { it.value })
+            if (points.isNotEmpty()) {
+                missing.forEach { dayStart ->
+                    val dayEnd = dayStart + dayMs
+                    // Bo dem hang ngay dat dinh ngay truoc nua dem -> max cua ngay la tong ngay do.
+                    val inDay = points.filter { it.timeMs in dayStart until dayEnd }
+                    val value = inDay.maxOfOrNull { it.value }
+                        ?: points.filter { it.timeMs < dayEnd }.maxByOrNull { it.timeMs }?.value
+                        ?: 0.0
+                    if (value > 0.0) {
+                        snapshots.set(entityId, dayStart, value)
+                        resolved[dayStart] = value
+                    }
+                }
+                snapshots.prune()
             }
-            snapshots.prune()
         }
 
         val past = (6 downTo 1).map { offset ->
             val dayStart = DailySnapshotStore.startOfDay(now, -offset)
+            val value = snapshots.get(entityId, dayStart) ?: resolved[dayStart] ?: 0.0
             DayValue(
                 label = DailySnapshotStore.dayLabel(dayStart),
-                value = ((snapshots.get(entityId, dayStart) ?: 0.0) * 10).toInt() / 10.0,
+                value = (value * 10).toInt() / 10.0,
                 isToday = false,
             )
         }
