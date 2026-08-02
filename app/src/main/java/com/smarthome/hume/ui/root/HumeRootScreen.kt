@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
@@ -56,18 +58,19 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
 /*
- * Navbar theo One UI 8.5 "floating tab bar":
- *  - MOT thanh pill lien khoi, bo tron hoan toan, co le trai/phai 12dp va le duoi 12dp
- *  - nen frosted: mau surface ban trong suot + vien sang mo, do bong nhe -> noi tren noi dung
- *  - 4 tab chia deu chieu ngang, CHI ICON (One UI 8.5 da bo nhan chu duoi icon)
- *  - tab dang chon: highlighter dang capsule nam SAU icon, cung co voi cac tab khac (khong phong to)
- *  - cuon xuong: ca thanh truot xuong khoi man hinh
+ * Navbar One UI 8.5 - floating tab bar.
+ *  - MOT pill lien khoi, NEN DAC (Compose khong blur duoc nen backdrop; de trong suot
+ *    thi noi dung phia sau loi qua nhin rat ban -> dung mau dac + scrim mo dan phia tren).
+ *  - Le trai/phai 14dp, le duoi 14dp, cao 58dp, bo tron nua chieu cao.
+ *  - 4 tab chia deu, CHI ICON, tab chon = capsule highlighter cung co.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
-private val BarHeight = 60.dp
-private val BarSideMargin = 12.dp
-private val CapsuleHeight = 44.dp
-private val CapsuleWidth = 62.dp
+private val BarHeight = 58.dp
+private val BarSideMargin = 14.dp
+private val BarBottomMargin = 14.dp
+private val CapsuleHeight = 40.dp
+private val CapsuleWidth = 58.dp
+private val ScrimHeight = 28.dp
 
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
@@ -91,8 +94,8 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         }
         AnimatedVisibility(
             visible = !(navHidden && tab == HumeTab.Home),
-            enter = slideInVertically(animationSpec = tween(380)) { it * 2 } + fadeIn(tween(220)),
-            exit = slideOutVertically(animationSpec = tween(380)) { it * 2 } + fadeOut(tween(220)),
+            enter = slideInVertically(animationSpec = tween(360)) { it * 2 } + fadeIn(tween(200)),
+            exit = slideOutVertically(animationSpec = tween(360)) { it * 2 } + fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             HumeNavBar(selected = tab, onSelect = { tab = it })
@@ -115,25 +118,45 @@ private fun AiPlaceholder() {
 @Composable
 private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(start = BarSideMargin, end = BarSideMargin, bottom = 12.dp)
-            .height(BarHeight)
-            .shadow(14.dp, shape, spotColor = Color.Black.copy(alpha = 0.5f))
-            .clip(shape)
-            .background(HumeColors.Card.copy(alpha = 0.82f))
-            .border(1.dp, HumeColors.Gray1000.copy(alpha = 0.06f), shape),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        navTabs.forEach { item ->
-            NavItem(
-                item = item,
-                active = selected == item,
-                onClick = { onSelect(item) },
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
+    val background = MaterialTheme.colorScheme.background
+    Column(Modifier.fillMaxWidth()) {
+        // Scrim: noi dung cuon toi day mo dan vao nen, khong dam sam vao thanh nav.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(ScrimHeight)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(background.copy(alpha = 0f), background.copy(alpha = 0.85f))
+                    )
+                )
+        )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(background.copy(alpha = 0.85f))
+                .navigationBarsPadding()
+                .padding(start = BarSideMargin, end = BarSideMargin, bottom = BarBottomMargin, top = 2.dp),
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(BarHeight)
+                    .shadow(12.dp, shape, spotColor = Color.Black.copy(alpha = 0.6f))
+                    .clip(shape)
+                    .background(HumeColors.Card)
+                    .border(1.dp, HumeColors.Gray1000.copy(alpha = 0.07f), shape),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                navTabs.forEach { item ->
+                    NavItem(
+                        item = item,
+                        active = selected == item,
+                        onClick = { onSelect(item) },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    )
+                }
+            }
         }
     }
 }
@@ -149,16 +172,16 @@ private fun NavItem(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.9f else 1f, tween(140), label = "navPress")
     val capsuleColor by animateColorAsState(
-        if (active) HumeColors.Orange.copy(alpha = 0.18f) else Color.Transparent,
-        tween(260),
+        if (active) HumeColors.Orange.copy(alpha = 0.16f) else Color.Transparent,
+        tween(240),
         label = "navCapsule",
     )
     val iconColor by animateColorAsState(
         if (active) HumeColors.Orange else HumeColors.Gray500,
-        tween(260),
+        tween(240),
         label = "navIcon",
     )
-    val capsuleW by animateDpAsState(if (active) CapsuleWidth else 0.dp, tween(280), label = "navCapsuleW")
+    val capsuleW by animateDpAsState(if (active) CapsuleWidth else 0.dp, tween(260), label = "navCapsuleW")
 
     Box(
         modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick),
@@ -174,7 +197,7 @@ private fun NavItem(
             HumeIcons.tab(item),
             contentDescription = item.label,
             tint = iconColor,
-            modifier = Modifier.size(24.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+            modifier = Modifier.size(23.dp).graphicsLayer { scaleX = scale; scaleY = scale },
         )
     }
 }
