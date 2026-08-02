@@ -62,6 +62,9 @@ import com.smarthome.hume.ui.theme.glassSurface
  * entity per domain and opens the sensor manager, the managed lists that feed
  * the Home header, and the info card. The AI group is gone because the AI tab
  * was removed, and the wallpaper group is iOS-only (PhotosPicker + AVFoundation).
+ *
+ * Read-only value boxes, icon wells and domain chips use tertiarySystemFill
+ * like the SwiftUI original, so they do not stay white in dark mode.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,7 +134,7 @@ fun DeviceManagerSheet(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White.copy(alpha = 0.55f))
+                                .background(HumeColors.FillTertiary)
                                 .padding(12.dp),
                         )
                     }
@@ -142,7 +145,7 @@ fun DeviceManagerSheet(
                             Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White.copy(alpha = 0.55f))
+                                .background(HumeColors.FillTertiary)
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -202,7 +205,7 @@ fun DeviceManagerSheet(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            Modifier.size(42.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.55f)),
+                            Modifier.size(42.dp).clip(CircleShape).background(HumeColors.FillTertiary),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -242,7 +245,7 @@ fun DeviceManagerSheet(
                                     Row(
                                         Modifier
                                             .clip(RoundedCornerShape(HumeShapes.Pill))
-                                            .background(Color.White.copy(alpha = 0.55f))
+                                            .background(HumeColors.FillTertiary)
                                             .padding(horizontal = 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
@@ -330,7 +333,7 @@ private fun ManagerRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(42.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.55f)),
+            Modifier.size(42.dp).clip(CircleShape).background(HumeColors.FillTertiary),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = HumeColors.Orange, modifier = Modifier.size(18.dp))
