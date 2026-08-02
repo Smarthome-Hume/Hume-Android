@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,28 +50,15 @@ import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.glassPill
 
-/** The only tabs the app ships with. The AI butler tab was removed. */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 
-/**
- * One UI 8.5 bottom navigation metrics.
- *
- * Samsung docks the bar to the bottom edge (it is not a floating pill), gives
- * every item the same width, and marks the active one with a rounded
- * "selected" indicator behind the icon only, with the label sitting below it.
- */
-private val BarHeight = 64.dp
-private val IndicatorWidth = 64.dp
-private val IndicatorHeight = 32.dp
-private val IconSize = 24.dp
+private val BarHeight = 66.dp
+private val BarHorizontalInset = 21.dp
+private val IndicatorHeight = 54.dp
+private val IconSize = 22.dp
 
-/**
- * Root shell.
- *
- * Android 15 (compileSdk 35) always draws edge to edge, so every screen is
- * inset by the status bar here instead of each screen guessing a top padding.
- */
 @Composable
 fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, settings: HumeSettings) {
     if (!settings.hasToken) {
@@ -79,8 +67,6 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
     }
     var tab by remember { mutableStateOf(HumeTab.Home) }
 
-    // ContentView.swift calls ha.setActiveTab whenever the selection changes, so
-    // the manager can freeze every entity the new tab does not draw.
     LaunchedEffect(tab) { ha.setActiveTab(tab) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -101,27 +87,21 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
     }
 }
 
-/**
- * Docked bottom bar. The surface spans the full width and runs into the gesture
- * area, with only its top corners rounded, which is how One UI draws its own
- * navigation surfaces; the gesture inset is applied to the content row so the
- * background still bleeds behind the gesture bar.
- */
 @Composable
 private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit, modifier: Modifier = Modifier) {
-    Column(
+    Box(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-            .background(HumeColors.Card),
+            .navigationBarsPadding()
+            .padding(start = BarHorizontalInset, end = BarHorizontalInset, bottom = 6.dp),
     ) {
-        // Hairline separator, the One UI divider above a docked bar.
-        Box(Modifier.fillMaxWidth().height(1.dp).background(HumeColors.Divider))
         Row(
             Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .height(BarHeight),
+                .height(BarHeight)
+                .shadow(18.dp, RoundedCornerShape(36.dp), ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
+                .glassPill(radius = 36.dp)
+                .padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -132,45 +112,40 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit, modifier:
     }
 }
 
-/**
- * A single destination. Equal weight for every item is what keeps the row from
- * looking skewed: sizing each item by its own label length made the row drift
- * to one side.
- */
 @Composable
 private fun RowScope.NavItem(item: HumeTab, selected: Boolean, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val indicator by animateColorAsState(
-        targetValue = if (selected) HumeColors.ChipPink else Color.Transparent,
+        targetValue = if (selected) Color.White.copy(alpha = if (HumeColors.isDark) 0.18f else 0.72f) else Color.Transparent,
         animationSpec = tween(180),
         label = "navIndicator",
     )
     val content by animateColorAsState(
-        targetValue = if (selected) HumeColors.OrangeDeep else HumeColors.TextSecondary,
+        targetValue = if (selected) HumeColors.Ink else HumeColors.Ink.copy(alpha = 0.55f),
         animationSpec = tween(180),
         label = "navContent",
     )
     val indicatorWidth by animateDpAsState(
-        targetValue = if (selected) IndicatorWidth else IndicatorHeight,
+        targetValue = if (selected) 76.dp else 54.dp,
         animationSpec = tween(180),
         label = "navIndicatorWidth",
     )
 
-    Column(
+    Box(
         Modifier
             .weight(1f)
             .fillMaxSize()
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
+        Column(
             Modifier
                 .width(indicatorWidth)
                 .height(IndicatorHeight)
-                .clip(RoundedCornerShape(50))
+                .clip(RoundedCornerShape(28.dp))
                 .background(indicator),
-            contentAlignment = Alignment.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Icon(
                 HumeIcons.tab(item),
@@ -178,16 +153,16 @@ private fun RowScope.NavItem(item: HumeTab, selected: Boolean, onClick: () -> Un
                 tint = content,
                 modifier = Modifier.size(IconSize),
             )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                item.label,
+                fontSize = 10.sp,
+                maxLines = 1,
+                softWrap = false,
+                textAlign = TextAlign.Center,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = content,
+            )
         }
-        Spacer(Modifier.height(3.dp))
-        Text(
-            item.label,
-            fontSize = 11.sp,
-            maxLines = 1,
-            softWrap = false,
-            textAlign = TextAlign.Center,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = content,
-        )
     }
 }

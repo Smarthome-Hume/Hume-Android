@@ -55,26 +55,15 @@ import kotlin.math.abs
 private const val USER_NAME = "H\u1ea3i H\u00e0"
 private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 
-/** HomeView.swift: ScrollView horizontal padding 16, group spacing 14. */
 private val PagePadding = 16.dp
 private val GroupSpacing = 14.dp
+private val NavBarRoom = 112.dp
 
-/** Height of the floating nav pill plus the gesture bar, so nothing hides under it. */
-private val NavBarRoom = 150.dp
-
-/** Alarmo when present, alarm_security otherwise (AlarmLights.swift). */
 internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
     if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
 
 internal const val ALARM_ENTITY = HumeConfig.ALARM_FALLBACK
 
-/**
- * Home dashboard ported from HomeView.swift.
- *
- * The screen is a ZStack: the greeting header and the alarm/lights row are
- * pinned on top and never scroll, and the scrollable part below them is three
- * GroupGlassContainer clusters (energy, card grid, scenes).
- */
 @Composable
 fun HomeScreen(ha: HomeAssistantRepository) {
     val context = LocalContext.current
@@ -100,18 +89,10 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     val todayPv = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
 
     LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
-    // Keyed on "do we have a snapshot yet", never on the entity count: the count
-    // changes whenever Home Assistant adds or drops an entity, which would restart
-    // the subscription for no reason.
     LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
-    // Today's bar follows the live sensor, the six past days come from the cache.
     LaunchedEffect(todayPv.toInt()) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
-    // HomeView.onChange(of: activeSheet?.id) -> ha.setActiveRoom(key): every
-    // device of the open room becomes realtime, and closing the sheet releases
-    // them again.
     LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
 
-    // Six small sensor tiles, exactly the list the iOS app shows.
     val leftTiles = HumeConfig.sensorTiles.map { tile ->
         SmallTile(
             icon = HumeIcons.sensor(tile.icon),
@@ -121,7 +102,6 @@ fun HomeScreen(ha: HomeAssistantRepository) {
         )
     }
 
-    // Right column: the two selector-driven cards (device power + door).
     val deviceKey = entities[HumeConfig.ACTIVE_CARD]?.state
     val device = HumeConfig.deviceCards[deviceKey] ?: HumeConfig.deviceCards.getValue("Table")
     val doorKey = entities[HumeConfig.ACTIVE_CARD_2]?.state
@@ -134,8 +114,6 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             entityId = device.entityId,
         ),
         SmallTile(
-            // DoorCardView.swift always draws the same "door" glyph; only the
-            // timestamp underneath changes when the contact opens or closes.
             icon = HumeIcons.Door,
             value = agoText(entities[door.entityId]?.lastChanged),
             label = door.label,
@@ -149,14 +127,12 @@ fun HomeScreen(ha: HomeAssistantRepository) {
             contentPadding = PaddingValues(
                 start = PagePadding,
                 end = PagePadding,
-                // HomeView.swift: .padding(.top, headerHeight + 15)
-                top = headerHeight + 12.dp,
+                top = headerHeight + 15.dp,
                 bottom = NavBarRoom,
             ),
             verticalArrangement = Arrangement.spacedBy(GroupSpacing),
         ) {
             item {
-                // Cluster 1: solar chart and Powerwall card.
                 GlassGroup(radius = 37.dp, spacing = 14.dp) {
                     SolarChartCard(
                         title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
@@ -175,7 +151,6 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 }
             }
             item {
-                // Cluster 2: the card grid, corner radius 45 on iOS.
                 GlassGroup(radius = 45.dp, spacing = 12.dp) {
                     RoomsShowcase(
                         climateRooms = vm.climateRooms,
@@ -191,21 +166,19 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 }
             }
             item {
-                // Cluster 3: scenes, which live in LocalSceneStore, not in scene.* entities.
                 GlassGroup(radius = 37.dp, spacing = 10.dp) {
                     SceneGridSection(ha = ha, alarmState = alarmState)
                 }
             }
         }
 
-        // Pinned header: greeting row plus the alarm/lights container.
         Column(
             Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .onSizeChanged { size -> headerHeight = with(density) { size.height.toDp() } }
-                .background(MaterialTheme.colorScheme.background)
-                .padding(start = PagePadding, end = PagePadding, top = 4.dp, bottom = 4.dp),
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.94f))
+                .padding(start = PagePadding, end = PagePadding, top = 6.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             HomeHeader(
@@ -215,8 +188,6 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                 connected = state.connected,
                 alertCount = state.alertCount,
                 onOpenNotifications = { notificationSheet = true },
-                // syncPerson() in GreetingHeaderView.swift: entity_picture is a
-                // relative path, so it only works once the base URL is prepended.
                 avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl),
                 onManageNotifications = { manageNotif = true },
             )
@@ -231,7 +202,6 @@ fun HomeScreen(ha: HomeAssistantRepository) {
                     Text(message, style = MaterialTheme.typography.bodySmall, color = HumeColors.Red)
                 }
             }
-            // GroupGlassContainer(cornerRadius: 34, innerPadding: 8) { AlarmLightsView() }
             GlassGroup(radius = 34.dp, padding = 8.dp, spacing = 8.dp) {
                 StatusChipRow(
                     alarmState = alarmState,
@@ -257,16 +227,10 @@ fun HomeScreen(ha: HomeAssistantRepository) {
         ManageListSheet(kind = ManagedKind.NOTIF, ha = ha, onDismiss = { manageNotif = false })
     }
     chartEntityId?.let { id ->
-        ChartDialog(
-            entityId = id,
-            entities = entities,
-            loadHistory = { vm.history(it) },
-            onDismiss = { chartEntityId = null },
-        )
+        ChartDialog(entityId = id, entities = entities, loadHistory = { vm.history(it) }, onDismiss = { chartEntityId = null })
     }
 }
 
-/** syncPerson(): absolute avatar URL built from ha_url + entity_picture. */
 private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
     val picture = person?.attrString("entity_picture")?.takeIf { it.isNotBlank() } ?: return null
     if (picture.startsWith("http")) return picture
@@ -274,7 +238,6 @@ private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
     return base.trimEnd('/') + picture
 }
 
-/** GroupGlassContainer.swift: one glass panel wrapping a stack of cards. */
 @Composable
 private fun GlassGroup(
     radius: Dp,
@@ -292,7 +255,6 @@ private fun GlassGroup(
     )
 }
 
-/** LiveSmallSensor formatting: one decimal below 10, none above. */
 private fun sensorValue(entity: HomeEntity?, unit: String): String {
     val value = entity?.numericState ?: return (entity?.state ?: "--") + " " + unit
     val text = if (abs(value) < 10.0) String.format(Locale.US, "%.1f", value)
@@ -300,7 +262,6 @@ private fun sensorValue(entity: HomeEntity?, unit: String): String {
     return "$text $unit"
 }
 
-/** DoorCardView.agoText */
 internal fun agoText(lastChanged: String?): String {
     val millis = parseTimestamp(lastChanged) ?: return "\u2014"
     val minutes = ((System.currentTimeMillis() - millis) / 60_000L).toInt()
@@ -327,20 +288,12 @@ private fun greeting(): String {
     }
 }
 
-/** Clock time when the remaining runtime in hours runs out. */
 private fun endTimeLabel(hoursRemaining: Double?): String {
     if (hoursRemaining == null || hoursRemaining <= 0.0) return "--:--"
     val calendar = Calendar.getInstance()
     calendar.add(Calendar.MINUTE, (hoursRemaining * 60).toInt())
-    return String.format(
-        Locale.US,
-        "%02d:%02d",
-        calendar.get(Calendar.HOUR_OF_DAY),
-        calendar.get(Calendar.MINUTE),
-    )
+    return String.format(Locale.US, "%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
 }
-
-// ---- shared helpers used by the sheets and the view model ----
 
 internal fun toggleLight(ha: HomeAssistantRepository, room: RoomConfig, entities: Map<String, HomeEntity>) {
     val on = entities[room.lightEntity]?.isOn == true
@@ -360,7 +313,6 @@ internal fun Map<String, HomeEntity>.num(entityId: String, digits: Int): String 
     return String.format(Locale.US, "%.${digits}f", value)
 }
 
-internal fun Map<String, HomeEntity>.attr(entityId: String, key: String): String? =
-    this[entityId]?.attrString(key)
+internal fun Map<String, HomeEntity>.attr(entityId: String, key: String): String? = this[entityId]?.attrString(key)
 
 internal fun alarmLabel(state: String?): String = HumeConfig.alarmLabel(state)

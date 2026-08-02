@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -12,35 +13,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
-/*
- * Colour system ported 1:1 from the SwiftUI project.
- *
- * Core/AppTheme.swift builds every neutral with
- *     Color.dynamic(light:dark:) -> UIColor { userInterfaceStyle == .dark ? dark : light }
- * so the iOS app follows the system setting and has no in-app switch. The
- * thirteen grey steps below are copied verbatim from that file, and the accent
- * colours are copied from the same file plus Theme/HumeTheme.swift. Accents are
- * plain constants in Swift, so they must NOT change between modes here either.
- *
- * The colours Swift takes from UIKit (systemBackground, label, secondaryLabel,
- * tertiaryLabel, tertiarySystemFill, secondarySystemFill) are reproduced with
- * Apple's published values for both appearances.
- */
 object HumeColors {
-
-    /**
-     * Current appearance. Set once per composition by [HumeTheme] from
-     * isSystemInDarkTheme(). It is snapshot state, so every colour read below
-     * recomposes (and redraws inside Canvas) when the system theme flips.
-     */
     var isDark by mutableStateOf(false)
         internal set
 
     private fun dyn(light: Color, dark: Color): Color = if (isDark) dark else light
 
-    // ── AppTheme.swift: Color.dynamic grey ramp ──────────────────────────
     val Gray000: Color get() = dyn(Color(0xFFFFFFFF), Color(0xFF161616))
     val Gray00: Color get() = dyn(Color(0xFFF6F6F6), Color(0xFF313131))
     val Gray01: Color get() = dyn(Color(0xFFF6F6F6), Color(0xFF1C1C1C))
@@ -55,32 +37,18 @@ object HumeColors {
     val Gray900: Color get() = dyn(Color(0xFF262626), Color(0xFFEDEDED))
     val Gray1000: Color get() = dyn(Color(0xFF101010), Color(0xFFFAFAFA))
 
-    // ── UIKit semantic colours used by HumeTheme.swift ───────────────────
-    /** Color(.systemBackground) */
     val PageBG: Color get() = dyn(Color(0xFFFFFFFF), Color(0xFF000000))
-    /** Color(.label) */
     val Label: Color get() = dyn(Color(0xFF000000), Color(0xFFFFFFFF))
-    /** Color(.secondaryLabel) */
     val LabelSecondary: Color get() = dyn(Color(0x993C3C43), Color(0x99EBEBF5))
-    /** Color(.tertiaryLabel) */
     val LabelTertiary: Color get() = dyn(Color(0x4D3C3C43), Color(0x4DEBEBF5))
-    /** Color(.tertiarySystemFill) - the fallback background of humeElement */
     val FillTertiary: Color get() = dyn(Color(0x1F767680), Color(0x3D767680))
-    /** Color(.secondarySystemFill) */
     val FillSecondary: Color get() = dyn(Color(0x29787880), Color(0x52787880))
-    /** Separator, used for hairlines */
     val Separator: Color get() = dyn(Color(0x4A3C3C43), Color(0xA6545458))
 
-    // ── Fixed accents (AppTheme.swift + Theme/HumeTheme.swift) ───────────
-    /** AppTheme.activeOrange */
     val Orange = Color(0xFFF9784C)
-    /** ProfileView header gradient midpoint */
     val OrangeDeep = Color(0xFFE8653A)
-    /** AppTheme.activePink */
     val Salmon = Color(0xFFFAC0B6)
-    /** HumeTheme.orange */
     val OrangePure = Color(0xFFFF7700)
-    /** HumeTheme.green */
     val Green = Color(0xFF4AC84F)
     val Purple = Color(0xFFAD99E6)
     val Yellow = Color(0xFFF2D26F)
@@ -97,26 +65,16 @@ object HumeColors {
     val BattGreen = Color(0xFF3EFD51)
     val BattOrange = Color(0xFFF9784C)
 
-    // ── Names the Android screens already use ────────────────────────────
-    // Kept so no call site has to change; each one now points at the Swift
-    // token it actually corresponds to.
-
-    /** Page background: Color(.systemBackground). */
-    val Background: Color get() = PageBG
-    /** Card surface: AppTheme.gray000, the base of every glass card. */
-    val Card: Color get() = Gray000
-    /** Recessed surface behind cards: AppTheme.gray01. */
+    /** Android has no live WallpaperBackground from Swift, so use the Swift grey ramp to keep cards visible. */
+    val Background: Color get() = dyn(Color(0xFFF6F6F6), Color(0xFF000000))
+    val Card: Color get() = dyn(Color(0xFFFFFFFF), Color(0xFF161616))
     val CardSunken: Color get() = Gray01
     val TextPrimary: Color get() = Label
     val TextSecondary: Color get() = LabelSecondary
-    val Divider: Color get() = dyn(Color(0xFFE6E6E6), Color(0xFF2F2F2F))
-    /** AppTheme.gray1000, the strongest ink colour. */
+    val Divider: Color get() = dyn(Color(0x1F000000), Color(0xFF2F2F2F))
     val Ink: Color get() = Gray1000
-    /** Inactive bar/track: AppTheme.gray100. */
     val BarGrey: Color get() = Gray100
 
-    // Tinted fills. Swift paints these as accent-with-opacity so they work on
-    // either background; keeping them translucent does the same here.
     val OrangeSoft: Color get() = Orange.copy(alpha = if (isDark) 0.22f else 0.14f)
     val OrangeSofter: Color get() = Orange.copy(alpha = if (isDark) 0.14f else 0.08f)
     val ChipPink: Color get() = Orange.copy(alpha = if (isDark) 0.24f else 0.12f)
@@ -128,18 +86,13 @@ object HumeColors {
     val Amber: Color get() = AlarmOrange
     val AmberBar: Color get() = Color(0xFFFFB74D)
 
-    // Room card "light is on" gradient = AppTheme.activeGradient.
     val RoomOnStart: Color get() = Orange.copy(alpha = if (isDark) 0.34f else 0.22f)
     val RoomOnEnd: Color get() = Salmon.copy(alpha = if (isDark) 0.26f else 0.55f)
 }
 
-/** Frosted-glass constants matching HumeCardModifier / HumeElementModifier. */
 object HumeGlass {
-    /** .regularMaterial over the page background. */
-    val card: Color get() = if (HumeColors.isDark) Color(0xB3161616) else Color(0xD9FFFFFF)
-    /** Specular edge: .white.opacity(0.14) in Swift, dimmed for light mode. */
-    val edge: Color get() = if (HumeColors.isDark) Color(0x24FFFFFF) else Color(0x14000000)
-    /** humeElement fallback background: Color(.tertiarySystemFill). */
+    val card: Color get() = if (HumeColors.isDark) Color(0xB3161616) else Color(0xEFFFFFFF)
+    val edge: Color get() = if (HumeColors.isDark) Color(0x24FFFFFF) else Color(0x33000000)
     val element: Color get() = HumeColors.FillTertiary
 }
 
@@ -154,15 +107,10 @@ private fun schemeFor(dark: Boolean) = if (dark) {
         tertiary = Color(0xFFF2D26F),
         background = Color(0xFF000000),
         onBackground = Color(0xFFFFFFFF),
-        surface = Color(0xFF000000),
+        surface = Color(0xFF161616),
         onSurface = Color(0xFFFFFFFF),
         surfaceVariant = Color(0xFF1C1C1C),
         onSurfaceVariant = Color(0xFFAFAFAF),
-        surfaceContainerLowest = Color(0xFF101010),
-        surfaceContainerLow = Color(0xFF161616),
-        surfaceContainer = Color(0xFF161616),
-        surfaceContainerHigh = Color(0xFF1C1C1C),
-        surfaceContainerHighest = Color(0xFF313131),
         outline = Color(0xFF545454),
         outlineVariant = Color(0xFF2F2F2F),
         error = Color(0xFFF28073),
@@ -176,27 +124,18 @@ private fun schemeFor(dark: Boolean) = if (dark) {
         secondary = Color(0xFFFAC0B6),
         onSecondary = Color(0xFF101010),
         tertiary = Color(0xFFF2D26F),
-        background = Color(0xFFFFFFFF),
+        background = Color(0xFFF6F6F6),
         onBackground = Color(0xFF000000),
         surface = Color(0xFFFFFFFF),
         onSurface = Color(0xFF000000),
         surfaceVariant = Color(0xFFF6F6F6),
         onSurfaceVariant = Color(0xFF6D6D6D),
-        surfaceContainerLowest = Color(0xFFFFFFFF),
-        surfaceContainerLow = Color(0xFFFFFFFF),
-        surfaceContainer = Color(0xFFF6F6F6),
-        surfaceContainerHigh = Color(0xFFF6F6F6),
-        surfaceContainerHighest = Color(0xFFCECECE),
         outline = Color(0xFF9A9A9A),
         outlineVariant = Color(0xFFCECECE),
         error = Color(0xFFF28073),
     )
 }
 
-/**
- * Material shape scale for the theme. The app's own corner radii live in the
- * HumeShapes object in HumeSurfaces.kt, so this one keeps a different name.
- */
 private val HumeMaterialShapes = Shapes(
     extraSmall = RoundedCornerShape(10.dp),
     small = RoundedCornerShape(14.dp),
@@ -205,15 +144,34 @@ private val HumeMaterialShapes = Shapes(
     extraLarge = RoundedCornerShape(30.dp),
 )
 
-/**
- * Follows the system appearance, exactly like the SwiftUI app, which never
- * calls preferredColorScheme and lets Color.dynamic resolve per trait.
- */
+private fun TextStyle.withHumeFont() = copy(fontFamily = FontFamily.SansSerif)
+
+private val HumeTypography = Typography().let { t ->
+    Typography(
+        displayLarge = t.displayLarge.withHumeFont(),
+        displayMedium = t.displayMedium.withHumeFont(),
+        displaySmall = t.displaySmall.withHumeFont(),
+        headlineLarge = t.headlineLarge.withHumeFont(),
+        headlineMedium = t.headlineMedium.withHumeFont(),
+        headlineSmall = t.headlineSmall.withHumeFont(),
+        titleLarge = t.titleLarge.withHumeFont(),
+        titleMedium = t.titleMedium.withHumeFont(),
+        titleSmall = t.titleSmall.withHumeFont(),
+        bodyLarge = t.bodyLarge.withHumeFont(),
+        bodyMedium = t.bodyMedium.withHumeFont(),
+        bodySmall = t.bodySmall.withHumeFont(),
+        labelLarge = t.labelLarge.withHumeFont(),
+        labelMedium = t.labelMedium.withHumeFont(),
+        labelSmall = t.labelSmall.withHumeFont(),
+    )
+}
+
 @Composable
 fun HumeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     SideEffect { HumeColors.isDark = darkTheme }
     MaterialTheme(
         colorScheme = schemeFor(darkTheme),
+        typography = HumeTypography,
         shapes = HumeMaterialShapes,
         content = content,
     )
