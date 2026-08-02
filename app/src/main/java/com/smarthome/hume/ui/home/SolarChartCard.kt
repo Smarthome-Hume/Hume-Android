@@ -1,7 +1,6 @@
 package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,7 +28,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -56,10 +53,11 @@ private val BarColor = Color(0xFFF9784C)
 /**
  * "\u0110i\u1ec7n m\u1eb7t tr\u1eddi" card: header with today's live total, then the week chart.
  *
- * The chart is the SwiftUI WeekBarLineChart: rounded bars in salmon, today
- * solid and the past days translucent with diagonal stripes, a Catmull-Rom
- * trend line through the bar tops, hollow dots on every point, and a tooltip
- * while a finger is down on the chart.
+ * CHI CON 2 LOP TREN MOI COT:
+ *  1. Track nen bo tron chay het chieu cao vung ve (mo).
+ *  2. Cot gia tri bo tron 2 dau.
+ * Lop hatch cheo cu bi clipRect goc vuong nen loi ra thanh mot mang hinh chu
+ * nhat cung mau phia duoi cot - da xoa han.
  */
 @Composable
 fun SolarChartCard(
@@ -120,6 +118,8 @@ private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier
         val rowWidth = barWidth * count + BarSpacing * (count - 1)
         val rowOffset = max(0f, (totalWidth - rowWidth).value / 2f).dp
         val maxValue = max(days.maxOf { it.value }, 5.0)
+        val trackColor = if (HumeColors.isDark) Color.White.copy(alpha = 0.06f)
+        else Color.Black.copy(alpha = 0.05f)
 
         /** Bar height in dp, using the original 1.15 head room. */
         fun barHeight(value: Double): Dp =
@@ -154,34 +154,27 @@ private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier
                     val spacing = BarSpacing.toPx()
                     val start = rowOffset.toPx()
                     val plot = size.height
-                    val corner = CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                    val corner = CornerRadius(barW / 2f, barW / 2f)
                     val points = ArrayList<Offset>(count)
 
                     days.forEachIndexed { index, day ->
                         val h = barHeight(day.value).toPx()
                         val left = start + index * (barW + spacing)
                         val top = plot - h
+                        // Lop 1: track nen, bo tron ca hai dau.
                         drawRoundRect(
-                            color = if (day.isToday) BarColor else BarColor.copy(alpha = 0.38f),
+                            color = trackColor,
+                            topLeft = Offset(left, 0f),
+                            size = Size(barW, plot),
+                            cornerRadius = corner,
+                        )
+                        // Lop 2: cot gia tri, bo tron ca hai dau. Khong con gi khac.
+                        drawRoundRect(
+                            color = if (day.isToday) BarColor else BarColor.copy(alpha = 0.55f),
                             topLeft = Offset(left, top),
                             size = Size(barW, h),
                             cornerRadius = corner,
                         )
-                        // Past days carry the diagonal hatch; today stays solid.
-                        if (!day.isToday) {
-                            clipRect(left = left, top = top, right = left + barW, bottom = plot) {
-                                var x = left - h
-                                while (x < left + barW + h) {
-                                    drawLine(
-                                        color = BarColor.copy(alpha = 0.25f),
-                                        start = Offset(x, top),
-                                        end = Offset(x + h, plot),
-                                        strokeWidth = 1.dp.toPx(),
-                                    )
-                                    x += 5.dp.toPx()
-                                }
-                            }
-                        }
                         // The line rides the value, not the clamped bar height.
                         val lineH = if (day.value > 0.0) {
                             (day.value / (maxValue * 1.15) * plot).toFloat()
@@ -265,6 +258,3 @@ private fun smoothPath(points: List<Offset>, tension: Float = 0.5f): Path {
     }
     return path
 }
-
-/** Unused placeholder kept so the card keeps compiling if a caller passes a background. */
-private fun Modifier.chartBackground(color: Color) = background(color, RoundedCornerShape(12.dp))
