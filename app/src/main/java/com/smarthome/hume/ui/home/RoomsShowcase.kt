@@ -43,9 +43,10 @@ import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.glassSurface
 
 private val CardRadius = 34.dp
-private val CardHeight = 240.dp
+private val CardHeight = 236.dp
 private val GridGap = 12.dp
 private val SensorPageHeight = 140.dp
+private val StepperWidth = 46.dp
 
 data class SmallTile(
     val icon: ImageVector,
@@ -98,12 +99,12 @@ private fun SensorPager(tiles: List<SmallTile>, onTileClick: (String) -> Unit) {
 
 @Composable
 private fun SensorTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
-    TileCard(tile = tile, cardHeight = 64.dp, circleSize = 60.dp, iconSize = 26.dp, onTileClick = onTileClick)
+    TileCard(tile = tile, cardHeight = 64.dp, circleSize = 56.dp, iconSize = 24.dp, onTileClick = onTileClick)
 }
 
 @Composable
 private fun WideTileCard(tile: SmallTile, onTileClick: (String) -> Unit) {
-    TileCard(tile = tile, cardHeight = 66.dp, circleSize = 62.dp, iconSize = 26.dp, trailingPadding = 20.dp, onTileClick = onTileClick)
+    TileCard(tile = tile, cardHeight = 66.dp, circleSize = 58.dp, iconSize = 24.dp, trailingPadding = 12.dp, onTileClick = onTileClick)
 }
 
 @Composable
@@ -112,7 +113,7 @@ private fun TileCard(
     cardHeight: Dp,
     circleSize: Dp,
     iconSize: Dp,
-    trailingPadding: Dp = 8.dp,
+    trailingPadding: Dp = 10.dp,
     onTileClick: (String) -> Unit,
 ) {
     Row(
@@ -128,9 +129,24 @@ private fun TileCard(
                 Icon(tile.icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(iconSize))
             }
         }
-        Column(Modifier.padding(start = 12.dp, end = trailingPadding)) {
-            Text(tile.value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, maxLines = 1, softWrap = false)
-            Text(tile.label, fontSize = 14.sp, color = HumeColors.TextPrimary.copy(alpha = 0.7f), maxLines = 1, softWrap = false)
+        Column(Modifier.weight(1f).padding(start = 8.dp, end = trailingPadding)) {
+            Text(
+                tile.value,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = HumeColors.TextPrimary,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                tile.label,
+                fontSize = 13.sp,
+                color = HumeColors.TextPrimary.copy(alpha = 0.7f),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -175,6 +191,7 @@ private fun RoomCardLarge(
     val temp = entities.num(room.tempEntity, 0)
     val humidity = entities.num(room.humidityEntity, 0)
     val target = entities.attr(room.climateEntity ?: "", "temperature")
+    val hasStepper = room.hasClimate && room.climateEntity != null
     val shape = RoundedCornerShape(CardRadius)
 
     Box(
@@ -191,17 +208,25 @@ private fun RoomCardLarge(
             .then(if (lightOn) Modifier.background(HumeColors.Orange.copy(alpha = 0.10f), shape) else Modifier)
             .border(1.dp, if (lightOn) HumeColors.Orange.copy(alpha = 0.40f) else Color.White.copy(alpha = 0.08f), shape)
             .clickable(onClick = onOpen)
-            .padding(16.dp),
+            .padding(14.dp),
     ) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(room.name, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary, maxLines = 2, modifier = Modifier.weight(1f))
+                Text(
+                    room.name,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HumeColors.TextPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 6.dp),
+                )
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
-                        Modifier.size(55.dp).clip(CircleShape).background(HumeColors.FillTertiary).clickable(onClick = onToggleLight),
+                        Modifier.size(52.dp).clip(CircleShape).background(HumeColors.FillTertiary).clickable(onClick = onToggleLight),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(HumeIcons.room(room.icon), contentDescription = null, tint = if (lightOn) HumeColors.Orange else HumeColors.TextPrimary, modifier = Modifier.size(28.dp))
+                        Icon(HumeIcons.room(room.icon), contentDescription = null, tint = if (lightOn) HumeColors.Orange else HumeColors.TextPrimary, modifier = Modifier.size(26.dp))
                     }
                     if (contactOpen) {
                         Box(Modifier.offset(x = 2.dp, y = 4.dp).size(8.dp).clip(CircleShape).background(HumeColors.Orange))
@@ -209,29 +234,33 @@ private fun RoomCardLarge(
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.Bottom) {
+                Row(
+                    Modifier.weight(1f).padding(end = 4.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
                     Text(
                         "$temp\u00b0",
-                        fontSize = if (room.hasClimate) 44.sp else 46.sp,
+                        fontSize = if (hasStepper) 38.sp else 44.sp,
+                        lineHeight = if (hasStepper) 42.sp else 48.sp,
                         fontWeight = FontWeight.ExtraLight,
                         color = HumeColors.TextPrimary,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Clip,
                     )
-                    Spacer(Modifier.width(4.dp))
                     Text(
                         "$humidity%",
-                        fontSize = if (room.hasClimate) 14.sp else 15.sp,
+                        fontSize = if (hasStepper) 13.sp else 15.sp,
                         fontWeight = FontWeight.Light,
                         color = HumeColors.TextPrimary,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Clip,
-                        modifier = Modifier.padding(bottom = 8.dp),
+                        modifier = Modifier.padding(bottom = 7.dp),
                     )
                 }
-                Spacer(Modifier.weight(1f))
-                if (room.hasClimate && room.climateEntity != null) {
+                if (hasStepper) {
                     TargetStepper(target = target, onAdjustTarget = onAdjustTarget)
                 }
             }
@@ -242,17 +271,25 @@ private fun RoomCardLarge(
 @Composable
 private fun TargetStepper(target: String?, onAdjustTarget: (Double) -> Unit) {
     Column(
-        Modifier.width(50.dp).clip(RoundedCornerShape(18.dp)).background(HumeColors.FillTertiary),
+        Modifier.width(StepperWidth).clip(RoundedCornerShape(18.dp)).background(HumeColors.FillTertiary),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().height(30.dp).clickable { onAdjustTarget(1.0) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "T\u0103ng", tint = HumeColors.TextPrimary, modifier = Modifier.size(20.dp))
+        Box(Modifier.fillMaxWidth().height(28.dp).clickable { onAdjustTarget(1.0) }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "T\u0103ng", tint = HumeColors.TextPrimary, modifier = Modifier.size(18.dp))
         }
-        Box(Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) {
-            Text(if (target == null) "--" else "$target\u00b0", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary, maxLines = 1, softWrap = false)
+        Box(Modifier.fillMaxWidth().height(36.dp), contentAlignment = Alignment.Center) {
+            Text(
+                if (target == null) "--" else "$target\u00b0",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = HumeColors.TextPrimary,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+            )
         }
-        Box(Modifier.fillMaxWidth().height(30.dp).clickable { onAdjustTarget(-1.0) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Gi\u1ea3m", tint = HumeColors.TextPrimary, modifier = Modifier.size(20.dp))
+        Box(Modifier.fillMaxWidth().height(28.dp).clickable { onAdjustTarget(-1.0) }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Gi\u1ea3m", tint = HumeColors.TextPrimary, modifier = Modifier.size(18.dp))
         }
     }
 }
