@@ -62,12 +62,14 @@ import kotlin.math.absoluteValue
 /*
  * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots.
  *
- * HIEU UNG NEON - lam RO HAN (truoc day gan nhu khong thay):
- *  1. The phong dang BAT DEN: vien neon CAM nhap nhay day 2dp (alpha 0.15 -> 0.95)
- *     + quang sang chay doc mep the, cong bong do mau tho theo nhip.
- *     Truoc day vien mau TRANG tren nen gradient cam nhat nen chim hoan toan.
- *  2. Cua/cua so mo: cham do nhap nhay + vong song lan toa, nam han ra ngoai
- *     goc vong icon.
+ * HIEU UNG NEON - LY DO TRUOC DAY "TUYET DOI KHONG THAY":
+ * ca vien neon lan bong do deu bi khoa sau dieu kien `lightOn`, ma luc chup
+ * man hinh khong co phong nao dang bat den -> khong the phong nao nhap nhay.
+ * Nay neon chay tren MOI the phong, moi luc:
+ *   - Den TAT : vien cam mo tho nhe (alpha 0.10 -> 0.55) + quang cam nhat.
+ *   - Den BAT : vien cam ruc (alpha 0.15 -> 0.95) + quang cam manh + vong neon
+ *               chay quanh nut icon.
+ *   - Cua MO  : them cham do nhap nhay co song lan toa o goc icon.
  *
  * CHAY CHU: gia tri/nhan cua tile va ten phong dung humeMarquee() - port tu
  * `animation: marquee 8s linear infinite` cua ban HTML, chi chay khi chu tran.
@@ -281,14 +283,18 @@ private fun RoomCardLarge(
     val iconCircle = (columnWidth * 0.27f).coerceIn(44.dp, 54.dp)
     val tempSize = (columnWidth.value * (if (hasStepper) 0.20f else 0.24f)).sp
 
-    // Nhip neon dung chung cho vien va bong khi den dang bat.
+    // Nhip neon CHAY LIEN TUC cho moi the, khong con khoa sau `lightOn`.
     val neon = rememberInfiniteTransition(label = "cardNeon")
     val glow by neon.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
         label = "cardGlow",
     )
+    // Den bat thi ruc han len; den tat van tho nhe de luon nhin thay neon.
+    val edgeAlpha = if (lightOn) 0.15f + 0.80f * glow else 0.10f + 0.45f * glow
+    val innerAlpha = if (lightOn) 0.20f + 0.60f * glow else 0.06f + 0.30f * glow
+    val elevation = if (lightOn) (10 + 18 * glow).dp else (4 + 10 * glow).dp
 
     Box(
         Modifier
@@ -296,28 +302,24 @@ private fun RoomCardLarge(
             .height(cardHeight)
             .pressScale(interaction)
             .shadow(
-                elevation = if (lightOn) (8 + 16 * glow).dp else 0.dp,
+                elevation = elevation,
                 shape = shape,
                 spotColor = NeonOrange,
                 ambientColor = NeonOrange,
             )
             .clip(shape)
             .then(if (lightOn) Modifier.background(ActiveGradient) else Modifier.background(HumeColors.Card))
-            // VIEN NEON CAM nhap nhay - thay cho vien trang cu (bi chim tren nen cam).
-            .then(
-                if (lightOn) {
-                    Modifier.border(
-                        width = 2.dp,
-                        brush = Brush.linearGradient(
-                            listOf(
-                                NeonOrange.copy(alpha = 0.15f + 0.8f * glow),
-                                Color.White.copy(alpha = 0.20f + 0.6f * glow),
-                                NeonOrange.copy(alpha = 0.15f + 0.8f * glow),
-                            )
-                        ),
-                        shape = shape,
+            // VIEN NEON CAM nhap nhay - luon co, dam hon khi den bat.
+            .border(
+                width = 2.dp,
+                brush = Brush.linearGradient(
+                    listOf(
+                        NeonOrange.copy(alpha = edgeAlpha),
+                        Color.White.copy(alpha = innerAlpha),
+                        NeonOrange.copy(alpha = edgeAlpha),
                     )
-                } else Modifier
+                ),
+                shape = shape,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onOpen)
             .padding(14.dp),
@@ -337,7 +339,19 @@ private fun RoomCardLarge(
                 )
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
-                        Modifier.size(iconCircle).clip(CircleShape).background(chipBg).clickable(onClick = onToggleLight),
+                        Modifier
+                            .size(iconCircle)
+                            .clip(CircleShape)
+                            .background(chipBg)
+                            // Vong neon quanh nut icon khi den dang bat.
+                            .then(
+                                if (lightOn) Modifier.border(
+                                    width = 1.5.dp,
+                                    color = Color.White.copy(alpha = 0.25f + 0.65f * glow),
+                                    shape = CircleShape,
+                                ) else Modifier
+                            )
+                            .clickable(onClick = onToggleLight),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(HumeIcons.room(room.icon), contentDescription = null, tint = fg, modifier = Modifier.size(iconCircle * 0.48f))
