@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +59,7 @@ private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
 
 private val PagePadding = 16.dp
 private val GroupSpacing = 14.dp
-private val NavBarRoom = 112.dp
+private val NavBarRoom = 108.dp
 
 internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
     if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
@@ -65,7 +67,7 @@ internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
 internal const val ALARM_ENTITY = HumeConfig.ALARM_FALLBACK
 
 @Composable
-fun HomeScreen(ha: HomeAssistantRepository) {
+fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {}) {
     val context = LocalContext.current
     val app = context.applicationContext as HumeApplication
     val lists = remember { ManagedListsStore.get(app) }
@@ -86,12 +88,27 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
     var headerHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
+    val listState = rememberLazyListState()
     val todayPv = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
 
     LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
     LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
     LaunchedEffect(todayPv.toInt()) { weekly = vm.weekly(HumeConfig.PV_TODAY) }
     LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
+
+    // LiquidNavBar minimize-on-scroll-down, like .tabBarMinimizeBehavior(.onScrollDown) in Swift.
+    LaunchedEffect(listState) {
+        var previous = 0
+        snapshotFlow { listState.firstVisibleItemIndex * 3000 + listState.firstVisibleItemScrollOffset }
+            .collect { position ->
+                when {
+                    position <= 8 -> onNavMinimize(false)
+                    position - previous > 14 -> onNavMinimize(true)
+                    previous - position > 14 -> onNavMinimize(false)
+                }
+                previous = position
+            }
+    }
 
     val leftTiles = HumeConfig.sensorTiles.map { tile ->
         SmallTile(icon = HumeIcons.sensor(tile.icon), value = sensorValue(entities[tile.entityId], tile.unit), label = tile.label, entityId = tile.entityId)
@@ -108,6 +125,7 @@ fun HomeScreen(ha: HomeAssistantRepository) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             Modifier.fillMaxSize(),
+            state = listState,
             contentPadding = PaddingValues(start = PagePadding, end = PagePadding, top = headerHeight + 15.dp, bottom = NavBarRoom),
             verticalArrangement = Arrangement.spacedBy(GroupSpacing),
         ) {
@@ -178,8 +196,8 @@ internal fun agoText(lastChanged: String?): String {
     val minutes = ((System.currentTimeMillis() - millis) / 60_000L).toInt()
     return when {
         minutes < 1 -> "V\u1eeba xong"
-        minutes < 60 -> "$minutes ph\u00fat tr\u01b0\u1edbc"
-        else -> (minutes / 60).toString() + " gi\u1edd tr\u01b0\u1edbc"
+        minutes < 60 -> "$minutes ph\u00fat"
+        else -> (minutes / 60).toString() + " gi\u1edd"
     }
 }
 
