@@ -71,6 +71,9 @@ import kotlinx.serialization.json.JsonPrimitive
 // delete) kept locally in SensorRecordStore. Frozen rows are dropped from the
 // watched set so the repository stops treating them as realtime, exactly like
 // removeFromWatched/addToWatched on iOS.
+//
+// Chips and icon wells use tertiarySystemFill from the theme, matching the
+// SwiftUI original, so nothing stays white on a dark background.
 
 private val domainLabels = mapOf(
     "sensor" to "C\u1ea3m bi\u1ebfn",
@@ -383,6 +386,7 @@ fun SensorsSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
         var text by remember(row.id) { mutableStateOf(row.name) }
         AlertDialog(
             onDismissRequest = { renameTarget = null },
+            containerColor = HumeColors.Card,
             title = { Text("\u0110\u1ed5i t\u00ean") },
             text = {
                 Column {
@@ -414,6 +418,7 @@ fun SensorsSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
     detailTarget?.let { row ->
         AlertDialog(
             onDismissRequest = { detailTarget = null },
+            containerColor = HumeColors.Card,
             title = { Text(row.name, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
             text = {
                 Column(
@@ -447,6 +452,7 @@ fun SensorsSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
     if (confirmRestore) {
         AlertDialog(
             onDismissRequest = { confirmRestore = false },
+            containerColor = HumeColors.Card,
             title = { Text("Kh\u00f4i ph\u1ee5c to\u00e0n b\u1ed9 t\u1eeb HA?") },
             text = {
                 Text(
@@ -491,7 +497,7 @@ private fun SensorRowView(
         ) {
             Box(contentAlignment = Alignment.BottomEnd) {
                 Box(
-                    Modifier.size(32.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.5f)),
+                    Modifier.size(32.dp).clip(CircleShape).background(HumeColors.FillTertiary),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -600,7 +606,7 @@ private fun Chip(
     Box(
         modifier
             .clip(RoundedCornerShape(HumeShapes.Pill))
-            .background(if (active) HumeColors.OrangeSoft else Color.White.copy(alpha = 0.55f))
+            .background(if (active) HumeColors.OrangeSoft else HumeColors.FillTertiary)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center,
