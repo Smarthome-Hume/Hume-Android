@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HomeAssistantRepository
@@ -44,20 +45,17 @@ import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
-private val LightsYellow = Color(0xFFFFEB3B)
+/*
+ * Hai chip theo ban HTML cocopi:
+ *  - chieu cao 48, bo goc 24, nen gray000
+ *  - vong tron icon 36 (bo goc 18), chu 14 weight 500
+ *  - chip den sang mau #b8860b khi co bong dang bat
+ */
+private val LightsGold = Color(0xFFB8860B)
+private val AlarmGreen = Color(0xFF4CAF50)
 private val PillHeight = 48.dp
 private val PillRadius = 24.dp
 
-/**
- * AlarmLightsView from AlarmLights.swift.
- *
- * Two 48dp pills sit side by side: the alarm mode on the left, the number of
- * lights that are on right next to it. Tapping the alarm pill replaces the
- * whole row with the five mode buttons, exactly like the iOS version. The
- * chosen mode is only painted as active once Home Assistant reports it; until
- * then the pill says "Dang bat...", and a refused call rolls the state back
- * because callService re-reads the entity when the POST is not accepted.
- */
 @Composable
 fun StatusChipRow(
     alarmState: String?,
@@ -70,17 +68,13 @@ fun StatusChipRow(
     var pendingState by remember { mutableStateOf<String?>(null) }
     val haptic = LocalHapticFeedback.current
 
-    // Home Assistant answered: drop the intermediate "arming" label.
     LaunchedEffect(alarmState) {
         if (pendingState != null && alarmState == pendingState) pendingState = null
     }
 
     AnimatedContent(targetState = picking, label = "alarmPicker") { open ->
         if (open) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 HumeConfig.alarmModes.forEach { (service, label, target) ->
                     val selected = alarmState == target
                     ModePill(
@@ -107,15 +101,13 @@ fun StatusChipRow(
                 }
             }
         } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                val armed = alarmState != null && alarmState != "disarmed"
                 BigPill(
                     icon = HumeIcons.Alarm,
                     label = if (pendingState != null) "\u0110ang b\u1eadt..." else alarmLabel(alarmState),
-                    circleTint = HumeColors.Orange,
-                    active = alarmState != null && alarmState != "disarmed",
+                    tint = AlarmGreen,
+                    active = armed,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -124,9 +116,8 @@ fun StatusChipRow(
                 )
                 BigPill(
                     icon = HumeIcons.Light,
-                    label = if (lightsOn == 0) "Kh\u00f4ng b\u00f3ng n\u00e0o b\u1eadt"
-                    else "$lightsOn b\u00f3ng \u0111\u00e8n",
-                    circleTint = LightsYellow,
+                    label = if (lightsOn == 0) "Kh\u00f4ng b\u00f3ng n\u00e0o b\u1eadt" else "$lightsOn b\u00f3ng \u0111\u00e8n",
+                    tint = LightsGold,
                     active = lightsOn > 0,
                     modifier = Modifier.weight(1f),
                     onClick = onOpenLights,
@@ -136,18 +127,11 @@ fun StatusChipRow(
     }
 }
 
-/**
- * 48dp pill with a 34dp icon circle, the shared shape of both header cards.
- *
- * The inactive fill used to be a hardcoded white, which turned into a glaring
- * white slab in dark mode. SwiftUI paints this pill with the card surface and
- * the icon well with tertiarySystemFill, so both follow the theme here too.
- */
 @Composable
 private fun BigPill(
     icon: ImageVector,
     label: String,
-    circleTint: Color,
+    tint: Color,
     active: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
@@ -156,28 +140,25 @@ private fun BigPill(
         modifier
             .height(PillHeight)
             .clip(RoundedCornerShape(PillRadius))
-            .background(if (active) circleTint.copy(alpha = 0.10f) else HumeColors.Card)
+            .background(if (active) tint.copy(alpha = 0.08f) else HumeColors.Card)
             .border(
                 1.dp,
-                if (active) circleTint.copy(alpha = 0.40f) else HumeColors.Divider,
+                if (active) tint.copy(alpha = 0.3f) else Color.Transparent,
                 RoundedCornerShape(PillRadius),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 7.dp),
+            .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(if (active) circleTint.copy(alpha = 0.22f) else HumeColors.FillTertiary),
+            Modifier.size(36.dp).clip(CircleShape).background(HumeColors.Gray00),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (active) circleTint else HumeColors.TextSecondary,
-                modifier = Modifier.size(17.dp),
+                tint = if (active) tint else HumeColors.Gray1000,
+                modifier = Modifier.size(20.dp),
             )
         }
         Spacer(Modifier.width(8.dp))
@@ -185,13 +166,14 @@ private fun BigPill(
             label,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = HumeColors.TextPrimary,
+            color = if (active) tint else HumeColors.Gray1000,
             maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/** One of the five alarm modes, shown only while the picker is open. */
 @Composable
 private fun ModePill(
     icon: ImageVector,
@@ -203,37 +185,33 @@ private fun ModePill(
 ) {
     Box(
         modifier
-            .height(PillHeight)
-            .clip(RoundedCornerShape(PillRadius))
-            .background(if (selected) tint.copy(alpha = 0.18f) else HumeColors.Card)
-            .border(
-                1.dp,
-                if (selected) tint.copy(alpha = 0.55f) else HumeColors.Divider,
-                RoundedCornerShape(PillRadius),
-            )
+            .height(36.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) tint else HumeColors.Gray00)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
             Icon(
                 icon,
                 contentDescription = label,
-                tint = if (selected) tint else HumeColors.TextSecondary,
+                tint = if (selected) Color.White else HumeColors.Gray1000,
                 modifier = Modifier.size(16.dp),
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = HumeColors.TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (selected) Color.White else HumeColors.Gray1000,
                 maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
-/** menuModes icons in AlarmLights.swift. */
 private fun modeIcon(service: String): ImageVector = when (service) {
     "arm_home" -> Icons.Rounded.Home
     "arm_away" -> Icons.Rounded.Map
@@ -242,11 +220,10 @@ private fun modeIcon(service: String): ImageVector = when (service) {
     else -> Icons.Rounded.Shield
 }
 
-/** menuModes colors in AlarmLights.swift. */
 private fun modeColor(service: String): Color = when (service) {
-    "arm_home" -> HumeColors.Green
-    "arm_away" -> HumeColors.Orange
-    "arm_night" -> HumeColors.TextSecondary
-    "arm_custom_bypass" -> LightsYellow
-    else -> HumeColors.TextSecondary
+    "arm_home" -> AlarmGreen
+    "arm_away" -> Color(0xFFFF9800)
+    "arm_night" -> Color(0xFF5C6BC0)
+    "arm_custom_bypass" -> Color(0xFFF2D26F)
+    else -> Color(0xFF757575)
 }

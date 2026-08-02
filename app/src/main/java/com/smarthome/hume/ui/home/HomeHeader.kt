@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -33,17 +32,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import com.smarthome.hume.ui.theme.glassSurface
 
-/** #22c55e presence dot and #ff5252 bell, straight from GreetingHeaderView.swift. */
+/* Header theo ban HTML: avatar 55 + cham trang thai 16, ten 22 bold, loi chao 16, chuong 50. */
 private val PresenceGreen = Color(0xFF22C55E)
+private val PresenceRed = Color(0xFFEF4444)
 private val BellRed = Color(0xFFFF5252)
 
-/**
- * Header row: glass avatar with the person.hutchet picture, greeting block and
- * the glass bell. Tap the bell for notifications, long press for the managed
- * notification list, exactly like the original onBell / onBellLongPress pair.
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeHeader(
@@ -61,18 +55,17 @@ fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
-        // ══ AVATAR + DOT ══
         Box(contentAlignment = Alignment.TopEnd) {
             Box(
-                Modifier.size(55.dp).glassSurface(radius = 28.dp).clip(CircleShape),
+                Modifier.size(55.dp).clip(CircleShape).background(HumeColors.Gray00),
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarUrl.isNullOrBlank()) {
                     Icon(
                         Icons.Rounded.Person,
                         contentDescription = null,
-                        tint = HumeColors.TextPrimary,
-                        modifier = Modifier.size(24.dp),
+                        tint = HumeColors.Gray1000,
+                        modifier = Modifier.size(26.dp),
                     )
                 } else {
                     SubcomposeAsyncImage(
@@ -84,16 +77,16 @@ fun HomeHeader(
                             Icon(
                                 Icons.Rounded.Person,
                                 contentDescription = null,
-                                tint = HumeColors.TextPrimary,
-                                modifier = Modifier.size(24.dp),
+                                tint = HumeColors.Gray1000,
+                                modifier = Modifier.size(26.dp),
                             )
                         },
                         error = {
                             Icon(
                                 Icons.Rounded.Person,
                                 contentDescription = null,
-                                tint = HumeColors.TextPrimary,
-                                modifier = Modifier.size(24.dp),
+                                tint = HumeColors.Gray1000,
+                                modifier = Modifier.size(26.dp),
                             )
                         },
                     )
@@ -104,68 +97,42 @@ fun HomeHeader(
                     .offset(x = 2.dp, y = (-2).dp)
                     .size(16.dp)
                     .clip(CircleShape)
-                    .background(if (connected) PresenceGreen else HumeColors.Amber)
-                    .border(2.dp, Color.White, CircleShape)
+                    .background(if (connected) PresenceGreen else PresenceRed)
+                    .border(2.dp, HumeColors.Background, CircleShape)
             )
         }
 
         Spacer(Modifier.width(12.dp))
 
-        // ══ TÊN + CHÀO ══
         Column(Modifier.weight(1f)) {
             Text(
                 "Hi, " + userName,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = HumeColors.TextPrimary,
+                color = HumeColors.Gray1000,
                 maxLines = 1,
             )
             Text(
                 greeting,
                 fontSize = 16.sp,
-                color = HumeColors.TextPrimary.copy(alpha = 0.75f),
-                modifier = Modifier.padding(top = 2.dp),
+                color = HumeColors.Gray600,
+                maxLines = 1,
             )
-            if (location.isNotBlank()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 3.dp),
-                ) {
-                    Icon(
-                        Icons.Rounded.LocationOn,
-                        contentDescription = null,
-                        tint = HumeColors.TextPrimary.copy(alpha = 0.55f),
-                        modifier = Modifier.size(10.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        location,
-                        fontSize = 12.sp,
-                        color = HumeColors.TextPrimary.copy(alpha = 0.55f),
-                        maxLines = 1,
-                    )
-                }
-            }
         }
 
         Spacer(Modifier.width(12.dp))
 
-        // ══ CHUÔNG ══
         val hasAlerts = alertCount > 0
         Box(
             Modifier
                 .size(50.dp)
-                .glassSurface(radius = 25.dp)
-                .then(
-                    if (hasAlerts) Modifier.background(BellRed.copy(alpha = 0.15f), CircleShape)
-                    else Modifier
-                )
+                .clip(CircleShape)
+                .background(if (hasAlerts) BellRed.copy(alpha = 0.15f) else HumeColors.Gray00)
                 .border(
                     1.dp,
-                    if (hasAlerts) BellRed.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.08f),
+                    if (hasAlerts) BellRed.copy(alpha = 0.4f) else Color.Transparent,
                     CircleShape,
                 )
-                .clip(CircleShape)
                 .combinedClickable(
                     onClick = onOpenNotifications,
                     onLongClick = onManageNotifications,
@@ -175,8 +142,8 @@ fun HomeHeader(
             Icon(
                 HumeIcons.Bell,
                 contentDescription = "Th\u00f4ng b\u00e1o",
-                tint = if (hasAlerts) BellRed else HumeColors.TextPrimary,
-                modifier = Modifier.size(20.dp),
+                tint = if (hasAlerts) BellRed else HumeColors.Gray1000,
+                modifier = Modifier.size(22.dp),
             )
         }
     }
