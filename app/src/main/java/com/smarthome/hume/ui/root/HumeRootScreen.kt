@@ -69,12 +69,14 @@ import dev.chrisbanes.haze.hazeSource
 /*
  * Navbar theo dung floating tab bar cua One UI (doi chieu anh chup thanh nav app Dien thoai).
  *
- *  - Nen thanh: BAM THEO THEME. Toi -> xam #2B2B2B, sang -> #F7F7F7 (khong phai
- *    tint den de len nen sang -> tranh mang xam ban nhu ban truoc). Van blur nen that.
- *  - Pill tab chon: mang XAM MEM, KHONG VIEN, khong gradient trang, chi sang/toi hon
- *    nen thanh mot bac (Gray00) -> hoa vao thanh dung kieu One UI.
- *  - Mau chu/icon: chon -> Gray1000 (trang o dark, den o light), thuong -> Gray500.
- *  - Ti le: thanh 60, pill 44 (= thanh - 16), inset 8, le ngoai 16, icon 22, nhan 11.
+ *  - Nen thanh: BAM THEO THEME. Toi -> xam #2B2B2B, sang -> #F7F7F7.
+ *  - Pill tab chon: mang XAM MEM, KHONG VIEN, chi lech mot bac so voi nen thanh.
+ *  - Mau chu/icon: chon -> Gray1000, thuong -> Gray500.
+ *  - Ti le: thanh 60, pill 44, inset 8, le ngoai 16, icon 22, nhan 11.
+ *
+ * LUU Y BUILD: lambda cua hazeEffect { } KHONG phai @Composable scope (no chay
+ * o thoi diem ve), nen moi gia tri lay tu MaterialTheme/CompositionLocal phai
+ * duoc doc SAN ra bien ben ngoai roi moi dung trong lambda.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 60.dp
@@ -135,9 +137,9 @@ private fun AiPlaceholder() {
 private fun HumeNavBar(selected: HumeTab, hazeState: HazeState, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val dark = HumeColors.isDark
-    // Mau nen thanh lay dung tinh than One UI: mot bac xam so voi nen trang/den.
+    // Doc san moi mau o day - trong lambda hazeEffect khong goi duoc @Composable.
+    val surfaceColor = MaterialTheme.colorScheme.background
     val barTint = if (dark) Color(0xFF2B2B2B).copy(alpha = 0.86f) else Color(0xFFF7F7F7).copy(alpha = 0.88f)
-    // Pill chi sang/toi hon thanh MOT bac, khong vien, khong gradient.
     val pillColor = if (dark) Color(0xFF3C3C3C) else Color(0xFFE3E3E3)
 
     Box(
@@ -154,7 +156,7 @@ private fun HumeNavBar(selected: HumeTab, hazeState: HazeState, onSelect: (HumeT
                 .clip(shape)
                 .hazeEffect(state = hazeState) {
                     blurRadius = 28.dp
-                    backgroundColor = MaterialTheme.colorScheme.background
+                    backgroundColor = surfaceColor
                     tints = listOf(HazeTint(barTint))
                     noiseFactor = 0f
                 }
