@@ -65,21 +65,24 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
 /*
- * Port 1-1 tu Components/LiquidNavBar.swift (khong tu che them mau).
+ * Port tu Components/LiquidNavBar.swift.
  *
- *   barHeight = 66, insetH = 21, itemW = W / 4
- *   pill      = (itemW - 12) x (barHeight - 12) = kinh mo TRANG (PillGlass):
- *               nen trang mo + vien trang 0.35 do day 0.5 -> KHONG co mau cam
- *   tab chon  : noi dung mau den 0.85, scale 1.0, chu semibold
- *   tab thuong: mau gray1000 @ 55%, scale 0.96
- *   icon 21, nhan 10, khoang cach 3
- *   animation : interactiveSpring(response 0.3, damping 0.78) -> pill truot giua cac tab
- *   nen thanh : glass toi + shadow black 0.25, radius 18, y 8
+ * QUAN TRONG: PillGlass cua iOS 26 la KINH MO SANG NHE tren nen toi
+ * (glassEffect(.clear) + stroke trang 0.35), KHONG PHAI mang trang duc.
+ * Vi vay noi dung tab dang chon van la mau SANG (trang), khong phai mau den.
+ *
+ *   barHeight 66 / insetH 21 / itemW = W/4
+ *   pill      (itemW - 12) x (barHeight - 14), nam gon trong thanh
+ *   chon      : trang 100%, chu semibold, scale 1.0
+ *   thuong    : gray1000 @ 55%, scale 0.96
+ *   icon 21 / nhan 10 / spacing 3
+ *   spring(damping 0.78) -> pill truot giua cac tab
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 66.dp
 private val InsetH = 21.dp
-private val PillInset = 12.dp
+private val PillInsetX = 12.dp
+private val PillInsetY = 14.dp
 private val ScrimHeight = 30.dp
 
 @Composable
@@ -157,11 +160,11 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
                     .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
             ) {
                 val itemWidth: Dp = maxWidth / navTabs.size
-                val pillWidth: Dp = itemWidth - PillInset
-                val pillHeight: Dp = BarHeight - PillInset
+                val pillWidth: Dp = itemWidth - PillInsetX
+                val pillHeight: Dp = BarHeight - PillInsetY
                 val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
                 val pillX by animateDpAsState(
-                    targetValue = itemWidth * activeIndex + PillInset / 2,
+                    targetValue = itemWidth * activeIndex + PillInsetX / 2,
                     animationSpec = spring(
                         dampingRatio = 0.78f,
                         stiffness = Spring.StiffnessMediumLow,
@@ -169,7 +172,7 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
                     label = "pillX",
                 )
 
-                // PillGlass: kinh mo TRANG, khong mau cam.
+                // PillGlass: kinh mo SANG NHE (khong phai trang duc, khong mau cam).
                 Box(
                     Modifier
                         .align(Alignment.CenterStart)
@@ -177,7 +180,14 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
                         .width(pillWidth)
                         .height(pillHeight)
                         .clip(RoundedCornerShape(pillHeight / 2))
-                        .background(Color.White.copy(alpha = 0.92f))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.18f),
+                                    Color.White.copy(alpha = 0.10f),
+                                )
+                            )
+                        )
                         .border(
                             0.5.dp,
                             Color.White.copy(alpha = 0.35f),
@@ -208,9 +218,8 @@ private fun NavItem(
     modifier: Modifier = Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
-    // Swift: chon -> den 0.85 ; khong chon -> gray1000 @ 55%
     val contentColor by animateColorAsState(
-        if (active) Color.Black.copy(alpha = 0.85f) else HumeColors.Gray1000.copy(alpha = 0.55f),
+        if (active) HumeColors.Gray1000 else HumeColors.Gray1000.copy(alpha = 0.55f),
         tween(220),
         label = "navContent",
     )
