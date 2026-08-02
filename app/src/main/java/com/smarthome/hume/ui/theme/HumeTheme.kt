@@ -1,5 +1,6 @@
 package com.smarthome.hume.ui.theme
 
+import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -11,10 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 object HumeColors {
@@ -66,7 +71,7 @@ object HumeColors {
     val BattOrange = Color(0xFFF9784C)
 
     /** Android has no live WallpaperBackground from Swift, so use the Swift grey ramp to keep cards visible. */
-    val Background: Color get() = dyn(Color(0xFFF6F6F6), Color(0xFF000000))
+    val Background: Color get() = dyn(Color(0xFFF1F1F3), Color(0xFF000000))
     val Card: Color get() = dyn(Color(0xFFFFFFFF), Color(0xFF161616))
     val CardSunken: Color get() = Gray01
     val TextPrimary: Color get() = Label
@@ -91,8 +96,8 @@ object HumeColors {
 }
 
 object HumeGlass {
-    val card: Color get() = if (HumeColors.isDark) Color(0xB3161616) else Color(0xEFFFFFFF)
-    val edge: Color get() = if (HumeColors.isDark) Color(0x24FFFFFF) else Color(0x33000000)
+    val card: Color get() = if (HumeColors.isDark) Color(0xB3161616) else Color(0xF7FFFFFF)
+    val edge: Color get() = if (HumeColors.isDark) Color(0x24FFFFFF) else Color(0x1F000000)
     val element: Color get() = HumeColors.FillTertiary
 }
 
@@ -124,7 +129,7 @@ private fun schemeFor(dark: Boolean) = if (dark) {
         secondary = Color(0xFFFAC0B6),
         onSecondary = Color(0xFF101010),
         tertiary = Color(0xFFF2D26F),
-        background = Color(0xFFF6F6F6),
+        background = Color(0xFFF1F1F3),
         onBackground = Color(0xFF000000),
         surface = Color(0xFFFFFFFF),
         onSurface = Color(0xFF000000),
@@ -144,10 +149,30 @@ private val HumeMaterialShapes = Shapes(
     extraLarge = RoundedCornerShape(30.dp),
 )
 
-private fun TextStyle.withHumeFont() = copy(fontFamily = FontFamily.SansSerif)
+/**
+ * Swift dùng Montserrat (Fonts/Montserrat-*.ttf) qua .appFont().
+ * Trên Android, font được nạp từ res/font theo tên; nếu chưa có file thì fallback SansSerif
+ * để app vẫn build và chạy.
+ */
+private fun montserratFamily(context: Context): FontFamily {
+    val weights = listOf(
+        "montserrat_light" to FontWeight.Light,
+        "montserrat_regular" to FontWeight.Normal,
+        "montserrat_medium" to FontWeight.Medium,
+        "montserrat_semibold" to FontWeight.SemiBold,
+        "montserrat_bold" to FontWeight.Bold,
+    )
+    val fonts = weights.mapNotNull { (name, weight) ->
+        val id = context.resources.getIdentifier(name, "font", context.packageName)
+        if (id != 0) Font(id, weight) else null
+    }
+    return if (fonts.isEmpty()) FontFamily.SansSerif else FontFamily(fonts)
+}
 
-private val HumeTypography = Typography().let { t ->
-    Typography(
+private fun typographyFor(family: FontFamily): Typography {
+    fun TextStyle.withHumeFont() = copy(fontFamily = family)
+    val t = Typography()
+    return Typography(
         displayLarge = t.displayLarge.withHumeFont(),
         displayMedium = t.displayMedium.withHumeFont(),
         displaySmall = t.displaySmall.withHumeFont(),
@@ -169,9 +194,11 @@ private val HumeTypography = Typography().let { t ->
 @Composable
 fun HumeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     SideEffect { HumeColors.isDark = darkTheme }
+    val context = LocalContext.current
+    val typography = remember(context) { typographyFor(montserratFamily(context)) }
     MaterialTheme(
         colorScheme = schemeFor(darkTheme),
-        typography = HumeTypography,
+        typography = typography,
         shapes = HumeMaterialShapes,
         content = content,
     )
