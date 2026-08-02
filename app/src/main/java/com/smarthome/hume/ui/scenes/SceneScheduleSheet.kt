@@ -62,6 +62,9 @@ import com.smarthome.hume.ui.theme.glassSurface
  * One card per schedule: big time, scene name in orange, weekday summary and
  * the enable toggle, with edit and delete underneath. The editor picks a local
  * scene, an hour and minute, and the repeat days (1 = Monday like on iOS).
+ *
+ * Unselected rows, steppers and day chips use the theme fill so the editor is
+ * readable in dark mode; only the selected state stays orange.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -258,6 +261,7 @@ private fun ScheduleEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = HumeColors.Card,
         title = {
             Text(
                 if (schedule == null) "Th\u00eam l\u1ecbch" else "S\u1eeda l\u1ecbch",
@@ -283,7 +287,7 @@ private fun ScheduleEditorDialog(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(
-                                    if (selected) HumeColors.OrangeSoft else Color.White.copy(alpha = 0.5f),
+                                    if (selected) HumeColors.OrangeSoft else HumeColors.FillTertiary,
                                 )
                                 .clickable { sceneId = option.first }
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -322,7 +326,7 @@ private fun ScheduleEditorDialog(
                                 .weight(1f)
                                 .height(38.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(if (on) HumeColors.Orange else Color.Gray.copy(alpha = 0.15f))
+                                .background(if (on) HumeColors.Orange else HumeColors.FillTertiary)
                                 .clickable { days = if (on) days - day else days + day },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -369,7 +373,7 @@ private fun Stepper(
     Row(
         modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.55f))
+            .background(HumeColors.FillTertiary)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
