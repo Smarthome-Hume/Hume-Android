@@ -417,4 +417,3 @@ fun PagerDots(count: Int, current: Int) {
         }
     }
 }
-}
