@@ -15,7 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,23 +65,21 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 
 /*
- * Navbar theo dung nguyen tac cua iOS 26 Liquid Glass tab bar / One UI 8.5 floating tab bar:
+ * Port 1-1 tu Components/LiquidNavBar.swift (khong tu che them mau).
  *
- *  1. MOT pill lien khoi noi tren noi dung, le trai/phai/duoi bang nhau (16dp).
- *  2. Be ngang pill chia thanh N O BANG NHAU tuyet doi (itemWidth = (W - 2*inset)/N).
- *     Icon nam chinh giua o cua no -> khoang cach giua cac icon luon deu.
- *  3. Tab dang chon co LOP NEN DANG VIEN THUOC (capsule) nam duoi icon, cung kich thuoc
- *     cho moi tab, va TRUOT (spring) tu o cu sang o moi khi doi tab - day la dac trung
- *     cua ca hai he dieu hanh, khong phai vong tron phong to.
- *  4. Chi icon, khong nhan chu (One UI 8.5 da bo nhan).
- *  5. Nen pill DAC + scrim mo dan phia tren (Compose khong blur duoc backdrop that).
+ *   barHeight = 66, insetH = 21, itemW = W / 4
+ *   pill      = (itemW - 12) x (barHeight - 12) = kinh mo TRANG (PillGlass):
+ *               nen trang mo + vien trang 0.35 do day 0.5 -> KHONG co mau cam
+ *   tab chon  : noi dung mau den 0.85, scale 1.0, chu semibold
+ *   tab thuong: mau gray1000 @ 55%, scale 0.96
+ *   icon 21, nhan 10, khoang cach 3
+ *   animation : interactiveSpring(response 0.3, damping 0.78) -> pill truot giua cac tab
+ *   nen thanh : glass toi + shadow black 0.25, radius 18, y 8
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
-private val BarHeight = 64.dp
-private val BarMargin = 16.dp
-private val BarInset = 6.dp
-private val CapsuleHeight = 48.dp
-private val CapsuleMaxWidth = 68.dp
+private val BarHeight = 66.dp
+private val InsetH = 21.dp
+private val PillInset = 12.dp
 private val ScrimHeight = 30.dp
 
 @Composable
@@ -146,50 +145,47 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
                 .fillMaxWidth()
                 .background(background.copy(alpha = 0.9f))
                 .navigationBarsPadding()
-                .padding(start = BarMargin, end = BarMargin, bottom = BarMargin, top = 2.dp),
+                .padding(start = InsetH, end = InsetH, bottom = 14.dp, top = 2.dp),
         ) {
             BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
                     .height(BarHeight)
-                    .shadow(14.dp, shape, spotColor = Color.Black.copy(alpha = 0.6f))
+                    .shadow(18.dp, shape, spotColor = Color.Black.copy(alpha = 0.55f))
                     .clip(shape)
                     .background(HumeColors.Card)
-                    .border(1.dp, HumeColors.Gray1000.copy(alpha = 0.08f), shape)
+                    .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
             ) {
-                // Chia o bang nhau tuyet doi -> khoang cach giua cac icon deu nhau.
-                val itemWidth: Dp = (maxWidth - BarInset * 2) / navTabs.size
-                val capsuleWidth: Dp = minOf(itemWidth - 6.dp, CapsuleMaxWidth)
+                val itemWidth: Dp = maxWidth / navTabs.size
+                val pillWidth: Dp = itemWidth - PillInset
+                val pillHeight: Dp = BarHeight - PillInset
                 val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
-                val capsuleX by animateDpAsState(
-                    targetValue = BarInset + itemWidth * activeIndex + (itemWidth - capsuleWidth) / 2,
+                val pillX by animateDpAsState(
+                    targetValue = itemWidth * activeIndex + PillInset / 2,
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        dampingRatio = 0.78f,
                         stiffness = Spring.StiffnessMediumLow,
                     ),
-                    label = "capsuleX",
+                    label = "pillX",
                 )
 
-                // Lop nen dang vien thuoc cua tab dang chon, truot giua cac o.
+                // PillGlass: kinh mo TRANG, khong mau cam.
                 Box(
                     Modifier
                         .align(Alignment.CenterStart)
-                        .offset(x = capsuleX)
-                        .width(capsuleWidth)
-                        .height(CapsuleHeight)
-                        .clip(RoundedCornerShape(CapsuleHeight / 2))
-                        .background(HumeColors.Orange.copy(alpha = 0.22f))
+                        .offset(x = pillX)
+                        .width(pillWidth)
+                        .height(pillHeight)
+                        .clip(RoundedCornerShape(pillHeight / 2))
+                        .background(Color.White.copy(alpha = 0.92f))
                         .border(
-                            1.dp,
-                            HumeColors.Orange.copy(alpha = 0.35f),
-                            RoundedCornerShape(CapsuleHeight / 2),
+                            0.5.dp,
+                            Color.White.copy(alpha = 0.35f),
+                            RoundedCornerShape(pillHeight / 2),
                         )
                 )
 
-                Row(
-                    Modifier.fillMaxSize().padding(horizontal = BarInset),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                     navTabs.forEach { item ->
                         NavItem(
                             item = item,
@@ -212,25 +208,36 @@ private fun NavItem(
     modifier: Modifier = Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 0.88f else 1f, tween(140), label = "navPress")
-    val iconColor by animateColorAsState(
-        if (active) HumeColors.Orange else HumeColors.Gray500,
-        tween(240),
-        label = "navIcon",
+    // Swift: chon -> den 0.85 ; khong chon -> gray1000 @ 55%
+    val contentColor by animateColorAsState(
+        if (active) Color.Black.copy(alpha = 0.85f) else HumeColors.Gray1000.copy(alpha = 0.55f),
+        tween(220),
+        label = "navContent",
     )
+    val scale by animateFloatAsState(if (active) 1f else 0.96f, tween(220), label = "navScale")
 
-    Box(
-        modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .graphicsLayer { scaleX = scale; scaleY = scale },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             HumeIcons.tab(item),
             contentDescription = item.label,
-            tint = iconColor,
-            modifier = Modifier
-                .size(24.dp)
-                .graphicsLayer { scaleX = press; scaleY = press },
+            tint = contentColor,
+            modifier = Modifier.size(21.dp),
+        )
+        Text(
+            item.label,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+            color = contentColor,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
