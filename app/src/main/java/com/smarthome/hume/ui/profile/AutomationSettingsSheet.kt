@@ -64,6 +64,9 @@ import com.smarthome.hume.ui.theme.glassSurface
  * consumption threshold, the temperature alert with its watched room, the
  * schedule list, and the morning digest. The Live Activity, HomeKit sync and
  * geofence groups are iOS-only and are left out.
+ *
+ * Unselected room rows and minute chips use the theme fill, so the sheet reads
+ * correctly in dark mode instead of showing white slabs.
  */
 private val tempRooms = listOf(
     "Ph\u00f2ng ng\u1ee7 l\u1edbn" to "sensor.cam_bien_moi_truong_phong_ngu_lon_temperature",
@@ -191,7 +194,7 @@ fun AutomationSettingsSheet(onDismiss: () -> Unit) {
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(
-                                        if (selected) HumeColors.OrangeSoft else Color.White.copy(alpha = 0.45f),
+                                        if (selected) HumeColors.OrangeSoft else HumeColors.FillTertiary,
                                     )
                                     .clickable {
                                         tempSensor = room.second
@@ -292,7 +295,7 @@ fun AutomationSettingsSheet(onDismiss: () -> Unit) {
                                     .weight(1f)
                                     .height(34.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(if (on) HumeColors.Orange else Color.Gray.copy(alpha = 0.15f))
+                                    .background(if (on) HumeColors.Orange else HumeColors.FillTertiary)
                                     .clickable { digestMinute = value; putInt("sg_digest_minute", value) },
                                 contentAlignment = Alignment.Center,
                             ) {
