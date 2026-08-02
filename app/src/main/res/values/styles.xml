@@ -1,8 +1,8 @@
 <resources>
     <!--
-        The app has one fixed light look, so the platform theme must not follow
-        the system dark mode: a DayNight parent turned the window background and
-        the status bar icons dark behind the light Compose surfaces.
+        Day variant. The night variant lives in res/values-night/styles.xml, so
+        the platform theme follows the system appearance just like the SwiftUI
+        app, which resolves Color.dynamic per trait collection.
         Bars are transparent because Android 15 always draws edge to edge; the
         insets are handled in HumeRootScreen.
     -->
