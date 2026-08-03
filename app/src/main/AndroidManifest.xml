@@ -8,6 +8,12 @@
         android:theme="@style/Theme.Hume"
         android:label="Hume"
         android:networkSecurityConfig="@xml/network_security_config">
+
+        <!-- Bao Play Services tai san bo Montserrat luc cai dat. -->
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts"/>
+
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
