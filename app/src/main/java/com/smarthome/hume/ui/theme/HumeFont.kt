@@ -1,51 +1,41 @@
 package com.smarthome.hume.ui.theme
 
 import android.content.Context
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontLoadingStrategy
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.core.content.res.ResourcesCompat
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import com.smarthome.hume.R
 
 /**
  * Swift dung Montserrat (Fonts/Montserrat-*.ttf) qua .appFont().
  *
- * Font khai bao bang font resource XML (res/font/montserrat_*.xml) + preloaded
- * fonts, nen he thong tu tai qua Play Services va co cache.
+ * Font lay bang GoogleFont API (Downloadable Fonts cua Play Services). Cach nay
+ * nap ASYNC: lan ve dau tien co the la font he thong, xong font that se thay
+ * vao. Neu provider loi thi Compose lang le dung font he thong - KHONG bao gio
+ * lam vang app.
  *
- * TAI SAO TRUOC DAY VANG APP: font resource duoc nap kieu Blocking. Khi provider
- * chua co font (may thieu Play Services, chua tai xong, hoac dang offline) thi
- * Compose NEM LOI NGAY LUC VE CHU - runCatching o day khong the bat vi loi xay
- * ra sau, trong lan ve dau tien. Nay:
- *   1. thu nap thu font regular bang ResourcesCompat truoc, that bai thi dung
- *      luon SansSerif;
- *   2. cac Font deu dat loadingStrategy = OptionalLocal, nghia la neu khong nap
- *      duoc thi Compose lang le dung font he thong thay vi nem loi.
+ * DUNG doi sang Font(R.font.montserrat_*) nua: font resource nap kieu Blocking,
+ * khi provider chua co font no NEM LOI ngay luc ve chu va app crash. Cac file
+ * res/font/montserrat_*.xml + res/values/preloaded_fonts.xml van duoc giu lai,
+ * vi chung bao Play Services tai san Montserrat ngay luc cai app, nho vay
+ * GoogleFont API o day lay duoc font tu cache gan nhu tuc thi.
  */
-internal fun humeFontFamily(context: Context): FontFamily {
-    val available = runCatching {
-        ResourcesCompat.getFont(context, R.font.montserrat_regular) != null
-    }.getOrDefault(false)
-    if (!available) return FontFamily.SansSerif
+private val provider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs,
+)
 
-    return runCatching {
-        FontFamily(
-            listOf(
-                R.font.montserrat_light to FontWeight.Light,
-                R.font.montserrat_regular to FontWeight.Normal,
-                R.font.montserrat_medium to FontWeight.Medium,
-                R.font.montserrat_semibold to FontWeight.SemiBold,
-                R.font.montserrat_bold to FontWeight.Bold,
-            ).map { (resId, weight) ->
-                Font(
-                    resId = resId,
-                    weight = weight,
-                    style = FontStyle.Normal,
-                    loadingStrategy = FontLoadingStrategy.OptionalLocal,
-                )
-            }
-        )
-    }.getOrElse { FontFamily.SansSerif }
-}
+private val montserrat = GoogleFont("Montserrat")
+
+@Suppress("UNUSED_PARAMETER")
+internal fun humeFontFamily(context: Context): FontFamily = runCatching {
+    FontFamily(
+        Font(googleFont = montserrat, fontProvider = provider, weight = FontWeight.Light),
+        Font(googleFont = montserrat, fontProvider = provider, weight = FontWeight.Normal),
+        Font(googleFont = montserrat, fontProvider = provider, weight = FontWeight.Medium),
+        Font(googleFont = montserrat, fontProvider = provider, weight = FontWeight.SemiBold),
+        Font(googleFont = montserrat, fontProvider = provider, weight = FontWeight.Bold),
+    )
+}.getOrElse { FontFamily.SansSerif }
