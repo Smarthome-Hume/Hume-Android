@@ -53,11 +53,9 @@ private val BarColor = Color(0xFFF9784C)
 /**
  * "\u0110i\u1ec7n m\u1eb7t tr\u1eddi" card: header with today's live total, then the week chart.
  *
- * CHI CON 2 LOP TREN MOI COT:
- *  1. Track nen bo tron chay het chieu cao vung ve (mo).
- *  2. Cot gia tri bo tron 2 dau.
- * Lop hatch cheo cu bi clipRect goc vuong nen loi ra thanh mot mang hinh chu
- * nhat cung mau phia duoi cot - da xoa han.
+ * Bieu do TRO LAI DUNG BAN CU: chi mot lop duy nhat cho moi ngay - cot bo goc
+ * 8dp (hom nay dam, ngay cu nhat hon) cong duong xu huong Catmull-Rom va cham
+ * rong tren moi dinh. Khong con lop nen chu nhat / gach cheo nao phia sau.
  */
 @Composable
 fun SolarChartCard(
@@ -118,8 +116,6 @@ private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier
         val rowWidth = barWidth * count + BarSpacing * (count - 1)
         val rowOffset = max(0f, (totalWidth - rowWidth).value / 2f).dp
         val maxValue = max(days.maxOf { it.value }, 5.0)
-        val trackColor = if (HumeColors.isDark) Color.White.copy(alpha = 0.06f)
-        else Color.Black.copy(alpha = 0.05f)
 
         /** Bar height in dp, using the original 1.15 head room. */
         fun barHeight(value: Double): Dp =
@@ -154,23 +150,16 @@ private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier
                     val spacing = BarSpacing.toPx()
                     val start = rowOffset.toPx()
                     val plot = size.height
-                    val corner = CornerRadius(barW / 2f, barW / 2f)
+                    val corner = CornerRadius(8.dp.toPx(), 8.dp.toPx())
                     val points = ArrayList<Offset>(count)
 
                     days.forEachIndexed { index, day ->
                         val h = barHeight(day.value).toPx()
                         val left = start + index * (barW + spacing)
                         val top = plot - h
-                        // Lop 1: track nen, bo tron ca hai dau.
+                        // MOT LOP DUY NHAT: cot gia tri bo goc, khong co nen phia sau.
                         drawRoundRect(
-                            color = trackColor,
-                            topLeft = Offset(left, 0f),
-                            size = Size(barW, plot),
-                            cornerRadius = corner,
-                        )
-                        // Lop 2: cot gia tri, bo tron ca hai dau. Khong con gi khac.
-                        drawRoundRect(
-                            color = if (day.isToday) BarColor else BarColor.copy(alpha = 0.55f),
+                            color = if (day.isToday) BarColor else BarColor.copy(alpha = 0.38f),
                             topLeft = Offset(left, top),
                             size = Size(barW, h),
                             cornerRadius = corner,
