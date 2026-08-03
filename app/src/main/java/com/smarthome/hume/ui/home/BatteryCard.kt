@@ -24,11 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,8 +38,8 @@ import kotlin.math.min
 
 /*
  * PowerwallCardView.swift -> Android.
- * Chieu cao KHONG fix cung nua: dung heightIn(min) + wrap noi dung,
- * neu khong hai dong chu thich "Du tru / Su dung" se bi cat o day the.
+ * Chieu cao KHONG fix cung: heightIn(min) + wrap noi dung, neu khong hai dong
+ * chu thich "Du tru / Su dung" se bi cat o day the.
  */
 private val BatteryCardMinHeight = 196.dp
 private val BatteryCardRadius = 36.dp
@@ -186,52 +183,33 @@ fun BatteryCard(
     }
 }
 
+/*
+ * Thanh pin CHI CON HAI LOP, ca hai deu bo tron hai dau:
+ *   1. nen thanh bar (track) keo het chieu ngang
+ *   2. phan da nap (soc) - trong do doan du tru dam hon
+ *
+ * Truoc day co them mot mang gach cheo ve trong clipRect GOC VUONG, nen no
+ * hien ra thanh mot hinh chu nhat cung mau dan len thanh bar. Da bo han.
+ */
 @Composable
 private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
     Canvas(Modifier.fillMaxWidth().height(BarHeight)) {
         val w = size.width
         val h = size.height
         val radius = CornerRadius(h / 2f, h / 2f)
-        val reserveWidth = (w * min(soc, backupSoc) / 100.0).toFloat().coerceAtLeast(0f)
-        val usableWidth = (w * max(0.0, soc - backupSoc) / 100.0).toFloat().coerceAtLeast(0f)
-        val grayReserve = (w * backupSoc / 100.0).toFloat()
-        val grayUsable = (w * (100.0 - backupSoc) / 100.0).toFloat()
+        val socWidth = (w * soc / 100.0).toFloat().coerceIn(0f, w)
+        val reserveWidth = (w * min(soc, backupSoc) / 100.0).toFloat().coerceIn(0f, w)
         val track = HumeColors.TextSecondary.copy(alpha = 0.25f)
 
-        drawRoundRect(track, size = Size(grayReserve, h), cornerRadius = radius)
-        drawRoundRect(track, topLeft = Offset(grayReserve, 0f), size = Size(grayUsable, h), cornerRadius = radius)
+        // Lop 1: nen thanh bar.
+        drawRoundRect(track, size = Size(w, h), cornerRadius = radius)
 
+        // Lop 2: phan da nap, bo tron hai dau.
+        if (socWidth > 0f) {
+            drawRoundRect(tint.copy(alpha = 0.35f), size = Size(socWidth, h), cornerRadius = radius)
+        }
         if (reserveWidth > 0f) {
             drawRoundRect(tint, size = Size(reserveWidth, h), cornerRadius = radius)
-        }
-        if (usableWidth > 0f) {
-            drawRoundRect(
-                color = tint.copy(alpha = 0.30f),
-                topLeft = Offset(reserveWidth, 0f),
-                size = Size(usableWidth, h),
-                cornerRadius = radius,
-            )
-            drawStripes(
-                left = reserveWidth,
-                right = reserveWidth + usableWidth,
-                height = h,
-                color = tint.copy(alpha = 0.75f),
-            )
-        }
-    }
-}
-
-private fun DrawScope.drawStripes(left: Float, right: Float, height: Float, color: Color) {
-    clipRect(left = left, top = 0f, right = right, bottom = height) {
-        var x = left - height
-        while (x < right + height) {
-            drawLine(
-                color = color,
-                start = Offset(x, height),
-                end = Offset(x + height, 0f),
-                strokeWidth = 2.5f,
-            )
-            x += 7.5f
         }
     }
 }
