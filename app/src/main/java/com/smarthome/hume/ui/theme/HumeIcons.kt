@@ -5,10 +5,10 @@ import com.smarthome.hume.core.model.HumeTab
 
 /*
  * TOAN BO icon lay tu ban HTML (Phosphor), khong con dung Material Icons.
- * Xem HumePhosphorIcons.kt: khung 256, ve bang net, khong co icon dac.
+ * Xem HumePhosphorIcons.kt: khung 256, ve bang net.
  *
- * Tab dang chon dung ban net day (bold), tab thuong dung net thuong - dung
- * cach navbar One UI / iOS 26 tang do day thay vi doi sang icon to dac.
+ * Navbar: tab DANG CHON dung ban TO DAC (ph-*-fill), tab con lai giu net mong
+ * - dung cach One UI / iOS 26 phan biet tab active.
  */
 object HumeIcons {
     val Light = Ph.Lightbulb
@@ -73,16 +73,16 @@ object HumeIcons {
         }
     }
 
-    /** Tab dang chon: cung hinh, net day hon. */
+    /** Tab DANG CHON: icon to dac. */
     fun tab(tab: HumeTab): ImageVector = when (tab) {
-        HumeTab.Home -> Ph.HouseBold
-        HumeTab.Energy -> Ph.LightningBold
-        HumeTab.Security -> Ph.ShieldBold
-        HumeTab.Profile -> Ph.UserBold
-        HumeTab.AI -> Ph.SparkleBold
+        HumeTab.Home -> Ph.HouseFill
+        HumeTab.Energy -> Ph.LightningFill
+        HumeTab.Security -> Ph.ShieldFill
+        HumeTab.Profile -> Ph.UserFill
+        HumeTab.AI -> Ph.SparkleFill
     }
 
-    /** Tab khong chon: net thuong. */
+    /** Tab khong chon: net mong. */
     fun tabOutline(tab: HumeTab): ImageVector = when (tab) {
         HumeTab.Home -> Ph.House
         HumeTab.Energy -> Ph.Lightning

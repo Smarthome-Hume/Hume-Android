@@ -1,6 +1,7 @@
 package com.smarthome.hume.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -15,15 +16,14 @@ import androidx.compose.ui.unit.dp
  * ve tren khung viewBox 0 0 256 256, net deu, dau bo tron, KHONG DAC.
  * Material Rounded ben Android lai la ban FILLED bo goc - do la ly do man hinh
  * day icon dac. Nen o day khung 256 cua Phosphor duoc dung lai nguyen ven va
- * moi icon ve bang NET (stroke) thay vi to dac.
+ * moi icon noi dung ve bang NET (stroke) thay vi to dac.
  *
  *  - Regular: net 16 (giong Phosphor regular) - dung cho moi icon noi dung.
- *  - Bold:    net 24 (giong Phosphor bold)    - dung cho tab dang chon.
+ *  - Fill:    to DAC (Phosphor fill)          - CHI dung cho tab dang chon.
  *
- * Icon.tint van doi mau binh thuong vi Compose to mau ca phan stroke.
+ * Icon.tint van doi mau binh thuong vi Compose to mau ca stroke lan fill.
  */
 private const val REGULAR = 16f
-private const val BOLD = 24f
 
 private fun phosphor(
     name: String,
@@ -44,6 +44,27 @@ private fun phosphor(
             strokeLineWidth = strokeWidth,
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
+        )
+    }
+}.build()
+
+/** Ban TO DAC (Phosphor fill) - dung EvenOdd de khoet lo ben trong (vd cua nha). */
+private fun phosphorFill(
+    name: String,
+    vararg pathData: String,
+): ImageVector = ImageVector.Builder(
+    name = name,
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 256f,
+    viewportHeight = 256f,
+).apply {
+    pathData.forEach { data ->
+        addPath(
+            pathData = PathParser().parsePathString(data).toNodes(),
+            pathFillType = PathFillType.EvenOdd,
+            fill = SolidColor(Color.Black),
+            stroke = null,
         )
     }
 }.build()
@@ -244,6 +265,34 @@ private val DESK = arrayOf(
     "M88,136 L168,136",
 )
 
+/* --- Ban FILL cho tab dang chon (ph-*-fill) --- */
+
+/** ph-house-fill: khoi nha dac, cua duoc khoet bang EvenOdd. */
+private val HOUSE_FILL = arrayOf(
+    "M40,216 L40,112 L128,40 L216,112 L216,216 Z M104,216 L104,164 L152,164 L152,216 Z",
+)
+
+/** ph-lightning-fill */
+private val LIGHTNING_FILL = arrayOf(
+    "M96,240 L112,144 L48,120 L160,16 L144,112 L208,136 Z",
+)
+
+/** ph-shield-fill */
+private val SHIELD_FILL = arrayOf(
+    "M48,56 L128,32 L208,56 L208,120 C208,176 168,206 128,224 C88,206 48,176 48,120 Z",
+)
+
+/** ph-user-fill */
+private val USER_FILL = arrayOf(
+    "M128,36 A46,46 0 1 0 128,128 A46,46 0 1 0 128,36 Z",
+    "M128,144 C86,144 50,172 38,212 L218,212 C206,172 170,144 128,144 Z",
+)
+
+/** ph-sparkle-fill */
+private val SPARKLE_FILL = arrayOf(
+    "M128,28 L148,108 L228,128 L148,148 L128,228 L108,148 L28,128 L108,108 Z",
+)
+
 /** Bo icon Phosphor da port. */
 object Ph {
     val Lightbulb = phosphor("ph-lightbulb", REGULAR, *LIGHTBULB)
@@ -275,10 +324,10 @@ object Ph {
     val SignOut = phosphor("ph-sign-out", REGULAR, *SIGN_OUT)
     val Desk = phosphor("ph-desk", REGULAR, *DESK)
 
-    /** Ban net day cho tab dang chon (Phosphor bold). */
-    val HouseBold = phosphor("ph-house-bold", BOLD, *HOUSE)
-    val LightningBold = phosphor("ph-lightning-bold", BOLD, *LIGHTNING)
-    val ShieldBold = phosphor("ph-shield-bold", BOLD, *SHIELD)
-    val UserBold = phosphor("ph-user-bold", BOLD, *USER)
-    val SparkleBold = phosphor("ph-sparkle-bold", BOLD, *SPARKLE)
+    /** Ban TO DAC cho tab dang chon. */
+    val HouseFill = phosphorFill("ph-house-fill", *HOUSE_FILL)
+    val LightningFill = phosphorFill("ph-lightning-fill", *LIGHTNING_FILL)
+    val ShieldFill = phosphorFill("ph-shield-fill", *SHIELD_FILL)
+    val UserFill = phosphorFill("ph-user-fill", *USER_FILL)
+    val SparkleFill = phosphorFill("ph-sparkle-fill", *SPARKLE_FILL)
 }
