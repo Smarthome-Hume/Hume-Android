@@ -2,12 +2,14 @@ package com.smarthome.hume.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -168,15 +170,28 @@ private fun typographyFor(family: FontFamily): Typography {
     )
 }
 
+/*
+ * VI SAO MAT MONTSERRAT:
+ * MaterialTheme chi dat Typography cho cac component cua Material. Text() goi
+ * truc tiep (gan nhu toan bo man hinh nay) lai doc LocalTextStyle, ma
+ * MaterialTheme KHONG he cung cap LocalTextStyle -> moi chu do roi ve font he
+ * thong (Roboto). Nen o day phai tu cung cap LocalTextStyle mang fontFamily
+ * Montserrat thi ca app moi dung font.
+ */
 @Composable
 fun HumeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     SideEffect { HumeColors.isDark = darkTheme }
     val context = LocalContext.current
-    val typography = remember(context) { typographyFor(humeFontFamily(context)) }
+    val fontFamily = remember(context) { humeFontFamily(context) }
+    val typography = remember(fontFamily) { typographyFor(fontFamily) }
     MaterialTheme(
         colorScheme = schemeFor(darkTheme),
         typography = typography,
         shapes = HumeMaterialShapes,
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(
+            LocalTextStyle provides typography.bodyLarge.copy(fontFamily = fontFamily),
+            content = content,
+        )
+    }
 }

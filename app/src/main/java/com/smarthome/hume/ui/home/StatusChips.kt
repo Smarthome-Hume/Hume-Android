@@ -16,12 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Map
-import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.WbTwilight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,12 +39,13 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
 
 /*
- * Hai chip trang thai. Truoc day moi chip an weight(1f) nen LUON dai bang nua
- * man hinh du chu ngan. Nay chip CHI DAI BANG NOI DUNG (wrap content), toi da
- * 180dp; chu nao dai hon thi tu CHAY (marquee) dung nhu ban HTML.
+ * Hai chip trang thai, moi chip chi dai bang noi dung (toi da 180dp) va chu
+ * dai thi tu chay nhu ban HTML.
+ *  - Chip bao dong nam SAT TRAI, chip so bong den nam SAT PHAI (SpaceBetween).
  *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
  */
 private val LightsGold = Color(0xFFB8860B)
@@ -105,7 +100,12 @@ fun StatusChipRow(
                 }
             }
         } else {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Chip bao dong ben trai, chip so bong den DAY HAN SANG PHAI.
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 val armed = alarmState != null && alarmState != "disarmed"
                 BigPill(
                     icon = HumeIcons.Alarm,
@@ -218,11 +218,11 @@ private fun ModePill(
 }
 
 private fun modeIcon(service: String): ImageVector = when (service) {
-    "arm_home" -> Icons.Rounded.Home
-    "arm_away" -> Icons.Rounded.Map
-    "arm_night" -> Icons.Rounded.Bedtime
-    "arm_custom_bypass" -> Icons.Rounded.WbTwilight
-    else -> Icons.Rounded.Shield
+    "arm_home" -> Ph.House
+    "arm_away" -> Ph.SignOut
+    "arm_night" -> Ph.Moon
+    "arm_custom_bypass" -> Ph.SunHorizon
+    else -> Ph.Shield
 }
 
 private fun modeColor(service: String): Color = when (service) {
