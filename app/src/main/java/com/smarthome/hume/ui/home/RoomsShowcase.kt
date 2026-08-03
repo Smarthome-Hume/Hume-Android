@@ -56,13 +56,11 @@ import kotlin.math.absoluteValue
 /*
  * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots.
  *
- * DA BO HAN HIEU UNG NEON NHAP NHAY tren the phong: khong con vien nhap nhay,
- * khong con quang sang do bong, khong con vong sang quanh nut icon. The phong
- * dang bat den chi doi sang nen gradient cam nhu ban goc.
- * Cua/cua so dang mo van co mot cham do TINH o goc nut icon de canh bao.
+ * KHONG co hieu ung neon nhap nhay tren the phong. The phong dang bat den chi
+ * doi sang nen gradient cam nhu ban goc; cua/cua so dang mo co mot cham do TINH.
  *
- * CHAY CHU: gia tri/nhan cua tile va ten phong dung humeMarquee() - port tu
- * `animation: marquee 8s linear infinite` cua ban HTML, chi chay khi chu tran.
+ * TEN PHONG KHONG CHAY CHU - ban goc de ten tinh, dai qua thi cat bang "...".
+ * Chi gia tri/nhan cua tile nho moi dung humeMarquee() (port tu marquee ban HTML).
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -291,9 +289,8 @@ private fun RoomCardLarge(
                     fontWeight = FontWeight.SemiBold,
                     color = fg,
                     maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Clip,
-                    modifier = Modifier.weight(1f).padding(end = 6.dp).humeMarquee(),
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 6.dp),
                 )
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(

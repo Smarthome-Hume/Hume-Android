@@ -29,9 +29,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.storage.DailySnapshotStore
 import com.smarthome.hume.ui.theme.HumeColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.round
@@ -43,8 +48,14 @@ data class WeekDay(val name: String, val value: Double, val isToday: Boolean)
  * Port of EnergyWeekChart + WeekBarLineChart (Views/Energy/EnergyView.swift and
  * Views/Home/2_Energy/SolarEnergyCardView.swift).
  *
- * Six past days come from the snapshot cache (filled once from history), the
- * seventh column is today and stays live off the websocket state.
+ * Sau ngay qua khu lay tu cache snapshot, cot thu bay la hom nay va chay truc
+ * tiep theo websocket.
+ *
+ * TAI SAO TRUOC DAY THIEU DATA: ca tuan duoc hoi bang MOT request 168 gio tren
+ * client dung chung voi kenh realtime (read timeout 20s). Home Assistant tra
+ * cham hon the la request bi huy -> khong ngay nao co so. Nay moi ngay la mot
+ * request rieng qua HistoryFetcher (timeout 60s, chay song song), giong cach
+ * ban iOS gom tung ngay bang task group.
  */
 @Composable
 fun EnergyWeekChart(
@@ -63,21 +74,35 @@ fun EnergyWeekChart(
 
     LaunchedEffect(entityId) {
         val now = System.currentTimeMillis()
+        val dayMs = 24L * 60L * 60L * 1000L
         val missing = (1..6).map { DailySnapshotStore.startOfDay(now, -it) }
             .filter { store.get(entityId, it) == null }
-        if (missing.isNotEmpty()) {
-            // One history call covers the whole week; daily counters are read as the
-            // day maximum, the same value the iOS task group collects per day.
-            val points = runCatching { ha.fetchHistory(entityId, hours = 24 * 7) }.getOrDefault(emptyList())
-            missing.forEach { dayStart ->
-                val dayEnd = dayStart + 24L * 60L * 60L * 1000L
-                val dayPoints = points.filter { it.timeMs in dayStart until dayEnd }
-                if (dayPoints.isNotEmpty()) {
-                    store.set(entityId, dayStart, dayPoints.maxOf { it.value })
-                }
+
+        if (missing.isNotEmpty() && HistoryFetcher.isConfigured) {
+            // Buoc 1: moi ngay mot request rieng, chay song song.
+            coroutineScope {
+                missing.map { dayStart ->
+                    async(Dispatchers.IO) {
+                        val points = HistoryFetcher.fetchRange(entityId, dayStart, dayStart + dayMs)
+                        dayStart to (points.maxOfOrNull { it.value } ?: 0.0)
+                    }
+                }.awaitAll()
+            }.forEach { (dayStart, value) ->
+                if (value > 0.0) store.set(entityId, dayStart, value)
             }
-            store.prune()
         }
+
+        // Buoc 2: ngay nao van trong thi thu lai bang duong cu (mot lan 7 ngay).
+        val stillMissing = missing.filter { store.get(entityId, it) == null }
+        if (stillMissing.isNotEmpty()) {
+            val points = runCatching { ha.fetchHistory(entityId, hours = 24 * 7) }.getOrDefault(emptyList())
+            stillMissing.forEach { dayStart ->
+                val dayPoints = points.filter { it.timeMs in dayStart until (dayStart + dayMs) }
+                if (dayPoints.isNotEmpty()) store.set(entityId, dayStart, dayPoints.maxOf { it.value })
+            }
+        }
+        store.prune()
+
         past = (6 downTo 1).map { offset ->
             val dayStart = DailySnapshotStore.startOfDay(now, -offset)
             val value = store.get(entityId, dayStart) ?: 0.0
@@ -158,14 +183,6 @@ private fun WeekBars(data: List<WeekDay>) {
         val baseline = size.height - 2.dp.toPx()
         val plotH = baseline - 8.dp.toPx()
         val radius = 8.dp.toPx()
-
-        // Faint baseline so empty days read as "no data" instead of a broken axis.
-        drawLine(
-            color = HumeColors.Divider,
-            start = Offset(0f, baseline),
-            end = Offset(size.width, baseline),
-            strokeWidth = 1.dp.toPx(),
-        )
 
         val tops = data.mapIndexed { index, day ->
             val ratio = (day.value / scale).toFloat().coerceIn(0f, 1f)
