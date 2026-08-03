@@ -54,8 +54,10 @@ data class WeekDay(val name: String, val value: Double, val isToday: Boolean)
  * TAI SAO TRUOC DAY THIEU DATA: ca tuan duoc hoi bang MOT request 168 gio tren
  * client dung chung voi kenh realtime (read timeout 20s). Home Assistant tra
  * cham hon the la request bi huy -> khong ngay nao co so. Nay moi ngay la mot
- * request rieng qua HistoryFetcher (timeout 60s, chay song song), giong cach
- * ban iOS gom tung ngay bang task group.
+ * request rieng qua HistoryFetcher (timeout 60s, chay song song).
+ *
+ * TAT CA loi mang deu bi nuot tai cho: mot IOException nem ra tu async se lan
+ * len LaunchedEffect va lam VANG APP, nen moi request duoc boc runCatching.
  */
 @Composable
 fun EnergyWeekChart(
@@ -73,40 +75,46 @@ fun EnergyWeekChart(
     val todayLive = round((entities[entityId]?.numericState ?: 0.0) * 10) / 10
 
     LaunchedEffect(entityId) {
-        val now = System.currentTimeMillis()
-        val dayMs = 24L * 60L * 60L * 1000L
-        val missing = (1..6).map { DailySnapshotStore.startOfDay(now, -it) }
-            .filter { store.get(entityId, it) == null }
+        runCatching {
+            val now = System.currentTimeMillis()
+            val dayMs = 24L * 60L * 60L * 1000L
+            val missing = (1..6).map { DailySnapshotStore.startOfDay(now, -it) }
+                .filter { store.get(entityId, it) == null }
 
-        if (missing.isNotEmpty() && HistoryFetcher.isConfigured) {
-            // Buoc 1: moi ngay mot request rieng, chay song song.
-            coroutineScope {
-                missing.map { dayStart ->
-                    async(Dispatchers.IO) {
-                        val points = HistoryFetcher.fetchRange(entityId, dayStart, dayStart + dayMs)
-                        dayStart to (points.maxOfOrNull { it.value } ?: 0.0)
-                    }
-                }.awaitAll()
-            }.forEach { (dayStart, value) ->
-                if (value > 0.0) store.set(entityId, dayStart, value)
+            if (missing.isNotEmpty() && HistoryFetcher.isConfigured) {
+                // Buoc 1: moi ngay mot request rieng, chay song song.
+                coroutineScope {
+                    missing.map { dayStart ->
+                        async(Dispatchers.IO) {
+                            val value = runCatching {
+                                HistoryFetcher.fetchRange(entityId, dayStart, dayStart + dayMs)
+                                    .maxOfOrNull { it.value } ?: 0.0
+                            }.getOrDefault(0.0)
+                            dayStart to value
+                        }
+                    }.awaitAll()
+                }.forEach { (dayStart, value) ->
+                    if (value > 0.0) store.set(entityId, dayStart, value)
+                }
             }
-        }
 
-        // Buoc 2: ngay nao van trong thi thu lai bang duong cu (mot lan 7 ngay).
-        val stillMissing = missing.filter { store.get(entityId, it) == null }
-        if (stillMissing.isNotEmpty()) {
-            val points = runCatching { ha.fetchHistory(entityId, hours = 24 * 7) }.getOrDefault(emptyList())
-            stillMissing.forEach { dayStart ->
-                val dayPoints = points.filter { it.timeMs in dayStart until (dayStart + dayMs) }
-                if (dayPoints.isNotEmpty()) store.set(entityId, dayStart, dayPoints.maxOf { it.value })
+            // Buoc 2: ngay nao van trong thi thu lai bang duong cu (mot lan 7 ngay).
+            val stillMissing = missing.filter { store.get(entityId, it) == null }
+            if (stillMissing.isNotEmpty()) {
+                val points = runCatching { ha.fetchHistory(entityId, hours = 24 * 7) }
+                    .getOrDefault(emptyList())
+                stillMissing.forEach { dayStart ->
+                    val dayPoints = points.filter { it.timeMs in dayStart until (dayStart + dayMs) }
+                    if (dayPoints.isNotEmpty()) store.set(entityId, dayStart, dayPoints.maxOf { it.value })
+                }
             }
-        }
-        store.prune()
+            runCatching { store.prune() }
 
-        past = (6 downTo 1).map { offset ->
-            val dayStart = DailySnapshotStore.startOfDay(now, -offset)
-            val value = store.get(entityId, dayStart) ?: 0.0
-            WeekDay(DailySnapshotStore.dayLabel(dayStart), round(value * 10) / 10, false)
+            past = (6 downTo 1).map { offset ->
+                val dayStart = DailySnapshotStore.startOfDay(now, -offset)
+                val value = store.get(entityId, dayStart) ?: 0.0
+                WeekDay(DailySnapshotStore.dayLabel(dayStart), round(value * 10) / 10, false)
+            }
         }
     }
 
