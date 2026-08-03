@@ -22,10 +22,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.ElectricalServices
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.House
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ElectricalServices
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.House
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -177,7 +177,7 @@ private fun ConsumptionTab(entities: Map<String, HomeEntity>, ha: HomeAssistantR
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NeonStat(
                 Modifier.weight(1f),
-                Icons.Rounded.ElectricalServices,
+                Icons.Outlined.ElectricalServices,
                 "\u0110i\u1ec7n l\u01b0\u1edbi",
                 vnd(entities.value("sensor.grid_cost")),
                 "VND",
@@ -185,7 +185,7 @@ private fun ConsumptionTab(entities: Map<String, HomeEntity>, ha: HomeAssistantR
             )
             NeonStat(
                 Modifier.weight(1f),
-                Icons.Rounded.House,
+                Icons.Outlined.House,
                 "\u0110i\u1ec7n ti\u00eau th\u1ee5",
                 vnd(entities.value("sensor.home_cost")),
                 "VND",
@@ -245,7 +245,7 @@ private fun AnalysisTab(entities: Map<String, HomeEntity>, ha: HomeAssistantRepo
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NeonStat(
                 Modifier.weight(1f),
-                Icons.Rounded.ElectricalServices,
+                Icons.Outlined.ElectricalServices,
                 "\u0110i\u1ec7n l\u01b0\u1edbi",
                 fmt(entities.value("sensor.grid_import_billing_2")),
                 "kWh",
@@ -253,7 +253,7 @@ private fun AnalysisTab(entities: Map<String, HomeEntity>, ha: HomeAssistantRepo
             )
             NeonStat(
                 Modifier.weight(1f),
-                Icons.Rounded.House,
+                Icons.Outlined.House,
                 "\u0110i\u1ec7n ti\u00eau th\u1ee5",
                 fmt(entities.value("sensor.home_import_billing")),
                 "kWh",
@@ -319,7 +319,7 @@ private fun ExpanderGroup(
         ) {
             Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
             Icon(
-                Icons.Rounded.ExpandMore,
+                Icons.Outlined.ExpandMore,
                 contentDescription = null,
                 tint = HumeColors.TextSecondary,
                 modifier = Modifier.rotate(if (open) 180f else 0f),
@@ -389,7 +389,7 @@ private fun NumberRow(
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Check, contentDescription = null, tint = GreenSave, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.Check, contentDescription = null, tint = GreenSave, modifier = Modifier.size(18.dp))
             }
         } else {
             Row(
