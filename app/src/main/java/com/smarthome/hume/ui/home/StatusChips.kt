@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -41,12 +42,17 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
+import com.smarthome.hume.ui.theme.rememberNeonPulse
 
 /*
  * Hai chip trang thai, moi chip chi dai bang noi dung (toi da 180dp) va chu
  * dai thi tu chay nhu ban HTML.
  *  - Chip bao dong nam SAT TRAI, chip so bong den nam SAT PHAI (SpaceBetween).
  *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
+ *
+ * NEON: ban HTML cho chip an ninh (khac disarmed) va chip so bong den (> 0)
+ * chay neonPulse 6s - quang sang quanh chip toa dan roi diu lai. Chip dang tat
+ * thi khong co gi.
  */
 private val LightsGold = Color(0xFFB8860B)
 private val AlarmGreen = Color(0xFF4CAF50)
@@ -138,16 +144,29 @@ private fun BigPill(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val shape = RoundedCornerShape(PillRadius)
+    // neonPulse 6s: chi chay khi chip dang bat.
+    val pulse = if (active) rememberNeonPulse(6000) else 0f
+    val glow = 6.dp + 8.dp * pulse
+
     Row(
         modifier
             .height(PillHeight)
             .widthIn(max = PillMaxWidth)
-            .clip(RoundedCornerShape(PillRadius))
-            .background(if (active) tint.copy(alpha = 0.08f) else HumeColors.Card)
+            .then(
+                if (active) Modifier.shadow(
+                    elevation = glow,
+                    shape = shape,
+                    ambientColor = tint,
+                    spotColor = tint,
+                ) else Modifier
+            )
+            .clip(shape)
+            .background(if (active) tint.copy(alpha = 0.08f + 0.08f * pulse) else HumeColors.Card)
             .border(
                 1.dp,
-                if (active) tint.copy(alpha = 0.3f) else Color.Transparent,
-                RoundedCornerShape(PillRadius),
+                if (active) tint.copy(alpha = 0.30f + 0.45f * pulse) else Color.Transparent,
+                shape,
             )
             .clickable(onClick = onClick)
             .padding(start = 6.dp, end = 12.dp),
