@@ -13,19 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AcUnit
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Air
-import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.PowerSettingsNew
-import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material.icons.rounded.Thermostat
-import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -45,6 +37,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.glassSurface
 import kotlinx.serialization.json.JsonArray
@@ -58,6 +51,9 @@ import kotlin.math.roundToInt
  * ClimatePopupView.swift. In the SwiftUI app they are reached by double tapping
  * the icon of a device card, never by the card toggle, and they sit on top of
  * the open room sheet over a dark scrim.
+ *
+ * Icon: toan bo dung Phosphor net mong (Ph.*), khong con Material dac.
+ * Popup cung chua status bar bang statusBarsPadding().
  */
 
 /** BubblePopup in HomeView.swift. */
@@ -83,7 +79,8 @@ private fun PopupShell(onDismiss: () -> Unit, content: @Composable () -> Unit) {
             Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.65f))
-                .clickable(onClick = onDismiss),
+                .clickable(onClick = onDismiss)
+                .statusBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
             Box(
@@ -117,11 +114,11 @@ private fun CloseButton(onDismiss: () -> Unit) {
 private data class ClimateMode(val key: String, val label: String, val icon: ImageVector, val color: Color)
 
 private val climateModes = listOf(
-    ClimateMode("off", "T\u1eaft", Icons.Rounded.PowerSettingsNew, Color(0xFF8E8E93)),
-    ClimateMode("cool", "M\u00e1t", Icons.Rounded.AcUnit, Color(0xFF73B9F2)),
-    ClimateMode("dry", "Kh\u00f4", Icons.Rounded.WaterDrop, Color(0xFFF2D26F)),
-    ClimateMode("fan_only", "Qu\u1ea1t", Icons.Rounded.Air, Color(0xFF66D19E)),
-    ClimateMode("heat_cool", "T\u1ef1 \u0111\u1ed9ng", Icons.Rounded.Thermostat, Color(0xFFF9784C)),
+    ClimateMode("off", "T\u1eaft", Ph.PowerButton, Color(0xFF8E8E93)),
+    ClimateMode("cool", "M\u00e1t", Ph.Snowflake, Color(0xFF73B9F2)),
+    ClimateMode("dry", "Kh\u00f4", Ph.Drop, Color(0xFFF2D26F)),
+    ClimateMode("fan_only", "Qu\u1ea1t", Ph.Fan, Color(0xFF66D19E)),
+    ClimateMode("heat_cool", "T\u1ef1 \u0111\u1ed9ng", Ph.Thermometer, Color(0xFFF9784C)),
 )
 
 @Composable
@@ -139,9 +136,9 @@ fun ClimatePopup(
 
     PopupShell(onDismiss) {
         Column(
-            Modifier.padding(22.dp),
+            Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
                 entity?.friendly() ?: entityId,
@@ -156,13 +153,14 @@ fun ClimatePopup(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                StepButton(Icons.Rounded.Remove, isOn && target > 16) {
+                StepButton(Ph.Minus, isOn && target > 16) {
                     ha.setClimateTemperature(entityId, target - 1)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         target.roundToInt().toString() + "\u00b0",
-                        fontSize = 56.sp,
+                        fontSize = 48.sp,
+                        lineHeight = 54.sp,
                         fontWeight = FontWeight.Light,
                         color = HumeColors.TextPrimary,
                     )
@@ -174,7 +172,7 @@ fun ClimatePopup(
                         )
                     }
                 }
-                StepButton(Icons.Rounded.Add, isOn && target < 31) {
+                StepButton(Ph.Plus, isOn && target < 31) {
                     ha.setClimateTemperature(entityId, target + 1)
                 }
             }
@@ -185,7 +183,7 @@ fun ClimatePopup(
                     Column(
                         Modifier
                             .weight(1f)
-                            .height(58.dp)
+                            .height(48.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (active) item.color else HumeColors.Background)
                             .clickable { ha.setHvacMode(entityId, item.key) },
@@ -196,12 +194,13 @@ fun ClimatePopup(
                             item.icon,
                             contentDescription = null,
                             tint = if (active) Color.White else HumeColors.TextSecondary,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(17.dp),
                         )
-                        Spacer(Modifier.height(5.dp))
+                        Spacer(Modifier.height(3.dp))
                         Text(
                             item.label,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
+                            lineHeight = 11.sp,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                             color = if (active) Color.White else HumeColors.TextSecondary,
                             maxLines = 1,
@@ -219,13 +218,13 @@ fun ClimatePopup(
 private fun StepButton(icon: ImageVector, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(52.dp)
+            .size(44.dp)
             .clip(CircleShape)
             .background(HumeColors.Background)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = HumeColors.TextPrimary, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -262,9 +261,9 @@ fun RgbPopup(
 
     PopupShell(onDismiss) {
         Column(
-            Modifier.padding(20.dp),
+            Modifier.padding(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 entity?.friendly() ?: entityId,
@@ -275,7 +274,7 @@ fun RgbPopup(
 
             Box(
                 Modifier
-                    .size(60.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
                     .background(if (isOn) Color.Yellow.copy(alpha = 0.20f) else HumeColors.Background)
                     .border(
@@ -287,10 +286,10 @@ fun RgbPopup(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Rounded.Lightbulb,
+                    Ph.Lightbulb,
                     contentDescription = null,
                     tint = if (isOn) Color.Yellow else HumeColors.TextSecondary,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
 
@@ -348,7 +347,7 @@ fun RgbPopup(
                             Box(
                                 Modifier
                                     .fillMaxWidth()
-                                    .height(40.dp)
+                                    .height(34.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(Color(preset.r, preset.g, preset.b))
                                     .border(
@@ -366,10 +365,11 @@ fun RgbPopup(
                                         )
                                     },
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(3.dp))
                             Text(
                                 preset.name,
                                 fontSize = 9.sp,
+                                lineHeight = 11.sp,
                                 color = HumeColors.TextPrimary,
                                 maxLines = 1,
                             )

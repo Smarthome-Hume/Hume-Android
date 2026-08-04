@@ -411,6 +411,37 @@ private val WARNING_PATH = arrayOf(
     "M128,184 L128,184",
 )
 
+/** ph-power - thay cho Icons.Rounded.PowerSettingsNew (dac). */
+private val POWER_BUTTON = arrayOf(
+    "M128,24 L128,96",
+    "M176,72 A68,68 0 1 1 80,72",
+)
+
+/** ph-wind - thay cho Icons.Rounded.Air (dac). */
+private val WIND_PATH = arrayOf(
+    "M40,96 L152,96 A24,24 0 1 0 128,72",
+    "M24,144 L184,144 A24,24 0 1 1 160,168",
+    "M56,192 L120,192",
+)
+
+/** ph-toggle-right - thay cho Icons.Rounded.ToggleOn (dac). */
+private val TOGGLE_RIGHT = arrayOf(
+    "M80,80 L176,80 A48,48 0 0 1 176,176 L80,176 A48,48 0 0 1 80,80 Z",
+    "M176,104 A24,24 0 1 0 176,152 A24,24 0 1 0 176,104",
+)
+
+/** ph-arrow-up-right - thay cho Icons.Rounded.ArrowOutward (dac). */
+private val ARROW_UP_RIGHT = arrayOf(
+    "M72,184 L184,72",
+    "M104,72 L184,72 L184,152",
+)
+
+/** ph-hand-tap - badge nho bao "bam hai lan de mo popup". */
+private val HAND_TAP = arrayOf(
+    "M104,112 L104,52 A20,20 0 0 1 144,52 L144,132",
+    "M144,104 A20,20 0 0 1 184,104 L184,152 A64,64 0 0 1 120,216 A56,56 0 0 1 64,160 L64,124 A20,20 0 0 1 104,124",
+)
+
 /* --- Ban FILL cho tab dang chon (ph-*-fill) --- */
 
 /** ph-house-fill: khoi nha dac, cua duoc khoet bang EvenOdd. */
@@ -494,6 +525,11 @@ object Ph {
     val Lock: ImageVector = phosphor("ph-lock-simple", REGULAR, *LOCK_PATH)
     val Gear: ImageVector = phosphor("ph-gear", REGULAR, *GEAR_PATH)
     val Warning: ImageVector = phosphor("ph-warning", REGULAR, *WARNING_PATH)
+    val PowerButton: ImageVector = phosphor("ph-power", REGULAR, *POWER_BUTTON)
+    val Fan: ImageVector = phosphor("ph-wind", REGULAR, *WIND_PATH)
+    val ToggleRight: ImageVector = phosphor("ph-toggle-right", REGULAR, *TOGGLE_RIGHT)
+    val ArrowUpRight: ImageVector = phosphor("ph-arrow-up-right", REGULAR, *ARROW_UP_RIGHT)
+    val HandTap: ImageVector = phosphor("ph-hand-tap", THIN, *HAND_TAP)
 
     /** Ban net MANH hon (Phosphor thin) cho icon phu. */
     val CaretRightThin: ImageVector = phosphor("ph-caret-right-thin", THIN, *CARET_RIGHT)
