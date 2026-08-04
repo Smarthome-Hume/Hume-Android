@@ -3,7 +3,6 @@ package com.smarthome.hume.ui.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -32,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -47,8 +47,10 @@ import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.NeonDotRed
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
+import com.smarthome.hume.ui.theme.rememberNeonBlink
 import kotlin.math.absoluteValue
 
 /*
@@ -61,8 +63,8 @@ import kotlin.math.absoluteValue
  * The cam bien nho thi chay chu (marquee) o ca gia tri va nhan, port tu
  * @keyframes marquee ban HTML.
  *
- * ICON: toan bo dung Phosphor regular (nhu <i class="ph ph-..."> ben ban HTML),
- * khong dung Material Rounded vi ban do la icon DAC.
+ * NEON: ban HTML chi cho CHAM DO o goc icon nhap nhay (neon-blink 1s), ca the
+ * phong KHONG bao gio nhap nhay.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -71,7 +73,6 @@ private val CardRadius = 30.dp
 private val TileRadius = 30.dp
 private const val CardAspect = 1.30f
 private const val TileBlockRatio = 0.583f
-private val NeonRed = Color(0xFFFF5252)
 
 private val ActiveGradient
     get() = Brush.linearGradient(
@@ -307,7 +308,7 @@ private fun RoomCardLarge(
                     ) {
                         Icon(HumeIcons.room(room.icon), contentDescription = null, tint = fg, modifier = Modifier.size(iconCircle * 0.48f))
                     }
-                    if (contactOpen) AlertDot(Modifier.offset(x = 4.dp, y = (-4).dp))
+                    if (contactOpen) AlertDot(Modifier.offset(y = 6.dp))
                 }
             }
 
@@ -345,15 +346,27 @@ private fun RoomCardLarge(
     }
 }
 
-/** Cham do bao cua/cua so dang mo. */
+/*
+ * Cham do bao cua dang mo - port 1:1 tu ban HTML:
+ *   width/height 8, borderRadius 50%, background #ff5252,
+ *   boxShadow 0 0 6px rgba(255,82,82,.8), 0 0 12px .4, 0 0 20px .2,
+ *   animation neon-blink 1s ease-in-out infinite (opacity 1 -> .3).
+ */
 @Composable
 private fun AlertDot(modifier: Modifier = Modifier) {
+    val blink = rememberNeonBlink(1000)
     Box(
         modifier
-            .size(12.dp)
+            .size(8.dp)
+            .graphicsLayer { alpha = blink }
+            .shadow(
+                elevation = 10.dp,
+                shape = CircleShape,
+                ambientColor = NeonDotRed,
+                spotColor = NeonDotRed,
+            )
             .clip(CircleShape)
-            .background(NeonRed)
-            .border(2.dp, HumeColors.Card, CircleShape)
+            .background(NeonDotRed)
     )
 }
 
