@@ -18,18 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Badge
-import androidx.compose.material.icons.rounded.ChatBubbleOutline
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.MailOutline
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Phone
-import androidx.compose.material.icons.rounded.PhoneIphone
-import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -62,6 +50,7 @@ import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
+import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.glassSurface
 import kotlinx.coroutines.CoroutineScope
@@ -75,11 +64,8 @@ private val NavBarRoom = 140.dp
 /**
  * Profile tab, rebuilt from ProfileView.swift.
  *
- * Same three groups as the original: the orange owner card, the account rows
- * (id, name, email, phone, location) with copy and edit actions, and the
- * automation entry, followed by the connection pill and the logout button.
- * "Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb" opens the device manager and "T\u1ef1 \u0111\u1ed9ng & c\u1ea3nh b\u00e1o"
- * opens the automation settings, exactly like the two iOS navigation links.
+ * Icon o day dung Phosphor regular (giong ban HTML: <i class="ph ph-...">),
+ * khong dung Material Rounded vi ban Rounded la icon DAC.
  */
 @Composable
 fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: HomeAssistantRepository) {
@@ -119,24 +105,24 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             Modifier.fillMaxWidth().glassSurface(radius = 47.dp).padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            ProfileRow(Icons.Rounded.Badge, "ID Ng\u01b0\u1eddi d\u00f9ng", userId, copy = true)
-            ProfileRow(Icons.Rounded.Person, "T\u00ean ng\u01b0\u1eddi d\u00f9ng", personName, copy = true)
+            ProfileRow(Ph.Badge, "ID Ng\u01b0\u1eddi d\u00f9ng", userId, copy = true)
+            ProfileRow(Ph.User, "T\u00ean ng\u01b0\u1eddi d\u00f9ng", personName, copy = true)
             ProfileRow(
-                Icons.Rounded.MailOutline,
+                Ph.Envelope,
                 "Email",
                 email.ifEmpty { "Ch\u01b0a c\u1eadp nh\u1eadt" },
                 copy = false,
                 onClick = { editing = "email" },
             )
             ProfileRow(
-                Icons.Rounded.Phone,
+                Ph.Phone,
                 "\u0110i\u1ec7n tho\u1ea1i",
                 phone.ifEmpty { "Ch\u01b0a c\u1eadp nh\u1eadt" },
                 copy = false,
                 onClick = { editing = "phone" },
             )
             ProfileRow(
-                Icons.Rounded.Place,
+                Ph.MapPin,
                 "V\u1ecb tr\u00ed",
                 locationName(person?.state),
                 copy = true,
@@ -152,10 +138,10 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
                 .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = HumeColors.Orange, modifier = Modifier.size(18.dp))
+            Icon(Ph.MagicWand, contentDescription = null, tint = HumeColors.Orange, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(12.dp))
             Text("T\u1ef1 \u0111\u1ed9ng & c\u1ea3nh b\u00e1o", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
-            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = HumeColors.TextSecondary, modifier = Modifier.size(16.dp))
+            Icon(Ph.CaretRight, contentDescription = null, tint = HumeColors.TextSecondary, modifier = Modifier.size(16.dp))
         }
 
         // Connection pill
@@ -272,7 +258,7 @@ private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> U
                         modifier = Modifier.size(60.dp).clip(CircleShape),
                     )
                 } else {
-                    Icon(Icons.Rounded.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(Ph.User, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
             }
             Spacer(Modifier.width(14.dp))
@@ -296,22 +282,22 @@ private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> U
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Rounded.PhoneIphone, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                Icon(Ph.DeviceMobile, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, maxLines = 1, softWrap = false, modifier = Modifier.weight(1f))
-                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
+                Icon(Ph.CaretRight, contentDescription = null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
             }
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(Ph.Chat, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
     }
 }
 
-/** ProfileCardRow: 50dp icon circle, label over value, copy or edit trailing button, radius 35. */
+/** ProfileCardRow: 46dp icon circle, label over value, copy or edit trailing button. */
 @Composable
 private fun ProfileRow(
     icon: ImageVector,
@@ -365,7 +351,7 @@ private fun ProfileRow(
                 Text("\u0110\u00e3 copy", fontSize = 11.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
             } else {
                 Icon(
-                    if (copy) Icons.Rounded.ContentCopy else Icons.Rounded.Edit,
+                    if (copy) Ph.Copy else Ph.Pencil,
                     contentDescription = null,
                     tint = HumeColors.TextPrimary,
                     modifier = Modifier.size(18.dp),

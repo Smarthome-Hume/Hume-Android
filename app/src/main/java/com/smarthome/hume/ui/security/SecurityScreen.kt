@@ -22,15 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DirectionsWalk
-import androidx.compose.material.icons.rounded.DoorFront
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Videocam
-import androidx.compose.material.icons.rounded.WaterDrop
-import androidx.compose.material.icons.rounded.Whatshot
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -69,6 +60,7 @@ import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
+import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.glassSurface
 import kotlinx.coroutines.delay
@@ -106,39 +98,36 @@ private enum class SensorKind { Door, Motion, Smoke, Leak }
 
 /** DOOR_SENSORS */
 private val doorSensors = listOf(
-    SensorDef("binary_sensor.cam_bien_cua_kinh_contact", "C\u1eeda k\u00ednh", Icons.Rounded.DoorFront, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_chinh_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 ch\u00ednh", Icons.Rounded.DoorFront, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_be_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 b\u00e9", Icons.Rounded.DoorFront, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_phong_tam_contact", "C\u1eeda ph\u00f2ng t\u1eafm", Icons.Rounded.DoorFront, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_ban_cong_tt2_contact", "C\u1eeda ban c\u00f4ng T2", Icons.Rounded.DoorFront, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_ban_cong_t3_contact", "C\u1eeda ban c\u00f4ng T3", Icons.Rounded.DoorFront, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_kinh_contact", "C\u1eeda k\u00ednh", Ph.Door, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_chinh_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 ch\u00ednh", Ph.Door, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_be_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 b\u00e9", Ph.Door, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_phong_tam_contact", "C\u1eeda ph\u00f2ng t\u1eafm", Ph.Door, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_ban_cong_tt2_contact", "C\u1eeda ban c\u00f4ng T2", Ph.Door, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_ban_cong_t3_contact", "C\u1eeda ban c\u00f4ng T3", Ph.Door, SensorKind.Door),
 )
 
 /** MOTION_SENSORS */
 private val motionSensors = listOf(
-    SensorDef("binary_sensor.cam_bien_pir_t1_occupancy", "PIR T\u1ea7ng 1", Icons.Rounded.DirectionsWalk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_pir_t2_occupancy", "PIR T\u1ea7ng 2", Icons.Rounded.DirectionsWalk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_pir_t3_occupancy", "PIR T\u1ea7ng 3", Icons.Rounded.DirectionsWalk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_hien_dien_presence", "C\u1ea3m bi\u1ebfn hi\u1ec7n di\u1ec7n", Icons.Rounded.DirectionsWalk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_pir_phong_tho_occupancy", "PIR ph\u00f2ng th\u1edd", Icons.Rounded.DirectionsWalk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_tuong_t2_occupancy", "C\u1ea3m bi\u1ebfn t\u01b0\u1eddng T2", Icons.Rounded.DirectionsWalk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_t1_occupancy", "PIR T\u1ea7ng 1", Ph.Walk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_t2_occupancy", "PIR T\u1ea7ng 2", Ph.Walk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_t3_occupancy", "PIR T\u1ea7ng 3", Ph.Walk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_hien_dien_presence", "C\u1ea3m bi\u1ebfn hi\u1ec7n di\u1ec7n", Ph.Walk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_phong_tho_occupancy", "PIR ph\u00f2ng th\u1edd", Ph.Walk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_tuong_t2_occupancy", "C\u1ea3m bi\u1ebfn t\u01b0\u1eddng T2", Ph.Walk, SensorKind.Motion),
 )
 
 /** ENV_SENSORS */
 private val envSensors = listOf(
-    SensorDef("binary_sensor.cam_bien_khoi_smoke", "Kh\u00f3i", Icons.Rounded.Whatshot, SensorKind.Smoke, Color(0xFFFF6D00)),
-    SensorDef("binary_sensor.cam_bien_nuoc_water_leak", "R\u00f2 r\u1ec9 n\u01b0\u1edbc", Icons.Rounded.WaterDrop, SensorKind.Leak, Color(0xFF2196F3)),
+    SensorDef("binary_sensor.cam_bien_khoi_smoke", "Kh\u00f3i", Ph.Fire, SensorKind.Smoke, Color(0xFFFF6D00)),
+    SensorDef("binary_sensor.cam_bien_nuoc_water_leak", "R\u00f2 r\u1ec9 n\u01b0\u1edbc", Ph.Drop, SensorKind.Leak, Color(0xFF2196F3)),
 )
 
 /**
  * Security tab, laid out exactly like SecurityView.swift: a camera picker, one
  * glass group holding the camera plus its recorded clips, and one glass group
- * holding the three sensor sections. The alarm mode buttons are not on this
- * screen in the original; they live in the home header.
+ * holding the three sensor sections.
  *
- * Note on colours: white is only used on top of the camera image and the video
- * player, where the backdrop is always dark. Every chrome surface uses the
- * theme tokens so the screen stays readable in dark mode.
+ * Icon dung Phosphor regular giong ban HTML, khong dung Material Rounded (dac).
  */
 @Composable
 fun SecurityScreen(ha: HomeAssistantRepository) {
@@ -209,14 +198,17 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
 
 /**
  * CameraView in SecurityView.swift. Locked state shows a single blurred
- * snapshot so nothing in frame is readable; dragging the pill up past 80dp
- * unlocks the live view, which re-fetches latest.jpg every 3 seconds. Switching
- * camera locks it again.
+ * snapshot; dragging the pill up past 80dp unlocks the live view, which
+ * re-fetches latest.jpg every 3 seconds.
+ *
+ * Neu snapshot khong tai duoc thi hien han loi thay vi de khung den tron, de
+ * lan sau con biet la loi mang chu khong phai loi giao dien.
  */
 @Composable
 private fun CameraCard(camera: SecurityCamera) {
     var unlocked by remember(camera.key) { mutableStateOf(false) }
     var frame by remember(camera.key) { mutableStateOf(0L) }
+    var failed by remember(camera.key) { mutableStateOf(false) }
 
     // Live polling, the Android side of SnapshotLoader.
     LaunchedEffect(camera.key, unlocked) {
@@ -244,19 +236,49 @@ private fun CameraCard(camera: SecurityCamera) {
                         .build(),
                     contentDescription = camera.name,
                     contentScale = ContentScale.Fit,
+                    onSuccess = { failed = false },
+                    onError = { failed = true },
                     modifier = Modifier
                         .fillMaxSize()
                         .then(if (live) Modifier else Modifier.blur(22.dp)),
                 )
             }
 
-            if (!unlocked) {
+            if (failed) {
+                Column(
+                    Modifier.align(Alignment.Center).padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Ph.Warning,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(22.dp),
+                    )
+                    Text(
+                        "Kh\u00f4ng l\u1ea5y \u0111\u01b0\u1ee3c h\u00ecnh t\u1eeb Frigate",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        FRIGATE + "/api/" + camera.key + "/latest.jpg",
+                        fontSize = 10.sp,
+                        color = Color.White.copy(alpha = 0.45f),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            } else if (!unlocked) {
                 Icon(
-                    Icons.Rounded.Videocam,
+                    Ph.VideoCamera,
                     contentDescription = null,
                     tint = Color.White.copy(alpha = 0.65f),
                     modifier = Modifier.align(Alignment.Center).size(26.dp),
                 )
+            }
+
+            if (!unlocked) {
                 // VerticalSlideToUnlockBar
                 var dragged by remember(camera.key) { mutableStateOf(0f) }
                 Box(
@@ -279,7 +301,7 @@ private fun CameraCard(camera: SecurityCamera) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Icons.Rounded.KeyboardArrowUp,
+                        Ph.CaretUp,
                         contentDescription = "Xem tr\u1ef1c ti\u1ebfp",
                         tint = Color.White.copy(alpha = 0.85f),
                         modifier = Modifier.size(20.dp),
@@ -302,7 +324,7 @@ private fun CameraCard(camera: SecurityCamera) {
                     .padding(horizontal = 12.dp, vertical = 4.dp),
             )
 
-            if (unlocked) {
+            if (unlocked && !failed) {
                 Row(
                     Modifier.align(Alignment.BottomStart).padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -320,8 +342,7 @@ private fun CameraCard(camera: SecurityCamera) {
 
 /**
  * FrigateEventsSection in SecurityView.swift. Clips are downloaded to app
- * storage first and played from file, exactly like the iOS build; the download
- * button re-pulls the ten newest events for this camera.
+ * storage first and played from file, exactly like the iOS build.
  */
 @Composable
 private fun FrigateEventsSection(camera: SecurityCamera) {
@@ -348,7 +369,7 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Rounded.Videocam,
+                Ph.VideoCamera,
                 contentDescription = null,
                 tint = HumeColors.Orange,
                 modifier = Modifier.size(14.dp),
@@ -371,7 +392,7 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
                 )
             } else {
                 Icon(
-                    Icons.Rounded.Download,
+                    Ph.Download,
                     contentDescription = "T\u1ea3i video m\u1edbi nh\u1ea5t",
                     tint = HumeColors.Orange,
                     modifier = Modifier
@@ -439,7 +460,7 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
     }
 }
 
-/** RecordingThumb: 150dp wide, 86dp image, 8sp label row, 10dp corners. */
+/** RecordingThumb: 150dp wide, 86dp image, 9sp label row, 10dp corners. */
 @Composable
 private fun RecordingThumb(
     rec: FrigateRecording,
@@ -472,10 +493,10 @@ private fun RecordingThumb(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Rounded.PlayArrow,
+                    Ph.Play,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(14.dp),
                 )
             }
         }
@@ -560,11 +581,8 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
 }
 
 /**
- * BinarySensorCardView: 25dp glass card, 36dp icon circle, name over an ago
- * line, and a status chip whose wording depends on the sensor kind.
- *
- * The idle icon well and idle status chip use tertiarySystemFill, matching the
- * SwiftUI original, so they do not turn into white slabs on a dark background.
+ * BinarySensorCardView: glass card, 36dp icon circle, name over an ago line, and
+ * a status chip whose wording depends on the sensor kind.
  */
 @Composable
 private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
