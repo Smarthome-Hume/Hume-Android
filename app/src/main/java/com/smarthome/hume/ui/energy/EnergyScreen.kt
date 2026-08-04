@@ -456,8 +456,13 @@ private fun Panel(
  *   vong icon 42 background tint 25% icon 20,
  *   nhan 12sp mau gray500, gia tri 18sp weight 600 mau gray1000,
  *   don vi 12sp weight 400 mo 60%.
- * Chieu cao la chieu cao tu nhien cua noi dung (khong ep cao them), chu can
- * TRAI, gia tri va don vi nam cung MOT hang duy nhat, chay chu khi tran.
+ *
+ * CHIEU CAO: HTML chi cao bang vong icon 42 + padding 14x2 = 70. Truoc day
+ * chieu cao bi doi len vi lineHeight mac dinh cua Montserrat lam cot chu cao
+ * hon 42 -> nay ghim lineHeight cua tung dong (14 / 22) nen the tro lai dung 70.
+ *
+ * DON VI: dung Modifier.alignByBaseline() nen "VND" nam thang CHAN CHU voi con
+ * so, giong alignItems:'baseline' cua HTML (truoc day can day hop nen bi lech).
  */
 @Composable
 private fun SensorStat(
@@ -487,32 +492,33 @@ private fun SensorStat(
             Text(
                 label,
                 fontSize = 12.sp,
+                lineHeight = 14.sp,
                 color = HumeColors.Gray500,
                 maxLines = 1,
                 softWrap = false,
                 modifier = Modifier.fillMaxWidth().humeMarquee(),
             )
-            Row(
-                Modifier.fillMaxWidth().humeMarquee(),
-                verticalAlignment = Alignment.Bottom,
-            ) {
+            Row(Modifier.fillMaxWidth().humeMarquee()) {
                 Text(
                     value,
                     fontSize = 18.sp,
+                    lineHeight = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = HumeColors.Gray1000,
                     maxLines = 1,
                     softWrap = false,
+                    modifier = Modifier.alignByBaseline(),
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
                     unit,
                     fontSize = 12.sp,
+                    lineHeight = 22.sp,
                     fontWeight = FontWeight.Normal,
                     color = HumeColors.Gray1000.copy(alpha = 0.6f),
                     maxLines = 1,
                     softWrap = false,
-                    modifier = Modifier.padding(bottom = 2.dp),
+                    modifier = Modifier.alignByBaseline(),
                 )
             }
         }
@@ -523,7 +529,8 @@ private fun SensorStat(
  * The gia (Gia mua / Gia EVN / Tiet kiem) dung dung so do HTML:
  *   background var(--gray000), radius 18, padding 10x12, can GIUA,
  *   vien 1px tint 27%, nhan 10sp gray500 cach duoi 2, gia tri 18sp weight 500
- *   mau tint, don vi 10sp gray500 cung hang, dong phu 9sp gray500 mo 60%.
+ *   mau tint, don vi 10sp gray500 CUNG CHAN CHU (baseline), dong phu 9sp
+ *   gray500 mo 60%. lineHeight bi ghim de the khong cao hon ban HTML.
  */
 @Composable
 private fun PriceBox(
@@ -545,6 +552,7 @@ private fun PriceBox(
         Text(
             label,
             fontSize = 10.sp,
+            lineHeight = 12.sp,
             color = HumeColors.Gray500,
             maxLines = 1,
             softWrap = false,
@@ -554,22 +562,32 @@ private fun PriceBox(
         Spacer(Modifier.height(2.dp))
         Row(
             Modifier.fillMaxWidth().humeMarquee(),
-            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.Center,
         ) {
-            Text(value, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = color, maxLines = 1, softWrap = false)
+            Text(
+                value,
+                fontSize = 18.sp,
+                lineHeight = 22.sp,
+                fontWeight = FontWeight.Medium,
+                color = color,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.alignByBaseline(),
+            )
             Text(
                 unit,
                 fontSize = 10.sp,
+                lineHeight = 22.sp,
                 color = HumeColors.Gray500,
                 maxLines = 1,
                 softWrap = false,
-                modifier = Modifier.padding(bottom = 2.dp),
+                modifier = Modifier.alignByBaseline(),
             )
         }
         Text(
             sub,
             fontSize = 9.sp,
+            lineHeight = 11.sp,
             color = HumeColors.Gray500.copy(alpha = 0.6f),
             maxLines = 1,
             softWrap = false,
