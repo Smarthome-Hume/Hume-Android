@@ -64,12 +64,12 @@ import com.smarthome.hume.ui.theme.HumeIcons
  * Navbar One UI - doi chieu 2 anh chup thanh nav app Dien thoai (light + dark).
  *
  *  1. Thanh KHONG keo het be ngang: vien thuoc NGAN, rong bang tong cac o tab.
- *  2. KHONG blur. Nen la mot bac SANG hon nen man hinh:
- *     dark -> #3A3A3C tren nen den, light -> #FFFFFF tren nen xam nhat.
- *  3. Pill tab chon lech mot bac: dark #4E4E52, light #E6E6EA. Khong vien.
- *  4. NET ICON: tab khong chon dung CUNG mau net voi tab dang chon
- *     (trang o nen toi / den o nen sang), khong dung xam. Phan biet tab dang
- *     chon bang NEN PILL + icon dac, khong bang cach lam mo net icon.
+ *  2. KHONG blur.
+ *  3. NEN THANH = DUNG mau nen cua the phong (HumeColors.Card), tuc #161616 o
+ *     nen toi va #FFFFFF o nen sang. Khong dung mau xam rieng.
+ *  4. Pill tab chon lech mot bac so voi nen thanh, khong vien.
+ *  5. NET ICON: tab khong chon dung CUNG mau net voi tab dang chon. Phan biet
+ *     tab dang chon bang NEN PILL + icon dac, khong bang cach lam mo net icon.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 56.dp
@@ -124,9 +124,11 @@ private fun AiPlaceholder() {
 private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val dark = HumeColors.isDark
-    val barColor = if (dark) Color(0xFF3A3A3C) else Color(0xFFFFFFFF)
+    // Nen thanh = nen the phong.
+    val barColor = HumeColors.Card
     val barEdge = if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.05f)
-    val pillColor = if (dark) Color(0xFF4E4E52) else Color(0xFFE6E6EA)
+    // Pill lech mot bac so voi nen thanh.
+    val pillColor = if (dark) Color.White.copy(alpha = 0.14f) else Color.Black.copy(alpha = 0.07f)
     val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
     val pillX by animateDpAsState(
         targetValue = BarInset + ItemWidth * activeIndex,
