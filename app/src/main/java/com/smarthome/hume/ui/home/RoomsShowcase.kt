@@ -3,6 +3,7 @@ package com.smarthome.hume.ui.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -31,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -48,23 +48,26 @@ import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.NeonDotRed
+import com.smarthome.hume.ui.theme.NeonGlowOrange
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
+import com.smarthome.hume.ui.theme.neonGlow
+import com.smarthome.hume.ui.theme.neonGlowCircle
 import com.smarthome.hume.ui.theme.rememberNeonBlink
 import kotlin.math.absoluteValue
 
 /*
  * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots.
  *
- * TEN PHONG: giong RoomCardView.swift va RoomCard.tsx - .lineLimit(2), chu
- * canh TREN cung hang voi icon, dai qua thi xuong DONG THU HAI roi moi cat.
- * Ten phong KHONG chay chu.
+ * TEN PHONG: .lineLimit(2), canh TREN cung hang voi icon, khong chay chu.
+ * The cam bien nho thi chay chu (marquee) o ca gia tri va nhan.
  *
- * The cam bien nho thi chay chu (marquee) o ca gia tri va nhan, port tu
- * @keyframes marquee ban HTML.
- *
- * NEON: ban HTML chi cho CHAM DO o goc icon nhap nhay (neon-blink 1s), ca the
- * phong KHONG bao gio nhap nhay.
+ * NEON (theo bundle ban HTML):
+ *  - Cham do goc icon khi cua dang mo: 8px #ff5252, vet sang do lan ra ngoai
+ *    theo nhip 1s (neon-blink), nhat dan tu vien cham.
+ *  - The phong DANG BAT DEN: vien cam #f9784c + vet sang cam lan ra ngoai tu
+ *    vien the roi nhat dan (box-shadow 0 0 12px rgba(249,120,76,.3)).
+ *  - Ca the KHONG nhap nhay.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -192,7 +195,6 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
             Icon(tile.icon, contentDescription = null, tint = HumeColors.Gray1000, modifier = Modifier.size(circle * 0.44f))
         }
         Column(Modifier.weight(1f).padding(start = 7.dp, end = 8.dp)) {
-            // Chu dai hon the thi CHAY CHU thay vi bi cat mat noi dung.
             Text(
                 tile.value,
                 fontSize = 14.sp,
@@ -279,13 +281,25 @@ private fun RoomCardLarge(
             .fillMaxWidth()
             .height(cardHeight)
             .pressScale(interaction)
+            // Vet sang cam lan ra ngoai TU VIEN the khi dang bat den, nhat dan.
+            .then(
+                if (lightOn) Modifier.neonGlow(
+                    color = NeonGlowOrange,
+                    cornerRadius = CardRadius,
+                    spread = 20.dp,
+                    intensity = 1f,
+                    maxAlpha = 0.40f,
+                ) else Modifier
+            )
             .clip(shape)
             .then(if (lightOn) Modifier.background(ActiveGradient) else Modifier.background(HumeColors.Card))
+            .then(
+                if (lightOn) Modifier.border(1.dp, NeonGlowOrange.copy(alpha = 0.85f), shape) else Modifier
+            )
             .clickable(interactionSource = interaction, indication = null, onClick = onOpen)
             .padding(14.dp),
     ) {
         Column(Modifier.fillMaxSize()) {
-            // alignment .top nhu HStack ban Swift: ten phong cao toi 2 dong.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Text(
                     room.name,
@@ -347,26 +361,24 @@ private fun RoomCardLarge(
 }
 
 /*
- * Cham do bao cua dang mo - port 1:1 tu ban HTML:
- *   width/height 8, borderRadius 50%, background #ff5252,
- *   boxShadow 0 0 6px rgba(255,82,82,.8), 0 0 12px .4, 0 0 20px .2,
- *   animation neon-blink 1s ease-in-out infinite (opacity 1 -> .3).
+ * Cham do bao cua dang mo - 8px #ff5252, vet sang do lan ra ngoai theo nhip
+ * neon-blink 1s: nhip manh thi lan xa hon va dam hon, nhat dan ra ngoai.
  */
 @Composable
 private fun AlertDot(modifier: Modifier = Modifier) {
     val blink = rememberNeonBlink(1000)
+    val beat = ((blink - 0.3f) / 0.7f).coerceIn(0f, 1f)
     Box(
         modifier
             .size(8.dp)
-            .graphicsLayer { alpha = blink }
-            .shadow(
-                elevation = 10.dp,
-                shape = CircleShape,
-                ambientColor = NeonDotRed,
-                spotColor = NeonDotRed,
+            .neonGlowCircle(
+                color = NeonDotRed,
+                spread = 6.dp + 8.dp * beat,
+                intensity = 0.45f + 0.55f * beat,
+                maxAlpha = 0.75f,
             )
             .clip(CircleShape)
-            .background(NeonDotRed)
+            .background(NeonDotRed.copy(alpha = 0.55f + 0.45f * beat))
     )
 }
 
