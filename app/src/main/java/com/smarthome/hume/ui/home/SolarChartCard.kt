@@ -24,10 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -53,9 +56,11 @@ private val BarColor = Color(0xFFF9784C)
 /**
  * "\u0110i\u1ec7n m\u1eb7t tr\u1eddi" card: header with today's live total, then the week chart.
  *
- * Bieu do TRO LAI DUNG BAN CU: chi mot lop duy nhat cho moi ngay - cot bo goc
- * 8dp (hom nay dam, ngay cu nhat hon) cong duong xu huong Catmull-Rom va cham
- * rong tren moi dinh. Khong con lop nen chu nhat / gach cheo nao phia sau.
+ * Dung WeekBarLineChart ban Swift:
+ *   - cot HOM NAY: to dac mau #f9784c
+ *   - cot CAC NGAY TRUOC: nen #f9784c alpha .38 + LOP GACH CHEO Canvas
+ *     (net alpha .25, spacing 4, lineWidth 1) cat trong goc bo 8dp
+ *   - duong xu huong Catmull-Rom + cham rong tren moi dinh
  */
 @Composable
 fun SolarChartCard(
@@ -150,20 +155,45 @@ private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier
                     val spacing = BarSpacing.toPx()
                     val start = rowOffset.toPx()
                     val plot = size.height
-                    val corner = CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                    val cornerPx = 8.dp.toPx()
+                    val corner = CornerRadius(cornerPx, cornerPx)
                     val points = ArrayList<Offset>(count)
 
                     days.forEachIndexed { index, day ->
                         val h = barHeight(day.value).toPx()
                         val left = start + index * (barW + spacing)
                         val top = plot - h
-                        // MOT LOP DUY NHAT: cot gia tri bo goc, khong co nen phia sau.
                         drawRoundRect(
                             color = if (day.isToday) BarColor else BarColor.copy(alpha = 0.38f),
                             topLeft = Offset(left, top),
                             size = Size(barW, h),
                             cornerRadius = corner,
                         )
+                        // Ngay truoc do: phu them lop gach cheo Canvas nhu ban Swift.
+                        if (!day.isToday && h > 0f) {
+                            val radius = min(cornerPx, h / 2f)
+                            val shape = Path().apply {
+                                addRoundRect(
+                                    RoundRect(
+                                        rect = Rect(offset = Offset(left, top), size = Size(barW, h)),
+                                        cornerRadius = CornerRadius(radius, radius),
+                                    )
+                                )
+                            }
+                            clipPath(shape) {
+                                val step = 4.dp.toPx() + 1.dp.toPx()
+                                var x = left - h
+                                while (x < left + barW + h) {
+                                    drawLine(
+                                        color = BarColor.copy(alpha = 0.25f),
+                                        start = Offset(x, top),
+                                        end = Offset(x + h, top + h),
+                                        strokeWidth = 1.dp.toPx(),
+                                    )
+                                    x += step
+                                }
+                            }
+                        }
                         // The line rides the value, not the clamped bar height.
                         val lineH = if (day.value > 0.0) {
                             (day.value / (maxValue * 1.15) * plot).toFloat()
