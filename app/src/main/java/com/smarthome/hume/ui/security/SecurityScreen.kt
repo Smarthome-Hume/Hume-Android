@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -79,6 +78,12 @@ private const val FRIGATE = "http://192.168.102.64:5000"
 
 /** Floating nav pill plus gesture bar: nothing may scroll under it. */
 private val NavBarRoom = 140.dp
+
+/*
+ * CHIEU CAO CHOT CUA THE SENSOR AN NINH (muc 2 — giam chieu cao that su):
+ *   70 -> 58. Dat cung bang height() nen font/lineHeight khong the day the cao len.
+ */
+private val SensorCardHeight = 58.dp
 
 private data class SecurityCamera(val key: String, val name: String)
 
@@ -601,16 +606,14 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
 }
 
 /**
- * xK trong ban HTML — sao y tung so do, khong tu sang tac:
- *   borderRadius 25, padding '8px 12px', minHeight 44, flex column gap 2,
- *   background  = on ? accent 12 (7%)  : rgba(255,255,255,0.08),
- *   border 1px  = on ? accent 55 (33%) : rgba(255,255,255,0.1),
- *   boxShadow   = on ? '0 0 16px accent44' (vet sang NGOAI vien, tinh),
- *   vong icon 36 (icon 18), ten 13/500, dong phu 9 gray500 opacity .7,
- *   chip trang thai alignSelf CENTER, 10/600, padding '2px 10px', radius 8.
- *
- * Den neon = chấm tron 14 o goc phai tren (top -4, right -4) nhay theo
- * keyframes neon-blink 1.5s (opacity 1 -> .3 -> 1), co quang lan ra ngoai.
+ * xK trong ban HTML, nhung CHIEU CAO da siet lai con 58dp (truoc 70):
+ *   - height() cung 58 nen lineHeight cua font khong the day the cao len nua,
+ *   - vong icon 36 -> 30, icon 18 -> 16,
+ *   - padding '8px 12px' -> '6px 10px',
+ *   - ten 13 -> 12sp (lineHeight 14), dong thoi gian 9 -> 8sp (lineHeight 10),
+ *   - chip trang thai 10 -> 9sp (lineHeight 11), padding doc 2 -> 1,
+ *   - noi dung can giua theo chieu doc nen chu khong bi lech len tren.
+ * Giu nguyen: radius 25, nen/vien theo accent, chip CAN GIUA, cham neon goc.
  */
 @Composable
 private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
@@ -638,17 +641,17 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 44.dp)
+                .height(SensorCardHeight)
                 .clip(shape)
                 .background(bg)
                 .border(1.dp, edge, shape)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.Center,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
-                        .size(36.dp)
+                        .size(30.dp)
                         .clip(CircleShape)
                         .background(if (isOn) accent.copy(alpha = 0.13f) else HumeColors.Gray00),
                     contentAlignment = Alignment.Center,
@@ -657,14 +660,15 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                         sensor.icon,
                         contentDescription = null,
                         tint = if (isOn) accent else HumeColors.Gray1000,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
                         sensor.name,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = if (isOn) accent else HumeColors.Gray1000,
                         maxLines = 1,
@@ -674,18 +678,20 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                     if (minutes != null) {
                         Text(
                             agoLabel(minutes),
-                            fontSize = 9.sp,
+                            fontSize = 8.sp,
+                            lineHeight = 10.sp,
                             color = HumeColors.Gray500.copy(alpha = 0.7f),
                             maxLines = 1,
                             softWrap = false,
-                            modifier = Modifier.padding(top = 1.dp),
                         )
                     }
                 }
             }
+            Spacer(Modifier.height(2.dp))
             Text(
                 status,
-                fontSize = 10.sp,
+                fontSize = 9.sp,
+                lineHeight = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isOn) accent else HumeColors.Gray500,
                 maxLines = 1,
@@ -694,7 +700,7 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                     .align(Alignment.CenterHorizontally)
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (isOn) accent.copy(alpha = 0.13f) else HumeColors.Gray00)
-                    .padding(horizontal = 10.dp, vertical = 2.dp),
+                    .padding(horizontal = 10.dp, vertical = 1.dp),
             )
         }
 
@@ -705,7 +711,7 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                     Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 4.dp, y = (-4).dp)
-                        .size(14.dp)
+                        .size(12.dp)
                         .neonGlowCircle(accent, spread = 10.dp, intensity = beat, maxAlpha = 0.6f)
                         .clip(CircleShape)
                         .background(accent.copy(alpha = 0.3f + 0.7f * beat)),
