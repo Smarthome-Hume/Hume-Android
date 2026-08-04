@@ -61,8 +61,8 @@ import kotlin.math.absoluteValue
  *
  * NEON: THE PHONG KHONG CO HIEU UNG NEON - khong quang sang, khong vien phat
  * sang, khong nhap nhay. The dang bat den chi doi sang nen gradient cam.
- * Rieng cham do bao cua dang mo thi van sang theo nhip chung cua app (day la
- * chi bao trang thai, khong phai hieu ung cua the).
+ * Rieng cham do bao cua dang mo: ban than cham giu nguyen mau, chi co den do
+ * hat RA NGOAI vien cham va nhat dan ra xa.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -344,8 +344,9 @@ private fun RoomCardLarge(
 }
 
 /*
- * Cham do bao cua dang mo: 8dp #ff5252, quang do toa muot ra ngoai theo NHIP
- * CHUNG cua app (rememberNeonBeat) nen dong pha voi chip va nut chuong.
+ * Cham do bao cua dang mo: 8dp #ff5252. Ban than cham GIU NGUYEN mau, khong
+ * nhap nhay. Chi co den do hat RA NGOAI vien cham, lan xa gan theo nhip chung
+ * cua app va nhat dan khi ra xa.
  */
 @Composable
 private fun AlertDot(modifier: Modifier = Modifier) {
@@ -360,7 +361,7 @@ private fun AlertDot(modifier: Modifier = Modifier) {
                 maxAlpha = 0.7f,
             )
             .clip(CircleShape)
-            .background(NeonDotRed.copy(alpha = 0.6f + 0.4f * beat))
+            .background(NeonDotRed)
     )
 }
 
