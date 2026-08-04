@@ -61,8 +61,8 @@ import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.Ph
-import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.glassSurface
+import com.smarthome.hume.ui.theme.humeMarquee
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -145,17 +145,29 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
         Text("An ninh", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
         Spacer(Modifier.height(12.dp))
 
-        // .pickerStyle(.segmented) on a glass background
-        Row(Modifier.fillMaxWidth().glassPill(22.dp).padding(4.dp)) {
+        /*
+         * Picker camera dung DUNG mau cua subtab trong ban HTML:
+         *   khung background var(--gray000) radius 25 padding 4 gap 4,
+         *   muc dang chon background var(--gray00), chu LUON var(--gray1000).
+         * Khong to cam, khong doi chu sang trang.
+         */
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(25.dp))
+                .background(HumeColors.Card)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             cameras.forEach { cam ->
                 val active = cam.key == selected
                 Box(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(if (active) HumeColors.Orange else Color.Transparent)
+                        .clip(RoundedCornerShape(21.dp))
+                        .background(if (active) HumeColors.Gray00 else Color.Transparent)
                         .clickable { selected = cam.key }
-                        .padding(vertical = 9.dp),
+                        .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -165,7 +177,8 @@ fun SecurityScreen(ha: HomeAssistantRepository) {
                         softWrap = false,
                         textAlign = TextAlign.Center,
                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (active) Color.White else HumeColors.TextSecondary,
+                        color = HumeColors.Gray1000,
+                        modifier = Modifier.fillMaxWidth().humeMarquee(),
                     )
                 }
             }
@@ -581,8 +594,17 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
 }
 
 /**
- * BinarySensorCardView: glass card, 36dp icon circle, name over an ago line, and
- * a status chip whose wording depends on the sensor kind.
+ * BinarySensorCardView.
+ *
+ * BO TRI CHU (theo dung cach ban HTML bay chu trong the cam bien):
+ *   - vong icon 36 ben trai, chu ben phai, cung mot hang;
+ *   - ten cam bien 13sp mot dong, phia duoi la dong "bao lau truoc" 10sp;
+ *   - chip trang thai xuong hang rieng, CAN TRAI thang voi cot chu (truoc day
+ *     can giua nen chu nhin lech so voi ten);
+ *   - CHIEU CAO: min 80dp de ten + dong thoi gian + chip luon du cho, khong
+ *     bao gio bi cat mat nhu truoc;
+ *   - CHAY CHU: ten, dong thoi gian va chip deu chay khi chu dai hon the
+ *     (humeMarquee), thay vi bi cat cut.
  */
 @Composable
 private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
@@ -599,11 +621,11 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 68.dp)
+            .heightIn(min = 80.dp)
             .glassSurface(radius = HumeShapes.Tile)
             .background(if (isOn) accent.copy(alpha = 0.10f) else Color.Transparent)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -629,26 +651,32 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
                     color = if (isOn) accent else HumeColors.TextPrimary,
                     maxLines = 1,
                     softWrap = false,
+                    modifier = Modifier.fillMaxWidth().humeMarquee(),
                 )
                 if (minutes != null) {
-                    Text(agoLabel(minutes), fontSize = 10.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
+                    Text(
+                        agoLabel(minutes),
+                        fontSize = 10.sp,
+                        color = HumeColors.TextSecondary,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.fillMaxWidth().humeMarquee(),
+                    )
                 }
             }
         }
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Text(
-                status,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isOn) accent else HumeColors.TextSecondary,
-                maxLines = 1,
-                softWrap = false,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.FillTertiary)
-                    .padding(horizontal = 10.dp, vertical = 2.dp),
-            )
-        }
+        Text(
+            status,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (isOn) accent else HumeColors.TextSecondary,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.FillTertiary)
+                .padding(horizontal = 10.dp, vertical = 3.dp),
+        )
     }
 }
 
