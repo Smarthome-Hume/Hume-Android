@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,22 +42,35 @@ import kotlin.math.max
 import kotlin.math.min
 
 /*
- * PowerwallCardView.swift -> Android, bam sat ban goc:
- *   .frame(height: 210)   -> chieu cao CO DINH 210dp (khong con heightIn nen
- *                            the bi cao dan len so voi ban Swift)
- *   barH = 28             -> thanh bar 28dp
- *   padding top18 left20 bottom16 right20
+ * PowerwallCardView.swift -> Android.
  *
- * Thanh bar kieu Live Activity, dung HAI segment nhu Swift:
+ * CHIEU CAO: 210dp la chieu cao CHUAN cua ban Swift, nhung dat cung bang
+ * .height(210) thi hang chu thich "Du tru %" / "Su dung %" o duoi cung bi
+ * cat mat khi chu to hon (font he thong lon, chuoi thoi gian dai). Nay dung
+ * .heightIn(min = 210) : the van cao dung 210 nhu ban Swift trong truong hop
+ * binh thuong, va chi cao them dung phan can thiet de KHONG BAO GIO che chu
+ * thich.
+ *
+ * barH = 28, padding top18 left20 bottom16 right20 giu nguyen theo ban goc.
+ *
+ * Thanh bar dung HAI segment nhu Swift:
  *   - nen xam segment 1 (vung du tru = backupSoc%)
  *   - nen xam segment 2 (vung su dung = 100 - backupSoc%)
  *   - doan du tru: to dac
- *   - doan su dung: GACH CHEO ve bang Canvas, cat trong hinh vien thuoc nen
- *     khong bao gio lo goc vuong
+ *   - doan su dung: GACH CHEO ve bang Canvas, cat trong hinh vien thuoc.
  */
 private val BatteryCardHeight = 210.dp
 private val BatteryCardRadius = 36.dp
 private val BarHeight = 28.dp
+
+/*
+ * Khoang cach soc cheo. Truoc day dung so px tho (net 2.5px, buoc 7.5px) nen
+ * tren man hinh mat do cao (2.5x - 3x) cac net dinh sat nhau, nhin nhu mot
+ * khoi dac. Nay khai bao bang dp de mat do nao cung ra dung mot ket qua, va
+ * noi rong buoc len 12dp cho thua ro rang.
+ */
+private val HatchStroke = 2.dp
+private val HatchStep = 12.dp
 
 private val BarGreen = Color(0xFF22C55E)
 private val BarOrange = Color(0xFFF97316)
@@ -92,7 +106,7 @@ fun BatteryCard(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(BatteryCardHeight)
+            .heightIn(min = BatteryCardHeight)
             .glassSurface(radius = BatteryCardRadius)
             .then(
                 if (resting) Modifier
@@ -179,7 +193,8 @@ fun BatteryCard(
             Spacer(Modifier.weight(1f))
 
             DualBar(soc = soc, backupSoc = backupSoc, tint = barTint)
-            Spacer(Modifier.height(4.dp))
+            // Chu thich luon co du cho: 6dp cach bar, va the tu gian chieu cao.
+            Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 LegendDot(
                     color = if (charging) BarGreen else BarSlate,
@@ -206,7 +221,7 @@ fun BatteryCard(
  *   2. nen xam segment 2 (backupSoc% -> 100%)
  *   3. doan du tru: to dac mau trang thai
  *   4. doan su dung: gach cheo Canvas (nen alpha .30, net alpha .75,
- *      spacing 5 + lineWidth 2.5), cat trong hinh vien thuoc.
+ *      net 2dp, buoc 12dp), cat trong hinh vien thuoc.
  */
 @Composable
 private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
@@ -249,6 +264,8 @@ private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
                     )
                 )
             }
+            val stroke = HatchStroke.toPx()
+            val step = HatchStep.toPx()
             clipPath(shape) {
                 drawRect(
                     tint.copy(alpha = 0.30f),
@@ -261,9 +278,9 @@ private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
                         color = tint.copy(alpha = 0.75f),
                         start = Offset(x, 0f),
                         end = Offset(x + h, h),
-                        strokeWidth = 2.5f,
+                        strokeWidth = stroke,
                     )
-                    x += 7.5f
+                    x += step
                 }
             }
         }
