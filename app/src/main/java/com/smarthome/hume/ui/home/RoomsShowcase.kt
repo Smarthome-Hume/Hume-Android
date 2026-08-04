@@ -24,9 +24,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +47,7 @@ import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
 import kotlin.math.absoluteValue
 
@@ -58,11 +56,13 @@ import kotlin.math.absoluteValue
  *
  * TEN PHONG: giong RoomCardView.swift va RoomCard.tsx - .lineLimit(2), chu
  * canh TREN cung hang voi icon, dai qua thi xuong DONG THU HAI roi moi cat.
- * Truoc day Android ep mot dong nen ten dai bi "..." mat noi dung.
  * Ten phong KHONG chay chu.
  *
  * The cam bien nho thi chay chu (marquee) o ca gia tri va nhan, port tu
  * @keyframes marquee ban HTML.
+ *
+ * ICON: toan bo dung Phosphor regular (nhu <i class="ph ph-..."> ben ban HTML),
+ * khong dung Material Rounded vi ban do la icon DAC.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -369,7 +369,7 @@ private fun TargetStepper(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.fillMaxWidth().height(22.dp).clickable { onAdjustTarget(1.0) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(17.dp))
+            Icon(Ph.CaretUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(15.dp))
         }
         Box(Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
             Text(
@@ -382,7 +382,7 @@ private fun TargetStepper(
             )
         }
         Box(Modifier.fillMaxWidth().height(22.dp).clickable { onAdjustTarget(-1.0) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(17.dp))
+            Icon(Ph.CaretDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(15.dp))
         }
     }
 }
