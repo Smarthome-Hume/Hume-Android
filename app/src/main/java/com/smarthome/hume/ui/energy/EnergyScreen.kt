@@ -21,11 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ElectricalServices
-import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.House
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -44,6 +39,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ha.HomeAssistantRepository
@@ -53,17 +49,19 @@ import com.smarthome.hume.ui.theme.GlassCard
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.HumeShapes
-import com.smarthome.hume.ui.theme.glassPill
+import com.smarthome.hume.ui.theme.Ph
+import com.smarthome.hume.ui.theme.humeMarquee
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
-private val Blue = Color(0xFF2196F3)
-private val Brick = Color(0xFFEB5F34)
-private val Yellow = Color(0xFFFFEB3B)
-private val GreenSave = Color(0xFF3BA776)
+private val Blue = Color(0xFF73B9F2)
+private val Brick = Color(0xFFF9784C)
+private val Yellow = Color(0xFFF2D26F)
+private val GreenSave = Color(0xFF4CAF50)
+private val PriceRed = Color(0xFFFF5252)
 
 /** Bottom room for the floating navigation pill (its height plus the gesture bar). */
 private val NavBarRoom = 130.dp
@@ -78,18 +76,25 @@ private val powerBars = listOf(
     PowerBarSpec("sensor.cong_suat_nha", Brick),
 )
 
-/** chargeIds in EnergyView.swift, in the same order and with the same labels. */
+/*
+ * Tab "Dien mat troi" cua ban HTML chi gom DUNG ba khoi, theo thu tu:
+ *   1. Expander "Sac Pin"  (9 hang)
+ *   2. Expander "Xa Pin"   (3 hang)
+ *   3. The tong hop tinh (luoi / PV / tai + tang 1-3 + Pin S6 + inverter)
+ * KHONG co so do dong nang luong o tab nay.
+ */
 private val chargeControls = listOf(
     Triple("switch.allow_grid_to_charge_the_battery_2", "B\u1eadt/ T\u1eaft s\u1ea1c AC", "switch"),
     Triple("number.solis_s6_eh1p_battery_max_charge_current_2", "S\u1ea1c DC", "number"),
     Triple("number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2", "S\u1ea1c AC", "number"),
     Triple("number.solis_s6_eh1p_grid_time_of_use_charge_cut_off_soc_slot_1_2", "SOC k\u1ebft th\u00fac", "number"),
     Triple("switch.grid_time_of_use_charging_period_1_2", "Theo th\u1eddi gian", "switch"),
+    Triple("time.solis_s6_eh1p_grid_time_of_use_charge_start_slot_1_2", "Gi\u1edd b\u1eaft \u0111\u1ea7u", "time"),
+    Triple("time.solis_s6_eh1p_grid_time_of_use_charge_end_slot_1_2", "Gi\u1edd k\u1ebft th\u00fac", "time"),
     Triple("number.solis_s6_eh1p_force_charge_soc_2", "S\u1ea1c b\u1eaft bu\u1ed9c", "number"),
     Triple(HumeConfig.BACKUP_SOC, "Pin d\u1ef1 tr\u1eef", "number"),
 )
 
-/** dischargeIds in EnergyView.swift. */
 private val dischargeControls = listOf(
     Triple("number.solis_s6_eh1p_battery_max_discharge_current_2", "X\u1ea3 DC", "number"),
     Triple("number.solis_s6_eh1p_off_grid_overdischarge_soc_2", "X\u1ea3 m\u1ea5t l\u01b0\u1edbi", "number"),
@@ -118,40 +123,8 @@ fun EnergyScreen(ha: HomeAssistantRepository) {
             modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 12.dp),
         )
 
-        // Segmented picker, the glassSegmentBG pill on iOS.
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .glassPill(22.dp)
-                .padding(4.dp),
-        ) {
-            listOf(
-                "consumption" to "Ti\u00eau th\u1ee5",
-                "analysis" to "Ph\u00e2n t\u00edch",
-                "solar" to "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
-            ).forEach { (key, label) ->
-                val active = subTab == key
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(if (active) HumeColors.Orange else Color.Transparent)
-                        .clickable { subTab = key }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        label,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        softWrap = false,
-                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (active) Color.White else HumeColors.TextSecondary,
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(12.dp))
+        SubTabs(subTab) { subTab = it }
+        Spacer(Modifier.height(8.dp))
 
         when (subTab) {
             "consumption" -> ConsumptionTab(entities, ha)
@@ -162,45 +135,89 @@ fun EnergyScreen(ha: HomeAssistantRepository) {
     }
 }
 
+/*
+ * SubTabs cua ban HTML:
+ *   khung : background var(--gray000), borderRadius 25, padding 4, gap 4
+ *   muc   : flex 1, padding 10px 0, borderRadius 21,
+ *           background = var(--gray00) khi chon, trong suot khi khong chon,
+ *           color LUON LUON var(--gray1000) (khong doi mau chu, khong dung cam),
+ *           fontSize 14, fontWeight 600 khi chon / 400 khi khong.
+ */
+@Composable
+private fun SubTabs(active: String, onSelect: (String) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(25.dp))
+            .background(HumeColors.Card)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        listOf(
+            "consumption" to "Ti\u00eau th\u1ee5",
+            "analysis" to "Ph\u00e2n t\u00edch",
+            "solar" to "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
+        ).forEach { (key, label) ->
+            val selected = active == key
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(21.dp))
+                    .background(if (selected) HumeColors.Gray00 else Color.Transparent)
+                    .clickable { onSelect(key) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    textAlign = TextAlign.Center,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = HumeColors.Gray1000,
+                )
+            }
+        }
+    }
+}
+
 /* ------------------------- tab 1: consumption ------------------------- */
 
 @Composable
 private fun ConsumptionTab(entities: Map<String, HomeEntity>, ha: HomeAssistantRepository) {
-    // Group 1: the 7 day chart of energy_home_daily.
     Panel(radius = HumeShapes.Panel) {
         EnergyWeekChart(ha, "N\u0103ng l\u01b0\u1ee3ng s\u1eed d\u1ee5ng", "sensor.energy_home_daily", "kWh")
     }
     Spacer(Modifier.height(12.dp))
 
-    // Group 2: two neon stats, the price row and the active power bars.
     Panel(radius = HumeShapes.Panel) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NeonStat(
+            SensorStat(
                 Modifier.weight(1f),
-                Icons.Outlined.ElectricalServices,
+                HumeIcons.Plug,
                 "\u0110i\u1ec7n l\u01b0\u1edbi",
                 vnd(entities.value("sensor.grid_cost")),
                 "VND",
-                Blue,
+                Brick,
             )
-            NeonStat(
+            SensorStat(
                 Modifier.weight(1f),
-                Icons.Outlined.House,
+                HumeIcons.House,
                 "\u0110i\u1ec7n ti\u00eau th\u1ee5",
                 vnd(entities.value("sensor.home_cost")),
                 "VND",
-                Brick,
+                Blue,
             )
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // priceRow in EnergyView.swift
         val homeCost = entities.value("sensor.home_cost") ?: 0.0
         val evn = entities.value("sensor.evn_current_unit_price") ?: 2167.0
         val solar = entities.value(HumeConfig.PV_TODAY) ?: 0.0
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PriceBox(Modifier.weight(1f), "Gi\u00e1 mua", group((homeCost / 147.49).roundToLong()), "\u0111/kWh", "HC/147.5kWh", Blue)
-            PriceBox(Modifier.weight(1f), "Gi\u00e1 EVN", group(evn.toLong()), "\u0111/kWh", "B\u1eadc hi\u1ec7n t\u1ea1i", HumeColors.Red)
+            PriceBox(Modifier.weight(1f), "Gi\u00e1 EVN", group(evn.toLong()), "\u0111/kWh", "B\u1eadc hi\u1ec7n t\u1ea1i", PriceRed)
             PriceBox(
                 Modifier.weight(1f),
                 "Ti\u1ebft ki\u1ec7m",
@@ -229,7 +246,6 @@ private fun ConsumptionTab(entities: Map<String, HomeEntity>, ha: HomeAssistantR
     }
     Spacer(Modifier.height(12.dp))
 
-    // Group 3: weak batteries + yesterday device breakdown.
     Panel(radius = HumeShapes.Panel) {
         BatteryLowList(entities)
         Spacer(Modifier.height(10.dp))
@@ -243,21 +259,21 @@ private fun ConsumptionTab(entities: Map<String, HomeEntity>, ha: HomeAssistantR
 private fun AnalysisTab(entities: Map<String, HomeEntity>, ha: HomeAssistantRepository) {
     Panel(radius = HumeShapes.Panel) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NeonStat(
+            SensorStat(
                 Modifier.weight(1f),
-                Icons.Outlined.ElectricalServices,
+                HumeIcons.Plug,
                 "\u0110i\u1ec7n l\u01b0\u1edbi",
                 fmt(entities.value("sensor.grid_import_billing_2")),
                 "kWh",
-                Blue,
+                Brick,
             )
-            NeonStat(
+            SensorStat(
                 Modifier.weight(1f),
-                Icons.Outlined.House,
+                HumeIcons.House,
                 "\u0110i\u1ec7n ti\u00eau th\u1ee5",
                 fmt(entities.value("sensor.home_import_billing")),
                 "kWh",
-                Brick,
+                Blue,
             )
         }
     }
@@ -282,18 +298,13 @@ private fun SolarTab(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
     ExpanderGroup("X\u1ea3 Pin", dischargeControls, entities, ha)
     Spacer(Modifier.height(12.dp))
 
-    // humeCard(cornerRadius: 44) around the animated flow diagram.
-    Panel(radius = 44.dp) {
-        SunsynkAnimatedFlowCard(ha)
-    }
-    Spacer(Modifier.height(12.dp))
-
-    Panel(radius = 24.dp, padding = PaddingValues(20.dp)) {
+    // Khoi thu ba cua tab HTML: the tong hop tinh. Khong co so do dong nang luong.
+    Panel(radius = 25.dp, padding = PaddingValues(10.dp)) {
         SunsynkStaticCard(entities)
     }
 }
 
-/** ExpanderCardView + ToggleRowView + NumberRowView from EnergyView.swift. */
+/** ExpanderCardView: background var(--gray000), radius 25, header 14x16, fontSize 16. */
 @Composable
 private fun ExpanderGroup(
     title: String,
@@ -301,7 +312,6 @@ private fun ExpanderGroup(
     entities: Map<String, HomeEntity>,
     ha: HomeAssistantRepository,
 ) {
-    // isAvailable(id) on iOS: hide the whole group when nothing reports a state.
     val available = controls.filter { (id, _, _) ->
         val state = entities[id]?.state
         state != null && state != "unavailable" && state != "unknown"
@@ -319,20 +329,20 @@ private fun ExpanderGroup(
         ) {
             Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
             Icon(
-                Icons.Outlined.ExpandMore,
+                Ph.CaretDown,
                 contentDescription = null,
                 tint = HumeColors.TextSecondary,
-                modifier = Modifier.rotate(if (open) 180f else 0f),
+                modifier = Modifier.size(20.dp).rotate(if (open) 180f else 0f),
             )
         }
         if (open) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(HumeColors.Divider))
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp)) {
                 available.forEach { (id, label, kind) ->
                     if (kind == "switch") {
                         ToggleRow(label, entities[id]?.isOn == true) { ha.toggle(id) }
                     } else {
-                        NumberRow(label, entities[id], ha, id)
+                        ValueRow(label, entities[id], ha, id, kind)
                     }
                 }
             }
@@ -352,16 +362,14 @@ private fun ToggleRow(name: String, checked: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/**
- * NumberRowView: tap the value, type a new one, confirm with the check mark.
- * The service call is number.set_value, exactly like iOS.
- */
+/** NumberRowView / TimeRowView: gia tri hien tai, bam de sua, xac nhan bang dau tich. */
 @Composable
-private fun NumberRow(
+private fun ValueRow(
     name: String,
     entity: HomeEntity?,
     ha: HomeAssistantRepository,
     entityId: String,
+    kind: String,
 ) {
     var editing by remember(entityId) { mutableStateOf(false) }
     var input by remember(entityId) { mutableStateOf("") }
@@ -380,16 +388,16 @@ private fun NumberRow(
             Spacer(Modifier.width(6.dp))
             Box(
                 Modifier
-                    .size(34.dp)
+                    .size(28.dp)
                     .clip(CircleShape)
-                    .background(GreenSave.copy(alpha = 0.16f))
+                    .background(GreenSave)
                     .clickable {
                         editing = false
-                        input.replace(',', '.').toDoubleOrNull()?.let { setNumber(ha, entityId, it) }
+                        applyValue(ha, entityId, kind, input)
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Outlined.Check, contentDescription = null, tint = GreenSave, modifier = Modifier.size(18.dp))
+                Icon(Ph.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
             }
         } else {
             Row(
@@ -406,8 +414,18 @@ private fun NumberRow(
     }
 }
 
-/** number.set_value, the call EnergyView.swift makes. */
-private fun setNumber(ha: HomeAssistantRepository, entityId: String, value: Double) {
+private fun applyValue(ha: HomeAssistantRepository, entityId: String, kind: String, raw: String) {
+    if (kind == "time") {
+        if (raw.isBlank()) return
+        ha.callService(
+            "time",
+            "set_value",
+            "{\"entity_id\":\"" + entityId + "\",\"time\":\"" + raw.trim() + "\"}",
+            entityId,
+        )
+        return
+    }
+    val value = raw.replace(',', '.').toDoubleOrNull() ?: return
     ha.callService(
         "number",
         "set_value",
@@ -432,14 +450,17 @@ private fun Panel(
     )
 }
 
-/**
- * NeonGlassStat: icon circle, label, tinted value, coloured ring.
- *
- * The value row must never wrap: on a narrow half-width box the unit used to
- * break into one letter per line ("V / N / D").
+/*
+ * The sensor "Dien luoi" / "Dien tieu thu" dung dung so do cua ban HTML:
+ *   radius 25, padding 14x16, gap 10, background tint 8%, vien 1px tint 40%,
+ *   vong icon 42 background tint 25% icon 20,
+ *   nhan 12sp mau gray500, gia tri 18sp weight 600 mau gray1000,
+ *   don vi 12sp weight 400 mo 60%.
+ * Chieu cao la chieu cao tu nhien cua noi dung (khong ep cao them), chu can
+ * TRAI, gia tri va don vi nam cung MOT hang duy nhat, chay chu khi tran.
  */
 @Composable
-private fun NeonStat(
+private fun SensorStat(
     modifier: Modifier,
     icon: ImageVector,
     label: String,
@@ -450,36 +471,60 @@ private fun NeonStat(
     Row(
         modifier
             .clip(RoundedCornerShape(25.dp))
-            .background(color.copy(alpha = 0.10f))
+            .background(color.copy(alpha = 0.08f))
             .border(1.dp, color.copy(alpha = 0.40f), RoundedCornerShape(25.dp))
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(38.dp).clip(CircleShape).background(HumeColors.Card),
+            Modifier.size(42.dp).clip(CircleShape).background(color.copy(alpha = 0.25f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(19.dp))
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 12.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
-            Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                label,
+                fontSize = 12.sp,
+                color = HumeColors.Gray500,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.fillMaxWidth().humeMarquee(),
+            )
+            Row(
+                Modifier.fillMaxWidth().humeMarquee(),
+                verticalAlignment = Alignment.Bottom,
+            ) {
                 Text(
                     value,
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = color,
+                    color = HumeColors.Gray1000,
                     maxLines = 1,
                     softWrap = false,
                 )
-                Spacer(Modifier.width(2.dp))
-                Text(unit, fontSize = 11.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    unit,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = HumeColors.Gray1000.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.padding(bottom = 2.dp),
+                )
             }
         }
     }
 }
 
+/*
+ * The gia (Gia mua / Gia EVN / Tiet kiem) dung dung so do HTML:
+ *   background var(--gray000), radius 18, padding 10x12, can GIUA,
+ *   vien 1px tint 27%, nhan 10sp gray500 cach duoi 2, gia tri 18sp weight 500
+ *   mau tint, don vi 10sp gray500 cung hang, dong phu 9sp gray500 mo 60%.
+ */
 @Composable
 private fun PriceBox(
     modifier: Modifier,
@@ -491,18 +536,46 @@ private fun PriceBox(
 ) {
     Column(
         modifier
-            .clip(RoundedCornerShape(HumeShapes.Element))
-            .background(color.copy(alpha = 0.10f))
-            .border(1.dp, color.copy(alpha = 0.40f), RoundedCornerShape(HumeShapes.Element))
-            .padding(horizontal = 8.dp, vertical = 10.dp),
+            .clip(RoundedCornerShape(18.dp))
+            .background(HumeColors.Card)
+            .border(1.dp, color.copy(alpha = 0.27f), RoundedCornerShape(18.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, fontSize = 10.sp, color = HumeColors.TextPrimary, maxLines = 1, softWrap = false)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = color, maxLines = 1, softWrap = false)
-            Text(unit, fontSize = 10.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
+        Text(
+            label,
+            fontSize = 10.sp,
+            color = HumeColors.Gray500,
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().humeMarquee(),
+        )
+        Spacer(Modifier.height(2.dp))
+        Row(
+            Modifier.fillMaxWidth().humeMarquee(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = color, maxLines = 1, softWrap = false)
+            Text(
+                unit,
+                fontSize = 10.sp,
+                color = HumeColors.Gray500,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.padding(bottom = 2.dp),
+            )
         }
-        Text(sub, fontSize = 9.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
+        Text(
+            sub,
+            fontSize = 9.sp,
+            color = HumeColors.Gray500.copy(alpha = 0.6f),
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().humeMarquee(),
+        )
     }
 }
 
