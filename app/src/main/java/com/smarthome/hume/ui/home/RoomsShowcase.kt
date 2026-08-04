@@ -3,7 +3,6 @@ package com.smarthome.hume.ui.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -48,12 +47,10 @@ import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.NeonDotRed
-import com.smarthome.hume.ui.theme.NeonGlowOrange
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
-import com.smarthome.hume.ui.theme.neonGlow
 import com.smarthome.hume.ui.theme.neonGlowCircle
-import com.smarthome.hume.ui.theme.rememberNeonBlink
+import com.smarthome.hume.ui.theme.rememberNeonBeat
 import kotlin.math.absoluteValue
 
 /*
@@ -62,12 +59,10 @@ import kotlin.math.absoluteValue
  * TEN PHONG: .lineLimit(2), canh TREN cung hang voi icon, khong chay chu.
  * The cam bien nho thi chay chu (marquee) o ca gia tri va nhan.
  *
- * NEON (theo bundle ban HTML):
- *  - Cham do goc icon khi cua dang mo: 8px #ff5252, vet sang do lan ra ngoai
- *    theo nhip 1s (neon-blink), nhat dan tu vien cham.
- *  - The phong DANG BAT DEN: vien cam #f9784c + vet sang cam lan ra ngoai tu
- *    vien the roi nhat dan (box-shadow 0 0 12px rgba(249,120,76,.3)).
- *  - Ca the KHONG nhap nhay.
+ * NEON: THE PHONG KHONG CO HIEU UNG NEON - khong quang sang, khong vien phat
+ * sang, khong nhap nhay. The dang bat den chi doi sang nen gradient cam.
+ * Rieng cham do bao cua dang mo thi van sang theo nhip chung cua app (day la
+ * chi bao trang thai, khong phai hieu ung cua the).
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -276,26 +271,14 @@ private fun RoomCardLarge(
     val iconCircle = (columnWidth * 0.27f).coerceIn(44.dp, 54.dp)
     val tempSize = (columnWidth.value * (if (hasStepper) 0.20f else 0.24f)).sp
 
+    // KHONG neon o the phong: khong glow, khong vien phat sang, khong nhap nhay.
     Box(
         Modifier
             .fillMaxWidth()
             .height(cardHeight)
             .pressScale(interaction)
-            // Vet sang cam lan ra ngoai TU VIEN the khi dang bat den, nhat dan.
-            .then(
-                if (lightOn) Modifier.neonGlow(
-                    color = NeonGlowOrange,
-                    cornerRadius = CardRadius,
-                    spread = 20.dp,
-                    intensity = 1f,
-                    maxAlpha = 0.40f,
-                ) else Modifier
-            )
             .clip(shape)
             .then(if (lightOn) Modifier.background(ActiveGradient) else Modifier.background(HumeColors.Card))
-            .then(
-                if (lightOn) Modifier.border(1.dp, NeonGlowOrange.copy(alpha = 0.85f), shape) else Modifier
-            )
             .clickable(interactionSource = interaction, indication = null, onClick = onOpen)
             .padding(14.dp),
     ) {
@@ -361,24 +344,23 @@ private fun RoomCardLarge(
 }
 
 /*
- * Cham do bao cua dang mo - 8px #ff5252, vet sang do lan ra ngoai theo nhip
- * neon-blink 1s: nhip manh thi lan xa hon va dam hon, nhat dan ra ngoai.
+ * Cham do bao cua dang mo: 8dp #ff5252, quang do toa muot ra ngoai theo NHIP
+ * CHUNG cua app (rememberNeonBeat) nen dong pha voi chip va nut chuong.
  */
 @Composable
 private fun AlertDot(modifier: Modifier = Modifier) {
-    val blink = rememberNeonBlink(1000)
-    val beat = ((blink - 0.3f) / 0.7f).coerceIn(0f, 1f)
+    val beat = rememberNeonBeat()
     Box(
         modifier
             .size(8.dp)
             .neonGlowCircle(
                 color = NeonDotRed,
-                spread = 6.dp + 8.dp * beat,
+                spread = 7.dp + 7.dp * beat,
                 intensity = 0.45f + 0.55f * beat,
-                maxAlpha = 0.75f,
+                maxAlpha = 0.7f,
             )
             .clip(CircleShape)
-            .background(NeonDotRed.copy(alpha = 0.55f + 0.45f * beat))
+            .background(NeonDotRed.copy(alpha = 0.6f + 0.4f * beat))
     )
 }
 

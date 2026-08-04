@@ -20,9 +20,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +43,7 @@ import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
 import com.smarthome.hume.ui.theme.neonGlow
 import com.smarthome.hume.ui.theme.neonGlowCircle
-import com.smarthome.hume.ui.theme.rememberNeonPulse
+import com.smarthome.hume.ui.theme.rememberNeonBeat
 
 /*
  * Hai chip trang thai, moi chip chi dai bang noi dung (toi da 180dp) va chu
@@ -51,12 +51,10 @@ import com.smarthome.hume.ui.theme.rememberNeonPulse
  *  - Chip bao dong nam SAT TRAI, chip so bong den nam SAT PHAI (SpaceBetween).
  *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
  *
- * NEON - trich tu bundle ban HTML, ve bang VET SANG lan ra ngoai tu vien:
- *  - Chip so bong den (> 0): background var(--yellow) 12%,
- *    border 1px var(--yellow) 40%, box-shadow 0 0 12px var(--yellow) 30%,
- *    neonPulse 6s -> vet sang quanh CA CHIP.
- *  - Chip an ninh khac disarmed: chi VONG ICON 28dp sang, background mau mode
- *    alpha 0.2 + vet sang tron. Ca chip khong glow.
+ * NEON - theo bundle ban HTML, va chay theo NHIP CHUNG rememberNeonBeat:
+ *  - Chip so bong den (> 0): background var(--yellow) 12%, border var(--yellow)
+ *    40%, quang vang toa muot ra ngoai tu vien chip.
+ *  - Chip an ninh khac disarmed: chi VONG ICON sang, khong glow ca chip.
  *  - Chip dang tat: khong co gi.
  */
 private val HtmlYellow = Color(0xFFF2D26F)
@@ -155,8 +153,7 @@ private fun BigPill(
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(PillRadius)
-    // neonPulse 6s: chi chay khi chip dang bat.
-    val pulse = if (active) rememberNeonPulse(6000) else 0f
+    val beat = if (active) rememberNeonBeat() else 0f
     val pillGlow = active && glowWholePill
 
     Row(
@@ -167,8 +164,8 @@ private fun BigPill(
                 if (pillGlow) Modifier.neonGlow(
                     color = glowColor,
                     cornerRadius = PillRadius,
-                    spread = 12.dp + 10.dp * pulse,
-                    intensity = 0.5f + 0.5f * pulse,
+                    spread = 13.dp + 9.dp * beat,
+                    intensity = 0.45f + 0.55f * beat,
                     maxAlpha = 0.5f,
                 ) else Modifier
             )
@@ -176,7 +173,7 @@ private fun BigPill(
             .background(if (pillGlow) glowColor.copy(alpha = 0.12f) else HumeColors.Card)
             .border(
                 1.dp,
-                if (pillGlow) glowColor.copy(alpha = 0.40f + 0.30f * pulse) else Color.Transparent,
+                if (pillGlow) glowColor.copy(alpha = 0.40f + 0.30f * beat) else Color.Transparent,
                 shape,
             )
             .clickable(onClick = onClick)
@@ -189,8 +186,8 @@ private fun BigPill(
                 .then(
                     if (active && !glowWholePill) Modifier.neonGlowCircle(
                         color = tint,
-                        spread = 7.dp + 7.dp * pulse,
-                        intensity = 0.5f + 0.5f * pulse,
+                        spread = 7.dp + 7.dp * beat,
+                        intensity = 0.45f + 0.55f * beat,
                         maxAlpha = 0.55f,
                     ) else Modifier
                 )
