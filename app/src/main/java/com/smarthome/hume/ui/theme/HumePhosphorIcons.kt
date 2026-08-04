@@ -25,6 +25,11 @@ import androidx.compose.ui.unit.dp
  *  - Regular: net 16 - dung cho moi icon noi dung.
  *  - Thin:    net 8  - dung cho icon phu, khi can mang hon.
  *  - Fill:    to DAC - CHI dung cho tab dang chon tren navbar.
+ *
+ * LUU Y: ten mang path phai KHAC ten property trong object Ph. Neu trung ten
+ * (vi du mang X va Ph.X) thi Kotlin hieu *X la chinh property dang khai bao,
+ * sinh loi "recursive problem" va "spread operator cannot be applied to an
+ * argument of nullable type". Vi vay mang cua ph-x duoc dat la X_MARK.
  */
 private const val REGULAR = 16f
 private const val THIN = 8f
@@ -107,14 +112,14 @@ private val DOOR_OPEN = arrayOf(
 )
 
 /** ph-door */
-private val DOOR = arrayOf(
+private val DOOR_PATH = arrayOf(
     "M56,224 L56,32 L200,32 L200,224",
     "M32,224 L224,224",
     "M168,132 L168,132",
 )
 
 /** ph-shield */
-private val SHIELD = arrayOf(
+private val SHIELD_PATH = arrayOf(
     "M48,56 L128,32 L208,56 L208,120 C208,176 168,206 128,224 C88,206 48,176 48,120 Z",
 )
 
@@ -125,18 +130,18 @@ private val SHIELD_CHECK = arrayOf(
 )
 
 /** ph-bell */
-private val BELL = arrayOf(
+private val BELL_PATH = arrayOf(
     "M56,184 C70,166 72,150 72,112 A56,56 0 0 1 184,112 C184,150 186,166 200,184 Z",
     "M100,208 A28,28 0 0 0 156,208",
 )
 
 /** ph-moon-stars */
-private val MOON = arrayOf(
+private val MOON_PATH = arrayOf(
     "M216,152 A96,96 0 1 1 104,40 A80,80 0 0 0 216,152 Z",
 )
 
 /** ph-sun */
-private val SUN = arrayOf(
+private val SUN_PATH = arrayOf(
     "M128,72 A56,56 0 1 0 128,184 A56,56 0 1 0 128,72",
     "M128,20 L128,44",
     "M128,212 L128,236",
@@ -158,25 +163,25 @@ private val SUN_HORIZON = arrayOf(
 )
 
 /** ph-house */
-private val HOUSE = arrayOf(
+private val HOUSE_PATH = arrayOf(
     "M40,216 L40,112 L128,40 L216,112 L216,216 Z",
     "M100,216 L100,160 L156,160 L156,216",
 )
 
 /** ph-lightning */
-private val LIGHTNING = arrayOf(
+private val LIGHTNING_PATH = arrayOf(
     "M96,240 L112,144 L48,120 L160,16 L144,112 L208,136 Z",
 )
 
 /** ph-battery-charging */
-private val BATTERY = arrayOf(
+private val BATTERY_PATH = arrayOf(
     "M24,80 L160,80 L160,176 L24,176 Z",
     "M184,108 L184,148",
     "M96,96 L72,132 L112,132 L88,160",
 )
 
 /** ph-plug */
-private val PLUG = arrayOf(
+private val PLUG_PATH = arrayOf(
     "M96,24 L96,88",
     "M160,24 L160,88",
     "M72,88 L184,88 L184,120 A56,56 0 0 1 72,120 Z",
@@ -184,14 +189,14 @@ private val PLUG = arrayOf(
 )
 
 /** ph-bed */
-private val BED = arrayOf(
+private val BED_PATH = arrayOf(
     "M32,88 L32,200",
     "M32,152 L224,152 L224,200",
     "M64,120 L184,120 A32,32 0 0 1 216,152",
 )
 
 /** ph-baby */
-private val BABY = arrayOf(
+private val BABY_PATH = arrayOf(
     "M128,40 A88,88 0 1 0 128,216 A88,88 0 1 0 128,40",
     "M100,112 L100,112",
     "M156,112 L156,112",
@@ -199,7 +204,7 @@ private val BABY = arrayOf(
 )
 
 /** ph-couch */
-private val COUCH = arrayOf(
+private val COUCH_PATH = arrayOf(
     "M40,120 A16,16 0 0 1 72,120 L72,152 L184,152 L184,120 A16,16 0 0 1 216,120 L216,192 L40,192 Z",
     "M64,96 A16,16 0 0 1 80,80 L176,80 A16,16 0 0 1 192,96",
     "M64,192 L64,216",
@@ -207,7 +212,7 @@ private val COUCH = arrayOf(
 )
 
 /** ph-bathtub */
-private val BATHTUB = arrayOf(
+private val BATHTUB_PATH = arrayOf(
     "M32,120 L224,120 L224,152 A48,48 0 0 1 176,200 L80,200 A48,48 0 0 1 32,152 Z",
     "M64,200 L56,224",
     "M192,200 L200,224",
@@ -225,7 +230,7 @@ private val COOKING_POT = arrayOf(
 )
 
 /** ph-washing-machine */
-private val WASHER = arrayOf(
+private val WASHER_PATH = arrayOf(
     "M48,32 L208,32 L208,224 L48,224 Z",
     "M48,80 L208,80",
     "M128,112 A48,48 0 1 0 128,208 A48,48 0 1 0 128,112",
@@ -234,23 +239,23 @@ private val WASHER = arrayOf(
 )
 
 /** ph-stairs */
-private val STAIRS = arrayOf(
+private val STAIRS_PATH = arrayOf(
     "M32,208 L32,160 L96,160 L96,112 L160,112 L160,64 L224,64",
 )
 
 /** ph-user */
-private val USER = arrayOf(
+private val USER_PATH = arrayOf(
     "M128,40 A44,44 0 1 0 128,128 A44,44 0 1 0 128,40",
     "M40,212 A100,100 0 0 1 216,212",
 )
 
 /** ph-sparkle */
-private val SPARKLE = arrayOf(
+private val SPARKLE_PATH = arrayOf(
     "M128,28 L148,108 L228,128 L148,148 L128,228 L108,148 L28,128 L108,108 Z",
 )
 
 /** ph-fire-simple */
-private val FIRE = arrayOf(
+private val FIRE_PATH = arrayOf(
     "M128,232 A72,72 0 0 0 200,160 C200,100 156,72 128,24 C100,72 56,100 56,160 A72,72 0 0 0 128,232 Z",
 )
 
@@ -262,7 +267,7 @@ private val SIGN_OUT = arrayOf(
 )
 
 /** ph-desk */
-private val DESK = arrayOf(
+private val DESK_PATH = arrayOf(
     "M24,96 L232,96",
     "M56,96 L56,208",
     "M200,96 L200,208",
@@ -284,14 +289,14 @@ private val CARET_UP = arrayOf("M48,168 L128,88 L208,168")
 private val CARET_DOWN = arrayOf("M208,88 L128,168 L48,88")
 
 /** ph-download-simple */
-private val DOWNLOAD = arrayOf(
+private val DOWNLOAD_PATH = arrayOf(
     "M74,102 L128,156 L182,102",
     "M128,32 L128,156",
     "M40,200 L216,200",
 )
 
 /** ph-play */
-private val PLAY = arrayOf("M72,40 L200,128 L72,216 Z")
+private val PLAY_PATH = arrayOf("M72,40 L200,128 L72,216 Z")
 
 /** ph-video-camera */
 private val VIDEO_CAMERA = arrayOf(
@@ -300,7 +305,7 @@ private val VIDEO_CAMERA = arrayOf(
 )
 
 /** ph-person-simple-walk */
-private val WALK = arrayOf(
+private val WALK_PATH = arrayOf(
     "M132,32 A16,16 0 1 0 132,64 A16,16 0 1 0 132,32",
     "M120,80 L120,132 L92,224",
     "M120,104 L172,124",
@@ -308,7 +313,7 @@ private val WALK = arrayOf(
 )
 
 /** ph-identification-badge */
-private val BADGE = arrayOf(
+private val BADGE_PATH = arrayOf(
     "M40,48 L216,48 L216,208 L40,208 Z",
     "M96,80 L160,80",
     "M128,116 A20,20 0 1 0 128,156 A20,20 0 1 0 128,116",
@@ -316,13 +321,13 @@ private val BADGE = arrayOf(
 )
 
 /** ph-envelope-simple */
-private val ENVELOPE = arrayOf(
+private val ENVELOPE_PATH = arrayOf(
     "M32,64 L224,64 L224,192 L32,192 Z",
     "M32,64 L128,144 L224,64",
 )
 
 /** ph-phone */
-private val PHONE = arrayOf(
+private val PHONE_PATH = arrayOf(
     "M92,40 L120,96 L96,120 C112,152 104,144 136,160 L160,136 L216,164 C216,196 196,216 168,216 C96,208 48,160 40,88 C40,60 60,40 92,40 Z",
 )
 
@@ -333,19 +338,19 @@ private val MAP_PIN = arrayOf(
 )
 
 /** ph-copy */
-private val COPY = arrayOf(
+private val COPY_PATH = arrayOf(
     "M80,80 L216,80 L216,216 L80,216 Z",
     "M176,80 L176,40 L40,40 L40,176 L80,176",
 )
 
 /** ph-pencil-simple */
-private val PENCIL = arrayOf(
+private val PENCIL_PATH = arrayOf(
     "M96,216 L40,216 L40,160 L160,40 L216,96 Z",
     "M136,64 L192,120",
 )
 
 /** ph-chat-circle-dots */
-private val CHAT = arrayOf(
+private val CHAT_PATH = arrayOf(
     "M128,32 A96,96 0 1 0 128,224 A96,96 0 1 0 128,32",
     "M96,128 L96,128",
     "M128,128 L128,128",
@@ -369,25 +374,25 @@ private val MAGIC_WAND = arrayOf(
 )
 
 /** ph-x */
-private val X = arrayOf("M64,64 L192,192", "M192,64 L64,192")
+private val X_MARK = arrayOf("M64,64 L192,192", "M192,64 L64,192")
 
 /** ph-plus */
-private val PLUS = arrayOf("M40,128 L216,128", "M128,40 L128,216")
+private val PLUS_PATH = arrayOf("M40,128 L216,128", "M128,40 L128,216")
 
 /** ph-minus */
-private val MINUS = arrayOf("M40,128 L216,128")
+private val MINUS_PATH = arrayOf("M40,128 L216,128")
 
 /** ph-check */
-private val CHECK = arrayOf("M216,72 L104,184 L48,128")
+private val CHECK_PATH = arrayOf("M216,72 L104,184 L48,128")
 
 /** ph-lock-simple */
-private val LOCK = arrayOf(
+private val LOCK_PATH = arrayOf(
     "M64,112 L192,112 L192,208 L64,208 Z",
     "M92,112 L92,72 A36,36 0 0 1 164,72 L164,112",
 )
 
 /** ph-gear */
-private val GEAR = arrayOf(
+private val GEAR_PATH = arrayOf(
     "M128,88 A40,40 0 1 0 128,168 A40,40 0 1 0 128,88",
     "M128,24 L128,56",
     "M128,200 L128,232",
@@ -400,7 +405,7 @@ private val GEAR = arrayOf(
 )
 
 /** ph-warning */
-private val WARNING = arrayOf(
+private val WARNING_PATH = arrayOf(
     "M128,32 L232,216 L24,216 Z",
     "M128,88 L128,148",
     "M128,184 L128,184",
@@ -436,69 +441,69 @@ private val SPARKLE_FILL = arrayOf(
 
 /** Bo icon Phosphor da port. */
 object Ph {
-    val Lightbulb = phosphor("ph-lightbulb", REGULAR, *LIGHTBULB)
-    val Drop = phosphor("ph-drop", REGULAR, *DROP)
-    val Snowflake = phosphor("ph-snowflake", REGULAR, *SNOWFLAKE)
-    val Thermometer = phosphor("ph-thermometer", REGULAR, *THERMOMETER)
-    val DoorOpen = phosphor("ph-door-open", REGULAR, *DOOR_OPEN)
-    val Door = phosphor("ph-door", REGULAR, *DOOR)
-    val Shield = phosphor("ph-shield", REGULAR, *SHIELD)
-    val ShieldCheck = phosphor("ph-shield-check", REGULAR, *SHIELD_CHECK)
-    val Bell = phosphor("ph-bell", REGULAR, *BELL)
-    val Moon = phosphor("ph-moon-stars", REGULAR, *MOON)
-    val Sun = phosphor("ph-sun", REGULAR, *SUN)
-    val SunHorizon = phosphor("ph-sun-horizon", REGULAR, *SUN_HORIZON)
-    val House = phosphor("ph-house", REGULAR, *HOUSE)
-    val Lightning = phosphor("ph-lightning", REGULAR, *LIGHTNING)
-    val Battery = phosphor("ph-battery-charging", REGULAR, *BATTERY)
-    val Plug = phosphor("ph-plug", REGULAR, *PLUG)
-    val Bed = phosphor("ph-bed", REGULAR, *BED)
-    val Baby = phosphor("ph-baby", REGULAR, *BABY)
-    val Couch = phosphor("ph-couch", REGULAR, *COUCH)
-    val Bathtub = phosphor("ph-bathtub", REGULAR, *BATHTUB)
-    val CookingPot = phosphor("ph-cooking-pot", REGULAR, *COOKING_POT)
-    val Washer = phosphor("ph-washing-machine", REGULAR, *WASHER)
-    val Stairs = phosphor("ph-stairs", REGULAR, *STAIRS)
-    val User = phosphor("ph-user", REGULAR, *USER)
-    val Sparkle = phosphor("ph-sparkle", REGULAR, *SPARKLE)
-    val Fire = phosphor("ph-fire-simple", REGULAR, *FIRE)
-    val SignOut = phosphor("ph-sign-out", REGULAR, *SIGN_OUT)
-    val Desk = phosphor("ph-desk", REGULAR, *DESK)
+    val Lightbulb: ImageVector = phosphor("ph-lightbulb", REGULAR, *LIGHTBULB)
+    val Drop: ImageVector = phosphor("ph-drop", REGULAR, *DROP)
+    val Snowflake: ImageVector = phosphor("ph-snowflake", REGULAR, *SNOWFLAKE)
+    val Thermometer: ImageVector = phosphor("ph-thermometer", REGULAR, *THERMOMETER)
+    val DoorOpen: ImageVector = phosphor("ph-door-open", REGULAR, *DOOR_OPEN)
+    val Door: ImageVector = phosphor("ph-door", REGULAR, *DOOR_PATH)
+    val Shield: ImageVector = phosphor("ph-shield", REGULAR, *SHIELD_PATH)
+    val ShieldCheck: ImageVector = phosphor("ph-shield-check", REGULAR, *SHIELD_CHECK)
+    val Bell: ImageVector = phosphor("ph-bell", REGULAR, *BELL_PATH)
+    val Moon: ImageVector = phosphor("ph-moon-stars", REGULAR, *MOON_PATH)
+    val Sun: ImageVector = phosphor("ph-sun", REGULAR, *SUN_PATH)
+    val SunHorizon: ImageVector = phosphor("ph-sun-horizon", REGULAR, *SUN_HORIZON)
+    val House: ImageVector = phosphor("ph-house", REGULAR, *HOUSE_PATH)
+    val Lightning: ImageVector = phosphor("ph-lightning", REGULAR, *LIGHTNING_PATH)
+    val Battery: ImageVector = phosphor("ph-battery-charging", REGULAR, *BATTERY_PATH)
+    val Plug: ImageVector = phosphor("ph-plug", REGULAR, *PLUG_PATH)
+    val Bed: ImageVector = phosphor("ph-bed", REGULAR, *BED_PATH)
+    val Baby: ImageVector = phosphor("ph-baby", REGULAR, *BABY_PATH)
+    val Couch: ImageVector = phosphor("ph-couch", REGULAR, *COUCH_PATH)
+    val Bathtub: ImageVector = phosphor("ph-bathtub", REGULAR, *BATHTUB_PATH)
+    val CookingPot: ImageVector = phosphor("ph-cooking-pot", REGULAR, *COOKING_POT)
+    val Washer: ImageVector = phosphor("ph-washing-machine", REGULAR, *WASHER_PATH)
+    val Stairs: ImageVector = phosphor("ph-stairs", REGULAR, *STAIRS_PATH)
+    val User: ImageVector = phosphor("ph-user", REGULAR, *USER_PATH)
+    val Sparkle: ImageVector = phosphor("ph-sparkle", REGULAR, *SPARKLE_PATH)
+    val Fire: ImageVector = phosphor("ph-fire-simple", REGULAR, *FIRE_PATH)
+    val SignOut: ImageVector = phosphor("ph-sign-out", REGULAR, *SIGN_OUT)
+    val Desk: ImageVector = phosphor("ph-desk", REGULAR, *DESK_PATH)
 
-    val CaretRight = phosphor("ph-caret-right", REGULAR, *CARET_RIGHT)
-    val CaretLeft = phosphor("ph-caret-left", REGULAR, *CARET_LEFT)
-    val CaretUp = phosphor("ph-caret-up", REGULAR, *CARET_UP)
-    val CaretDown = phosphor("ph-caret-down", REGULAR, *CARET_DOWN)
-    val Download = phosphor("ph-download-simple", REGULAR, *DOWNLOAD)
-    val Play = phosphor("ph-play", REGULAR, *PLAY)
-    val VideoCamera = phosphor("ph-video-camera", REGULAR, *VIDEO_CAMERA)
-    val Walk = phosphor("ph-person-simple-walk", REGULAR, *WALK)
-    val Badge = phosphor("ph-identification-badge", REGULAR, *BADGE)
-    val Envelope = phosphor("ph-envelope-simple", REGULAR, *ENVELOPE)
-    val Phone = phosphor("ph-phone", REGULAR, *PHONE)
-    val MapPin = phosphor("ph-map-pin", REGULAR, *MAP_PIN)
-    val Copy = phosphor("ph-copy", REGULAR, *COPY)
-    val Pencil = phosphor("ph-pencil-simple", REGULAR, *PENCIL)
-    val Chat = phosphor("ph-chat-circle-dots", REGULAR, *CHAT)
-    val DeviceMobile = phosphor("ph-device-mobile", REGULAR, *DEVICE_MOBILE)
-    val MagicWand = phosphor("ph-magic-wand", REGULAR, *MAGIC_WAND)
-    val X = phosphor("ph-x", REGULAR, *X)
-    val Plus = phosphor("ph-plus", REGULAR, *PLUS)
-    val Minus = phosphor("ph-minus", REGULAR, *MINUS)
-    val Check = phosphor("ph-check", REGULAR, *CHECK)
-    val Lock = phosphor("ph-lock-simple", REGULAR, *LOCK)
-    val Gear = phosphor("ph-gear", REGULAR, *GEAR)
-    val Warning = phosphor("ph-warning", REGULAR, *WARNING)
+    val CaretRight: ImageVector = phosphor("ph-caret-right", REGULAR, *CARET_RIGHT)
+    val CaretLeft: ImageVector = phosphor("ph-caret-left", REGULAR, *CARET_LEFT)
+    val CaretUp: ImageVector = phosphor("ph-caret-up", REGULAR, *CARET_UP)
+    val CaretDown: ImageVector = phosphor("ph-caret-down", REGULAR, *CARET_DOWN)
+    val Download: ImageVector = phosphor("ph-download-simple", REGULAR, *DOWNLOAD_PATH)
+    val Play: ImageVector = phosphor("ph-play", REGULAR, *PLAY_PATH)
+    val VideoCamera: ImageVector = phosphor("ph-video-camera", REGULAR, *VIDEO_CAMERA)
+    val Walk: ImageVector = phosphor("ph-person-simple-walk", REGULAR, *WALK_PATH)
+    val Badge: ImageVector = phosphor("ph-identification-badge", REGULAR, *BADGE_PATH)
+    val Envelope: ImageVector = phosphor("ph-envelope-simple", REGULAR, *ENVELOPE_PATH)
+    val Phone: ImageVector = phosphor("ph-phone", REGULAR, *PHONE_PATH)
+    val MapPin: ImageVector = phosphor("ph-map-pin", REGULAR, *MAP_PIN)
+    val Copy: ImageVector = phosphor("ph-copy", REGULAR, *COPY_PATH)
+    val Pencil: ImageVector = phosphor("ph-pencil-simple", REGULAR, *PENCIL_PATH)
+    val Chat: ImageVector = phosphor("ph-chat-circle-dots", REGULAR, *CHAT_PATH)
+    val DeviceMobile: ImageVector = phosphor("ph-device-mobile", REGULAR, *DEVICE_MOBILE)
+    val MagicWand: ImageVector = phosphor("ph-magic-wand", REGULAR, *MAGIC_WAND)
+    val X: ImageVector = phosphor("ph-x", REGULAR, *X_MARK)
+    val Plus: ImageVector = phosphor("ph-plus", REGULAR, *PLUS_PATH)
+    val Minus: ImageVector = phosphor("ph-minus", REGULAR, *MINUS_PATH)
+    val Check: ImageVector = phosphor("ph-check", REGULAR, *CHECK_PATH)
+    val Lock: ImageVector = phosphor("ph-lock-simple", REGULAR, *LOCK_PATH)
+    val Gear: ImageVector = phosphor("ph-gear", REGULAR, *GEAR_PATH)
+    val Warning: ImageVector = phosphor("ph-warning", REGULAR, *WARNING_PATH)
 
     /** Ban net MANH hon (Phosphor thin) cho icon phu. */
-    val CaretRightThin = phosphor("ph-caret-right-thin", THIN, *CARET_RIGHT)
-    val CaretUpThin = phosphor("ph-caret-up-thin", THIN, *CARET_UP)
-    val CaretDownThin = phosphor("ph-caret-down-thin", THIN, *CARET_DOWN)
+    val CaretRightThin: ImageVector = phosphor("ph-caret-right-thin", THIN, *CARET_RIGHT)
+    val CaretUpThin: ImageVector = phosphor("ph-caret-up-thin", THIN, *CARET_UP)
+    val CaretDownThin: ImageVector = phosphor("ph-caret-down-thin", THIN, *CARET_DOWN)
 
     /** Ban TO DAC cho tab dang chon. */
-    val HouseFill = phosphorFill("ph-house-fill", *HOUSE_FILL)
-    val LightningFill = phosphorFill("ph-lightning-fill", *LIGHTNING_FILL)
-    val ShieldFill = phosphorFill("ph-shield-fill", *SHIELD_FILL)
-    val UserFill = phosphorFill("ph-user-fill", *USER_FILL)
-    val SparkleFill = phosphorFill("ph-sparkle-fill", *SPARKLE_FILL)
+    val HouseFill: ImageVector = phosphorFill("ph-house-fill", *HOUSE_FILL)
+    val LightningFill: ImageVector = phosphorFill("ph-lightning-fill", *LIGHTNING_FILL)
+    val ShieldFill: ImageVector = phosphorFill("ph-shield-fill", *SHIELD_FILL)
+    val UserFill: ImageVector = phosphorFill("ph-user-fill", *USER_FILL)
+    val SparkleFill: ImageVector = phosphorFill("ph-sparkle-fill", *SPARKLE_FILL)
 }
