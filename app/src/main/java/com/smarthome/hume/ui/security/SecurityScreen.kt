@@ -2,6 +2,7 @@ package com.smarthome.hume.ui.security
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,6 +65,9 @@ import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.glassSurface
 import com.smarthome.hume.ui.theme.humeMarquee
+import com.smarthome.hume.ui.theme.neonGlow
+import com.smarthome.hume.ui.theme.neonGlowCircle
+import com.smarthome.hume.ui.theme.rememberNeonBeat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -567,20 +572,22 @@ private fun ClipPlayerDialog(path: String, onDismiss: () -> Unit) {
 
 /* ------------------------- sensors ------------------------- */
 
+/**
+ * SK trong ban HTML:
+ *   tieu de {fontSize:14, fontWeight:600, color:var(--gray1000), marginBottom:8,
+ *   paddingLeft:4} — KHONG co nen chip; luoi 2 cot gap 6.
+ */
 @Composable
 private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map<String, HomeEntity>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             title,
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = HumeColors.TextSecondary,
+            color = HumeColors.Gray1000,
             maxLines = 1,
             softWrap = false,
-            modifier = Modifier
-                .clip(RoundedCornerShape(HumeShapes.Element))
-                .background(HumeColors.FillTertiary)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
+            modifier = Modifier.padding(start = 4.dp),
         )
         sensors.chunked(2).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -594,17 +601,16 @@ private fun SensorSection(title: String, sensors: List<SensorDef>, entities: Map
 }
 
 /**
- * BinarySensorCardView.
+ * xK trong ban HTML — sao y tung so do, khong tu sang tac:
+ *   borderRadius 25, padding '8px 12px', minHeight 44, flex column gap 2,
+ *   background  = on ? accent 12 (7%)  : rgba(255,255,255,0.08),
+ *   border 1px  = on ? accent 55 (33%) : rgba(255,255,255,0.1),
+ *   boxShadow   = on ? '0 0 16px accent44' (vet sang NGOAI vien, tinh),
+ *   vong icon 36 (icon 18), ten 13/500, dong phu 9 gray500 opacity .7,
+ *   chip trang thai alignSelf CENTER, 10/600, padding '2px 10px', radius 8.
  *
- * BO TRI CHU (theo dung cach ban HTML bay chu trong the cam bien):
- *   - vong icon 36 ben trai, chu ben phai, cung mot hang;
- *   - ten cam bien 13sp mot dong, phia duoi la dong "bao lau truoc" 10sp;
- *   - chip trang thai xuong hang rieng, CAN TRAI thang voi cot chu (truoc day
- *     can giua nen chu nhin lech so voi ten);
- *   - CHIEU CAO: min 80dp de ten + dong thoi gian + chip luon du cho, khong
- *     bao gio bi cat mat nhu truoc;
- *   - CHAY CHU: ten, dong thoi gian va chip deu chay khi chu dai hon the
- *     (humeMarquee), thay vi bi cat cut.
+ * Den neon = chấm tron 14 o goc phai tren (top -4, right -4) nhay theo
+ * keyframes neon-blink 1.5s (opacity 1 -> .3 -> 1), co quang lan ra ngoai.
  */
 @Composable
 private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
@@ -618,65 +624,94 @@ private fun BinarySensorCard(sensor: SensorDef, entity: HomeEntity?) {
         SensorKind.Door -> if (isOn) "M\u1ede" else "\u0110\u00d3NG"
     }
 
-    Column(
+    val dark = HumeColors.isDark
+    val shape = RoundedCornerShape(25.dp)
+    val bg = if (isOn) accent.copy(alpha = 0.07f) else if (dark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.04f)
+    val edge = if (isOn) accent.copy(alpha = 0.33f) else if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.06f)
+    val beat = rememberNeonBeat(1500)
+
+    Box(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 80.dp)
-            .glassSurface(radius = HumeShapes.Tile)
-            .background(if (isOn) accent.copy(alpha = 0.10f) else Color.Transparent)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .then(if (isOn) Modifier.neonGlow(accent, cornerRadius = 25.dp, spread = 16.dp, intensity = 1f, maxAlpha = 0.30f) else Modifier),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.FillTertiary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    sensor.icon,
-                    contentDescription = null,
-                    tint = if (isOn) accent else HumeColors.TextPrimary,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    sensor.name,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isOn) accent else HumeColors.TextPrimary,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.fillMaxWidth().humeMarquee(),
-                )
-                if (minutes != null) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .clip(shape)
+                .background(bg)
+                .border(1.dp, edge, shape)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (isOn) accent.copy(alpha = 0.13f) else HumeColors.Gray00),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        sensor.icon,
+                        contentDescription = null,
+                        tint = if (isOn) accent else HumeColors.Gray1000,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        agoLabel(minutes),
-                        fontSize = 10.sp,
-                        color = HumeColors.TextSecondary,
+                        sensor.name,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isOn) accent else HumeColors.Gray1000,
                         maxLines = 1,
                         softWrap = false,
                         modifier = Modifier.fillMaxWidth().humeMarquee(),
                     )
+                    if (minutes != null) {
+                        Text(
+                            agoLabel(minutes),
+                            fontSize = 9.sp,
+                            color = HumeColors.Gray500.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(top = 1.dp),
+                        )
+                    }
                 }
             }
+            Text(
+                status,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isOn) accent else HumeColors.Gray500,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isOn) accent.copy(alpha = 0.13f) else HumeColors.Gray00)
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
+            )
         }
-        Text(
-            status,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isOn) accent else HumeColors.TextSecondary,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (isOn) accent.copy(alpha = 0.22f) else HumeColors.FillTertiary)
-                .padding(horizontal = 10.dp, vertical = 3.dp),
-        )
+
+        if (isOn) {
+            // Cham neon o goc, bi cat boi overflow:hidden cua the — giong HTML.
+            Box(Modifier.matchParentSize().clip(shape)) {
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp)
+                        .size(14.dp)
+                        .neonGlowCircle(accent, spread = 10.dp, intensity = beat, maxAlpha = 0.6f)
+                        .clip(CircleShape)
+                        .background(accent.copy(alpha = 0.3f + 0.7f * beat)),
+                )
+            }
+        }
     }
 }
 
