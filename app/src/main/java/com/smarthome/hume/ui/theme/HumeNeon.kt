@@ -8,11 +8,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -28,20 +34,22 @@ import kotlin.math.cos
  *      20%    { box-shadow: 0 0 14px #f9784c99, 0 0 28px #f9784c4d, 0 0 50px #f9784c26 }
  *   }
  *
- * HAI DIEU KIEN BAT BUOC
+ * BA DIEU KIEN BAT BUOC
  *
- * 1. TOA MUOT. `box-shadow: 0 0 Npx` la vet sang BLUR toa deu ra ngoai tu vien.
- *    KHONG duoc mo phong bang cach xep nhieu vong stroke dong tam - lam vay se
- *    hien ro van tung lop. Phai blur that:
- *      - khoi bo goc  -> BlurMaskFilter tren native canvas (dung 3 lop blur
- *        8/16/30dp giong dung ba lop box-shadow cua CSS)
- *      - khoi tron    -> Brush.radialGradient nhieu color stop, chuyen mau lien
- *        tuc nen khong bao gio co van
+ * 1. ANH SANG CHI O NGOAI VIEN. Den neon hat RA NGOAI, tinh tu vien, va nhat
+ *    dan khi ra xa. Ben trong vien khong duoc co bat ky anh sang hay nhip nhap
+ *    nhay nao. Vi vay sau khi ve blur, PHAI cat bo toan bo phan nam trong hinh
+ *    bang clipPath(ClipOp.Difference). Neu chi de nen phu len phan trong thi
+ *    khi nen ban trong suot (vi du chip nen 12%) anh sang se lot qua va nhin
+ *    thay nhap nhay ben trong - day dung la loi da mac phai.
  *
- * 2. CUNG MOT NHIP. Moi cho phat sang trong app dung CHUNG rememberNeonBeat:
- *    pha duoc tinh tu dong ho khung hinh (withInfiniteAnimationFrameMillis) nen
- *    tat ca thanh phan sang/tat DONG PHA tuyet doi, khong lech nhau du duoc
- *    tao ra o cac thoi diem khac nhau.
+ * 2. TOA MUOT. Khong xep nhieu vong stroke dong tam (se hien ro van tung lop).
+ *    Phai blur that:
+ *      - khoi bo goc -> BlurMaskFilter, 3 lop blur theo dung 3 lop box-shadow
+ *      - khoi tron   -> Brush.radialGradient nhieu chang, chuyen mau lien tuc
+ *
+ * 3. CUNG MOT NHIP. Moi cho phat sang dung CHUNG rememberNeonBeat, pha tinh tu
+ *    dong ho khung hinh nen dong pha tuyet doi.
  */
 
 /** Chu ky nhip neon dung chung cho toan bo app. */
@@ -70,7 +78,7 @@ val NeonGlowOrange = Color(0xFFF9784C)
 
 /*
  * Ba lop blur cua box-shadow trong CSS, ti le theo `spread`:
- *   0 0 8px  30%  |  0 0 16px 15%  |  0 0 30px 8%
+ *   0 0 8px 30% | 0 0 16px 15% | 0 0 30px 8%
  */
 private val GlowLayers = listOf(
     0.42f to 1.00f,
@@ -79,10 +87,10 @@ private val GlowLayers = listOf(
 )
 
 /**
- * Vet sang neon quanh khoi bo goc: blur that, sang nhat sat vien roi nhat dan
- * ra ngoai mot cach lien tuc.
+ * Den neon hat ra NGOAI vien mot khoi bo goc: blur that, sang nhat sat vien roi
+ * nhat dan ra ngoai. Phan ben trong vien duoc cat bo hoan toan.
  *
- * Dat TRUOC .clip()/.background() de vet sang nam ngoai than the.
+ * Dat TRUOC .clip()/.background().
  */
 fun Modifier.neonGlow(
     color: Color,
@@ -94,37 +102,49 @@ fun Modifier.neonGlow(
     if (intensity <= 0.01f) return@drawBehind
     val radiusPx = cornerRadius.toPx()
     val spreadPx = spread.toPx()
-    drawIntoCanvas { canvas ->
-        val paint = Paint().apply { style = PaintingStyle.Fill }
-        val frameworkPaint = paint.asFrameworkPaint()
-        frameworkPaint.isAntiAlias = true
-        GlowLayers.forEach { (blurRatio, alphaRatio) ->
-            val blurPx = spreadPx * blurRatio
-            if (blurPx <= 0.5f) return@forEach
-            frameworkPaint.color = color.copy(alpha = maxAlpha * alphaRatio * intensity).toArgb()
-            frameworkPaint.maskFilter =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    BlurMaskFilter(blurPx, BlurMaskFilter.Blur.NORMAL)
-                } else {
-                    null
-                }
-            canvas.nativeCanvas.drawRoundRect(
-                0f,
-                0f,
-                size.width,
-                size.height,
-                radiusPx,
-                radiusPx,
-                frameworkPaint,
+    // Hinh than the: moi thu nam trong day se bi cat bo.
+    val bodyPath = Path().apply {
+        addRoundRect(
+            RoundRect(
+                rect = Rect(0f, 0f, size.width, size.height),
+                cornerRadius = CornerRadius(radiusPx, radiusPx),
             )
+        )
+    }
+    clipPath(path = bodyPath, clipOp = ClipOp.Difference) {
+        drawIntoCanvas { canvas ->
+            val paint = Paint().apply { style = PaintingStyle.Fill }
+            val frameworkPaint = paint.asFrameworkPaint()
+            frameworkPaint.isAntiAlias = true
+            GlowLayers.forEach { (blurRatio, alphaRatio) ->
+                val blurPx = spreadPx * blurRatio
+                if (blurPx <= 0.5f) return@forEach
+                frameworkPaint.color =
+                    color.copy(alpha = maxAlpha * alphaRatio * intensity).toArgb()
+                frameworkPaint.maskFilter =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        BlurMaskFilter(blurPx, BlurMaskFilter.Blur.NORMAL)
+                    } else {
+                        null
+                    }
+                canvas.nativeCanvas.drawRoundRect(
+                    0f,
+                    0f,
+                    size.width,
+                    size.height,
+                    radiusPx,
+                    radiusPx,
+                    frameworkPaint,
+                )
+            }
+            frameworkPaint.maskFilter = null
         }
-        frameworkPaint.maskFilter = null
     }
 }
 
 /**
- * Vet sang neon quanh khoi tron: dung radial gradient nhieu chang nen mau
- * chuyen lien tuc, tuyet doi khong co van.
+ * Den neon hat ra NGOAI vien mot khoi tron: radial gradient nen chuyen mau lien
+ * tuc, khong bao gio co van. Phan ben trong duong tron bi cat bo hoan toan.
  */
 fun Modifier.neonGlowCircle(
     color: Color,
@@ -136,24 +156,36 @@ fun Modifier.neonGlowCircle(
     val baseRadius = size.minDimension / 2f
     val spreadPx = spread.toPx()
     val outerRadius = baseRadius + spreadPx
-    if (outerRadius <= 0f) return@drawBehind
+    if (outerRadius <= 0f || baseRadius <= 0f) return@drawBehind
+    val center = Offset(size.width / 2f, size.height / 2f)
     val edge = (baseRadius / outerRadius).coerceIn(0f, 0.95f)
     val a = maxAlpha * intensity
-    // Sang deu ben trong den sat vien, sau do tat dan muot ra ngoai.
-    drawCircle(
-        brush = Brush.radialGradient(
-            colorStops = arrayOf(
-                0f to color.copy(alpha = a),
-                edge to color.copy(alpha = a),
-                edge + (1f - edge) * 0.25f to color.copy(alpha = a * 0.55f),
-                edge + (1f - edge) * 0.5f to color.copy(alpha = a * 0.26f),
-                edge + (1f - edge) * 0.75f to color.copy(alpha = a * 0.09f),
-                1f to Color.Transparent,
+    val bodyPath = Path().apply {
+        addOval(
+            Rect(
+                center.x - baseRadius,
+                center.y - baseRadius,
+                center.x + baseRadius,
+                center.y + baseRadius,
+            )
+        )
+    }
+    clipPath(path = bodyPath, clipOp = ClipOp.Difference) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0f to color.copy(alpha = a),
+                    edge to color.copy(alpha = a),
+                    edge + (1f - edge) * 0.25f to color.copy(alpha = a * 0.55f),
+                    edge + (1f - edge) * 0.5f to color.copy(alpha = a * 0.26f),
+                    edge + (1f - edge) * 0.75f to color.copy(alpha = a * 0.09f),
+                    1f to Color.Transparent,
+                ),
+                center = center,
+                radius = outerRadius,
             ),
-            center = Offset(size.width / 2f, size.height / 2f),
             radius = outerRadius,
-        ),
-        radius = outerRadius,
-        center = Offset(size.width / 2f, size.height / 2f),
-    )
+            center = center,
+        )
+    }
 }
