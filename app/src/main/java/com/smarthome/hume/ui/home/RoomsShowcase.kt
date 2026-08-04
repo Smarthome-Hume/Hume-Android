@@ -56,11 +56,13 @@ import kotlin.math.absoluteValue
 /*
  * Luoi 2 cot doi xung. Moi cot deu gom DUNG hai khoi + hai hang dots.
  *
- * KHONG co hieu ung neon nhap nhay tren the phong. The phong dang bat den chi
- * doi sang nen gradient cam nhu ban goc; cua/cua so dang mo co mot cham do TINH.
+ * TEN PHONG: giong RoomCardView.swift va RoomCard.tsx - .lineLimit(2), chu
+ * canh TREN cung hang voi icon, dai qua thi xuong DONG THU HAI roi moi cat.
+ * Truoc day Android ep mot dong nen ten dai bi "..." mat noi dung.
+ * Ten phong KHONG chay chu.
  *
- * TEN PHONG KHONG CHAY CHU - ban goc de ten tinh, dai qua thi cat bang "...".
- * Chi gia tri/nhan cua tile nho moi dung humeMarquee() (port tu marquee ban HTML).
+ * The cam bien nho thi chay chu (marquee) o ca gia tri va nhan, port tu
+ * @keyframes marquee ban HTML.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -189,6 +191,7 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
             Icon(tile.icon, contentDescription = null, tint = HumeColors.Gray1000, modifier = Modifier.size(circle * 0.44f))
         }
         Column(Modifier.weight(1f).padding(start = 7.dp, end = 8.dp)) {
+            // Chu dai hon the thi CHAY CHU thay vi bi cat mat noi dung.
             Text(
                 tile.value,
                 fontSize = 14.sp,
@@ -196,8 +199,8 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
                 color = HumeColors.Gray1000,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.humeMarquee(),
+                overflow = TextOverflow.Visible,
+                modifier = Modifier.fillMaxWidth().humeMarquee(),
             )
             Text(
                 tile.label,
@@ -205,8 +208,8 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
                 color = HumeColors.Gray1000.copy(alpha = 0.7f),
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.humeMarquee(),
+                overflow = TextOverflow.Visible,
+                modifier = Modifier.fillMaxWidth().humeMarquee(),
             )
         }
     }
@@ -281,14 +284,15 @@ private fun RoomCardLarge(
             .padding(14.dp),
     ) {
         Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            // alignment .top nhu HStack ban Swift: ten phong cao toi 2 dong.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Text(
                     room.name,
                     fontSize = 17.sp,
-                    lineHeight = 21.sp,
+                    lineHeight = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = fg,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f).padding(end = 6.dp),
                 )
@@ -341,7 +345,7 @@ private fun RoomCardLarge(
     }
 }
 
-/** Cham do TINH bao cua/cua so dang mo - khong nhap nhay. */
+/** Cham do bao cua/cua so dang mo. */
 @Composable
 private fun AlertDot(modifier: Modifier = Modifier) {
     Box(
