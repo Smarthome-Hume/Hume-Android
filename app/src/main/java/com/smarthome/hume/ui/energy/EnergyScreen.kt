@@ -66,6 +66,16 @@ private val PriceRed = Color(0xFFFF5252)
 /** Bottom room for the floating navigation pill (its height plus the gesture bar). */
 private val NavBarRoom = 130.dp
 
+/*
+ * CHIEU CAO CHOT CUA CAC THE SENSOR (muc 2 — giam chieu cao that su):
+ *   SensorStat (Dien luoi / Dien tieu thu) : 70 -> 56
+ *   PriceBox   (Gia mua / Gia EVN / Tiet kiem) : 67 -> 54
+ * Dat cung bang height() nen khong con phu thuoc lineHeight cua font, khong the
+ * tu doi len duoc nua.
+ */
+private val SensorStatHeight = 56.dp
+private val PriceBoxHeight = 54.dp
+
 /** Power bars of the consumption tab, in the order of EnergyView.swift. */
 private data class PowerBarSpec(val entityId: String, val color: Color, val dynamic: Boolean = false)
 
@@ -451,18 +461,15 @@ private fun Panel(
 }
 
 /*
- * The sensor "Dien luoi" / "Dien tieu thu" dung dung so do cua ban HTML:
- *   radius 25, padding 14x16, gap 10, background tint 8%, vien 1px tint 40%,
- *   vong icon 42 background tint 25% icon 20,
- *   nhan 12sp mau gray500, gia tri 18sp weight 600 mau gray1000,
- *   don vi 12sp weight 400 mo 60%.
+ * The sensor "Dien luoi" / "Dien tieu thu" — CHIEU CAO CHOT 56dp (truoc 70).
  *
- * CHIEU CAO: HTML chi cao bang vong icon 42 + padding 14x2 = 70. Truoc day
- * chieu cao bi doi len vi lineHeight mac dinh cua Montserrat lam cot chu cao
- * hon 42 -> nay ghim lineHeight cua tung dong (14 / 22) nen the tro lai dung 70.
- *
- * DON VI: dung Modifier.alignByBaseline() nen "VND" nam thang CHAN CHU voi con
- * so, giong alignItems:'baseline' cua HTML (truoc day can day hop nen bi lech).
+ * Cach giam chieu cao (khong cat mat noi dung nao):
+ *   - height() cung 56 nen font co doi lineHeight cung khong doi len duoc;
+ *   - vong icon 42 -> 32, icon 20 -> 17;
+ *   - padding doc 14 -> bo han, chi con padding ngang 12 (truoc 16);
+ *   - nhan 12 -> 11sp (lineHeight 13), gia tri 18 -> 16sp (lineHeight 19),
+ *     don vi 12 -> 10sp; cot chu cao 32 dung bang vong icon nen can giua deu.
+ *   - don vi van CUNG CHAN CHU voi gia tri (alignByBaseline), chu van chay khi tran.
  */
 @Composable
 private fun SensorStat(
@@ -475,24 +482,25 @@ private fun SensorStat(
 ) {
     Row(
         modifier
+            .height(SensorStatHeight)
             .clip(RoundedCornerShape(25.dp))
             .background(color.copy(alpha = 0.08f))
             .border(1.dp, color.copy(alpha = 0.40f), RoundedCornerShape(25.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(42.dp).clip(CircleShape).background(color.copy(alpha = 0.25f)),
+            Modifier.size(32.dp).clip(CircleShape).background(color.copy(alpha = 0.25f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(17.dp))
         }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 label,
-                fontSize = 12.sp,
-                lineHeight = 14.sp,
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
                 color = HumeColors.Gray500,
                 maxLines = 1,
                 softWrap = false,
@@ -501,19 +509,19 @@ private fun SensorStat(
             Row(Modifier.fillMaxWidth().humeMarquee()) {
                 Text(
                     value,
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp,
+                    fontSize = 16.sp,
+                    lineHeight = 19.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = HumeColors.Gray1000,
                     maxLines = 1,
                     softWrap = false,
                     modifier = Modifier.alignByBaseline(),
                 )
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(3.dp))
                 Text(
                     unit,
-                    fontSize = 12.sp,
-                    lineHeight = 22.sp,
+                    fontSize = 10.sp,
+                    lineHeight = 19.sp,
                     fontWeight = FontWeight.Normal,
                     color = HumeColors.Gray1000.copy(alpha = 0.6f),
                     maxLines = 1,
@@ -526,11 +534,15 @@ private fun SensorStat(
 }
 
 /*
- * The gia (Gia mua / Gia EVN / Tiet kiem) dung dung so do HTML:
- *   background var(--gray000), radius 18, padding 10x12, can GIUA,
- *   vien 1px tint 27%, nhan 10sp gray500 cach duoi 2, gia tri 18sp weight 500
- *   mau tint, don vi 10sp gray500 CUNG CHAN CHU (baseline), dong phu 9sp
- *   gray500 mo 60%. lineHeight bi ghim de the khong cao hon ban HTML.
+ * The gia (Gia mua / Gia EVN / Tiet kiem) — CHIEU CAO CHOT 54dp (truoc 67).
+ *
+ * Cach giam chieu cao:
+ *   - height() cung 54, ba dong duoc can giua theo chieu doc (Arrangement.Center);
+ *   - bo padding doc, chi con padding ngang 8 (truoc 12);
+ *   - nhan 10 -> 9sp (lineHeight 11), gia tri 18 -> 16sp (lineHeight 19),
+ *     don vi 10 -> 9sp, dong phu 9 -> 8sp (lineHeight 10);
+ *   - bo Spacer 2 giua nhan va gia tri;
+ *   - don vi van cung CHAN CHU voi gia tri, chu van chay khi tran.
  */
 @Composable
 private fun PriceBox(
@@ -543,31 +555,32 @@ private fun PriceBox(
 ) {
     Column(
         modifier
+            .height(PriceBoxHeight)
             .clip(RoundedCornerShape(18.dp))
             .background(HumeColors.Card)
             .border(1.dp, color.copy(alpha = 0.27f), RoundedCornerShape(18.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             label,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
+            fontSize = 9.sp,
+            lineHeight = 11.sp,
             color = HumeColors.Gray500,
             maxLines = 1,
             softWrap = false,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().humeMarquee(),
         )
-        Spacer(Modifier.height(2.dp))
         Row(
             Modifier.fillMaxWidth().humeMarquee(),
             horizontalArrangement = Arrangement.Center,
         ) {
             Text(
                 value,
-                fontSize = 18.sp,
-                lineHeight = 22.sp,
+                fontSize = 16.sp,
+                lineHeight = 19.sp,
                 fontWeight = FontWeight.Medium,
                 color = color,
                 maxLines = 1,
@@ -576,8 +589,8 @@ private fun PriceBox(
             )
             Text(
                 unit,
-                fontSize = 10.sp,
-                lineHeight = 22.sp,
+                fontSize = 9.sp,
+                lineHeight = 19.sp,
                 color = HumeColors.Gray500,
                 maxLines = 1,
                 softWrap = false,
@@ -586,8 +599,8 @@ private fun PriceBox(
         }
         Text(
             sub,
-            fontSize = 9.sp,
-            lineHeight = 11.sp,
+            fontSize = 8.sp,
+            lineHeight = 10.sp,
             color = HumeColors.Gray500.copy(alpha = 0.6f),
             maxLines = 1,
             softWrap = false,
