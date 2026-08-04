@@ -67,6 +67,9 @@ import com.smarthome.hume.ui.theme.HumeIcons
  *  2. KHONG blur. Nen la mot bac SANG hon nen man hinh:
  *     dark -> #3A3A3C tren nen den, light -> #FFFFFF tren nen xam nhat.
  *  3. Pill tab chon lech mot bac: dark #4E4E52, light #E6E6EA. Khong vien.
+ *  4. NET ICON: tab khong chon dung CUNG mau net voi tab dang chon
+ *     (trang o nen toi / den o nen sang), khong dung xam. Phan biet tab dang
+ *     chon bang NEN PILL + icon dac, khong bang cach lam mo net icon.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 56.dp
@@ -121,7 +124,6 @@ private fun AiPlaceholder() {
 private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     val shape = RoundedCornerShape(BarHeight / 2)
     val dark = HumeColors.isDark
-    // Nen navbar SANG hon mot bac so voi truoc (#2B2B2B / #F2F2F2).
     val barColor = if (dark) Color(0xFF3A3A3C) else Color(0xFFFFFFFF)
     val barEdge = if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.05f)
     val pillColor = if (dark) Color(0xFF4E4E52) else Color(0xFFE6E6EA)
@@ -136,7 +138,6 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
         Modifier
             .navigationBarsPadding()
             .padding(bottom = 12.dp)
-            // Thanh NGAN: chi rong bang tong cac o tab, khong fillMaxWidth.
             .width(ItemWidth * navTabs.size + BarInset * 2)
             .height(BarHeight)
             .shadow(10.dp, shape, spotColor = Color.Black.copy(alpha = 0.4f))
@@ -178,8 +179,10 @@ private fun NavItem(
     modifier: Modifier = Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
+    // Net icon tab KHONG chon dung cung mau voi tab dang chon (trang tren nen
+    // toi), chi khac o do day nhan va nen pill.
     val contentColor by animateColorAsState(
-        if (active) HumeColors.Gray1000 else HumeColors.Gray500,
+        HumeColors.Gray1000,
         tween(220),
         label = "navContent",
     )

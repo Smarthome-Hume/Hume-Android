@@ -27,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -42,6 +41,8 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
+import com.smarthome.hume.ui.theme.neonGlow
+import com.smarthome.hume.ui.theme.neonGlowCircle
 import com.smarthome.hume.ui.theme.rememberNeonPulse
 
 /*
@@ -50,12 +51,12 @@ import com.smarthome.hume.ui.theme.rememberNeonPulse
  *  - Chip bao dong nam SAT TRAI, chip so bong den nam SAT PHAI (SpaceBetween).
  *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
  *
- * NEON - trich tu bundle ban HTML:
+ * NEON - trich tu bundle ban HTML, ve bang VET SANG lan ra ngoai tu vien:
  *  - Chip so bong den (> 0): background var(--yellow) 12%,
- *    border 1px var(--yellow) 40%, boxShadow 0 0 12px var(--yellow) 30%,
- *    animation neonPulse 6s  -> quang sang tren CA CHIP.
- *  - Chip an ninh khac disarmed: quang sang chi o VONG ICON 36px voi
- *    background mau mode alpha 0.2, animation neonPulse 6s. Ca chip khong glow.
+ *    border 1px var(--yellow) 40%, box-shadow 0 0 12px var(--yellow) 30%,
+ *    neonPulse 6s -> vet sang quanh CA CHIP.
+ *  - Chip an ninh khac disarmed: chi VONG ICON 28dp sang, background mau mode
+ *    alpha 0.2 + vet sang tron. Ca chip khong glow.
  *  - Chip dang tat: khong co gi.
  */
 private val HtmlYellow = Color(0xFFF2D26F)
@@ -111,7 +112,6 @@ fun StatusChipRow(
                 }
             }
         } else {
-            // Chip bao dong ben trai, chip so bong den DAY HAN SANG PHAI.
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -123,7 +123,6 @@ fun StatusChipRow(
                     label = if (pendingState != null) "\u0110ang b\u1eadt..." else alarmLabel(alarmState),
                     tint = AlarmGreen,
                     active = armed,
-                    // Ban HTML: chip an ninh chi sang o vong icon.
                     glowWholePill = false,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -165,20 +164,16 @@ private fun BigPill(
             .height(PillHeight)
             .widthIn(max = PillMaxWidth)
             .then(
-                if (pillGlow) Modifier.shadow(
-                    elevation = 6.dp + 8.dp * pulse,
-                    shape = shape,
-                    ambientColor = glowColor,
-                    spotColor = glowColor,
+                if (pillGlow) Modifier.neonGlow(
+                    color = glowColor,
+                    cornerRadius = PillRadius,
+                    spread = 12.dp + 10.dp * pulse,
+                    intensity = 0.5f + 0.5f * pulse,
+                    maxAlpha = 0.5f,
                 ) else Modifier
             )
             .clip(shape)
-            .background(
-                when {
-                    pillGlow -> glowColor.copy(alpha = 0.12f)
-                    else -> HumeColors.Card
-                }
-            )
+            .background(if (pillGlow) glowColor.copy(alpha = 0.12f) else HumeColors.Card)
             .border(
                 1.dp,
                 if (pillGlow) glowColor.copy(alpha = 0.40f + 0.30f * pulse) else Color.Transparent,
@@ -192,11 +187,11 @@ private fun BigPill(
             Modifier
                 .size(IconCircle)
                 .then(
-                    if (active && !glowWholePill) Modifier.shadow(
-                        elevation = 4.dp + 7.dp * pulse,
-                        shape = CircleShape,
-                        ambientColor = tint,
-                        spotColor = tint,
+                    if (active && !glowWholePill) Modifier.neonGlowCircle(
+                        color = tint,
+                        spread = 7.dp + 7.dp * pulse,
+                        intensity = 0.5f + 0.5f * pulse,
+                        maxAlpha = 0.55f,
                     ) else Modifier
                 )
                 .clip(CircleShape)

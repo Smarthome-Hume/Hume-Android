@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.neonGlowCircle
 import com.smarthome.hume.ui.theme.rememberNeonPulse
 
 /*
@@ -41,7 +41,7 @@ import com.smarthome.hume.ui.theme.rememberNeonPulse
  * NEON nut chuong (chi khi co thong bao) - trich tu bundle:
  *   background rgba(255,82,82,0.15)
  *   border 1px solid rgba(255,82,82,0.4)
- *   boxShadow 0 0 12px rgba(255,82,82,0.25)
+ *   boxShadow 0 0 12px rgba(255,82,82,0.25)  -> VET SANG lan ra ngoai tu vien
  *   animation neonPulse 6s ease-in-out infinite
  */
 private val PresenceGreen = Color(0xFF22C55E)
@@ -139,11 +139,11 @@ fun HomeHeader(
             Modifier
                 .size(50.dp)
                 .then(
-                    if (hasAlerts) Modifier.shadow(
-                        elevation = 6.dp + 8.dp * pulse,
-                        shape = CircleShape,
-                        ambientColor = BellRed,
-                        spotColor = BellRed,
+                    if (hasAlerts) Modifier.neonGlowCircle(
+                        color = BellRed,
+                        spread = 10.dp + 10.dp * pulse,
+                        intensity = 0.5f + 0.5f * pulse,
+                        maxAlpha = 0.5f,
                     ) else Modifier
                 )
                 .clip(CircleShape)
