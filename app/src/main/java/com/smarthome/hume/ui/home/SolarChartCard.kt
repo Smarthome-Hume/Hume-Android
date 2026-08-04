@@ -53,13 +53,21 @@ private val BarSpacing = 4.dp
 private val PlotHeight = 165.dp // chartH 220 * 0.75
 private val BarColor = Color(0xFFF9784C)
 
+/*
+ * Khoang cach soc cheo cua cot ngay cu. Truoc day buoc chi 5dp (4 + 1) nen cac
+ * net dinh nhau, cot nhin nhu to dac mot mau. Nay net 1dp giu nguyen do manh,
+ * buoc noi rong len 10dp de thay ro tung soc.
+ */
+private val HatchStroke = 1.dp
+private val HatchStep = 10.dp
+
 /**
  * "\u0110i\u1ec7n m\u1eb7t tr\u1eddi" card: header with today's live total, then the week chart.
  *
  * Dung WeekBarLineChart ban Swift:
  *   - cot HOM NAY: to dac mau #f9784c
  *   - cot CAC NGAY TRUOC: nen #f9784c alpha .38 + LOP GACH CHEO Canvas
- *     (net alpha .25, spacing 4, lineWidth 1) cat trong goc bo 8dp
+ *     (net alpha .25) cat trong goc bo 8dp
  *   - duong xu huong Catmull-Rom + cham rong tren moi dinh
  */
 @Composable
@@ -181,14 +189,14 @@ private fun WeekBarLineChart(days: List<DayValue>, modifier: Modifier = Modifier
                                 )
                             }
                             clipPath(shape) {
-                                val step = 4.dp.toPx() + 1.dp.toPx()
+                                val step = HatchStep.toPx()
                                 var x = left - h
                                 while (x < left + barW + h) {
                                     drawLine(
                                         color = BarColor.copy(alpha = 0.25f),
                                         start = Offset(x, top),
                                         end = Offset(x + h, top + h),
-                                        strokeWidth = 1.dp.toPx(),
+                                        strokeWidth = HatchStroke.toPx(),
                                     )
                                     x += step
                                 }
