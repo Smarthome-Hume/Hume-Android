@@ -188,8 +188,7 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
                     onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) },
                 )
             }
-            // SceneGridSection tu ve tieu de "Kich ban" nen o day khong them tieu de nua.
-            item { SceneGridSection(ha = ha, alarmState = alarmState) }
+            // Khoi "Kich ban" da bi xoa theo yeu cau.
         }
     }
 
