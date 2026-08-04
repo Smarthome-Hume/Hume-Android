@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -32,8 +33,17 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.rememberNeonPulse
 
-/* Header theo ban HTML: avatar 55 + cham trang thai 16, ten 22 bold, loi chao 16, chuong 50. */
+/*
+ * Header theo ban HTML: avatar 55 + cham trang thai 16, ten 22 bold, loi chao 16, chuong 50.
+ *
+ * NEON nut chuong (chi khi co thong bao) - trich tu bundle:
+ *   background rgba(255,82,82,0.15)
+ *   border 1px solid rgba(255,82,82,0.4)
+ *   boxShadow 0 0 12px rgba(255,82,82,0.25)
+ *   animation neonPulse 6s ease-in-out infinite
+ */
 private val PresenceGreen = Color(0xFF22C55E)
 private val PresenceRed = Color(0xFFEF4444)
 private val BellRed = Color(0xFFFF5252)
@@ -123,14 +133,24 @@ fun HomeHeader(
         Spacer(Modifier.width(12.dp))
 
         val hasAlerts = alertCount > 0
+        // neonPulse 6s: dinh quang sang o 20% chu ky roi diu dan.
+        val pulse = if (hasAlerts) rememberNeonPulse(6000) else 0f
         Box(
             Modifier
                 .size(50.dp)
+                .then(
+                    if (hasAlerts) Modifier.shadow(
+                        elevation = 6.dp + 8.dp * pulse,
+                        shape = CircleShape,
+                        ambientColor = BellRed,
+                        spotColor = BellRed,
+                    ) else Modifier
+                )
                 .clip(CircleShape)
                 .background(if (hasAlerts) BellRed.copy(alpha = 0.15f) else HumeColors.Gray00)
                 .border(
                     1.dp,
-                    if (hasAlerts) BellRed.copy(alpha = 0.4f) else Color.Transparent,
+                    if (hasAlerts) BellRed.copy(alpha = 0.40f + 0.35f * pulse) else Color.Transparent,
                     CircleShape,
                 )
                 .combinedClickable(

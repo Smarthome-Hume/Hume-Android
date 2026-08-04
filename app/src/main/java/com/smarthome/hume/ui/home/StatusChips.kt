@@ -50,10 +50,15 @@ import com.smarthome.hume.ui.theme.rememberNeonPulse
  *  - Chip bao dong nam SAT TRAI, chip so bong den nam SAT PHAI (SpaceBetween).
  *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
  *
- * NEON: ban HTML cho chip an ninh (khac disarmed) va chip so bong den (> 0)
- * chay neonPulse 6s - quang sang quanh chip toa dan roi diu lai. Chip dang tat
- * thi khong co gi.
+ * NEON - trich tu bundle ban HTML:
+ *  - Chip so bong den (> 0): background var(--yellow) 12%,
+ *    border 1px var(--yellow) 40%, boxShadow 0 0 12px var(--yellow) 30%,
+ *    animation neonPulse 6s  -> quang sang tren CA CHIP.
+ *  - Chip an ninh khac disarmed: quang sang chi o VONG ICON 36px voi
+ *    background mau mode alpha 0.2, animation neonPulse 6s. Ca chip khong glow.
+ *  - Chip dang tat: khong co gi.
  */
+private val HtmlYellow = Color(0xFFF2D26F)
 private val LightsGold = Color(0xFFB8860B)
 private val AlarmGreen = Color(0xFF4CAF50)
 private val PillHeight = 40.dp
@@ -118,6 +123,8 @@ fun StatusChipRow(
                     label = if (pendingState != null) "\u0110ang b\u1eadt..." else alarmLabel(alarmState),
                     tint = AlarmGreen,
                     active = armed,
+                    // Ban HTML: chip an ninh chi sang o vong icon.
+                    glowWholePill = false,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         picking = true
@@ -127,7 +134,9 @@ fun StatusChipRow(
                     icon = HumeIcons.Light,
                     label = if (lightsOn == 0) "T\u1eaft h\u1ebft" else "$lightsOn b\u00f3ng \u0111\u00e8n",
                     tint = LightsGold,
+                    glowColor = HtmlYellow,
                     active = lightsOn > 0,
+                    glowWholePill = true,
                     onClick = onOpenLights,
                 )
             }
@@ -141,31 +150,38 @@ private fun BigPill(
     label: String,
     tint: Color,
     active: Boolean,
+    glowWholePill: Boolean,
+    glowColor: Color = tint,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(PillRadius)
     // neonPulse 6s: chi chay khi chip dang bat.
     val pulse = if (active) rememberNeonPulse(6000) else 0f
-    val glow = 6.dp + 8.dp * pulse
+    val pillGlow = active && glowWholePill
 
     Row(
         modifier
             .height(PillHeight)
             .widthIn(max = PillMaxWidth)
             .then(
-                if (active) Modifier.shadow(
-                    elevation = glow,
+                if (pillGlow) Modifier.shadow(
+                    elevation = 6.dp + 8.dp * pulse,
                     shape = shape,
-                    ambientColor = tint,
-                    spotColor = tint,
+                    ambientColor = glowColor,
+                    spotColor = glowColor,
                 ) else Modifier
             )
             .clip(shape)
-            .background(if (active) tint.copy(alpha = 0.08f + 0.08f * pulse) else HumeColors.Card)
+            .background(
+                when {
+                    pillGlow -> glowColor.copy(alpha = 0.12f)
+                    else -> HumeColors.Card
+                }
+            )
             .border(
                 1.dp,
-                if (active) tint.copy(alpha = 0.30f + 0.45f * pulse) else Color.Transparent,
+                if (pillGlow) glowColor.copy(alpha = 0.40f + 0.30f * pulse) else Color.Transparent,
                 shape,
             )
             .clickable(onClick = onClick)
@@ -173,7 +189,18 @@ private fun BigPill(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(IconCircle).clip(CircleShape).background(HumeColors.Gray00),
+            Modifier
+                .size(IconCircle)
+                .then(
+                    if (active && !glowWholePill) Modifier.shadow(
+                        elevation = 4.dp + 7.dp * pulse,
+                        shape = CircleShape,
+                        ambientColor = tint,
+                        spotColor = tint,
+                    ) else Modifier
+                )
+                .clip(CircleShape)
+                .background(if (active && !glowWholePill) tint.copy(alpha = 0.20f) else HumeColors.Gray00),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
