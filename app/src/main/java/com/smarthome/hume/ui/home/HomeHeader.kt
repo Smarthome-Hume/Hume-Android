@@ -38,11 +38,9 @@ import com.smarthome.hume.ui.theme.rememberNeonBeat
 /*
  * Header theo ban HTML: avatar 55 + cham trang thai 16, ten 22 bold, loi chao 16, chuong 50.
  *
- * NEON nut chuong (chi khi co thong bao) - trich tu bundle:
- *   background rgba(255,82,82,0.15)
- *   border 1px solid rgba(255,82,82,0.4)
- *   box-shadow 0 0 12px rgba(255,82,82,0.25) -> quang sang toa muot ra ngoai
- * Chay theo NHIP CHUNG rememberNeonBeat nen dong pha voi cac cho phat sang khac.
+ * NEON nut chuong (chi khi co thong bao): nen rgba(255,82,82,0.15) va vien
+ * 1px rgba(255,82,82,0.4) la TINH; chi den do hat RA NGOAI vien tron dap theo
+ * nhip chung. Ben trong vien khong nhap nhay.
  */
 private val PresenceGreen = Color(0xFF22C55E)
 private val PresenceRed = Color(0xFFEF4444)
@@ -137,19 +135,21 @@ fun HomeHeader(
         Box(
             Modifier
                 .size(50.dp)
+                // Den do hat ra NGOAI vien tron.
                 .then(
                     if (hasAlerts) Modifier.neonGlowCircle(
                         color = BellRed,
                         spread = 10.dp + 10.dp * beat,
                         intensity = 0.45f + 0.55f * beat,
-                        maxAlpha = 0.5f,
+                        maxAlpha = 0.55f,
                     ) else Modifier
                 )
                 .clip(CircleShape)
+                // Nen va vien TINH.
                 .background(if (hasAlerts) BellRed.copy(alpha = 0.15f) else HumeColors.Gray00)
                 .border(
                     1.dp,
-                    if (hasAlerts) BellRed.copy(alpha = 0.40f + 0.35f * beat) else Color.Transparent,
+                    if (hasAlerts) BellRed.copy(alpha = 0.40f) else Color.Transparent,
                     CircleShape,
                 )
                 .combinedClickable(

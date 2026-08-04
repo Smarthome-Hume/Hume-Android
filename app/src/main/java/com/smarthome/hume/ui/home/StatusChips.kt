@@ -20,9 +20,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,10 +51,11 @@ import com.smarthome.hume.ui.theme.rememberNeonBeat
  *  - Chip bao dong nam SAT TRAI, chip so bong den nam SAT PHAI (SpaceBetween).
  *  - cao 40, bo goc 20, vong icon 28, icon 16, chu 13
  *
- * NEON - theo bundle ban HTML, va chay theo NHIP CHUNG rememberNeonBeat:
- *  - Chip so bong den (> 0): background var(--yellow) 12%, border var(--yellow)
- *    40%, quang vang toa muot ra ngoai tu vien chip.
- *  - Chip an ninh khac disarmed: chi VONG ICON sang, khong glow ca chip.
+ * NEON: den chi hat RA NGOAI VIEN. Nen chip, mau vien va mau chu la TINH -
+ * tuyet doi khong doi theo nhip. Chi vung ngoai vien sang len roi nhat dan.
+ *  - Chip so bong den (> 0): nen var(--yellow) 12% (tinh), vien var(--yellow)
+ *    40% (tinh), den vang hat ra ngoai vien chip theo nhip chung.
+ *  - Chip an ninh khac disarmed: den chi hat ra ngoai VONG ICON.
  *  - Chip dang tat: khong co gi.
  */
 private val HtmlYellow = Color(0xFFF2D26F)
@@ -160,20 +161,23 @@ private fun BigPill(
         modifier
             .height(PillHeight)
             .widthIn(max = PillMaxWidth)
+            // Den hat ra NGOAI vien chip, phan trong vien duoc cat bo.
             .then(
                 if (pillGlow) Modifier.neonGlow(
                     color = glowColor,
                     cornerRadius = PillRadius,
                     spread = 13.dp + 9.dp * beat,
                     intensity = 0.45f + 0.55f * beat,
-                    maxAlpha = 0.5f,
+                    maxAlpha = 0.55f,
                 ) else Modifier
             )
             .clip(shape)
+            // Nen TINH.
             .background(if (pillGlow) glowColor.copy(alpha = 0.12f) else HumeColors.Card)
+            // Vien TINH.
             .border(
                 1.dp,
-                if (pillGlow) glowColor.copy(alpha = 0.40f + 0.30f * beat) else Color.Transparent,
+                if (pillGlow) glowColor.copy(alpha = 0.40f) else Color.Transparent,
                 shape,
             )
             .clickable(onClick = onClick)
@@ -188,7 +192,7 @@ private fun BigPill(
                         color = tint,
                         spread = 7.dp + 7.dp * beat,
                         intensity = 0.45f + 0.55f * beat,
-                        maxAlpha = 0.55f,
+                        maxAlpha = 0.6f,
                     ) else Modifier
                 )
                 .clip(CircleShape)
