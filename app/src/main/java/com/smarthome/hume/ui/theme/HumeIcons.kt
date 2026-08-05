@@ -9,9 +9,12 @@ import com.smarthome.hume.core.model.HumeTab
  *
  * Navbar: tab DANG CHON dung ban TO DAC (ph-*-fill), tab con lai giu net mong
  * - dung cach One UI / iOS 26 phan biet tab active.
+ *
+ * DIEM 3: bong den (chip so bong den) va pin doi sang PhHtml - ban ve lai dung
+ * dang Phosphor cua ban HTML. Xem HumePhosphorFix.kt.
  */
 object HumeIcons {
-    val Light = Ph.Lightbulb
+    val Light = PhHtml.Lightbulb
     val Temperature = Ph.Thermometer
     val Humidity = Ph.Drop
     val Climate = Ph.Snowflake
@@ -22,7 +25,8 @@ object HumeIcons {
     val Bell = Ph.Bell
     val Night = Ph.Moon
     val Solar = Ph.Sun
-    val Battery = Ph.Battery
+    val Battery = PhHtml.BatteryCharging
+    val BatteryFull = PhHtml.BatteryFull
     val Desk = Ph.Desk
     val Sunrise = Ph.SunHorizon
     val Leaving = Ph.SignOut
@@ -46,7 +50,8 @@ object HumeIcons {
     /** Icon keys used by the SwiftUI sensor/device cards. */
     fun sensor(key: String): ImageVector = when (key) {
         "sun" -> Solar
-        "battery-full", "battery-charging" -> Battery
+        "battery-charging" -> Battery
+        "battery-full" -> BatteryFull
         "plug" -> Plug
         "house" -> House
         "desk" -> Desk
@@ -55,6 +60,7 @@ object HumeIcons {
         "fire" -> Ph.Fire
         "cooking" -> Ph.CookingPot
         "dishwasher", "washer", "dryer" -> Ph.Washer
+        "bulb", "lightbulb" -> Light
         else -> Power
     }
 
