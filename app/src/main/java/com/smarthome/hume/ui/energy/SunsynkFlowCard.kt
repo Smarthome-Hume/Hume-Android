@@ -355,8 +355,33 @@ private fun DrawScope.ringNode(
 }
 
 /* =====================================================================
- *  SUNSYNK STATIC CARD — floors, battery limits, inverter efficiency, PV strings
+ *  SUNSYNK STATIC CARD \u2014 floors, battery limits, inverter efficiency, PV strings
+ *
+ *  MAU SAC LAY DUNG TU BAN HTML (index-BZ2dR2AJ.js, khoi the nay):
+ *    - "Tai tieu thu" tong    : #5c6bc0, dam 700
+ *    - o Tang 1/2/3           : nen rgba(92,107,192,0.1), nhan gray500,
+ *                               gia tri gray1000
+ *    - nhom pin (Cong suat /
+ *      Dong-Ap / Sac / Xa)    : nen rgba(76,175,80,0.1)
+ *    - icon + ten "Pin S6"    : #4caf50
+ *    - SOC va hieu suat       : > 90 -> #4caf50, > 75 -> #ff9800,
+ *                               con lai -> #f44336
+ *    - cong suat PV1 / PV2    : > 0 -> #ff9800, = 0 -> gray500
  * ===================================================================== */
+
+private val HtmlIndigo = Color(0xFF5C6BC0)
+private val HtmlIndigoTint = Color(0x1A5C6BC0)
+private val HtmlGreen = Color(0xFF4CAF50)
+private val HtmlGreenTint = Color(0x1A4CAF50)
+private val HtmlAmber = Color(0xFFFF9800)
+private val HtmlRed = Color(0xFFF44336)
+
+/** color k trong ban HTML: nguong 90 / 75. */
+private fun htmlLevelColor(percent: Double): Color = when {
+    percent > 90 -> HtmlGreen
+    percent > 75 -> HtmlAmber
+    else -> HtmlRed
+}
 
 @Composable
 fun SunsynkStaticCard(entities: Map<String, HomeEntity>) {
@@ -366,36 +391,95 @@ fun SunsynkStaticCard(entities: Map<String, HomeEntity>) {
     val battery = d("sensor.battery_power_flow")
     val load = d("sensor.cong_suat_nha")
     val grid = d("sensor.aptomat_tong_power")
+    val soc = d("sensor.solis_s6_eh1p_battery_soc_2")
     val input = (pv - battery).coerceAtLeast(0.0)
     val output = (load - grid.coerceAtLeast(0.0)).coerceAtLeast(0.0) + (-grid).coerceAtLeast(0.0)
     val efficiency = if (input > 50) min(output / input * 100, 100.0) else 0.0
 
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MiniStat(Modifier.weight(1f), "T\u1ea7ng 1", d("sensor.aptomat_t1_power").toInt().toString() + "W")
-            MiniStat(Modifier.weight(1f), "T\u1ea7ng 2", d("sensor.aptomat_t2_power").toInt().toString() + "W")
-            MiniStat(Modifier.weight(1f), "T\u1ea7ng 3", d("sensor.aptomat_t3_power").toInt().toString() + "W")
+        // Header "Tai tieu thu": gia tri mau #5c6bc0 giong ban HTML.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "T\u1ea3i ti\u00eau th\u1ee5",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = HumeColors.TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                load.toInt().toString() + " W",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = HtmlIndigo,
+            )
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MiniStat(Modifier.weight(1f), "C\u00f4ng su\u1ea5t", abs(battery).toInt().toString() + " W")
+            MiniStat(Modifier.weight(1f), "T\u1ea7ng 1", d("sensor.aptomat_t1_power").toInt().toString() + "W", HtmlIndigoTint)
+            MiniStat(Modifier.weight(1f), "T\u1ea7ng 2", d("sensor.aptomat_t2_power").toInt().toString() + "W", HtmlIndigoTint)
+            MiniStat(Modifier.weight(1f), "T\u1ea7ng 3", d("sensor.aptomat_t3_power").toInt().toString() + "W", HtmlIndigoTint)
+        }
+        Spacer(Modifier.height(12.dp))
+
+        // Header "Pin S6": ten mau #4caf50, SOC theo nguong nhu ban HTML.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Rounded.BatteryFull,
+                contentDescription = null,
+                tint = HtmlGreen,
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(Modifier.size(6.dp))
+            Text(
+                "Pin S6",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = HumeColors.TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                soc.toInt().toString() + "%",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = htmlLevelColor(soc),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            MiniStat(Modifier.weight(1f), "C\u00f4ng su\u1ea5t", abs(battery).toInt().toString() + " W", HtmlGreenTint)
             MiniStat(
                 Modifier.weight(1f),
                 "D\u00f2ng / \u00c1p",
                 String.format(Locale.US, "%.1fA / %.1fV", d("sensor.battery_current_flow"), d("sensor.solis_s6_eh1p_battery_voltage_2")),
+                HtmlGreenTint,
             )
         }
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MiniStat(Modifier.weight(1f), "S\u1ea1c gi\u1edbi h\u1ea1n", String.format(Locale.US, "%.1fA", d("sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2")))
-            MiniStat(Modifier.weight(1f), "X\u1ea3 gi\u1edbi h\u1ea1n", String.format(Locale.US, "%.1fA", d("sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2")))
+            MiniStat(
+                Modifier.weight(1f),
+                "S\u1ea1c gi\u1edbi h\u1ea1n",
+                String.format(Locale.US, "%.1fA", d("sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2")),
+                HtmlGreenTint,
+            )
+            MiniStat(
+                Modifier.weight(1f),
+                "X\u1ea3 gi\u1edbi h\u1ea1n",
+                String.format(Locale.US, "%.1fA", d("sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2")),
+                HtmlGreenTint,
+            )
         }
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(HumeColors.Divider))
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Pin n\u0103ng l\u01b0\u1ee3ng", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextSecondary, modifier = Modifier.weight(1f))
-            Text(String.format(Locale.US, "%.1f%%", efficiency), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
+            Text(
+                String.format(Locale.US, "%.1f%%", efficiency),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = htmlLevelColor(efficiency),
+            )
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -406,16 +490,16 @@ fun SunsynkStaticCard(entities: Map<String, HomeEntity>) {
 }
 
 @Composable
-private fun MiniStat(modifier: Modifier, label: String, value: String) {
+private fun MiniStat(modifier: Modifier, label: String, value: String, tint: Color) {
     Column(
         modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(HumeColors.Background)
-            .padding(vertical = 8.dp),
+            .background(tint)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, fontSize = 10.sp, color = HumeColors.TextSecondary)
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
+        Text(label, fontSize = 10.sp, color = HumeColors.TextSecondary, maxLines = 1)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary, maxLines = 1)
     }
 }
 
@@ -428,12 +512,13 @@ private fun PvBox(modifier: Modifier, label: String, power: Double, volt: Double
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, fontSize = 10.sp, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
+            Text(label, fontSize = 10.sp, color = HumeColors.TextSecondary, modifier = Modifier.weight(1f))
             Text(
                 power.toInt().toString() + " W",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (power > 0) HumeColors.Orange else HumeColors.TextSecondary,
+                // HTML: cong suat > 0 -> #ff9800, = 0 -> gray500
+                color = if (power > 0) HtmlAmber else HumeColors.TextSecondary,
             )
         }
         Text(String.format(Locale.US, "%dV / %.1fA", volt.toInt(), current), fontSize = 9.sp, color = HumeColors.TextSecondary)
