@@ -64,13 +64,18 @@ private val BatteryCardRadius = 36.dp
 private val BarHeight = 28.dp
 
 /*
- * Khoang cach soc cheo. Truoc day dung so px tho (net 2.5px, buoc 7.5px) nen
- * tren man hinh mat do cao (2.5x - 3x) cac net dinh sat nhau, nhin nhu mot
- * khoi dac. Nay khai bao bang dp de mat do nao cung ra dung mot ket qua, va
- * noi rong buoc len 12dp cho thua ro rang.
+ * SOC CHEO: dung DUNG MOT MAU MAU voi canvas cua the bieu do "Dien mat troi"
+ * (SolarChartCard.kt), khong con thong so rieng nua:
+ *   - net  : 1dp   (truoc 2dp -> nhin tho)
+ *   - buoc : 10dp  (truoc 12dp)
+ *   - nen doan su dung : alpha 0.38  (giong cot ngay cu cua bieu do)
+ *   - net gach cheo    : alpha 0.25  (giong cot ngay cu cua bieu do)
+ * Khai bao bang dp nen moi mat do man hinh deu ra cung ket qua.
  */
-private val HatchStroke = 2.dp
-private val HatchStep = 12.dp
+private val HatchStroke = 1.dp
+private val HatchStep = 10.dp
+private const val HATCH_FILL_ALPHA = 0.38f
+private const val HATCH_LINE_ALPHA = 0.25f
 
 private val BarGreen = Color(0xFF22C55E)
 private val BarOrange = Color(0xFFF97316)
@@ -220,8 +225,9 @@ fun BatteryCard(
  *   1. nen xam segment 1 (0 -> backupSoc%)
  *   2. nen xam segment 2 (backupSoc% -> 100%)
  *   3. doan du tru: to dac mau trang thai
- *   4. doan su dung: gach cheo Canvas (nen alpha .30, net alpha .75,
- *      net 2dp, buoc 12dp), cat trong hinh vien thuoc.
+ *   4. doan su dung: gach cheo Canvas, DUNG CHUNG MAU MAU voi bieu do
+ *      "Dien mat troi": nen alpha .38, net alpha .25, net 1dp, buoc 10dp,
+ *      cat trong hinh vien thuoc.
  */
 @Composable
 private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
@@ -268,14 +274,14 @@ private fun DualBar(soc: Double, backupSoc: Double, tint: Color) {
             val step = HatchStep.toPx()
             clipPath(shape) {
                 drawRect(
-                    tint.copy(alpha = 0.30f),
+                    tint.copy(alpha = HATCH_FILL_ALPHA),
                     topLeft = Offset(reserve, 0f),
                     size = Size(usable, h),
                 )
                 var x = reserve - h
                 while (x < reserve + usable + h) {
                     drawLine(
-                        color = tint.copy(alpha = 0.75f),
+                        color = tint.copy(alpha = HATCH_LINE_ALPHA),
                         start = Offset(x, 0f),
                         end = Offset(x + h, h),
                         strokeWidth = stroke,
