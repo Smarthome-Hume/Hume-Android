@@ -19,16 +19,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AcUnit
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.WbSunny
-import androidx.compose.material.icons.rounded.WbTwilight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +47,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.smarthome.hume.ui.scenes.SceneScheduleSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
 import com.smarthome.hume.ui.theme.glassSurface
@@ -61,9 +56,12 @@ import com.smarthome.hume.ui.theme.glassSurface
  *
  * Same groups and same preference keys as the iOS @AppStorage values, so the
  * two apps describe the same behaviour: proactive solar hints, the abnormal
- * consumption threshold, the temperature alert with its watched room, the
- * schedule list, and the morning digest. The Live Activity, HomeKit sync and
- * geofence groups are iOS-only and are left out.
+ * consumption threshold, the temperature alert with its watched room, and the
+ * morning digest. The Live Activity, HomeKit sync and geofence groups are
+ * iOS-only and are left out.
+ *
+ * Nhom "Hen gio ngu canh" va hai cong tac chay kich ban theo gio da bi go bo
+ * cung voi toan bo nhanh kich ban (scene / schedule) trong Dot 3.
  *
  * Unselected room rows and minute chips use the theme fill, so the sheet reads
  * correctly in dark mode instead of showing white slabs.
@@ -97,9 +95,6 @@ fun AutomationSettingsSheet(onDismiss: () -> Unit) {
     var digest by remember { mutableStateOf(prefs.getBoolean("sg_digest_enabled", true)) }
     var digestHour by remember { mutableStateOf(prefs.getInt("sg_digest_hour", 7)) }
     var digestMinute by remember { mutableStateOf(prefs.getInt("sg_digest_minute", 0)) }
-    var morningOn by remember { mutableStateOf(prefs.getBoolean("scene_morning_enabled", false)) }
-    var nightOn by remember { mutableStateOf(prefs.getBoolean("scene_night_enabled", false)) }
-    var showSchedules by remember { mutableStateOf(false) }
 
     fun putBool(key: String, value: Boolean) = prefs.edit().putBoolean(key, value).apply()
     fun putInt(key: String, value: Int) = prefs.edit().putInt(key, value).apply()
@@ -231,42 +226,6 @@ fun AutomationSettingsSheet(onDismiss: () -> Unit) {
             }
 
             SettingGroup {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { showSchedules = true },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Rounded.Schedule,
-                        contentDescription = null,
-                        tint = HumeColors.Orange,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "H\u1eb9n gi\u1edd ng\u1eef c\u1ea3nh",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = HumeColors.TextPrimary,
-                        )
-                        Text(
-                            "T\u1ef1 \u0111\u1ed9ng ch\u1ea1y k\u1ecbch b\u1ea3n v\u00e0o gi\u1edd c\u1ed1 \u0111\u1ecbnh, k\u1ec3 c\u1ea3 khi \u0111\u00f3ng app.",
-                            fontSize = 12.sp,
-                            color = HumeColors.TextSecondary,
-                        )
-                    }
-                    Icon(
-                        Icons.Rounded.ChevronRight,
-                        contentDescription = null,
-                        tint = HumeColors.TextSecondary,
-                        modifier = Modifier.size(14.dp),
-                    )
-                }
-            }
-
-            SettingGroup {
                 ToggleRow(
                     icon = Icons.Rounded.WbSunny,
                     title = "B\u00e1o c\u00e1o bu\u1ed5i s\u00e1ng",
@@ -310,29 +269,7 @@ fun AutomationSettingsSheet(onDismiss: () -> Unit) {
                     }
                 }
             }
-
-            SettingGroup {
-                ToggleRow(
-                    icon = Icons.Rounded.WbTwilight,
-                    title = "Ch\u00e0o bu\u1ed5i s\u00e1ng theo gi\u1edd",
-                    sub = "\u0110\u1ebfn gi\u1edd s\u00e1ng, t\u1ef1 ch\u1ea1y k\u1ecbch b\u1ea3n 'Ch\u00e0o bu\u1ed5i s\u00e1ng'. C\u1ea5u h\u00ecnh gi\u1edd \u1edf H\u1eb9n gi\u1edd ng\u1eef c\u1ea3nh.",
-                    checked = morningOn,
-                ) { morningOn = it; putBool("scene_morning_enabled", it) }
-            }
-
-            SettingGroup {
-                ToggleRow(
-                    icon = Icons.Rounded.Bedtime,
-                    title = "\u0110i ng\u1ee7 theo gi\u1edd",
-                    sub = "\u0110\u1ebfn gi\u1edd t\u1ed1i, t\u1ef1 ch\u1ea1y k\u1ecbch b\u1ea3n 'Ch\u00fac ng\u1ee7 ngon'. C\u1ea5u h\u00ecnh gi\u1edd \u1edf H\u1eb9n gi\u1edd ng\u1eef c\u1ea3nh.",
-                    checked = nightOn,
-                ) { nightOn = it; putBool("scene_night_enabled", it) }
-            }
         }
-    }
-
-    if (showSchedules) {
-        SceneScheduleSheet(onDismiss = { showSchedules = false })
     }
 }
 
