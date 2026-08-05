@@ -37,9 +37,11 @@ import androidx.compose.ui.window.DialogProperties
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.ui.theme.HumeSurfaces
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.glassPill
-import com.smarthome.hume.ui.theme.glassSurface
+import com.smarthome.hume.ui.theme.rememberHumeHaptics
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -54,6 +56,19 @@ import kotlin.math.roundToInt
  *
  * Icon: toan bo dung Phosphor net mong (Ph.*), khong con Material dac.
  * Popup cung chua status bar bang statusBarsPadding().
+ *
+ * DIEM 1: nen popup truoc day la glassSurface (trang #FFFFFF / #161616) nen
+ * lech han mau nen cua 4 trang chinh (MaterialTheme.background = #F1F1F3 /
+ * #000000, tuc HumeColors.Background). Nay popup lay dung HumeColors.Background
+ * de trung khop voi nen trang, chi con vien mong de tach khoi lop scrim.
+ *
+ * DIEM 4: vi nen popup da la mau nen trang, moi o nho ben trong (nut +/-, o che
+ * do, vong icon bong den) doi sang HumeColors.IconBg - lech han mot bac so voi
+ * nen - de khong bi tan vao nhau.
+ *
+ * DIEM 5: cum 5 nut che do dieu hoa duoc keo dai: popup rong toi da 400dp
+ * (truoc 360), le trong 16dp (truoc 20), khe giua cac nut 6dp (truoc 8) va nut
+ * cao 54dp (truoc 48).
  */
 
 /** BubblePopup in HomeView.swift. */
@@ -66,11 +81,16 @@ sealed interface RoomPopup {
 fun isRgbLight(entityId: String): Boolean =
     entityId == "light.smartlight" || entityId == "light.table_led"
 
+private val PopupRadius = 35.dp
+private val PopupMaxWidth = 400.dp
+private val ModeButtonHeight = 54.dp
+
 private fun HomeEntity.attrDouble(key: String): Double? =
     attrString(key)?.toDoubleOrNull()
 
 @Composable
 private fun PopupShell(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    val shape = RoundedCornerShape(PopupRadius)
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -85,9 +105,12 @@ private fun PopupShell(onDismiss: () -> Unit, content: @Composable () -> Unit) {
         ) {
             Box(
                 Modifier
-                    .padding(horizontal = 20.dp)
-                    .widthIn(max = 360.dp)
-                    .glassSurface(radius = 35.dp)
+                    .padding(horizontal = 14.dp)
+                    .widthIn(max = PopupMaxWidth)
+                    .clip(shape)
+                    // Dung dung mau nen cua 4 trang chinh.
+                    .background(HumeColors.Background)
+                    .border(0.8.dp, HumeSurfaces.glassEdge, shape)
                     // Swallow taps so the card itself never closes the popup.
                     .clickable(enabled = false) {},
             ) {
@@ -133,10 +156,11 @@ fun ClimatePopup(
     val isOn = mode !in setOf("off", "unavailable", "unknown")
     val target = entity?.attrDouble("temperature") ?: 26.0
     val current = entity?.attrDouble("current_temperature")
+    val haptics = rememberHumeHaptics()
 
     PopupShell(onDismiss) {
         Column(
-            Modifier.padding(20.dp),
+            Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -154,6 +178,7 @@ fun ClimatePopup(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 StepButton(Ph.Minus, isOn && target > 16) {
+                    haptics.tap()
                     ha.setClimateTemperature(entityId, target - 1)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -173,20 +198,26 @@ fun ClimatePopup(
                     }
                 }
                 StepButton(Ph.Plus, isOn && target < 31) {
+                    haptics.tap()
                     ha.setClimateTemperature(entityId, target + 1)
                 }
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // DIEM 5: cum nut che do keo dai het be ngang popup, khe hep hon va
+            // nut cao hon nen nhin dai han truoc.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 climateModes.forEach { item ->
                     val active = mode == item.key
                     Column(
                         Modifier
                             .weight(1f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (active) item.color else HumeColors.Background)
-                            .clickable { ha.setHvacMode(entityId, item.key) },
+                            .height(ModeButtonHeight)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(if (active) item.color else HumeColors.IconBg)
+                            .clickable {
+                                haptics.toggle()
+                                ha.setHvacMode(entityId, item.key)
+                            },
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -194,9 +225,9 @@ fun ClimatePopup(
                             item.icon,
                             contentDescription = null,
                             tint = if (active) Color.White else HumeColors.TextSecondary,
-                            modifier = Modifier.size(17.dp),
+                            modifier = Modifier.size(18.dp),
                         )
-                        Spacer(Modifier.height(3.dp))
+                        Spacer(Modifier.height(4.dp))
                         Text(
                             item.label,
                             fontSize = 9.sp,
@@ -220,7 +251,7 @@ private fun StepButton(icon: ImageVector, enabled: Boolean, onClick: () -> Unit)
         Modifier
             .size(44.dp)
             .clip(CircleShape)
-            .background(HumeColors.Background)
+            .background(HumeColors.IconBg)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -258,6 +289,7 @@ fun RgbPopup(
     val minMired = entity?.attrDouble("min_mireds") ?: 153.0
     val maxMired = entity?.attrDouble("max_mireds") ?: 500.0
     val mired = entity?.attrDouble("color_temp") ?: minMired
+    val haptics = rememberHumeHaptics()
 
     PopupShell(onDismiss) {
         Column(
@@ -276,17 +308,20 @@ fun RgbPopup(
                 Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(if (isOn) Color.Yellow.copy(alpha = 0.20f) else HumeColors.Background)
+                    .background(if (isOn) Color.Yellow.copy(alpha = 0.20f) else HumeColors.IconBg)
                     .border(
                         1.dp,
                         if (isOn) Color.Yellow else HumeColors.TextSecondary,
                         CircleShape,
                     )
-                    .clickable { ha.toggle(entityId) },
+                    .clickable {
+                        haptics.toggle()
+                        ha.toggle(entityId)
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Ph.Lightbulb,
+                    HumeIcons.Light,
                     contentDescription = null,
                     tint = if (isOn) Color.Yellow else HumeColors.TextSecondary,
                     modifier = Modifier.size(24.dp),
@@ -356,6 +391,7 @@ fun RgbPopup(
                                         RoundedCornerShape(12.dp),
                                     )
                                     .clickable {
+                                        haptics.tap()
                                         ha.callService(
                                             "light",
                                             "turn_on",

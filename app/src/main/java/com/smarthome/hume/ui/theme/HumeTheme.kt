@@ -79,6 +79,20 @@ object HumeColors {
     val Ink: Color get() = Gray1000
     val BarGrey: Color get() = Gray100
 
+    /*
+     * DIEM 4: nen cua VONG ICON va cac o nho trong the.
+     *
+     * Truoc day cac vong icon dung Background (sang: #F1F1F3, toi: #000000).
+     * Tren mat the (Card: #FFFFFF / #161616) thi:
+     *  - o che do toi, #000000 gan nhu bang mat the #161616 -> vong icon TAN
+     *    vao nen, chinh la loi "icon bg bi chim".
+     *  - o che do sang, #F1F1F3 chi cach mat the trang 6% do sang nen cung mo.
+     * IconBg duoc chon lech han mot bac so voi mat the (toi: sang hon, sang:
+     * dam hon) nen vong icon luon co ranh gioi ro rang.
+     */
+    val IconBg: Color get() = dyn(Color(0xFFEAEAEF), Color(0xFF2C2C30))
+    val IconBgStrong: Color get() = dyn(Color(0xFFDEDEE5), Color(0xFF3A3A40))
+
     val OrangeSoft: Color get() = Orange.copy(alpha = if (isDark) 0.22f else 0.14f)
     val OrangeSofter: Color get() = Orange.copy(alpha = if (isDark) 0.14f else 0.08f)
     val ChipPink: Color get() = Orange.copy(alpha = if (isDark) 0.24f else 0.12f)
