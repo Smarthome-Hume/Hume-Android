@@ -16,6 +16,22 @@ android {
     }
     buildFeatures { compose = true }
 
+    buildTypes {
+        release {
+            // R8 + rut gon tai nguyen: APK release nho hon dang ke va bo bot
+            // lop khong dung (vi du phan icon Material chua kip go).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+        debug {
+            isMinifyEnabled = false
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
