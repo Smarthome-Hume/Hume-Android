@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.ArrowDropUp
 import androidx.compose.material.icons.rounded.ElectricalServices
-import androidx.compose.material.icons.rounded.Power
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -337,7 +336,6 @@ fun EnergyFlowAndMix(entities: Map<String, HomeEntity>) {
         )
         hour < 18 -> {
             val morning = minOf(if (noon > 0) noon else total * 0.5, total)
-            Triple("", 0.0, Color.Transparent)
             listOf(
                 Triple("S\u00e1ng", morning, Color(0xFFFFB74D)),
                 Triple("Chi\u1ec1u", (total - morning).coerceAtLeast(0.0), Color(0xFFFF9800)),
@@ -373,7 +371,7 @@ fun EnergyFlowAndMix(entities: Map<String, HomeEntity>) {
         }
         Spacer(Modifier.height(12.dp))
         SegmentBar(flow, flow.sumOf { it.second })
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         StatRow(flow)
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(HumeColors.Divider))
@@ -384,7 +382,7 @@ fun EnergyFlowAndMix(entities: Map<String, HomeEntity>) {
         }
         Spacer(Modifier.height(10.dp))
         SegmentBar(breakers, breakerTotal)
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         StatRow(breakers)
     }
 }
@@ -421,6 +419,16 @@ private fun SegmentBar(items: List<Triple<String, Double, Color>>, total: Double
     }
 }
 
+/*
+ * The Sang / Chieu / Toi va CB1 / CB2 / CB3.
+ *
+ * TRUOC: khong ghim chieu cao, chi co padding(vertical = 8) + ba dong chu
+ * 9/15/9sp -> mot o cao khoang 60dp, nhin rat tho.
+ * NAY: cao CUNG 44dp, chu 9/14/8sp co lineHeight ghim, ba dong duoc can giua
+ * theo chieu doc nen khong con khoang trong thua o tren va duoi.
+ */
+private val StatCellHeight = 44.dp
+
 @Composable
 private fun StatRow(items: List<Triple<String, Double, Color>>) {
     val total = maxOf(items.sumOf { it.second }, 0.01)
@@ -429,14 +437,36 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
             Column(
                 Modifier
                     .weight(1f)
+                    .height(StatCellHeight)
                     .clip(RoundedCornerShape(14.dp))
                     .background(HumeColors.Background)
-                    .padding(vertical = 8.dp),
+                    .padding(horizontal = 4.dp),
+                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(label, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = color)
-                Text(String.format(Locale.US, "%.2f", value), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
-                Text((value / total * 100).toInt().toString() + "%", fontSize = 9.sp, color = HumeColors.TextSecondary)
+                Text(
+                    label,
+                    fontSize = 9.sp,
+                    lineHeight = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = color,
+                    maxLines = 1,
+                )
+                Text(
+                    String.format(Locale.US, "%.2f", value),
+                    fontSize = 14.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HumeColors.TextPrimary,
+                    maxLines = 1,
+                )
+                Text(
+                    (value / total * 100).toInt().toString() + "%",
+                    fontSize = 8.sp,
+                    lineHeight = 9.sp,
+                    color = HumeColors.TextSecondary,
+                    maxLines = 1,
+                )
             }
         }
     }
@@ -444,30 +474,17 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
 
 /* =====================================================================
  *  DEVICE FILTER LIST  (DeviceFilterList in EnergyView.swift)
- *  Every sensor.*_power that is not noise, in power or energy mode, with
- *  the same hard-coded switch mapping for the on/off buttons.
+ *  Every sensor.*_power that is not noise, in power or energy mode.
+ *
+ *  YEU CAU MOI: moi dong thiet bi CHI con ten + thoi diem + gia tri (+ tien
+ *  o che do Nang luong). KHONG con nut icon bat/tat tron o cuoi dong, va
+ *  cung khong con bang anh xa switch/climate di kem.
  * ===================================================================== */
 
 private val powerNoise = listOf(
     "solis", "battery", "soc", "soh", "dod", "alarm", "zigbee", "hourly", "monthly",
     "daily_cooling_energy", "daily_heating_energy", "aptomat", "cooling", "heating",
     "home_power", "grid_power", "cong_suat",
-)
-
-private val switchMap: Map<String, Pair<String, String>> = mapOf(
-    "sensor.o_cam_ngoai_vi_power" to ("switch.o_cam_ngoai_vi" to "switch"),
-    "sensor.o_cam_bep_tu_power" to ("switch.o_cam_bep_tu" to "switch"),
-    "sensor.o_cam_noi_chien_power" to ("switch.o_cam_noi_chien" to "switch"),
-    "sensor.o_cam_may_say_power" to ("switch.o_cam_may_say" to "switch"),
-    "sensor.o_cam_ban_lam_viec_power" to ("switch.o_cam_ban_lam_viec" to "switch"),
-    "sensor.o_cam_tu_lanh_power" to ("switch.o_cam_tu_lanh" to "switch"),
-    "sensor.o_cam_tuong_phong_ngu_lon_power" to ("switch.o_cam_tuong_phong_ngu_lon" to "switch"),
-    "sensor.o_cam_may_rua_bat_power" to ("switch.o_cam_may_rua_bat" to "switch"),
-    "sensor.o_cam_may_giat_power" to ("switch.o_cam_phong_giat" to "switch"),
-    "sensor.cong_tac_nong_lanh_power" to ("switch.cong_tac_nong_lanh" to "switch"),
-    "sensor.air_condition_current_extrapolated_power" to ("climate.air_condition" to "climate"),
-    "sensor.dieu_hoa_spare_room_power" to ("climate.dieu_hoa_2" to "climate"),
-    "sensor.dieu_hoa_power" to ("climate.dieu_hoa" to "climate"),
 )
 
 private val explicitEnergyMap = mapOf(
@@ -563,7 +580,6 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
             )
         } else {
             items.forEach { item ->
-                val mapped = switchMap[item.id]
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -586,29 +602,6 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
                         Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(min = 64.dp)) {
                             Text(vndGroup(item.cost), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF3BA776))
                             Text("VND", fontSize = 11.sp, color = HumeColors.TextSecondary)
-                        }
-                    }
-                    if (mapped != null) {
-                        Spacer(Modifier.width(10.dp))
-                        val (targetId, domain) = mapped
-                        Box(
-                            Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(HumeColors.OrangeSofter)
-                                .clickable {
-                                    // Same swipe actions as iOS: climate switches hvac mode,
-                                    // everything else toggles the mapped switch.
-                                    if (domain == "climate") {
-                                        val on = entities[targetId]?.state != "off"
-                                        ha.setHvacMode(targetId, if (on) "off" else "cool")
-                                    } else {
-                                        ha.toggle(targetId)
-                                    }
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Rounded.Power, contentDescription = null, tint = HumeColors.Orange, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
