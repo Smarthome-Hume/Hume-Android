@@ -392,6 +392,11 @@ private enum class SensorKind { Temperature, Humidity }
 /**
  * The nhiet do / do am: cao co dinh 72dp (truoc ~92), radius 40, vong icon 42
  * (icon 20), so do 24sp, ten 11sp, sparkline 24h cao 30dp o day the.
+ *
+ * SUA: hang noi dung (vong icon + so do + ten) truoc day nam o TREN CUNG cua
+ * Box (mac dinh TopStart) nen vong icon bi lech len, khong dong tam voi duong
+ * bo cua the. Nay hang duoc canh GIUA theo chieu doc bang .align(Center) nen
+ * tam vong icon trung dung tam the.
  */
 @Composable
 private fun SensorBigCard(
@@ -435,6 +440,7 @@ private fun SensorBigCard(
         }
         Row(
             Modifier
+                .align(Alignment.Center)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -553,7 +559,7 @@ private fun smoothPath(points: List<Offset>, tension: Float): Path {
     return path
 }
 
-/** IconMapper.swift equivalents — toan bo dung Phosphor net mong. */
+/** IconMapper.swift equivalents \u2014 toan bo dung Phosphor net mong. */
 private fun deviceIcon(key: String): ImageVector = when (key) {
     "bulb", "lightbulb" -> Ph.Lightbulb
     "sun" -> Ph.Sun
