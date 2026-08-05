@@ -79,6 +79,7 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
     var lightsSheet by remember { mutableStateOf(false) }
     var notificationSheet by remember { mutableStateOf(false) }
     var manageNotif by remember { mutableStateOf(false) }
+    var manageLights by remember { mutableStateOf(false) }
     var chartEntityId by remember { mutableStateOf<String?>(null) }
     var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
     val listState = rememberLazyListState()
@@ -155,7 +156,15 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
                 }
             }
             item {
-                StatusChipRow(alarmState = alarmState, lightsOn = state.lightsOn, ha = ha, alarmEntity = alarmEntity, onOpenLights = { lightsSheet = true })
+                StatusChipRow(
+                    alarmState = alarmState,
+                    lightsOn = state.lightsOn,
+                    ha = ha,
+                    alarmEntity = alarmEntity,
+                    onOpenLights = { lightsSheet = true },
+                    // AlarmLights.swift: giu lau chip den = mo "Quan ly den".
+                    onManageLights = { manageLights = true },
+                )
             }
             item {
                 SolarChartCard(
@@ -194,8 +203,13 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
 
     roomSheet?.let { room -> RoomBottomSheet(room = room, ha = ha, entities = entities, onDismiss = { roomSheet = null }) }
     if (lightsSheet) LightsBottomSheet(rooms = vm.rooms, ha = ha, entities = entities, onDismiss = { lightsSheet = false })
-    if (notificationSheet) NotificationBottomSheet(entities = entities, onDismiss = { notificationSheet = false })
+    if (notificationSheet) NotificationBottomSheet(
+        entities = entities,
+        onManage = { notificationSheet = false; manageNotif = true },
+        onDismiss = { notificationSheet = false },
+    )
     if (manageNotif) ManageListSheet(kind = ManagedKind.NOTIF, ha = ha, onDismiss = { manageNotif = false })
+    if (manageLights) ManageListSheet(kind = ManagedKind.LIGHTS, ha = ha, onDismiss = { manageLights = false })
     chartEntityId?.let { id -> ChartDialog(entityId = id, entities = entities, loadHistory = { vm.history(it) }, onDismiss = { chartEntityId = null }) }
 }
 

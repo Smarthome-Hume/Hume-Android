@@ -22,6 +22,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,6 +88,17 @@ class HomeViewModel(
     init {
         ha.setWatchedEntities(watchedIds())
         viewModelScope.launch { withContext(Dispatchers.IO) { sensors.prune(30) } }
+        // ManagedLists.swift goi notifyConfigChanged() sau moi lan them / bot.
+        // Ban Android truoc day chi dang ky watched ids MOT LAN luc khoi tao,
+        // nen cam bien vua them vao danh sach thong bao van bi bo dem (freeze)
+        // va chuong khong bao gio sang -> chinh la loi "notification chua chay".
+        viewModelScope.launch {
+            combine(lists.lights, lists.notif) { lights, notif ->
+                (lights.map { it.id } + notif.map { it.id }).toSet()
+            }
+                .distinctUntilChanged()
+                .collect { ha.setWatchedEntities(watchedIds()) }
+        }
     }
 
     /** Only these entities get realtime updates; the other ~1580 are throttled. */
