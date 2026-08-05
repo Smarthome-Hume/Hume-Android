@@ -66,6 +66,11 @@ private val NavBarRoom = 140.dp
  *
  * Icon o day dung Phosphor regular (giong ban HTML: <i class="ph ph-...">),
  * khong dung Material Rounded vi ban Rounded la icon DAC.
+ *
+ * YEU CAU MOI:
+ *   - KHONG con the "Tu dong & canh bao" (toan bo nhanh kich ban da bo).
+ *   - KHONG con lop nen bao ngoai (GroupGlassContainer radius 47): the con tu
+ *     mang nen cua no, cac the nam truc tiep tren mat trang.
  */
 @Composable
 fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: HomeAssistantRepository) {
@@ -78,7 +83,6 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
     var phone by remember { mutableStateOf(prefs.getString("user_phone", "").orEmpty()) }
     var editing by remember { mutableStateOf<String?>(null) }
     var openDeviceManager by remember { mutableStateOf(false) }
-    var openAutomation by remember { mutableStateOf(false) }
 
     val person: HomeEntity? = entities["person.hutchet"]
     val personName = person?.attr("friendly_name") ?: "H\u1ea3i H\u00e0"
@@ -95,14 +99,12 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
     ) {
         Text("Th\u00f4ng tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
 
-        // GroupGlassContainer(cornerRadius: 47, innerPadding: 8) { orangeCard }
-        Box(Modifier.fillMaxWidth().glassSurface(radius = 47.dp).padding(8.dp)) {
-            OwnerCard(personName, avatarUrl) { openDeviceManager = true }
-        }
+        // The chu nha nam truc tiep tren trang, KHONG con lop nen bao ngoai.
+        OwnerCard(personName, avatarUrl) { openDeviceManager = true }
 
-        // Account rows
+        // Cac dong thong tin: moi dong tu mang nen rieng, khong co the cha.
         Column(
-            Modifier.fillMaxWidth().glassSurface(radius = 47.dp).padding(8.dp),
+            Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ProfileRow(Ph.Badge, "ID Ng\u01b0\u1eddi d\u00f9ng", userId, copy = true)
@@ -127,21 +129,6 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
                 locationName(person?.state),
                 copy = true,
             )
-        }
-
-        // Automation entry -> AutomationSettingsView
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .glassSurface(radius = 47.dp)
-                .clickable { openAutomation = true }
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Ph.MagicWand, contentDescription = null, tint = HumeColors.Orange, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(12.dp))
-            Text("T\u1ef1 \u0111\u1ed9ng & c\u1ea3nh b\u00e1o", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
-            Icon(Ph.CaretRight, contentDescription = null, tint = HumeColors.TextSecondary, modifier = Modifier.size(16.dp))
         }
 
         // Connection pill
@@ -197,10 +184,6 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
     if (openDeviceManager) {
         DeviceManagerSheet(ha = ha, settings = settings, onDismiss = { openDeviceManager = false })
-    }
-
-    if (openAutomation) {
-        AutomationSettingsSheet(onDismiss = { openAutomation = false })
     }
 
     // EditFieldView
