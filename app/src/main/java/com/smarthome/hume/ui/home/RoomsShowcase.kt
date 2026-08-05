@@ -50,6 +50,7 @@ import com.smarthome.hume.ui.theme.NeonDotRed
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.humeMarquee
 import com.smarthome.hume.ui.theme.neonGlowCircle
+import com.smarthome.hume.ui.theme.rememberHumeHaptics
 import com.smarthome.hume.ui.theme.rememberNeonBeat
 import kotlin.math.absoluteValue
 
@@ -63,6 +64,10 @@ import kotlin.math.absoluteValue
  * sang, khong nhap nhay. The dang bat den chi doi sang nen gradient cam.
  * Rieng cham do bao cua dang mo: ban than cham giu nguyen mau, chi co den do
  * hat RA NGOAI vien cham va nhat dan ra xa.
+ *
+ * DIEM 2: bam vong icon de bat/tat den va bam nut tang/giam nhiet do deu goi
+ * rung cua he thong (rememberHumeHaptics).
+ * DIEM 4: nen vong icon doi tu Gray00 sang IconBg de khong chim vao mat the.
  */
 private val GridGap = 12.dp
 private val TileGap = 10.dp
@@ -184,7 +189,7 @@ private fun TileCard(tile: SmallTile, tileHeight: Dp, onTileClick: (String) -> U
     ) {
         Spacer(Modifier.width(5.dp))
         Box(
-            Modifier.size(circle).clip(CircleShape).background(HumeColors.Gray00),
+            Modifier.size(circle).clip(CircleShape).background(HumeColors.IconBg),
             contentAlignment = Alignment.Center,
         ) {
             Icon(tile.icon, contentDescription = null, tint = HumeColors.Gray1000, modifier = Modifier.size(circle * 0.44f))
@@ -266,10 +271,11 @@ private fun RoomCardLarge(
     val hasStepper = room.hasClimate && room.climateEntity != null
     val shape = RoundedCornerShape(CardRadius)
     val fg = if (lightOn) Color(0xFF000000) else HumeColors.Gray1000
-    val chipBg = if (lightOn) Color.White.copy(alpha = 0.22f) else HumeColors.Gray00
+    val chipBg = if (lightOn) Color.White.copy(alpha = 0.22f) else HumeColors.IconBg
     val interaction = remember { MutableInteractionSource() }
     val iconCircle = (columnWidth * 0.27f).coerceIn(44.dp, 54.dp)
     val tempSize = (columnWidth.value * (if (hasStepper) 0.20f else 0.24f)).sp
+    val haptics = rememberHumeHaptics()
 
     // KHONG neon o the phong: khong glow, khong vien phat sang, khong nhap nhay.
     Box(
@@ -300,7 +306,10 @@ private fun RoomCardLarge(
                             .size(iconCircle)
                             .clip(CircleShape)
                             .background(chipBg)
-                            .clickable(onClick = onToggleLight),
+                            .clickable {
+                                haptics.toggle()
+                                onToggleLight()
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(HumeIcons.room(room.icon), contentDescription = null, tint = fg, modifier = Modifier.size(iconCircle * 0.48f))
@@ -372,11 +381,18 @@ private fun TargetStepper(
     foreground: Color,
     onAdjustTarget: (Double) -> Unit,
 ) {
+    val haptics = rememberHumeHaptics()
     Column(
         Modifier.width(40.dp).clip(RoundedCornerShape(18.dp)).background(background),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().height(22.dp).clickable { onAdjustTarget(1.0) }, contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.fillMaxWidth().height(22.dp).clickable {
+                haptics.tap()
+                onAdjustTarget(1.0)
+            },
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(Ph.CaretUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(15.dp))
         }
         Box(Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
@@ -389,7 +405,13 @@ private fun TargetStepper(
                 softWrap = false,
             )
         }
-        Box(Modifier.fillMaxWidth().height(22.dp).clickable { onAdjustTarget(-1.0) }, contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.fillMaxWidth().height(22.dp).clickable {
+                haptics.tap()
+                onAdjustTarget(-1.0)
+            },
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(Ph.CaretDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(15.dp))
         }
     }
