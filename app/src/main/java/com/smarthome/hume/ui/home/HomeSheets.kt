@@ -63,6 +63,7 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.Ph
 import com.smarthome.hume.ui.theme.glassSurface
+import com.smarthome.hume.ui.theme.rememberHumeHaptics
 import java.util.Locale
 
 /*
@@ -74,6 +75,14 @@ import java.util.Locale
  *   - Sheet chua status bar bang statusBarsPadding() nen khong de len thanh
  *     thong bao cua may nua.
  *   - Icon: toan bo dung Phosphor net mong (Ph.*), khong con Material dac.
+ *
+ * DIEM 2: moi cong tac (Switch cua the thiet bi, nut tat den trong popup "Den
+ * dang sang") deu goi rung cua HE THONG qua rememberHumeHaptics() - ton trong
+ * cai dat phan hoi xuc giac cua One UI, khong can quyen VIBRATE.
+ *
+ * DIEM 4: vong icon va pill trang thai doi tu HumeColors.Background sang
+ * HumeColors.IconBg. Background o che do toi la #000000, gan nhu bang mat the
+ * #161616 nen vong icon truoc day bi chim han vao nen.
  */
 private val DeviceCardHeight = 150.dp
 private val DeviceCardPill = 34.dp
@@ -108,7 +117,7 @@ fun RoomBottomSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(44.dp).clip(CircleShape).background(HumeColors.Background),
+                    Modifier.size(44.dp).clip(CircleShape).background(HumeColors.IconBg),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -130,7 +139,7 @@ fun RoomBottomSheet(
                     Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(HumeColors.Background)
+                        .background(HumeColors.IconBg)
                         .clickable(onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -296,6 +305,7 @@ private fun SquareCard(
     accent: Color = HumeColors.Orange,
     onIconDoubleTap: (() -> Unit)? = null,
 ) {
+    val haptics = rememberHumeHaptics()
     Column(
         Modifier
             .fillMaxWidth()
@@ -314,11 +324,14 @@ private fun SquareCard(
                     Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(HumeColors.Background)
+                        .background(HumeColors.IconBg)
                         .combinedClickable(
                             enabled = onIconDoubleTap != null,
                             onClick = {},
-                            onDoubleClick = { onIconDoubleTap?.invoke() },
+                            onDoubleClick = {
+                                haptics.tap()
+                                onIconDoubleTap?.invoke()
+                            },
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -349,7 +362,14 @@ private fun SquareCard(
                 }
             }
             Spacer(Modifier.weight(1f))
-            Switch(checked = isOn, onCheckedChange = { onToggle() })
+            // DIEM 2: rung khi bat/tat cong tac.
+            Switch(
+                checked = isOn,
+                onCheckedChange = {
+                    haptics.toggle()
+                    onToggle()
+                },
+            )
         }
         Spacer(Modifier.height(8.dp))
         Text(
@@ -373,7 +393,7 @@ private fun SquareCard(
                 .fillMaxWidth()
                 .height(DeviceCardPill)
                 .clip(RoundedCornerShape(17.dp))
-                .background(HumeColors.Background),
+                .background(HumeColors.IconBg),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -447,7 +467,7 @@ private fun SensorBigCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
-                Modifier.size(42.dp).clip(CircleShape).background(HumeColors.Background),
+                Modifier.size(42.dp).clip(CircleShape).background(HumeColors.IconBg),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
@@ -561,7 +581,8 @@ private fun smoothPath(points: List<Offset>, tension: Float): Path {
 
 /** IconMapper.swift equivalents \u2014 toan bo dung Phosphor net mong. */
 private fun deviceIcon(key: String): ImageVector = when (key) {
-    "bulb", "lightbulb" -> Ph.Lightbulb
+    // DIEM 3: bong den dung ban ve lai theo HTML (PhHtml qua HumeIcons.Light).
+    "bulb", "lightbulb" -> HumeIcons.Light
     "sun" -> Ph.Sun
     "desk" -> Ph.Desk
     "switch" -> Ph.ToggleRight
@@ -595,6 +616,7 @@ fun LightsBottomSheet(
     val lights by store.lights.collectAsStateWithLifecycle()
     val active = lights.filter { !it.hidden && entities[it.id]?.isOn == true }
     var manage by remember { mutableStateOf(false) }
+    val haptics = rememberHumeHaptics()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -656,7 +678,7 @@ fun LightsBottomSheet(
                             Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(HumeColors.Background)
+                                .background(HumeColors.IconBg)
                                 .padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -687,7 +709,12 @@ fun LightsBottomSheet(
                                     Text(roomName, fontSize = 10.sp, color = HumeColors.TextSecondary)
                                 }
                             }
-                            IconButton(onClick = { ha.turnOff(item.id) }) {
+                            IconButton(
+                                onClick = {
+                                    haptics.toggle()
+                                    ha.turnOff(item.id)
+                                },
+                            ) {
                                 Icon(
                                     Ph.PowerButton,
                                     contentDescription = "T\u1eaft",
