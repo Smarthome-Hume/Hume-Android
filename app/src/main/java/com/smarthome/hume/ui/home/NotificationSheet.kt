@@ -3,6 +3,7 @@
 package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,10 +22,10 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DirectionsRun
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.MeetingRoom
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -92,9 +93,17 @@ internal fun homeAlerts(entities: Map<String, HomeEntity>): List<HomeAlert> {
 /**
  * NotifPopupView.swift: the managed notification entities that are currently on,
  * with the custom name and icon the user picked, plus how long ago they changed.
+ *
+ * The list is empty on a fresh install exactly like iOS, so the sheet always
+ * shows a visible "Ch\u1ecdn c\u1ea3m bi\u1ebfn" action that opens ManageListSheet
+ * (the entity picker). Long pressing the bell still opens the same screen.
  */
 @Composable
-fun NotificationBottomSheet(entities: Map<String, HomeEntity>, onDismiss: () -> Unit) {
+fun NotificationBottomSheet(
+    entities: Map<String, HomeEntity>,
+    onManage: () -> Unit = {},
+    onDismiss: () -> Unit,
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     val store = remember { ManagedListsStore.get(context) }
@@ -126,6 +135,28 @@ fun NotificationBottomSheet(entities: Map<String, HomeEntity>, onDismiss: () -> 
                         )
                     }
                 }
+                Spacer(Modifier.weight(1f))
+                Row(
+                    Modifier
+                        .background(HumeColors.Orange.copy(alpha = 0.12f), RoundedCornerShape(50))
+                        .clickable(onClick = onManage)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.Tune,
+                        contentDescription = null,
+                        tint = HumeColors.Orange,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "Ch\u1ecdn c\u1ea3m bi\u1ebfn",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = HumeColors.Orange,
+                    )
+                }
             }
             Spacer(Modifier.height(16.dp))
             if (active.isEmpty()) {
@@ -133,7 +164,10 @@ fun NotificationBottomSheet(entities: Map<String, HomeEntity>, onDismiss: () -> 
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = HumeColors.Green)
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        "Kh\u00f4ng c\u00f3 thi\u1ebft b\u1ecb n\u00e0o \u0111ang ho\u1ea1t \u0111\u1ed9ng",
+                        if (notif.isEmpty())
+                            "Ch\u01b0a ch\u1ecdn c\u1ea3m bi\u1ebfn n\u00e0o \u2014 nh\u1ea5n \"Ch\u1ecdn c\u1ea3m bi\u1ebfn\" \u0111\u1ec3 th\u00eam."
+                        else
+                            "Kh\u00f4ng c\u00f3 thi\u1ebft b\u1ecb n\u00e0o \u0111ang ho\u1ea1t \u0111\u1ed9ng",
                         fontSize = 14.sp,
                         color = HumeColors.TextSecondary,
                     )

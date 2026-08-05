@@ -1,9 +1,11 @@
 package com.smarthome.hume.ui.home
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -57,6 +59,10 @@ import com.smarthome.hume.ui.theme.rememberNeonBeat
  *    40% (tinh), den vang hat ra ngoai vien chip theo nhip chung.
  *  - Chip an ninh khac disarmed: den chi hat ra ngoai VONG ICON.
  *  - Chip dang tat: khong co gi.
+ *
+ * AlarmLights.swift: GIU LAU chip so bong den mo man hinh "Quan ly den"
+ * (onLightsLongPress) de chon dung nhung entity duoc dem. Ban Android truoc
+ * day thieu cua nay nen danh sach den khong the sua trong app.
  */
 private val HtmlYellow = Color(0xFFF2D26F)
 private val LightsGold = Color(0xFFB8860B)
@@ -73,6 +79,7 @@ fun StatusChipRow(
     ha: HomeAssistantRepository,
     alarmEntity: String,
     onOpenLights: () -> Unit,
+    onManageLights: () -> Unit = {},
 ) {
     var picking by remember { mutableStateOf(false) }
     var pendingState by remember { mutableStateOf<String?>(null) }
@@ -136,12 +143,17 @@ fun StatusChipRow(
                     active = lightsOn > 0,
                     glowWholePill = true,
                     onClick = onOpenLights,
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onManageLights()
+                    },
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BigPill(
     icon: ImageVector,
@@ -151,6 +163,7 @@ private fun BigPill(
     glowWholePill: Boolean,
     glowColor: Color = tint,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(PillRadius)
@@ -180,7 +193,10 @@ private fun BigPill(
                 if (pillGlow) glowColor.copy(alpha = 0.40f) else Color.Transparent,
                 shape,
             )
-            .clickable(onClick = onClick)
+            .then(
+                if (onLongClick == null) Modifier.clickable(onClick = onClick)
+                else Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            )
             .padding(start = 6.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
