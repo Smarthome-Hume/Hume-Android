@@ -17,10 +17,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -28,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,11 +74,14 @@ import com.smarthome.hume.ui.theme.HumeIcons
  *  4. Pill tab chon lech mot bac so voi nen thanh, khong vien.
  *  5. NET ICON: tab khong chon dung CUNG mau net voi tab dang chon. Phan biet
  *     tab dang chon bang NEN PILL + icon dac, khong bang cach lam mo net icon.
+ *  6. Be rong o tab CHIA DEU theo be rong thuc te (weight), chi bi chan tren
+ *     boi MaxItemWidth. Man hep (Multi-window, Pop-up view, Fold man ngoai)
+ *     khong con tran ngang.
  */
 private val navTabs = listOf(HumeTab.Home, HumeTab.Energy, HumeTab.Security, HumeTab.Profile)
 private val BarHeight = 56.dp
 private val BarInset = 6.dp
-private val ItemWidth = 76.dp
+private val MaxItemWidth = 76.dp
 private val PillHeight = 44.dp
 
 @Composable
@@ -83,8 +90,10 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         LoginScreen(settingsStore)
         return
     }
-    var tab by remember { mutableStateOf(HumeTab.Home) }
-    var navHidden by remember { mutableStateOf(false) }
+    // rememberSaveable: One UI doi uiMode (che do toi theo lich), co chu, xoay
+    // may, DeX va Multi-window rat thuong xuyen. Khong duoc mat tab dang xem.
+    var tab by rememberSaveable { mutableStateOf(HumeTab.Home) }
+    var navHidden by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(tab) { ha.setActiveTab(tab) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -130,28 +139,33 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
     // Pill lech mot bac so voi nen thanh.
     val pillColor = if (dark) Color.White.copy(alpha = 0.14f) else Color.Black.copy(alpha = 0.07f)
     val activeIndex = navTabs.indexOf(selected).coerceAtLeast(0)
-    val pillX by animateDpAsState(
-        targetValue = BarInset + ItemWidth * activeIndex,
-        animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow),
-        label = "pillX",
-    )
 
-    Box(
+    BoxWithConstraints(
         Modifier
+            // navigationBarsPadding: Samsung cho chon thanh 3 nut (~48dp) hoac
+            // cu chi (~24dp), nen khong duoc dung khoang chua cung.
             .navigationBarsPadding()
-            .padding(bottom = 12.dp)
-            .width(ItemWidth * navTabs.size + BarInset * 2)
+            .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+            .widthIn(max = MaxItemWidth * navTabs.size + BarInset * 2)
+            .fillMaxWidth()
             .height(BarHeight)
             .shadow(10.dp, shape, spotColor = Color.Black.copy(alpha = 0.4f))
             .clip(shape)
             .background(barColor)
             .border(0.5.dp, barEdge, shape),
     ) {
+        val itemWidth = (maxWidth - BarInset * 2) / navTabs.size
+        val pillX by animateDpAsState(
+            targetValue = BarInset + itemWidth * activeIndex,
+            animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow),
+            label = "pillX",
+        )
+
         Box(
             Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = pillX)
-                .width(ItemWidth)
+                .width(itemWidth)
                 .height(PillHeight)
                 .clip(RoundedCornerShape(PillHeight / 2))
                 .background(pillColor)
@@ -166,7 +180,7 @@ private fun HumeNavBar(selected: HumeTab, onSelect: (HumeTab) -> Unit) {
                     item = item,
                     active = selected == item,
                     onClick = { onSelect(item) },
-                    modifier = Modifier.width(ItemWidth).fillMaxHeight(),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
         }
