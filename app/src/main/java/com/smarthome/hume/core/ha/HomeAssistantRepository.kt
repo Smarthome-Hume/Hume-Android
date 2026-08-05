@@ -8,6 +8,7 @@ import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.toHomeEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -103,6 +105,13 @@ class HomeAssistantRepository {
     private val registryRequests = HashMap<Int, String>()
 
     /**
+     * Coalescing timer. Only alive while the app is in the foreground: the old
+     * version ran a while(true) loop for the whole process lifetime, which kept
+     * waking the CPU every second even with the screen off.
+     */
+    private var flushJob: Job? = null
+
+    /**
      * Tab the user is looking at, mirroring activeTab in
      * HomeAssistantManager.swift. Entities that the current tab does not render
      * are frozen: their events are queued and replayed when the tab comes back.
@@ -143,15 +152,6 @@ class HomeAssistantRepository {
     /** Set by HumeApplication so numeric readings land in the local sensor database. */
     var sensorSink: ((String, Double, Long) -> Unit)? = null
 
-    init {
-        scope.launch {
-            while (true) {
-                delay(1_000)
-                flushDueBuckets()
-            }
-        }
-    }
-
     /* ---------------- configuration and lifecycle ---------------- */
 
     fun configure(url: String, token: String) {
@@ -173,10 +173,12 @@ class HomeAssistantRepository {
         closeSocket()
         scope.launch { fetchInitialStates() }
         openSocket()
+        startFlushLoop()
     }
 
     fun disconnect() {
         wantConnection = false
+        stopFlushLoop()
         closeSocket()
     }
 
@@ -187,13 +189,31 @@ class HomeAssistantRepository {
         reconnectAttempt = 0
         scope.launch { fetchInitialStates() }
         if (ws == null) openSocket()
+        startFlushLoop()
     }
 
     /** Called when the app is no longer visible: drop the socket instead of burning battery. */
     fun onAppBackground() {
         wantConnection = false
+        stopFlushLoop()
         closeSocket()
         Log.i(TAG, "App backgrounded, WebSocket released")
+    }
+
+    private fun startFlushLoop() {
+        if (flushJob?.isActive == true) return
+        flushJob = scope.launch {
+            while (isActive) {
+                delay(1_000)
+                val empty = synchronized(pending) { pending.isEmpty() }
+                if (!empty) flushDueBuckets()
+            }
+        }
+    }
+
+    private fun stopFlushLoop() {
+        flushJob?.cancel()
+        flushJob = null
     }
 
     private fun closeSocket() {
@@ -381,11 +401,16 @@ class HomeAssistantRepository {
 
         val sink = sensorSink ?: return
         val watched = _watched.value
-        changed.values.forEach { entity ->
+        val samples = changed.values.mapNotNull { entity ->
             val value = entity.numericState
-            if (value != null && watched.contains(entity.id)) {
-                sink(entity.id, value, System.currentTimeMillis())
-            }
+            if (value != null && watched.contains(entity.id)) entity.id to value else null
+        }
+        if (samples.isEmpty()) return
+        // SensorDatabase cham dia. applyUpdates() duoc goi tu thread cua
+        // WebSocket, nen viec ghi phai day sang Dispatchers.IO.
+        val stamp = System.currentTimeMillis()
+        scope.launch {
+            samples.forEach { (id, value) -> runCatching { sink(id, value, stamp) } }
         }
     }
 
