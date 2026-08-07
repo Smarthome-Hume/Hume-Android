@@ -47,12 +47,6 @@ private const val TAG = "HumeHA"
 /** One point of /api/history/period, used by ChartDialog. */
 data class HistoryPoint(val timeMs: Long, val value: Double)
 
-/** Domains whose changes users expect to see instantly when the entity is on screen. */
-private val INTERACTIVE_DOMAINS = setOf(
-    "light", "switch", "lock", "cover", "fan", "climate", "media_player",
-    "alarm_control_panel", "binary_sensor", "input_boolean", "scene", "script", "automation",
-)
-
 class HomeAssistantRepository {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private val client = OkHttpClient.Builder()
@@ -95,9 +89,17 @@ class HomeAssistantRepository {
     private val _areas = MutableStateFlow<Map<String, String>>(emptyMap())
     val areas: StateFlow<Map<String, String>> = _areas.asStateFlow()
 
-    /** Entity IDs currently visible in the UI. Only these get realtime treatment. */
+    /**
+     * Entity IDs the UI is actually rendering right now. This is the single
+     * source of truth for the update policy: an entity in this set is realtime,
+     * anything else is frozen for the UI.
+     */
     private val _watched = MutableStateFlow<Set<String>>(emptySet())
     val watchedEntityIds: StateFlow<Set<String>> = _watched.asStateFlow()
+
+    /** True while the Sensors sheet is open: it lists everything, so everything is realtime. */
+    private val _sensorsSheetOpen = MutableStateFlow(false)
+    val sensorsSheetOpen: StateFlow<Boolean> = _sensorsSheetOpen.asStateFlow()
 
     private val bucketOverrides = HashMap<String, UpdateBucket>()
     private val pending = HashMap<String, HomeEntity>()
@@ -112,17 +114,15 @@ class HomeAssistantRepository {
     private var flushJob: Job? = null
 
     /**
-     * Tab the user is looking at, mirroring activeTab in
-     * HomeAssistantManager.swift. Entities that the current tab does not render
-     * are frozen: their events are queued and replayed when the tab comes back.
+     * Tab the user is looking at. Kept so callers stay source compatible, but it
+     * no longer gates updates: freezing by tab made screens go stale, and the
+     * watched set already describes what is on screen.
      */
     private var activeTab: HumeTab = HumeTab.Home
 
     /**
-     * Room bubble currently open, mirroring activeRoomKey in
-     * HomeAssistantManager.swift. While a room sheet is open the entities that
-     * belong to the other rooms are frozen: their events are queued instead of
-     * being published, so the open sheet is the only thing repainting.
+     * Room bubble currently open. Kept for the same reason as activeTab: opening
+     * a room no longer freezes the other rooms.
      */
     private var activeRoomKey: String? = null
 
@@ -253,7 +253,7 @@ class HomeAssistantRepository {
         // Anything already queued for a watched entity should show up immediately.
         val ready = HashMap<String, HomeEntity>()
         synchronized(pending) {
-            ids.forEach { id -> if (isVisibleOnActiveTab(id)) pending.remove(id)?.let { ready[id] = it } }
+            ids.forEach { id -> pending.remove(id)?.let { ready[id] = it } }
         }
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
@@ -263,9 +263,21 @@ class HomeAssistantRepository {
     fun unwatchEntity(entityId: String) = setWatchedEntities(_watched.value - entityId)
 
     /**
-     * setActiveTab() in HomeAssistantManager.swift. Switching tabs replays every
-     * queued event that the new tab actually renders, so the screen is correct
-     * the moment it appears.
+     * Called by SensorsSheet when it opens and closes. The sheet walks every
+     * entity in the system, so while it is open everything is realtime; closing
+     * it drops those entities straight back to frozen.
+     */
+    fun setSensorsSheetOpen(open: Boolean) {
+        if (open == _sensorsSheetOpen.value) return
+        _sensorsSheetOpen.value = open
+        Log.i(TAG, "Sensors sheet open -> $open")
+        if (open) releaseVisiblePending()
+    }
+
+    /**
+     * setActiveTab(): kept for source compatibility. Tabs no longer freeze
+     * anything, but switching tabs is still a good moment to publish whatever
+     * was queued.
      */
     fun setActiveTab(tab: HumeTab) {
         if (tab == activeTab) return
@@ -274,11 +286,7 @@ class HomeAssistantRepository {
         releaseVisiblePending()
     }
 
-    /**
-     * setActiveRoom() in HomeAssistantManager.swift: pass the room key when a
-     * room sheet opens and null when it closes. Opening a room immediately
-     * releases everything queued for that room.
-     */
+    /** setActiveRoom(): kept for source compatibility. Opening a room freezes nothing. */
     fun setActiveRoom(key: String?) {
         if (key == activeRoomKey) return
         activeRoomKey = key
@@ -286,14 +294,14 @@ class HomeAssistantRepository {
         releaseVisiblePending()
     }
 
-    /** reloadEntitiesFromCache(): publish whatever the new context can display. */
+    /** reloadEntitiesFromCache(): publish everything that is now realtime. */
     private fun releaseVisiblePending() {
         val ready = HashMap<String, HomeEntity>()
         synchronized(pending) {
             val iterator = pending.entries.iterator()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
-                if (isVisibleOnActiveTab(entry.key)) {
+                if (bucketFor(entry.key) == UpdateBucket.REALTIME) {
                     ready[entry.key] = entry.value
                     iterator.remove()
                 }
@@ -302,54 +310,48 @@ class HomeAssistantRepository {
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
 
-    /**
-     * isVisibleOnActiveTab() in HomeAssistantManager.swift.
-     *
-     * Home    : hides the energy-only readings, and freezes the other rooms
-     *           while a room sheet is open.
-     * Energy  : does not draw lights, climate or scenes.
-     * Security: only contact/motion sensors and the alarm panel.
-     * Profile : only the person entity.
-     */
-    private fun isVisibleOnActiveTab(entityId: String): Boolean {
-        val domain = entityId.substringBefore('.')
-        return when (activeTab) {
-            HumeTab.Home -> {
-                if (ENERGY_ONLY_IDS.contains(entityId)) return false
-                val rooms = entityRoomMap[entityId]
-                val key = activeRoomKey
-                if (rooms != null && key != null) rooms.contains(key) else true
-            }
-            HumeTab.Energy -> domain !in HOME_ONLY_DOMAINS
-            HumeTab.Security -> domain == "binary_sensor" || domain == "alarm_control_panel"
-            HumeTab.Profile -> domain == "person"
-            else -> false
-        }
-    }
-
     /** Pin one entity to a specific bucket, e.g. a slow outdoor sensor at ONE_HOUR. */
     fun setBucket(entityId: String, bucket: UpdateBucket) {
         bucketOverrides[entityId] = bucket
     }
 
+    /**
+     * The whole update policy, in two branches.
+     *
+     * An entity that some screen is actually rendering updates in realtime, with
+     * no throttling at all. Everything else is frozen for the UI, because
+     * repainting an entity nothing is showing only costs battery and frames.
+     */
     fun bucketFor(entityId: String): UpdateBucket {
         bucketOverrides[entityId]?.let { return it }
-        val watched = _watched.value.contains(entityId)
-        val domain = entityId.substringBefore('.')
-        return when {
-            watched && domain in INTERACTIVE_DOMAINS -> UpdateBucket.REALTIME
-            watched -> UpdateBucket.TEN_SECONDS
-            domain in INTERACTIVE_DOMAINS -> UpdateBucket.THIRTY_SECONDS
-            else -> UpdateBucket.FIVE_MINUTES
-        }
+        if (_sensorsSheetOpen.value) return UpdateBucket.REALTIME
+        if (_watched.value.contains(entityId)) return UpdateBucket.REALTIME
+        return UpdateBucket.ONE_DAY
     }
 
     private fun onIncomingState(entity: HomeEntity) {
-        if (!isVisibleOnActiveTab(entity.id) || bucketFor(entity.id) != UpdateBucket.REALTIME) {
+        // Background logging runs for every entity, frozen or not.
+        logToSink(entity)
+        if (bucketFor(entity.id) != UpdateBucket.REALTIME) {
             synchronized(pending) { pending[entity.id] = entity }
         } else {
             applyUpdates(mapOf(entity.id to entity))
         }
+    }
+
+    /**
+     * Write a numeric reading to the local sensor database even when the entity
+     * is frozen for the UI, so history charts and daily snapshots keep filling
+     * up for entities no screen is currently rendering.
+     *
+     * SensorDatabase cham dia, va ham nay duoc goi tu thread cua WebSocket,
+     * nen viec ghi phai day sang Dispatchers.IO.
+     */
+    private fun logToSink(entity: HomeEntity) {
+        val sink = sensorSink ?: return
+        val value = entity.numericState ?: return
+        val stamp = System.currentTimeMillis()
+        scope.launch { runCatching { sink(entity.id, value, stamp) } }
     }
 
     private fun flushDueBuckets() {
@@ -361,7 +363,6 @@ class HomeAssistantRepository {
             val touched = HashSet<UpdateBucket>()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
-                if (!isVisibleOnActiveTab(entry.key)) continue
                 val bucket = bucketFor(entry.key)
                 val last = lastFlush[bucket] ?: 0L
                 if (now - last >= bucket.intervalMs) {
@@ -398,20 +399,6 @@ class HomeAssistantRepository {
         if (changed.isEmpty()) return
         _entities.value = current + changed
         changed.keys.forEach { _entityUpdated.tryEmit(it) }
-
-        val sink = sensorSink ?: return
-        val watched = _watched.value
-        val samples = changed.values.mapNotNull { entity ->
-            val value = entity.numericState
-            if (value != null && watched.contains(entity.id)) entity.id to value else null
-        }
-        if (samples.isEmpty()) return
-        // SensorDatabase cham dia. applyUpdates() duoc goi tu thread cua
-        // WebSocket, nen viec ghi phai day sang Dispatchers.IO.
-        val stamp = System.currentTimeMillis()
-        scope.launch {
-            samples.forEach { (id, value) -> runCatching { sink(id, value, stamp) } }
-        }
     }
 
     /* ---------------- WebSocket ---------------- */
@@ -789,34 +776,5 @@ class HomeAssistantRepository {
     private companion object {
         /** How long a local flip outranks a REST snapshot. */
         const val OPTIMISTIC_WINDOW_MS = 5_000L
-
-        /** energyOnlyIds in HomeAssistantManager.swift: never drawn on Home. */
-        val ENERGY_ONLY_IDS = setOf(
-            "sensor.solis_s6_eh1p_pv_voltage_1_2", "sensor.solis_s6_eh1p_pv_voltage_2_2",
-            "sensor.solis_s6_eh1p_pv_current_1_2", "sensor.solis_s6_eh1p_pv_current_2_2",
-            "sensor.solis_s6_eh1p_battery_voltage_2",
-            "sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2",
-            "sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2",
-            "sensor.battery_current_flow",
-            "sensor.aptomat_t1_energy_daily", "sensor.aptomat_t1_power",
-            "sensor.aptomat_t2_energy_daily", "sensor.aptomat_t2_power",
-            "sensor.aptomat_t3_energy_daily", "sensor.aptomat_t3_power",
-            "sensor.grid_import_billing_2", "sensor.home_import_billing",
-            "sensor.evn_current_unit_price",
-            "sensor.grid_cost", "sensor.home_cost",
-            "number.solis_s6_eh1p_battery_max_charge_current_2",
-            "number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2",
-            "number.solis_s6_eh1p_grid_time_of_use_charge_cut_off_soc_slot_1_2",
-            "number.solis_s6_eh1p_force_charge_soc_2",
-            "number.solis_s6_eh1p_backup_soc_2",
-            "number.solis_s6_eh1p_battery_max_discharge_current_2",
-            "number.solis_s6_eh1p_off_grid_overdischarge_soc_2",
-            "number.solis_s6_eh1p_overdischarge_soc_2",
-            "switch.allow_grid_to_charge_the_battery_2",
-            "switch.grid_time_of_use_charging_period_1_2",
-        )
-
-        /** homeOnlyDomains: lights, climate and scenes are not drawn outside Home. */
-        val HOME_ONLY_DOMAINS = setOf("light", "climate", "scene")
     }
 }

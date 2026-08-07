@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,9 +69,11 @@ import kotlinx.serialization.json.JsonPrimitive
 //
 // Same data model as iOS: one row per entity, built from the entity registry
 // plus the live state map, with the user-owned bits (rename, hide, freeze,
-// delete) kept locally in SensorRecordStore. Frozen rows are dropped from the
-// watched set so the repository stops treating them as realtime, exactly like
-// removeFromWatched/addToWatched on iOS.
+// delete) kept locally in SensorRecordStore.
+//
+// This sheet walks every entity in the system, so it asks the repository for
+// realtime updates only while it is on screen. Closing the sheet drops those
+// entities straight back to frozen instead of leaving the whole system live.
 //
 // Chips and icon wells use tertiarySystemFill from the theme, matching the
 // SwiftUI original, so nothing stays white on a dark background.
@@ -154,6 +157,12 @@ fun SensorsSheet(ha: HomeAssistantRepository, onDismiss: () -> Unit) {
     val registry by ha.registry.collectAsStateWithLifecycle()
     val watched by ha.watchedEntityIds.collectAsStateWithLifecycle()
     val overrides by store.overrides.collectAsStateWithLifecycle()
+
+    // Sheet nay duyet toan bo entity, nen chi cho realtime khi no dang mo.
+    DisposableEffect(Unit) {
+        ha.setSensorsSheetOpen(true)
+        onDispose { ha.setSensorsSheetOpen(false) }
+    }
 
     var query by remember { mutableStateOf("") }
     var groupMode by remember { mutableStateOf(GroupMode.DOMAIN) }
