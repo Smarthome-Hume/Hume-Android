@@ -1,63 +1,261 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.smarthome.hume.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.HumeApplication
 import com.smarthome.hume.core.ha.HomeAssistantRepository
-import com.smarthome.hume.core.model.DefaultRooms
+import com.smarthome.hume.core.model.HomeEntity
+import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomConfig
+import com.smarthome.hume.core.scene.ManagedKind
+import com.smarthome.hume.core.scene.ManagedListsStore
+import com.smarthome.hume.core.storage.DailySnapshotStore
+import com.smarthome.hume.core.storage.HumeSettings
+import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
+import com.smarthome.hume.ui.theme.HumeIcons
+import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.util.Calendar
+import java.util.Locale
+import kotlin.math.abs
+
+private const val USER_NAME = "H\u1ea3i H\u00e0"
+private const val LOCATION = "Li\u00ean Ph\u01b0\u1eddng, P. Ki\u1ebfn An"
+
+/* page-container: padding ngang 15, khoang cach nhom 14, chua cho navbar 96. */
+private val PagePadding = 15.dp
+private val GroupSpacing = 14.dp
+private val NavBarRoom = 96.dp
+
+internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
+    if (entities.containsKey(HumeConfig.ALARM_PRIMARY)) HumeConfig.ALARM_PRIMARY else HumeConfig.ALARM_FALLBACK
+
+internal const val ALARM_ENTITY = HumeConfig.ALARM_FALLBACK
 
 @Composable
-fun HomeScreen(ha: HomeAssistantRepository) {
-    val entities by ha.entities.collectAsState()
-    val connected by ha.connected.collectAsState()
-    val rooms = DefaultRooms.climateRooms + DefaultRooms.basicRooms
-    Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF8F8FA), Color(0xFFEFF3F8)))).padding(16.dp)) {
-        Text("Xin chào", style = MaterialTheme.typography.headlineMedium)
-        Text(if (connected) "Home Assistant đã kết nối" else "Đang kết nối Home Assistant...", color = if (connected) HumeColors.Green else HumeColors.Orange)
-        Spacer(Modifier.height(16.dp))
-        ElevatedCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
-            Column(Modifier.padding(18.dp)) {
-                Text("Tổng quan", style = MaterialTheme.typography.titleLarge)
-                Text("${entities.size} entities đã tải")
-                Text("Alarm: ${entities["alarm_control_panel.alarm_security"]?.state ?: "unknown"}")
+fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {}) {
+    val context = LocalContext.current
+    val app = context.applicationContext as HumeApplication
+    val lists = remember { ManagedListsStore.get(app) }
+    val snapshots = remember { DailySnapshotStore.get(app) }
+    val settingsStore = remember { SettingsStore(app) }
+    val settings by settingsStore.settings.collectAsStateWithLifecycle(initialValue = HumeSettings())
+    val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(ha, app.sensorDatabase, lists, snapshots))
+    val state by vm.uiState.collectAsStateWithLifecycle()
+    val entities = state.entities
+    val alarmEntity = alarmEntityId(entities)
+    val alarmState = entities[alarmEntity]?.state
+
+    var roomSheet by remember { mutableStateOf<RoomConfig?>(null) }
+    var lightsSheet by remember { mutableStateOf(false) }
+    var notificationSheet by remember { mutableStateOf(false) }
+    var manageNotif by remember { mutableStateOf(false) }
+    var manageLights by remember { mutableStateOf(false) }
+    var chartEntityId by remember { mutableStateOf<String?>(null) }
+    var weekly by remember { mutableStateOf<List<DayValue>>(emptyList()) }
+    val listState = rememberLazyListState()
+    val todayPv = entities[HumeConfig.PV_TODAY]?.numericState ?: 0.0
+
+    LaunchedEffect(Unit) { vm.watchEntities(EnergyDetect.watchedIds()) }
+    LaunchedEffect(entities.isNotEmpty()) { vm.watchEnergySensors(entities) }
+    // Chuoi 7 ngay: tai ngay khi websocket ket noi (truoc day chi chay theo
+    // todayPv nen sang som - luc PV con 0 - bieu do khong bao gio duoc nap lai),
+    // roi tu lam moi moi 5 phut de bat kip du lieu history ve muon.
+    LaunchedEffect(state.connected) {
+        if (!state.connected) return@LaunchedEffect
+        while (true) {
+            weekly = vm.weekly(HumeConfig.PV_TODAY)
+            delay(300_000L)
+        }
+    }
+    // Gia tri hom nay cap nhat theo thoi gian thuc.
+    LaunchedEffect(todayPv.toInt()) {
+        if (weekly.isNotEmpty()) weekly = vm.weekly(HumeConfig.PV_TODAY)
+    }
+    LaunchedEffect(roomSheet?.rawKey) { vm.setActiveRoom(roomSheet) }
+
+    // Cuon xuong an navbar, cuon len hien lai.
+    LaunchedEffect(listState) {
+        var previous = 0
+        snapshotFlow { listState.firstVisibleItemIndex * 3000 + listState.firstVisibleItemScrollOffset }
+            .collect { position ->
+                when {
+                    position <= 8 -> onNavMinimize(false)
+                    position - previous > 12 -> onNavMinimize(true)
+                    previous - position > 12 -> onNavMinimize(false)
+                }
+                previous = position
             }
+    }
+
+    val leftTiles = HumeConfig.sensorTiles.map { tile ->
+        SmallTile(icon = HumeIcons.sensor(tile.icon), value = sensorValue(entities[tile.entityId], tile.unit), label = tile.label, entityId = tile.entityId)
+    }
+    val deviceKey = entities[HumeConfig.ACTIVE_CARD]?.state
+    val device = HumeConfig.deviceCards[deviceKey] ?: HumeConfig.deviceCards.getValue("Table")
+    val doorKey = entities[HumeConfig.ACTIVE_CARD_2]?.state
+    val door = HumeConfig.doorCards[doorKey] ?: HumeConfig.doorCards.getValue("Master")
+    val rightTiles = listOf(
+        SmallTile(icon = HumeIcons.sensor(device.icon), value = (entities[device.entityId]?.numericState?.toInt() ?: 0).toString() + " W", label = device.label, entityId = device.entityId),
+        SmallTile(icon = HumeIcons.Door, value = agoText(entities[door.entityId]?.lastChanged), label = door.label, entityId = door.entityId),
+    )
+
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(start = PagePadding, end = PagePadding, top = 6.dp, bottom = NavBarRoom),
+            verticalArrangement = Arrangement.spacedBy(GroupSpacing),
+        ) {
+            item {
+                HomeHeader(
+                    userName = entities["person.hutchet"]?.friendly() ?: USER_NAME,
+                    greeting = if (state.connected) greeting() else "\u0110ang k\u1ebft n\u1ed1i Home Assistant...",
+                    location = LOCATION,
+                    connected = state.connected,
+                    alertCount = state.alertCount,
+                    onOpenNotifications = { notificationSheet = true },
+                    avatarUrl = personAvatarUrl(entities["person.hutchet"], settings.haUrl),
+                    onManageNotifications = { manageNotif = true },
+                )
+            }
+            state.error?.let { message ->
+                item {
+                    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(HumeColors.Red.copy(alpha = 0.12f)).padding(14.dp)) {
+                        Text(message, style = MaterialTheme.typography.bodySmall, color = HumeColors.Red)
+                    }
+                }
+            }
+            item {
+                StatusChipRow(
+                    alarmState = alarmState,
+                    lightsOn = state.lightsOn,
+                    ha = ha,
+                    alarmEntity = alarmEntity,
+                    onOpenLights = { lightsSheet = true },
+                    // AlarmLights.swift: giu lau chip den = mo "Quan ly den".
+                    onManageLights = { manageLights = true },
+                )
+            }
+            item {
+                SolarChartCard(
+                    title = "\u0110i\u1ec7n m\u1eb7t tr\u1eddi",
+                    totalText = String.format(Locale.US, "%.1f", todayPv),
+                    unitText = "kWh",
+                    days = weekly,
+                    emptyHint = if (state.connected) "\u0110ang t\u1ea3i l\u1ecbch s\u1eed 7 ng\u00e0y..." else "Ch\u01b0a k\u1ebft n\u1ed1i Home Assistant",
+                )
+            }
+            item {
+                BatteryCard(
+                    soc = EnergyDetect.soc(entities),
+                    power = EnergyDetect.power(entities),
+                    backupSoc = EnergyDetect.backupSoc(entities),
+                    timeText = EnergyDetect.runtimeText(entities),
+                    finishTime = endTimeLabel(EnergyDetect.runtimeHours(entities)),
+                )
+            }
+            item {
+                RoomsShowcase(
+                    climateRooms = vm.climateRooms,
+                    otherRooms = vm.basicRooms,
+                    entities = entities,
+                    leftTiles = leftTiles,
+                    rightTiles = rightTiles,
+                    onOpenRoom = { roomSheet = it },
+                    onToggleLight = { vm.toggleRoomLight(it) },
+                    onTileClick = { chartEntityId = it },
+                    onAdjustTarget = { room, delta -> vm.adjustTarget(room, delta) },
+                )
+            }
+            // Khoi "Kich ban" da bi xoa theo yeu cau.
         }
-        Spacer(Modifier.height(16.dp))
-        LazyVerticalGrid(columns = GridCells.Fixed(2), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
-            items(rooms) { RoomCard(it, ha) }
-        }
+    }
+
+    roomSheet?.let { room -> RoomBottomSheet(room = room, ha = ha, entities = entities, onDismiss = { roomSheet = null }) }
+    if (lightsSheet) LightsBottomSheet(rooms = vm.rooms, ha = ha, entities = entities, onDismiss = { lightsSheet = false })
+    if (notificationSheet) NotificationBottomSheet(
+        entities = entities,
+        onManage = { notificationSheet = false; manageNotif = true },
+        onDismiss = { notificationSheet = false },
+    )
+    if (manageNotif) ManageListSheet(kind = ManagedKind.NOTIF, ha = ha, onDismiss = { manageNotif = false })
+    if (manageLights) ManageListSheet(kind = ManagedKind.LIGHTS, ha = ha, onDismiss = { manageLights = false })
+    chartEntityId?.let { id -> ChartDialog(entityId = id, entities = entities, loadHistory = { vm.history(it) }, onDismiss = { chartEntityId = null }) }
+}
+
+private fun personAvatarUrl(person: HomeEntity?, haUrl: String): String? {
+    val picture = person?.attrString("entity_picture")?.takeIf { it.isNotBlank() } ?: return null
+    if (picture.startsWith("http")) return picture
+    val base = if (haUrl.startsWith("http")) haUrl else "http://$haUrl"
+    return base.trimEnd('/') + picture
+}
+
+private fun sensorValue(entity: HomeEntity?, unit: String): String {
+    val value = entity?.numericState ?: return (entity?.state ?: "--") + " " + unit
+    val text = if (abs(value) < 10.0) String.format(Locale.US, "%.1f", value) else String.format(Locale.US, "%.0f", value)
+    return "$text $unit"
+}
+
+internal fun agoText(lastChanged: String?): String {
+    val millis = parseTimestamp(lastChanged) ?: return "\u2014"
+    val minutes = ((System.currentTimeMillis() - millis) / 60_000L).toInt()
+    return when {
+        minutes < 1 -> "V\u1eeba xong"
+        minutes < 60 -> "$minutes ph\u00fat"
+        else -> (minutes / 60).toString() + " gi\u1edd"
     }
 }
 
-@Composable
-private fun RoomCard(room: RoomConfig, ha: HomeAssistantRepository) {
-    val entities by ha.entities.collectAsState()
-    val light = entities[room.lightEntity]
-    val temp = entities[room.tempEntity]?.state ?: "--"
-    val hum = entities[room.humidityEntity]?.state ?: "--"
-    ElevatedCard(shape = RoundedCornerShape(22.dp), onClick = {
-        val domain = room.lightEntity.substringBefore('.')
-        val service = if (light?.isOn == true) "turn_off" else "turn_on"
-        ha.callService(domain, service, "{\"entity_id\":\"${room.lightEntity}\"}")
-    }) {
-        Column(Modifier.padding(16.dp)) {
-            Text(room.name, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-            Text("Đèn: ${light?.state ?: "unknown"}")
-            Text("$temp°C · $hum%")
-        }
-    }
+internal fun parseTimestamp(value: String?): Long? {
+    if (value.isNullOrBlank()) return null
+    return runCatching { Instant.parse(value).toEpochMilli() }.recoverCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }.getOrNull()
 }
+
+private fun greeting(): String {
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    return when { hour >= 18 -> "Ch\u00e0o bu\u1ed5i t\u1ed1i"; hour >= 12 -> "Ch\u00e0o bu\u1ed5i chi\u1ec1u"; else -> "Ch\u00e0o bu\u1ed5i s\u00e1ng" }
+}
+
+private fun endTimeLabel(hoursRemaining: Double?): String {
+    if (hoursRemaining == null || hoursRemaining <= 0.0) return "--:--"
+    val calendar = Calendar.getInstance()
+    calendar.add(Calendar.MINUTE, (hoursRemaining * 60).toInt())
+    return String.format(Locale.US, "%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
+}
+
+internal fun toggleLight(ha: HomeAssistantRepository, room: RoomConfig, entities: Map<String, HomeEntity>) { setLight(ha, room.lightEntity, entities[room.lightEntity]?.isOn != true) }
+internal fun setLight(ha: HomeAssistantRepository, entityId: String, on: Boolean) { if (on) ha.turnOn(entityId) else ha.turnOff(entityId) }
+internal fun setAllLights(ha: HomeAssistantRepository, rooms: List<RoomConfig>, on: Boolean) { rooms.forEach { setLight(ha, it.lightEntity, on) } }
+internal fun Map<String, HomeEntity>.num(entityId: String, digits: Int): String = this[entityId]?.numericState?.let { String.format(Locale.US, "%.${digits}f", it) } ?: "--"
+internal fun Map<String, HomeEntity>.attr(entityId: String, key: String): String? = this[entityId]?.attrString(key)
+internal fun alarmLabel(state: String?): String = HumeConfig.alarmLabel(state)

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Truoc day chi mo cleartext cho 192.168.102.22 (Home Assistant), nen moi
+  request HTTP toi Frigate 192.168.102.64:5000 deu bi Android chan thang tu
+  tang network => anh snapshot khong tai duoc (khung den xi) va tai video cung
+  that bai (khong co video ghi hinh).
+
+  Toan bo he thong nay chay trong LAN va khong co HTTPS, nen mo cleartext o
+  base-config de doi IP/them thiet bi khong phai sua lai app.
+-->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">192.168.102.22</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </base-config>
 </network-security-config>

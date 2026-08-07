@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Logo app Hume.
+
+    Ve bang vector (khong dung anh PNG) nen mot file dung cho moi mat do man
+    hinh, khong lo mo tren may Samsung do phan giai cao.
+
+    Khoi hinh: mai nha + than nha to trang, o giua la diem sang mau thuong hieu
+    #F9784C (dung mau cua bien active-big trong ban HTML). Toan bo nam trong
+    vung an toan 66x66 cua adaptive icon 108x108 nen One UI co bo tron kieu nao
+    cung khong cat mat chi tiet.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Mai nha va than nha, mot khoi lien -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,26 L86,53 L77,53 L77,84 L31,84 L31,53 L22,53 Z" />
+
+    <!-- Diem sang giua nha, mau thuong hieu -->
+    <path
+        android:fillColor="#F9784C"
+        android:pathData="M54,66 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
+</vector>

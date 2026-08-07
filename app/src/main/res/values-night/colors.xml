@@ -1,0 +1,4 @@
+<resources>
+    <!-- Color(.systemBackground) in dark appearance. -->
+    <color name="hume_background">#000000</color>
+</resources>
