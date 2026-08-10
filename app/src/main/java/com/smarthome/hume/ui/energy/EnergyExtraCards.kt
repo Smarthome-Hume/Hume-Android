@@ -598,9 +598,8 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
 
     data class Item(val id: String, val name: String, val value: Double, val unit: String, val ago: String, val cost: Long?)
 
-    // hidden = so thiet bi bi cat khoi top, de con noi cho nguoi dung biet.
-    val (items, hidden) = if (mode == "power") {
-        val all = candidates
+    val items = if (mode == "power") {
+        candidates
             // Sensor dien nang khong co cho o day, neu khong the se lan kWh vao kW.
             .filter { it.isPowerSensor() }
             .mapNotNull { entity ->
@@ -619,10 +618,10 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
             }
             .distinctBy { it.id }
             .sortedByDescending { it.value }
-        // Chi giu top 5 thiet bi dang keo nhieu dien nhat.
-        all.take(POWER_TOP_COUNT) to (all.size - POWER_TOP_COUNT).coerceAtLeast(0)
+            // Chi giu top 5 thiet bi dang keo nhieu dien nhat.
+            .take(POWER_TOP_COUNT)
     } else {
-        val rows = candidates.mapNotNull { entity ->
+        candidates.mapNotNull { entity ->
             // Entity da la sensor dien nang thi dung thang, khong phai ghep gi.
             val target = if (entity.isEnergySensor()) {
                 entity
@@ -647,30 +646,17 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
             // neu khong tien dien se bi cong doi.
             .distinctBy { it.id }
             .sortedByDescending { it.value }
-        rows to 0
     }
 
     Column(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Thi\u1ebft b\u1ecb", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
-                Text(
-                    if (usingLabels) {
-                        val kind = if (mode == "power") "c\u00f4ng su\u1ea5t" else "\u0111i\u1ec7n n\u0103ng"
-                        if (hidden > 0) {
-                            "Top " + items.size + " / " + (items.size + hidden) +
-                                " thi\u1ebft b\u1ecb " + kind + " \u00b7 label " + DEVICE_LIST_LABEL
-                        } else {
-                            items.size.toString() + " thi\u1ebft b\u1ecb " + kind +
-                                " \u00b7 label " + DEVICE_LIST_LABEL
-                        }
-                    } else {
-                        "Ch\u01b0a c\u00f3 entity n\u00e0o mang label " + DEVICE_LIST_LABEL
-                    },
-                    fontSize = 11.sp,
-                    color = HumeColors.TextSecondary,
-                )
-            }
+            Text(
+                "Thi\u1ebft b\u1ecb",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HumeColors.TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
             Box {
                 Row(
                     Modifier
