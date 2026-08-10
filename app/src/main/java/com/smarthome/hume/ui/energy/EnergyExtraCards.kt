@@ -488,6 +488,15 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
  *  khong phai sua code nua. Entity bi an hoac bi tat ben HA luon bi loai,
  *  ke ca khi con dinh label.
  *
+ *  MOT LABEL DUNG CHO CA HAI LOAI SENSOR. Nguoi dung gan label New cho ca
+ *  sensor cong suat (W, kW) lan sensor dien nang (Wh, kWh), nen the phai tu
+ *  tach hai loai theo device_class / unit_of_measurement:
+ *    - Che do Cong suat: chi lay sensor cong suat, quy het ve W.
+ *    - Che do Nang luong: chi lay sensor dien nang, quy het ve kWh; sensor
+ *      cong suat duoc ghep sang sensor dien nang tuong ung neu tim thay.
+ *  Neu khong tach nhu vay thi mot danh sach se lan ca kW lan kWh, so lieu
+ *  khong the so sanh voi nhau va tien dien tinh sai.
+ *
  *  Khi chua co entity nao mang label (HA cu hon 2024.4, hoac registry chua
  *  ve kip), the quay ve bo loc ten cu nhung co them hai lop chan trung:
  *  bo entity an/tat/diagnostic, va moi device_id chi giu mot entity.
@@ -495,6 +504,38 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
 
 /** Ten label ben Home Assistant danh dau entity duoc phep len the Thiet bi. */
 private const val DEVICE_LIST_LABEL = "New"
+
+private val powerUnits = setOf("W", "kW", "mW", "MW")
+private val energyUnits = setOf("Wh", "kWh", "MWh")
+
+private fun HomeEntity.unitRaw(): String? = attr("unit_of_measurement")?.trim()
+
+private fun HomeEntity.isPowerSensor(): Boolean =
+    attr("device_class") == "power" || unitRaw() in powerUnits
+
+private fun HomeEntity.isEnergySensor(): Boolean =
+    attr("device_class") == "energy" || unitRaw() in energyUnits
+
+/** Quy moi sensor cong suat ve W de ca danh sach dung chung mot don vi. */
+private fun HomeEntity.watts(): Double? {
+    val raw = numericState ?: return null
+    return when (unitRaw()) {
+        "kW" -> raw * 1000.0
+        "MW" -> raw * 1000000.0
+        "mW" -> raw / 1000.0
+        else -> raw
+    }
+}
+
+/** Quy moi sensor dien nang ve kWh de con nhan duoc voi don gia dien. */
+private fun HomeEntity.kwh(): Double? {
+    val raw = numericState ?: return null
+    return when (unitRaw()) {
+        "Wh" -> raw / 1000.0
+        "MWh" -> raw * 1000.0
+        else -> raw
+    }
+}
 
 private val powerNoise = listOf(
     "solis", "battery", "soc", "soh", "dod", "alarm", "zigbee", "hourly", "monthly",
@@ -553,33 +594,43 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
     data class Item(val id: String, val name: String, val value: Double, val unit: String, val ago: String, val cost: Long?)
 
     val items = if (mode == "power") {
-        candidates.mapNotNull { entity ->
-            val value = entity.numericState ?: return@mapNotNull null
-            // Voi danh sach theo label thi thiet bi dang tat van phai hien 0 W,
-            // vi chinh nguoi dung da chon no. Bo loc ten cu thi van bo qua so 0.
-            if (!usingLabels && value <= 0) return@mapNotNull null
-            val minutes = entity.minutesAgo()
-            val ago = when {
-                minutes == null -> "Gi\u00e1m s\u00e1t"
-                minutes < 1 -> "V\u1eeba xong"
-                minutes < 60 -> minutes.toString() + " ph\u00fat tr\u01b0\u1edbc"
-                else -> (minutes / 60).toString() + " gi\u1edd tr\u01b0\u1edbc"
+        candidates
+            // Sensor dien nang khong co cho o day, neu khong the se lan kWh vao kW.
+            .filter { it.isPowerSensor() }
+            .mapNotNull { entity ->
+                val value = entity.watts() ?: return@mapNotNull null
+                // Voi danh sach theo label thi thiet bi dang tat van phai hien 0 W,
+                // vi chinh nguoi dung da chon no. Bo loc ten cu thi van bo qua so 0.
+                if (!usingLabels && value <= 0) return@mapNotNull null
+                val minutes = entity.minutesAgo()
+                val ago = when {
+                    minutes == null -> "Gi\u00e1m s\u00e1t"
+                    minutes < 1 -> "V\u1eeba xong"
+                    minutes < 60 -> minutes.toString() + " ph\u00fat tr\u01b0\u1edbc"
+                    else -> (minutes / 60).toString() + " gi\u1edd tr\u01b0\u1edbc"
+                }
+                Item(entity.id, entity.friendly(), value, "W", ago, null)
             }
-            Item(entity.id, entity.friendly(), value, entity.attr("unit_of_measurement") ?: "W", ago, null)
-        }.sortedByDescending { it.value }
+            .distinctBy { it.id }
+            .sortedByDescending { it.value }
     } else {
         candidates.mapNotNull { entity ->
-            val energyId = explicitEnergyMap[entity.id]
-                ?: prefixLookup[entity.id.removeSuffix("_power")]
-                ?: return@mapNotNull null
-            val target = entities[energyId] ?: return@mapNotNull null
-            val value = target.numericState ?: return@mapNotNull null
+            // Entity da la sensor dien nang thi dung thang, khong phai ghep gi.
+            val target = if (entity.isEnergySensor()) {
+                entity
+            } else {
+                val energyId = explicitEnergyMap[entity.id]
+                    ?: prefixLookup[entity.id.removeSuffix("_power")]
+                    ?: return@mapNotNull null
+                entities[energyId] ?: return@mapNotNull null
+            }
+            val value = target.kwh() ?: return@mapNotNull null
             if (value <= 0) return@mapNotNull null
             Item(
                 target.id,
                 entity.friendly(),
                 value,
-                target.attr("unit_of_measurement") ?: "kWh",
+                "kWh",
                 "H\u00f4m nay",
                 (value * rate).roundToLong(),
             )
@@ -596,7 +647,8 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
                 Text("Thi\u1ebft b\u1ecb", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
                 Text(
                     if (usingLabels) {
-                        "Theo label " + DEVICE_LIST_LABEL + " trong Home Assistant"
+                        "Label " + DEVICE_LIST_LABEL + " \u00b7 " + items.size + " thi\u1ebft b\u1ecb " +
+                            (if (mode == "power") "c\u00f4ng su\u1ea5t" else "\u0111i\u1ec7n n\u0103ng")
                     } else {
                         "Ch\u01b0a c\u00f3 entity n\u00e0o mang label " + DEVICE_LIST_LABEL
                     },
