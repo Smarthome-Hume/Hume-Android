@@ -474,12 +474,27 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
 
 /* =====================================================================
  *  DEVICE FILTER LIST  (DeviceFilterList in EnergyView.swift)
- *  Every sensor.*_power that is not noise, in power or energy mode.
  *
- *  YEU CAU MOI: moi dong thiet bi CHI con ten + thoi diem + gia tri (+ tien
- *  o che do Nang luong). KHONG con nut icon bat/tat tron o cuoi dong, va
- *  cung khong con bang anh xa switch/climate di kem.
+ *  DANH SACH DO HOME ASSISTANT QUYET DINH.
+ *
+ *  TRUOC: the tu quet moi entity sensor.*_power roi loai bot bang mot
+ *  danh sach tu khoa nhieu (powerNoise). Hai entity khac id nhung do cung
+ *  mot o cam vat ly deu lot qua, nen danh sach ra hai dong trung nhau
+ *  (vi du "Ban hoc" va "O cam ban lam viec Cong suat"), va o che do Nang
+ *  luong thi tien dien con bi dem hai lan.
+ *
+ *  NAY: chi entity mang label DEVICE_LIST_LABEL trong Home Assistant moi
+ *  duoc len the. Muon them hay bot mot thiet bi thi gan/bo label ben HA,
+ *  khong phai sua code nua. Entity bi an hoac bi tat ben HA luon bi loai,
+ *  ke ca khi con dinh label.
+ *
+ *  Khi chua co entity nao mang label (HA cu hon 2024.4, hoac registry chua
+ *  ve kip), the quay ve bo loc ten cu nhung co them hai lop chan trung:
+ *  bo entity an/tat/diagnostic, va moi device_id chi giu mot entity.
  * ===================================================================== */
+
+/** Ten label ben Home Assistant danh dau entity duoc phep len the Thiet bi. */
+private const val DEVICE_LIST_LABEL = "New"
 
 private val powerNoise = listOf(
     "solis", "battery", "soc", "soh", "dod", "alarm", "zigbee", "hourly", "monthly",
@@ -497,10 +512,36 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
     var mode by remember { mutableStateOf("power") }
     var menu by remember { mutableStateOf(false) }
 
+    val registry by ha.registry.collectAsState()
+    val labelNames by ha.labels.collectAsState()
+    val deviceLabels by ha.deviceLabels.collectAsState()
+
+    // Danh sach id do label quyet dinh. Doi theo registry nen chi tinh lai khi
+    // Home Assistant gui registry moi, khong phai moi lan mot sensor nhay so.
+    val labelled = remember(registry, labelNames, deviceLabels) {
+        ha.entityIdsWithLabel(DEVICE_LIST_LABEL)
+    }
+    val usingLabels = labelled.isNotEmpty()
+
     val rate = ((entities["sensor.home_cost"]?.numericState ?: 0.0) / 147.49).roundToLong()
-    val powerEntities = entities.values.filter { entity ->
-        entity.id.startsWith("sensor.") && entity.id.endsWith("_power") &&
-            powerNoise.none { entity.id.contains(it) }
+
+    val candidates: List<HomeEntity> = remember(entities, labelled, registry) {
+        if (usingLabels) {
+            labelled.mapNotNull { entities[it] }
+        } else {
+            entities.values
+                .filter { entity ->
+                    entity.id.startsWith("sensor.") && entity.id.endsWith("_power") &&
+                        powerNoise.none { entity.id.contains(it) }
+                }
+                .filter { entity ->
+                    val entry = registry[entity.id]
+                    entry?.hiddenBy == null && entry?.disabledBy == null &&
+                        entry?.entityCategory == null
+                }
+                // Hai entity cua cung mot thiet bi chi duoc lay mot.
+                .distinctBy { entity -> registry[entity.id]?.deviceId ?: entity.id }
+        }
     }
 
     // Energy mode pairs each power sensor with its *_daily_energy_* counterpart.
@@ -512,9 +553,11 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
     data class Item(val id: String, val name: String, val value: Double, val unit: String, val ago: String, val cost: Long?)
 
     val items = if (mode == "power") {
-        powerEntities.mapNotNull { entity ->
+        candidates.mapNotNull { entity ->
             val value = entity.numericState ?: return@mapNotNull null
-            if (value <= 0) return@mapNotNull null
+            // Voi danh sach theo label thi thiet bi dang tat van phai hien 0 W,
+            // vi chinh nguoi dung da chon no. Bo loc ten cu thi van bo qua so 0.
+            if (!usingLabels && value <= 0) return@mapNotNull null
             val minutes = entity.minutesAgo()
             val ago = when {
                 minutes == null -> "Gi\u00e1m s\u00e1t"
@@ -522,10 +565,10 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
                 minutes < 60 -> minutes.toString() + " ph\u00fat tr\u01b0\u1edbc"
                 else -> (minutes / 60).toString() + " gi\u1edd tr\u01b0\u1edbc"
             }
-            Item(entity.id, entity.friendly(), value, "W", ago, null)
+            Item(entity.id, entity.friendly(), value, entity.attr("unit_of_measurement") ?: "W", ago, null)
         }.sortedByDescending { it.value }
     } else {
-        powerEntities.mapNotNull { entity ->
+        candidates.mapNotNull { entity ->
             val energyId = explicitEnergyMap[entity.id]
                 ?: prefixLookup[entity.id.removeSuffix("_power")]
                 ?: return@mapNotNull null
@@ -540,12 +583,27 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
                 "H\u00f4m nay",
                 (value * rate).roundToLong(),
             )
-        }.sortedByDescending { it.value }
+        }
+            // Hai sensor cong suat tro chung mot sensor nang luong chi ra mot dong,
+            // neu khong tien dien se bi cong doi.
+            .distinctBy { it.id }
+            .sortedByDescending { it.value }
     }
 
     Column(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Thi\u1ebft b\u1ecb", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
+            Column(Modifier.weight(1f)) {
+                Text("Thi\u1ebft b\u1ecb", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
+                Text(
+                    if (usingLabels) {
+                        "Theo label " + DEVICE_LIST_LABEL + " trong Home Assistant"
+                    } else {
+                        "Ch\u01b0a c\u00f3 entity n\u00e0o mang label " + DEVICE_LIST_LABEL
+                    },
+                    fontSize = 11.sp,
+                    color = HumeColors.TextSecondary,
+                )
+            }
             Box {
                 Row(
                     Modifier
