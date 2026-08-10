@@ -491,9 +491,11 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
  *  MOT LABEL DUNG CHO CA HAI LOAI SENSOR. Nguoi dung gan label New cho ca
  *  sensor cong suat (W, kW) lan sensor dien nang (Wh, kWh), nen the phai tu
  *  tach hai loai theo device_class / unit_of_measurement:
- *    - Che do Cong suat: chi lay sensor cong suat, quy het ve W.
+ *    - Che do Cong suat: chi lay sensor cong suat, quy het ve W, va chi giu
+ *      POWER_TOP_COUNT thiet bi dang an nhieu dien nhat.
  *    - Che do Nang luong: chi lay sensor dien nang, quy het ve kWh; sensor
  *      cong suat duoc ghep sang sensor dien nang tuong ung neu tim thay.
+ *      Che do nay giu nguyen ca danh sach vi con cong tien dien.
  *  Neu khong tach nhu vay thi mot danh sach se lan ca kW lan kWh, so lieu
  *  khong the so sanh voi nhau va tien dien tinh sai.
  *
@@ -504,6 +506,9 @@ private fun StatRow(items: List<Triple<String, Double, Color>>) {
 
 /** Ten label ben Home Assistant danh dau entity duoc phep len the Thiet bi. */
 private const val DEVICE_LIST_LABEL = "New"
+
+/** So dong toi da o che do Cong suat, xep theo W giam dan. */
+private const val POWER_TOP_COUNT = 5
 
 private val powerUnits = setOf("W", "kW", "mW", "MW")
 private val energyUnits = setOf("Wh", "kWh", "MWh")
@@ -593,8 +598,9 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
 
     data class Item(val id: String, val name: String, val value: Double, val unit: String, val ago: String, val cost: Long?)
 
-    val items = if (mode == "power") {
-        candidates
+    // hidden = so thiet bi bi cat khoi top, de con noi cho nguoi dung biet.
+    val (items, hidden) = if (mode == "power") {
+        val all = candidates
             // Sensor dien nang khong co cho o day, neu khong the se lan kWh vao kW.
             .filter { it.isPowerSensor() }
             .mapNotNull { entity ->
@@ -613,8 +619,10 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
             }
             .distinctBy { it.id }
             .sortedByDescending { it.value }
+        // Chi giu top 5 thiet bi dang keo nhieu dien nhat.
+        all.take(POWER_TOP_COUNT) to (all.size - POWER_TOP_COUNT).coerceAtLeast(0)
     } else {
-        candidates.mapNotNull { entity ->
+        val rows = candidates.mapNotNull { entity ->
             // Entity da la sensor dien nang thi dung thang, khong phai ghep gi.
             val target = if (entity.isEnergySensor()) {
                 entity
@@ -639,6 +647,7 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
             // neu khong tien dien se bi cong doi.
             .distinctBy { it.id }
             .sortedByDescending { it.value }
+        rows to 0
     }
 
     Column(Modifier.fillMaxWidth()) {
@@ -647,8 +656,14 @@ fun DeviceFilterList(entities: Map<String, HomeEntity>, ha: HomeAssistantReposit
                 Text("Thi\u1ebft b\u1ecb", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = HumeColors.TextPrimary)
                 Text(
                     if (usingLabels) {
-                        "Label " + DEVICE_LIST_LABEL + " \u00b7 " + items.size + " thi\u1ebft b\u1ecb " +
-                            (if (mode == "power") "c\u00f4ng su\u1ea5t" else "\u0111i\u1ec7n n\u0103ng")
+                        val kind = if (mode == "power") "c\u00f4ng su\u1ea5t" else "\u0111i\u1ec7n n\u0103ng"
+                        if (hidden > 0) {
+                            "Top " + items.size + " / " + (items.size + hidden) +
+                                " thi\u1ebft b\u1ecb " + kind + " \u00b7 label " + DEVICE_LIST_LABEL
+                        } else {
+                            items.size.toString() + " thi\u1ebft b\u1ecb " + kind +
+                                " \u00b7 label " + DEVICE_LIST_LABEL
+                        }
                     } else {
                         "Ch\u01b0a c\u00f3 entity n\u00e0o mang label " + DEVICE_LIST_LABEL
                     },
