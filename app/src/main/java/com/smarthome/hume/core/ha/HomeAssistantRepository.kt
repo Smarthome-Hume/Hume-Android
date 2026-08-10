@@ -90,6 +90,21 @@ class HomeAssistantRepository {
     val areas: StateFlow<Map<String, String>> = _areas.asStateFlow()
 
     /**
+     * Label registry: label_id -> the name shown in the Home Assistant UI.
+     * Labels are how the user decides which entities a screen is allowed to
+     * list, instead of the app guessing from entity_id spelling.
+     */
+    private val _labels = MutableStateFlow<Map<String, String>>(emptyMap())
+    val labels: StateFlow<Map<String, String>> = _labels.asStateFlow()
+
+    /**
+     * device_id -> label IDs. Home Assistant does not copy a device label down
+     * onto its entities, so a label put on the device has to be resolved here.
+     */
+    private val _deviceLabels = MutableStateFlow<Map<String, Set<String>>>(emptyMap())
+    val deviceLabels: StateFlow<Map<String, Set<String>>> = _deviceLabels.asStateFlow()
+
+    /**
      * Entity IDs the UI is actually rendering right now. This is the single
      * source of truth for the update policy: an entity in this set is realtime,
      * anything else is frozen for the UI.
@@ -452,18 +467,37 @@ class HomeAssistantRepository {
                 when (registryRequests.remove(id)) {
                     "entities" -> parseEntityRegistry(obj["result"])
                     "areas" -> parseAreaRegistry(obj["result"])
+                    "labels" -> parseLabelRegistry(obj["result"])
+                    "devices" -> parseDeviceRegistry(obj["result"])
                 }
             }
         }
     }
 
+    /**
+     * Four registries are pulled once per session. Labels come before entities
+     * only for readability; every parser writes its own StateFlow, so the order
+     * the answers arrive in does not matter.
+     */
     private fun requestRegistries() {
         val areaId = ++msgId
         registryRequests[areaId] = "areas"
         ws?.send("""{"id":$areaId,"type":"config/area_registry/list"}""")
+        val labelId = ++msgId
+        registryRequests[labelId] = "labels"
+        ws?.send("""{"id":$labelId,"type":"config/label_registry/list"}""")
+        val deviceId = ++msgId
+        registryRequests[deviceId] = "devices"
+        ws?.send("""{"id":$deviceId,"type":"config/device_registry/list"}""")
         val entityId = ++msgId
         registryRequests[entityId] = "entities"
         ws?.send("""{"id":$entityId,"type":"config/entity_registry/list"}""")
+    }
+
+    /** Read a JSON array of plain strings, skipping anything that is not one. */
+    private fun stringSet(element: JsonElement?): Set<String> {
+        val array = element as? JsonArray ?: return emptySet()
+        return array.mapNotNull { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }.toSet()
     }
 
     private fun parseEntityRegistry(element: JsonElement?) {
@@ -479,10 +513,15 @@ class HomeAssistantRepository {
                 areaId = row["area_id"]?.jsonPrimitive?.contentOrNull,
                 deviceId = row["device_id"]?.jsonPrimitive?.contentOrNull,
                 platform = row["platform"]?.jsonPrimitive?.contentOrNull,
+                labels = stringSet(row["labels"]),
+                hiddenBy = row["hidden_by"]?.jsonPrimitive?.contentOrNull,
+                disabledBy = row["disabled_by"]?.jsonPrimitive?.contentOrNull,
+                entityCategory = row["entity_category"]?.jsonPrimitive?.contentOrNull,
             )
         }
         _registry.value = map
-        Log.i(TAG, "Entity registry loaded: ${map.size} entries")
+        val labelled = map.values.count { it.labels.isNotEmpty() }
+        Log.i(TAG, "Entity registry loaded: ${map.size} entries, $labelled carry a label")
     }
 
     private fun parseAreaRegistry(element: JsonElement?) {
@@ -498,6 +537,38 @@ class HomeAssistantRepository {
         Log.i(TAG, "Area registry loaded: ${map.size} areas")
     }
 
+    /** config/label_registry/list, available since Home Assistant 2024.4. */
+    private fun parseLabelRegistry(element: JsonElement?) {
+        val array = element as? JsonArray ?: return
+        val map = HashMap<String, String>(array.size)
+        array.forEach { item ->
+            val row = runCatching { item.jsonObject }.getOrNull() ?: return@forEach
+            val id = row["label_id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            val name = row["name"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            map[id] = name
+        }
+        _labels.value = map
+        Log.i(TAG, "Label registry loaded: ${map.size} labels ${map.values.joinToString(prefix = "[", postfix = "]")}")
+    }
+
+    /**
+     * config/device_registry/list, kept only for the labels. A label dropped on
+     * a device in the Home Assistant UI does not appear on that device's
+     * entities, so both sides have to be checked when resolving a label.
+     */
+    private fun parseDeviceRegistry(element: JsonElement?) {
+        val array = element as? JsonArray ?: return
+        val map = HashMap<String, Set<String>>()
+        array.forEach { item ->
+            val row = runCatching { item.jsonObject }.getOrNull() ?: return@forEach
+            val id = row["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            val labels = stringSet(row["labels"])
+            if (labels.isNotEmpty()) map[id] = labels
+        }
+        _deviceLabels.value = map
+        Log.i(TAG, "Device registry loaded: ${map.size} devices carry a label")
+    }
+
     /** Area name for an entity, resolved through the registry. */
     fun areaNameFor(entityId: String): String? {
         val area = _registry.value[entityId]?.areaId ?: return null
@@ -507,6 +578,38 @@ class HomeAssistantRepository {
     /** Entity IDs belonging to one area, useful when building room screens from the registry. */
     fun entitiesInArea(areaId: String): List<String> =
         _registry.value.values.filter { it.areaId == areaId }.map { it.entityId }
+
+    /** Label names on an entity, counting the labels of the device it belongs to. */
+    fun labelNamesFor(entityId: String): Set<String> {
+        val entry = _registry.value[entityId] ?: return emptySet()
+        val names = _labels.value
+        val fromDevice = entry.deviceId?.let { _deviceLabels.value[it] }.orEmpty()
+        return (entry.labels + fromDevice).mapNotNull { names[it] }.toSet()
+    }
+
+    /**
+     * Every entity carrying a label, matched on the name shown in the Home
+     * Assistant UI and ignoring case.
+     *
+     * This is how a screen asks Home Assistant which entities it may list,
+     * instead of guessing from how an entity_id happens to be spelled. Entities
+     * hidden or disabled in Home Assistant are left out even when labelled,
+     * because hiding one of two duplicates is exactly how the user says which
+     * copy is the real one.
+     */
+    fun entityIdsWithLabel(labelName: String): Set<String> {
+        val wanted = _labels.value.filterValues { it.equals(labelName, ignoreCase = true) }.keys
+        if (wanted.isEmpty()) return emptySet()
+        val devices = _deviceLabels.value
+        return _registry.value.values
+            .filter { entry ->
+                if (entry.hiddenBy != null || entry.disabledBy != null) return@filter false
+                val fromDevice = entry.deviceId?.let { devices[it] }.orEmpty()
+                (entry.labels + fromDevice).any { it in wanted }
+            }
+            .map { it.entityId }
+            .toSet()
+    }
 
     /* ---------------- REST ---------------- */
 

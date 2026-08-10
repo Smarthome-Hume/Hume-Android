@@ -25,4 +25,15 @@ data class RegistryEntry(
     val areaId: String?,
     val deviceId: String?,
     val platform: String?,
+    /**
+     * Label IDs assigned to this entity in Home Assistant, available since HA
+     * 2024.4. Resolve them to names through HomeAssistantRepository.labels.
+     */
+    val labels: Set<String> = emptySet(),
+    /** Non-null when the entity is hidden in Home Assistant. */
+    val hiddenBy: String? = null,
+    /** Non-null when the entity is disabled in Home Assistant. */
+    val disabledBy: String? = null,
+    /** "config" or "diagnostic" for entities Home Assistant keeps out of the main UI. */
+    val entityCategory: String? = null,
 )
