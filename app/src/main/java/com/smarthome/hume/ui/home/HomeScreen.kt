@@ -61,6 +61,18 @@ internal fun alarmEntityId(entities: Map<String, HomeEntity>): String =
 
 internal const val ALARM_ENTITY = HumeConfig.ALARM_FALLBACK
 
+/*
+ * The thiet bi nho ben phai: TRUOC DAY chi doc sensor.dashboard_active_card ben
+ * Home Assistant roi tra khoa do vao HumeConfig.deviceCards. Neu template ben HA
+ * tra ve chuoi khong khop khoa nao (hoac dung im) thi the roi thang ve mac dinh
+ * "Table", nen may dang an nhieu dien nhat - vi du dieu hoa lon - khong bao gio
+ * hien ra. Nay app tu chon thiet bi co cong suat lon nhat trong 10 the.
+ */
+private fun busiestDevice(entities: Map<String, HomeEntity>): HumeConfig.DeviceCard? =
+    HumeConfig.deviceCards.values
+        .maxByOrNull { entities[it.entityId]?.numericState ?: -1.0 }
+        ?.takeIf { (entities[it.entityId]?.numericState ?: 0.0) > 0.0 }
+
 @Composable
 fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {}) {
     val context = LocalContext.current
@@ -120,8 +132,11 @@ fun HomeScreen(ha: HomeAssistantRepository, onNavMinimize: (Boolean) -> Unit = {
     val leftTiles = HumeConfig.sensorTiles.map { tile ->
         SmallTile(icon = HumeIcons.sensor(tile.icon), value = sensorValue(entities[tile.entityId], tile.unit), label = tile.label, entityId = tile.entityId)
     }
+    // Uu tien may dang an dien nhat; het cach moi nghe theo HA roi ve "Table".
     val deviceKey = entities[HumeConfig.ACTIVE_CARD]?.state
-    val device = HumeConfig.deviceCards[deviceKey] ?: HumeConfig.deviceCards.getValue("Table")
+    val device = busiestDevice(entities)
+        ?: HumeConfig.deviceCards[deviceKey]
+        ?: HumeConfig.deviceCards.getValue("Table")
     val doorKey = entities[HumeConfig.ACTIVE_CARD_2]?.state
     val door = HumeConfig.doorCards[doorKey] ?: HumeConfig.doorCards.getValue("Master")
     val rightTiles = listOf(
