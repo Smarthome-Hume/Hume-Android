@@ -442,7 +442,12 @@ class HomeAssistantRepository {
         when (obj["type"]?.jsonPrimitive?.contentOrNull) {
             "auth_required" -> {
                 Log.i(TAG, "WebSocket auth_required, sending token")
-                ws?.send("""{"type":"auth","access_token":"$token"}""")
+                // Build JSON bang builder de token co ky tu dac biet (") cung khong vo JSON.
+                val authMsg = buildJsonObject {
+                    put("type", "auth")
+                    put("access_token", token)
+                }.toString()
+                ws?.send(authMsg)
             }
             "auth_ok" -> {
                 Log.i(TAG, "WebSocket auth_ok, subscribing to state_changed")
