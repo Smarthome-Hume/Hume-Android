@@ -12,7 +12,7 @@ Native Android port of the Hume SwiftUI smart-home app for Samsung Galaxy S26 Ul
 
 ## Current status
 This is the first Android skeleton port:
-- 4 native tabs: Home, Energy, Security, Profile
+- 5 native tabs: Home, Energy, Security, Profile, AI
 - Home Assistant URL/token login
 - REST `/api/states`
 - WebSocket `/api/websocket` auth + `state_changed` subscription

@@ -27,6 +27,6 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         Spacer(Modifier.height(16.dp))
         ElevatedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text("Home Assistant", style = MaterialTheme.typography.titleLarge); Text(settings.haUrl); Spacer(Modifier.height(8.dp)); OutlinedButton(onClick = { ha.disconnect(); CoroutineScope(Dispatchers.IO).launch { settingsStore.logout() } }) { Text("Đăng xuất") } } }
         Spacer(Modifier.height(12.dp))
-        Text("Quản lý thiết bị sẽ port ở các phase tiếp theo.")
+        Text("Quản lý thiết bị, scene, AI settings sẽ port ở các phase tiếp theo.")
     }
 }
