@@ -827,12 +827,6 @@ class HomeAssistantRepository {
     fun setCoverPosition(entityId: String, position: Int) =
         callService("cover", "set_cover_position", serviceData(entityId) { put("position", position) }, entityId)
 
-    fun activateScene(entityId: String) =
-        callService("scene", "turn_on", serviceData(entityId))
-
-    fun runScript(entityId: String) =
-        callService("script", "turn_on", serviceData(entityId))
-
     fun pressButton(entityId: String) =
         callService("button", "press", serviceData(entityId))
 

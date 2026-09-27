@@ -85,7 +85,6 @@ object HumeIcons {
         HumeTab.Energy -> Ph.LightningFill
         HumeTab.Security -> Ph.ShieldFill
         HumeTab.Profile -> Ph.UserFill
-        HumeTab.AI -> Ph.SparkleFill
     }
 
     /** Tab khong chon: net mong. */
@@ -94,7 +93,6 @@ object HumeIcons {
         HumeTab.Energy -> Ph.Lightning
         HumeTab.Security -> Ph.Shield
         HumeTab.Profile -> Ph.User
-        HumeTab.AI -> Ph.Sparkle
     }
 
     fun tab(tab: HumeTab, selected: Boolean): ImageVector =

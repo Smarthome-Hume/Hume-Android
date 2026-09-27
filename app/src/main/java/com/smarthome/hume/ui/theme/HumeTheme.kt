@@ -98,8 +98,6 @@ object HumeColors {
     val ChipPink: Color get() = Orange.copy(alpha = if (isDark) 0.24f else 0.12f)
     val ChipYellow: Color get() = Yellow.copy(alpha = if (isDark) 0.24f else 0.18f)
     val ChipYellowIcon: Color get() = Yellow
-    val SceneGreenBg: Color get() = AlarmGreen.copy(alpha = if (isDark) 0.22f else 0.14f)
-    val SceneGreen: Color get() = AlarmGreen
     val SalmonSoft: Color get() = Salmon.copy(alpha = if (isDark) 0.28f else 0.55f)
     val Amber: Color get() = AlarmOrange
     val AmberBar: Color get() = Color(0xFFFFB74D)

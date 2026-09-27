@@ -102,7 +102,6 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
                 HumeTab.Energy -> EnergyScreen(ha)
                 HumeTab.Security -> SecurityScreen(ha)
                 HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
-                HumeTab.AI -> AiPlaceholder()
                 else -> HomeScreen(ha, onNavMinimize = { navHidden = it })
             }
         }
@@ -114,18 +113,6 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
         ) {
             HumeNavBar(selected = tab, onSelect = { tab = it })
         }
-    }
-}
-
-@Composable
-private fun AiPlaceholder() {
-    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-        Text(
-            "Tr\u1ee3 l\u00fd Hume AI \u0111ang \u0111\u01b0\u1ee3c ph\u00e1t tri\u1ec3n",
-            fontSize = 15.sp,
-            color = HumeColors.TextSecondary,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
