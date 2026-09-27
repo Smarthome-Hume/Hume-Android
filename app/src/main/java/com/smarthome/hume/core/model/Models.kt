@@ -27,7 +27,7 @@ data class HomeEntity(
 
 fun HAEntity.toHomeEntity() = HomeEntity(entityId, state, attributes, lastChanged, lastUpdated)
 
-enum class HumeTab(val label: String) { Home("Nhà"), Energy("Năng lượng"), Security("An ninh"), Profile("Hồ sơ"), AI("AI") }
+enum class HumeTab(val label: String) { Home("Nhà"), Energy("Năng lượng"), Security("An ninh"), Profile("Hồ sơ") }
 
 data class RoomConfig(val name: String, val rawKey: String, val lightEntity: String, val tempEntity: String, val humidityEntity: String, val contactEntity: String?, val icon: String, val hasClimate: Boolean, val climateEntity: String? = null)
 

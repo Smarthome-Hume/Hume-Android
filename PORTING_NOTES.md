@@ -34,5 +34,4 @@ Samsung-specific additions are optional: One UI design inspiration, Samsung Remo
 3. Port Home UI cards and room bottom sheets.
 4. Port Energy charts and flow cards.
 5. Port Frigate camera snapshots/clips with Coil + Media3.
-6. Port AI providers and tool-calling.
-7. Add Android widgets and rich notifications.
+6. Add Android widgets and rich notifications.

@@ -17,7 +17,6 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HumeTab
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
-import com.smarthome.hume.ui.ai.AgentChatScreen
 import com.smarthome.hume.ui.energy.EnergyScreen
 import com.smarthome.hume.ui.home.HomeScreen
 import com.smarthome.hume.ui.login.LoginScreen
@@ -37,9 +36,8 @@ fun HumeRootScreen(settingsStore: SettingsStore, ha: HomeAssistantRepository, se
                 HumeTab.Energy -> EnergyScreen(ha)
                 HumeTab.Security -> SecurityScreen(ha)
                 HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
-                HumeTab.AI -> AgentChatScreen()
             }
         }
     }
 }
-private fun iconFor(tab: HumeTab) = when (tab) { HumeTab.Home -> "⌂"; HumeTab.Energy -> "⚡"; HumeTab.Security -> "🛡"; HumeTab.Profile -> "👤"; HumeTab.AI -> "✦" }
+private fun iconFor(tab: HumeTab) = when (tab) { HumeTab.Home -> "⌂"; HumeTab.Energy -> "⚡"; HumeTab.Security -> "🛡"; HumeTab.Profile -> "👤" }
