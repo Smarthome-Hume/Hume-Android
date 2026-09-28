@@ -21,7 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DonutLarge
 import androidx.compose.material.icons.outlined.DoorFront
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.RemoteGen
+import androidx.compose.material.icons.outlined.SettingsRemote
 import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -737,7 +737,7 @@ private fun DeviceRow(
 private fun lowBattIcon(name: String): ImageVector {
     val n = name.lowercase()
     return when {
-        "remote" in n -> Icons.Outlined.RemoteGen
+        "remote" in n -> Icons.Outlined.SettingsRemote
         "khoá" in n || "khóa" in n || "khoa" in n -> Icons.Outlined.Lock
         "cảm biến" in n || "cam bien" in n || "pir" in n -> Icons.Outlined.Sensors
         "cửa" in n || "cua" in n -> Icons.Outlined.DoorFront

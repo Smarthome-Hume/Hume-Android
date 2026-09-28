@@ -40,6 +40,7 @@ import com.smarthome.hume.core.model.BatteryControlKind
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
