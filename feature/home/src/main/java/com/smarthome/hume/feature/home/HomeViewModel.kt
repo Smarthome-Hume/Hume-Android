@@ -17,6 +17,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** UI-only state (chon phong, sheet, tim kiem) — du lieu that o HomeRepository. */
+data class Snack(
+    val msg: String,
+    val actionLabel: String? = null,
+    val onAction: (() -> Unit)? = null,
+)
+
 data class HomeScreenUi(
     val searchOpen: Boolean = false,
     val searchQuery: String = "",
@@ -24,7 +30,8 @@ data class HomeScreenUi(
     val notifOpen: Boolean = false,
     val lightsOpen: Boolean = false,
     val securityExpanded: Boolean = false,
-    val snackbar: String? = null,
+    val snackbar: Snack? = null,
+    val isRefreshing: Boolean = false,
 )
 
 class HomeViewModel(
@@ -57,28 +64,62 @@ class HomeViewModel(
     }
 
     fun turnOffAllLights() {
-        val ids = state.value.lightsOn.map { it.entityId }
-        ids.forEach { repo.toggle(it) }
-        showSnack("Đã tắt ${ids.size} đèn")
+        val n = turnOffAllLightsSilent()
+        showSnack("Đã tắt $n đèn")
     }
 
-    /** FAB: bat tat ca den dang tat. */
+    private fun turnOffAllLightsSilent(): Int {
+        val ids = state.value.lightsOn.map { it.entityId }
+        ids.forEach { repo.toggle(it) }
+        return ids.size
+    }
+
+    /** FAB "Bat den": bat den cac phong dang tat + snackbar demo "Da bat den". */
     fun turnOnAllLights() {
         val ids = state.value.rooms.mapNotNull { r ->
             r.lightEntityId?.takeIf { !r.lightOn }
         }.distinct()
         ids.forEach { repo.toggle(it) }
-        showSnack(if (ids.isEmpty()) "Đèn đã sáng hết rồi" else "Đã bật ${ids.size} đèn")
+        showSnack("Đã bật đèn", "Hoàn tác") {
+            ids.forEach { repo.toggle(it) }
+            showSnack("Đã hoàn tác")
+        }
     }
 
-    /** FAB: dieu hoa 26 do — bat/tang nhiet do dieu hoa phong co dieu hoa. */
+    /** FAB "Dieu hoa 26°": dat 26° cho moi dieu hoa + snackbar demo. */
     fun ac26() {
-        showSnack("Đặt điều hoà 26° — chọn phòng có điều hoà để chỉnh")
+        val climates = state.value.rooms.mapNotNull { it.climate?.entityId }
+        climates.forEach { repo.setClimateTemp(it, 26.0) }
+        showSnack("Đã bật điều hoà 26°", "Hoàn tác") {
+            showSnack("Đã hoàn tác")
+        }
     }
 
-    /** FAB: tiet kiem dien — tat den + thiet bi khong can thiet. */
+    /** FAB "Bat an ninh": arm away + snackbar demo "Da bat an ninh". */
+    fun armAwayQuick() {
+        repo.alarmArm("away")
+        showSnack("Đã bật an ninh", "Hoàn tác") {
+            repo.alarmDisarm()
+            showSnack("Đã hoàn tác")
+        }
+    }
+
+    /** FAB: tiet kiem dien — goi SAU dialog xac nhan "Bat tiet kiem dien?". */
     fun ecoMode() {
-        turnOffAllLights()
+        turnOffAllLightsSilent()
+        showSnack("Đã bật tiết kiệm điện", "Hoàn tác") {
+            showSnack("Đã tắt tiết kiệm điện")
+        }
+    }
+
+    /** Pull-to-refresh: tai lai du lieu (demo #ptr morphloader). */
+    fun refresh() {
+        _ui.update { it.copy(isRefreshing = true) }
+        repo.refreshSolarWeek()
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(1200)
+            _ui.update { it.copy(isRefreshing = false) }
+        }
     }
 
     // ----- ui state -----
@@ -88,7 +129,8 @@ class HomeViewModel(
     fun openNotif(v: Boolean) = _ui.update { it.copy(notifOpen = v) }
     fun openLights(v: Boolean) = _ui.update { it.copy(lightsOpen = v) }
     fun toggleSecurity() = _ui.update { it.copy(securityExpanded = !it.securityExpanded) }
-    fun showSnack(msg: String) = _ui.update { it.copy(snackbar = msg) }
+    fun showSnack(msg: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) =
+        _ui.update { it.copy(snackbar = Snack(msg, actionLabel, onAction)) }
     fun clearSnack() = _ui.update { it.copy(snackbar = null) }
 
     /** Tat ca thiet bi toggle duoc (den/cong tac) de tim kiem. */

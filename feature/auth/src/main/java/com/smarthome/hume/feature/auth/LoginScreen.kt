@@ -52,7 +52,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 
 /**
  * Man hinh dang nhap M3E: nhap URL + Long-Lived Access Token cua Home Assistant.
@@ -63,170 +62,168 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(factory = LoginViewModel.factory()),
 ) {
-    HumeM3ETheme {
-        val state by viewModel.uiState.collectAsState()
-        val focus = LocalFocusManager.current
+    val state by viewModel.uiState.collectAsState()
+    val focus = LocalFocusManager.current
 
-        Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                Column(
+    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Logo
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .widthIn(max = 420.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                        .size(76.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                 ) {
-                    // Logo
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(76.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Home,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(38.dp),
-                        )
-                    }
-                    Spacer(Modifier.height(20.dp))
-                    Text(
-                        text = "Hume",
-                        style = MaterialTheme.typography.displayLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = "Ngôi nhà thông minh của bạn",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(28.dp))
-
-                    // Form card
-                    Card(
-                        shape = MaterialTheme.shapes.medium, // 28dp expressive
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column(Modifier.padding(20.dp)) {
-                            OutlinedTextField(
-                                value = state.serverUrl,
-                                onValueChange = viewModel::onUrlChange,
-                                label = { Text("Địa chỉ máy chủ") },
-                                placeholder = { Text("http://192.168.1.10:8123") },
-                                leadingIcon = { Icon(Icons.Outlined.Link, null) },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Uri,
-                                    imeAction = ImeAction.Next,
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onNext = { focus.moveFocus(FocusDirection.Down) },
-                                ),
-                                shape = MaterialTheme.shapes.small,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            OutlinedTextField(
-                                value = state.token,
-                                onValueChange = viewModel::onTokenChange,
-                                label = { Text("Long-Lived Access Token") },
-                                leadingIcon = { Icon(Icons.Outlined.Key, null) },
-                                trailingIcon = {
-                                    IconButton(onClick = viewModel::onToggleTokenVisibility) {
-                                        Icon(
-                                            if (state.tokenVisible) Icons.Outlined.VisibilityOff
-                                            else Icons.Outlined.Visibility,
-                                            contentDescription = if (state.tokenVisible) "Ẩn token" else "Hiện token",
-                                        )
-                                    }
-                                },
-                                singleLine = true,
-                                visualTransformation = if (state.tokenVisible) VisualTransformation.None
-                                else PasswordVisualTransformation(),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = {
-                                    focus.clearFocus()
-                                    viewModel.onLogin()
-                                }),
-                                shape = MaterialTheme.shapes.small,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text = "Tạo token trong Home Assistant: Hồ sơ → Bảo mật → " +
-                                    "Token truy cập dài hạn.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    // Loi
-                    AnimatedVisibility(
-                        visible = state.error != null,
-                        enter = expandVertically(),
-                        exit = shrinkVertically(),
-                    ) {
-                        Card(
-                            shape = MaterialTheme.shapes.small,
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(16.dp),
-                            ) {
-                                Icon(
-                                    Icons.Outlined.ErrorOutline,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = state.error.orEmpty(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-                    Button(
-                        onClick = viewModel::onLogin,
-                        enabled = state.canSubmit,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                    ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                strokeWidth = 3.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp),
-                            )
-                        } else {
-                            Text("Kết nối", style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = "Token chỉ lưu trên máy này, mã hóa bằng Keystore.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
+                    Icon(
+                        imageVector = Icons.Outlined.Home,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(38.dp),
                     )
                 }
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = "Hume",
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Ngôi nhà thông minh của bạn",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(28.dp))
+
+                // Form card
+                Card(
+                    shape = MaterialTheme.shapes.medium, // 28dp expressive
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(20.dp)) {
+                        OutlinedTextField(
+                            value = state.serverUrl,
+                            onValueChange = viewModel::onUrlChange,
+                            label = { Text("Địa chỉ máy chủ") },
+                            placeholder = { Text("http://192.168.1.10:8123") },
+                            leadingIcon = { Icon(Icons.Outlined.Link, null) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Uri,
+                                imeAction = ImeAction.Next,
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focus.moveFocus(FocusDirection.Down) },
+                            ),
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = state.token,
+                            onValueChange = viewModel::onTokenChange,
+                            label = { Text("Long-Lived Access Token") },
+                            leadingIcon = { Icon(Icons.Outlined.Key, null) },
+                            trailingIcon = {
+                                IconButton(onClick = viewModel::onToggleTokenVisibility) {
+                                    Icon(
+                                        if (state.tokenVisible) Icons.Outlined.VisibilityOff
+                                        else Icons.Outlined.Visibility,
+                                        contentDescription = if (state.tokenVisible) "Ẩn token" else "Hiện token",
+                                    )
+                                }
+                            },
+                            singleLine = true,
+                            visualTransformation = if (state.tokenVisible) VisualTransformation.None
+                            else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = {
+                                focus.clearFocus()
+                                viewModel.onLogin()
+                            }),
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = "Tạo token trong Home Assistant: Hồ sơ → Bảo mật → " +
+                                "Token truy cập dài hạn.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                // Loi
+                AnimatedVisibility(
+                    visible = state.error != null,
+                    enter = expandVertically(),
+                    exit = shrinkVertically(),
+                ) {
+                    Card(
+                        shape = MaterialTheme.shapes.small,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(16.dp),
+                        ) {
+                            Icon(
+                                Icons.Outlined.ErrorOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = state.error.orEmpty(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+                Button(
+                    onClick = viewModel::onLogin,
+                    enabled = state.canSubmit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            strokeWidth = 3.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    } else {
+                        Text("Kết nối", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Token chỉ lưu trên máy này, mã hóa bằng Keystore.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

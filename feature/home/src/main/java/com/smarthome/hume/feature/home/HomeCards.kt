@@ -1,54 +1,61 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Lightbulb
-import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.smarthome.hume.core.model.AlarmUi
-import com.smarthome.hume.core.model.BatteryUi
+import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.SolarDay
-import com.smarthome.hume.core.ui.components.BatteryLegend
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
-import com.smarthome.hume.core.ui.components.PillBarChart
-import com.smarthome.hume.core.ui.components.WavyBatteryBar
+import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.rememberHaptic
 import java.time.LocalTime
+import kotlinx.coroutines.delay
 
 fun greeting(): String = when (LocalTime.now().hour) {
     in 5..10 -> "Chào buổi sáng"
@@ -57,7 +64,11 @@ fun greeting(): String = when (LocalTime.now().hour) {
     else -> "Chào buổi tối"
 }
 
-/** Header: loi chao + chip tim kiem + chuong thong bao. */
+/**
+ * Header trang Nha theo demo rev12 (.hhome):
+ * avatar 55px + cham xanh presence (.pdot 16px) | "Hi, ..." 22px/700/-0.2
+ * truoc, loi chao 13px/500 sau | nut tron 46px, press morph scale(.88) spring.
+ */
 @Composable
 fun HomeHeader(
     state: HomeUiState,
@@ -65,163 +76,373 @@ fun HomeHeader(
     onNotif: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val cs = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 2.dp, start = 2.dp, end = 2.dp),
     ) {
-        // Avatar 55px nhu demo .hava
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(55.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-        ) {
-            androidx.compose.material3.Icon(
-                M3EIcons.Person, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(28.dp),
+        // Avatar 55px + presence dot
+        Box(Modifier.size(55.dp)) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(cs.surfaceContainerHighest),
+            ) {
+                Icon(
+                    M3EIcons.Person, null,
+                    tint = cs.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF22C55E))
+                    .border(3.dp, cs.surface, CircleShape),
             )
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
+            val name = state.userName.ifBlank { "Gia đình" }
+            Text(
+                text = "Hi, $name",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.2).sp,
+                color = cs.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 text = greeting(),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            val name = state.userName
-            Text(
-                text = if (name.isNotBlank()) name else if (state.connected) "Đã kết nối" else "Đang kết nối…",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = cs.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
-        // Chip tim kiem tron 46px
+        // Nut tim kiem tron 46px
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(46.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .clickable(onClick = onSearch),
+                .background(cs.surfaceContainerHighest)
+                .pressMorph(pressedScale = 0.88f, onClick = onSearch),
         ) {
-            androidx.compose.material3.Icon(
+            Icon(
                 Icons.Outlined.Search, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = cs.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
             )
         }
         Spacer(Modifier.width(10.dp))
-        // Chuong + badge (tam badge tren vien tron)
-        BadgedBox(
-            badge = {
-                if (state.notifications.isNotEmpty()) {
-                    Badge { Text("${state.notifications.size}") }
-                }
-            },
-            modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .clickable(onClick = onNotif),
-        ) {
+        // Chuong 46px + badge custom (error, 18px, 11px/700, top/right -2px)
+        Box(Modifier.size(46.dp)) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(cs.surfaceContainerHighest)
+                    .pressMorph(pressedScale = 0.88f, onClick = onNotif),
             ) {
                 Icon(
                     Icons.Outlined.Notifications, null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = cs.onSurface,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            if (state.notifications.isNotEmpty()) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
+                        .height(18.dp)
+                        .widthIn(min = 18.dp)
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(cs.error)
+                        .padding(horizontal = 5.dp),
+                ) {
+                    Text(
+                        "${state.notifications.size}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The goi y theo demo rev12 (.suggest/.sgbtn): padding 16px 18px,
+ * icon auto_awesome 30px co dinh, tieu de 14px/700, sub 12px/500,
+ * nut 13px/700 padding 12px 20px bo 20px, :active scale(.9) + bo 13px spring.
+ * Nhan nut: rung nhe + goi onTipAction + chuyen "Da xong" (disabled).
+ */
+@Composable
+fun SuggestCard(
+    state: HomeUiState,
+    onTipAction: (key: String) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    data class Tip(val key: String, val title: String, val sub: String, val action: String)
+    val tips = buildList {
+        if (state.battery.soc in 1..29) add(Tip(
+            "battery", "Pin còn ${state.battery.soc}%",
+            "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
+        val doors = state.notifications.filter { it.title.contains("Cửa") }
+        if (doors.isNotEmpty()) add(Tip(
+            "door", doors.first().title, doors.first().body, "Đóng"))
+        if (state.solarNowKw > 2.0) add(Tip(
+            "ac", "Trời đang nắng to",
+            "Bật điều hoà phòng khách 26°?", "Bật"))
+    }
+    if (tips.isEmpty()) return
+    val tip = tips.first()
+    var done by remember(tip.key) { mutableStateOf(false) }
+    val haptic = rememberHaptic()
+    val cs = MaterialTheme.colorScheme
+    M3ECard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = cs.tertiaryContainer,
+        shape = RoundedCornerShape(28.dp),
+        contentPadding = 16.dp,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 2.dp),
+        ) {
+            Icon(
+                Icons.Outlined.AutoAwesome, null,
+                tint = cs.onTertiaryContainer,
+                modifier = Modifier.size(30.dp),
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    tip.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onTertiaryContainer,
+                )
+                Text(
+                    tip.sub,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .alpha(if (done) 0.6f else 1f)
+                    .pressMorphCard(
+                        pressedScale = 0.9f,
+                        corner = 20.dp,
+                        pressedCorner = 13.dp,
+                        onClick = if (done) null else {
+                            {
+                                haptic()
+                                onTipAction(tip.key)
+                                done = true
+                            }
+                        },
+                    )
+                    .background(cs.onTertiaryContainer)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            ) {
+                Text(
+                    if (done) "Đã xong" else tip.action,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.tertiaryContainer,
                 )
             }
         }
     }
 }
 
-/** The goi y theo ngu canh — dung demo rev12: tertiaryContainer + nut hanh dong. */
-@Composable
-fun SuggestCard(state: HomeUiState, modifier: Modifier = Modifier) {
-    data class Tip(val icon: ImageVector, val title: String, val sub: String, val action: String)
-    val tips = buildList {
-        if (state.battery.soc in 1..29) add(Tip(
-            M3EIcons.Battery, "Pin còn ${state.battery.soc}%",
-            "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
-        val doors = state.notifications.filter { it.title.contains("Cửa") }
-        if (doors.isNotEmpty()) add(Tip(
-            M3EIcons.Door, doors.first().title, doors.first().body, "Đóng"))
-        if (state.solarNowKw > 2.0) add(Tip(
-            M3EIcons.Solar, "Trời đang nắng to",
-            "Bật điều hoà phòng khách 26°?", "Bật"))
-    }
-    if (tips.isEmpty()) return
-    val tip = tips.first()
-    val cs = MaterialTheme.colorScheme
-    M3ECard(
-        modifier = modifier.fillMaxWidth(),
-        containerColor = cs.tertiaryContainer,
-        shape = RoundedCornerShape(28.dp),
-        contentPadding = 18.dp,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(tip.icon, null, tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(30.dp))
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(tip.title, style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold, color = cs.onTertiaryContainer)
-                Text(tip.sub, style = MaterialTheme.typography.bodyMedium,
-                    color = cs.onTertiaryContainer.copy(alpha = 0.75f))
-            }
-            Spacer(Modifier.width(12.dp))
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(cs.onTertiaryContainer)
-                    .clickable { /* TODO: hanh dong goi y */ }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-            ) {
-                Text(tip.action, style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold, color = cs.tertiaryContainer)
-            }
-        }
-    }
-}
-
-/** The dien mat troi: bieu do pill 7 ngay. */
+/**
+ * The dien mat troi tuan (.solcard): bo 32px, padding 20px;
+ * header KHONG icon: title 14px/700 + sub "San luong hom nay · truc tiep" 12px/500,
+ * gia tri 26px/800 + "kWh" 13px/600;
+ * bieu do scale CO DINH maxV=7 (khong scale theo data), tooltip khi cham,
+ * tick 8s tang cot hom nay (+0.06, tran 6.8).
+ */
 @Composable
 fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
+    val cs = MaterialTheme.colorScheme
     val week: List<SolarDay> = state.solarWeek
-    M3ECard(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.Icon(
-                M3EIcons.Solar, null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text("Điện mặt trời", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.weight(1f))
-            state.solarTodayKwh?.let {
-                Text("%.1f kWh".format(it), style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface)
+    var tickGrow by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(8000)
+            tickGrow += 0.06f
+        }
+    }
+    val vals = week.map { it.kwh }
+    val todayBase = state.solarTodayKwh?.toFloat() ?: vals.lastOrNull() ?: 0f
+    val todayShown = minOf(6.8f, todayBase + tickGrow)
+
+    M3ECard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        contentPadding = 20.dp,
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Điện mặt trời",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onSurface,
+                )
+                Text(
+                    "Sản lượng hôm nay · trực tiếp",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "%.1f".format(todayShown),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.3).sp,
+                    color = cs.onSurface,
+                )
+                Text(
+                    "kWh",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 3.dp),
+                )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        if (week.isNotEmpty()) {
-            PillBarChart(
-                values = week.map { it.kwh },
+        Spacer(Modifier.height(6.dp))
+        if (vals.isNotEmpty()) {
+            SolarBars(
+                vals = vals,
                 labels = week.map { it.label },
-                valueLabel = { if (it >= 10) "${it.toInt()}" else "" },
+                tickGrow = tickGrow,
             )
         } else {
-            Text("Đang tải dữ liệu…", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Đang tải dữ liệu…",
+                fontSize = 12.sp,
+                color = cs.onSurfaceVariant,
+            )
         }
     }
 }
 
-/** The nho: cong suat dang phat — dung demo rev12 (.solar): tertiaryContainer. */
+/**
+ * Bieu do cot mo phong SVG demo: viewBox 320x150, PT=14, PB=10, bw=30,
+ * maxV=7 CO DINH. Cot hom nay = primary, cac ngay khac = primaryContainer.
+ * Cham cot hien tooltip "T2: 4.2 kWh" (surfaceContainerHigh, bo 12px).
+ */
+@Composable
+private fun SolarBars(
+    vals: List<Float>,
+    labels: List<String>,
+    tickGrow: Float,
+) {
+    val cs = MaterialTheme.colorScheme
+    var selected by remember { mutableStateOf<Int?>(null) }
+    val shown = vals.mapIndexed { i, v ->
+        if (i == vals.lastIndex) minOf(6.8f, v + tickGrow) else v
+    }
+    val maxV = 7f
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp),
+    ) {
+        val w = maxWidth
+        // X(i) = 20 + i*(280/6); Y(v) = 14 + 126*(1 - v/7)  (don vi dp)
+        fun x(i: Int): androidx.compose.ui.unit.Dp = 20.dp + i * (280.dp / 6)
+        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxV).coerceIn(0f, 1f))
+        shown.forEachIndexed { i, v ->
+            val today = i == shown.lastIndex
+            val top = y(v)
+            val h = (140.dp - top).coerceAtLeast(4.dp)
+            Box(
+                modifier = Modifier
+                    .offset(x = x(i) - 15.dp, y = top)
+                    .width(30.dp)
+                    .height(h)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (today) cs.primary else cs.primaryContainer)
+                    .pointerInput(i) {
+                        detectTapGestures(onTap = {
+                            selected = if (selected == i) null else i
+                        })
+                    },
+            )
+            // Tooltip phia tren cot duoc cham
+            if (selected == i) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = x(i) - 60.dp, y = (top - 40.dp).coerceAtLeast(0.dp))
+                        .width(120.dp)
+                        .heightIn(min = 24.dp)
+                        .shadow(6.dp, RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(cs.surfaceContainerHigh)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} kWh",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(2.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        labels.forEachIndexed { i, l ->
+            val today = i == labels.lastIndex
+            Text(
+                l,
+                fontSize = 10.5.sp,
+                fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
+                color = if (today) cs.primary else cs.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * The nho cong suat dang phat (.solar): tertiaryContainer, bo 32px,
+ * padding 16px 18px; icon nen trang 35% (.sicon 48px, icon 26px);
+ * sub 12px/500; sparkline SVG 90x34 ben phai.
+ */
 @Composable
 fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
@@ -229,27 +450,69 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth(),
         containerColor = cs.tertiaryContainer,
         shape = RoundedCornerShape(32.dp),
-        contentPadding = 18.dp,
+        contentPadding = 0.dp,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+        ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(cs.onTertiaryContainer.copy(alpha = 0.25f)),
+                    .background(Color.White.copy(alpha = 0.35f)),
             ) {
-                Icon(M3EIcons.Solar, null, tint = cs.onTertiaryContainer,
-                    modifier = Modifier.size(26.dp))
+                Icon(
+                    M3EIcons.Solar, null,
+                    tint = cs.onTertiaryContainer,
+                    modifier = Modifier.size(26.dp),
+                )
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text("Điện mặt trời", style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold, color = cs.onTertiaryContainer)
-                Text("Đang phát · ${"%.1f".format(state.solarNowKw)} kW",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = cs.onTertiaryContainer.copy(alpha = 0.75f))
+                Text(
+                    "Điện mặt trời",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onTertiaryContainer,
+                )
+                Text(
+                    "Đang phát · ${"%.1f".format(state.solarNowKw)} kW",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
+            Sparkline(
+                color = cs.onTertiaryContainer,
+                modifier = Modifier.size(90.dp, 34.dp),
+            )
         }
+    }
+}
+
+/** Sparkline mo phong path SVG demo (viewBox 90x34). */
+@Composable
+private fun Sparkline(color: Color, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val sx = size.width / 90f
+        val sy = size.height / 34f
+        fun X(v: Float) = v * sx
+        fun Y(v: Float) = v * sy
+        val path = Path().apply {
+            moveTo(X(2f), Y(28f))
+            cubicTo(X(15f), Y(26f), X(20f), Y(12f), X(32f), Y(14f))
+            // S 50 26, 62 18: phan xa (20,12) qua (32,14) -> (44,16)
+            cubicTo(X(44f), Y(16f), X(50f), Y(26f), X(62f), Y(18f))
+            // S 80 6, 88 8: phan xa (50,26) qua (62,18) -> (74,10)
+            cubicTo(X(74f), Y(10f), X(80f), Y(6f), X(88f), Y(8f))
+        }
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+        )
     }
 }

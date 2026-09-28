@@ -1,39 +1,81 @@
 package com.smarthome.hume.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.rememberHaptic
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Trang Nha M3E theo demo hume-m3e-v4-dashboard.html rev12 (#page-home):
  * header → pills (an ninh + den) → "Goi y cho ban" → solcard →
  * solar → batcard → "Phong" → rooms grid + FAB speed-dial.
+ *
+ * .page{padding:4px 18px 170px}; FAB tuyet doi right 20px bottom 108px;
+ * snackbar tonal bottom 104px; pull-to-refresh morphloader (#ptr).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -41,152 +83,402 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
+    val cs = MaterialTheme.colorScheme
     val snack = remember { SnackbarHostState() }
+    var fabOpen by rememberSaveable { mutableStateOf(false) }
+    var ecoDialog by remember { mutableStateOf(false) }
 
-    ui.snackbar?.let { msg ->
-        LaunchedEffect(msg) {
-            snack.showSnackbar(msg)
+    ui.snackbar?.let { s ->
+        LaunchedEffect(s) {
+            val res = snack.showSnackbar(s.msg, actionLabel = s.actionLabel)
+            if (res == SnackbarResult.ActionPerformed) s.onAction?.invoke()
             viewModel.clearSnack()
         }
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snack) },
-        floatingActionButton = {
-            HomeFabMenu(
-                onTurnOnLights = { viewModel.turnOnAllLights() },
-                onAc26 = { viewModel.ac26() },
-                onArmAway = { viewModel.armAlarm("away", "Vắng nhà") },
-                onEco = { viewModel.ecoMode() },
-                modifier = Modifier.padding(bottom = 88.dp, end = 4.dp),
-            )
+        snackbarHost = {
+            SnackbarHost(
+                snack,
+                modifier = Modifier.padding(bottom = 18.dp),
+            ) { data -> M3ESnackbar(data) }
         },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = cs.surface,
         modifier = modifier.fillMaxSize(),
     ) { _ ->
-        Box(Modifier.fillMaxSize()) {
-            androidx.compose.foundation.lazy.LazyColumn(
-                contentPadding = PaddingValues(
-                    start = 16.dp, end = 16.dp, top = 16.dp, bottom = 120.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                item {
-                    RiseIn(0) {
-                        HomeHeader(
-                            state = state,
-                            onSearch = { viewModel.openSearch(true) },
-                            onNotif = { viewModel.openNotif(true) },
-                        )
+        val pullState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = ui.isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            state = pullState,
+            indicator = {
+                MorphLoaderIndicator(
+                    isRefreshing = ui.isRefreshing,
+                    state = pullState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            },
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        start = 18.dp, end = 18.dp, top = 4.dp, bottom = 170.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    item {
+                        RiseIn(20) {
+                            HomeHeader(
+                                state = state,
+                                onSearch = { viewModel.openSearch(true) },
+                                onNotif = { viewModel.openNotif(true) },
+                            )
+                        }
                     }
-                }
-                item {
-                    RiseIn(1) {
-                        PillsRow(
-                            alarm = state.alarm,
-                            lightsOnCount = state.lightsOn.size,
-                            onArm = { mode, label -> viewModel.armAlarm(mode, label) },
-                            onDisarm = { viewModel.disarmAlarm() },
-                            onLights = { viewModel.openLights(true) },
-                        )
+                    item {
+                        RiseIn(140) {
+                            PillsRow(
+                                alarm = state.alarm,
+                                lightsOnCount = state.lightsOn.size,
+                                onArm = { mode, label -> viewModel.armAlarm(mode, label) },
+                                onDisarm = { viewModel.disarmAlarm() },
+                                onLights = { viewModel.openLights(true) },
+                            )
+                        }
                     }
-                }
-                item {
-                    RiseIn(2) {
-                        SectionTitle("Gợi ý cho bạn")
+                    item { RiseIn(155) { SectionTitle("Gợi ý cho bạn") } }
+                    item {
+                        RiseIn(165) {
+                            SuggestCard(state, onTipAction = { key ->
+                                if (key == "ac") viewModel.ac26()
+                            })
+                        }
                     }
-                }
-                item { RiseIn(3) { SuggestCard(state) } }
-                item { RiseIn(4) { SolarWeekCard(state) } }
-                item { RiseIn(5) { SolarLiveCard(state) } }
-                item { RiseIn(6) { BatteryCard(state.battery) } }
-                item {
-                    RiseIn(7) {
-                        SectionTitle("Phòng")
-                    }
-                }
-                item {
-                    RiseIn(8) {
+                    item { RiseIn(200) { SolarWeekCard(state) } }
+                    item { RiseIn(220) { SolarLiveCard(state) } }
+                    item { RiseIn(240) { BatteryCard(state.battery) } }
+                    item { RiseIn(340) { SectionTitle("Phòng") } }
+                    item {
                         RoomGrid(
                             rooms = state.rooms,
+                            notifications = state.notifications,
                             onRoom = { viewModel.selectRoom(it) },
                             onToggleLight = { viewModel.toggle(it) },
                         )
                     }
+                    item { Spacer(Modifier.height(8.dp)) }
                 }
-                item { Spacer(Modifier.height(8.dp)) }
-            }
 
-            // Sheet phong
-            ui.selectedRoom?.let { room ->
-                val live = state.rooms.firstOrNull { it.key == room.key } ?: room
-                RoomSheet(
-                    room = live,
-                    onDismiss = { viewModel.selectRoom(null) },
-                    onToggle = { viewModel.toggle(it) },
-                    onClimateTemp = { id, t -> viewModel.setClimateTemp(id, t) },
-                    onHvacMode = { id, m -> viewModel.setHvacMode(id, m) },
-                    onToggleClimate = { viewModel.toggleClimate(it) },
+                // Scrim khi mo FAB (.fabscrim)
+                AnimatedVisibility(
+                    visible = fabOpen,
+                    enter = fadeIn(tween(300)),
+                    exit = fadeOut(tween(300)),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(cs.scrim)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { fabOpen = false },
+                    )
+                }
+
+                // FAB tuyet doi: right 20px bottom 108px (demo .fabwrap)
+                HomeFabMenu(
+                    open = fabOpen,
+                    onOpenChange = { fabOpen = it },
+                    onTurnOnLights = { viewModel.turnOnAllLights() },
+                    onAc26 = { viewModel.ac26() },
+                    onArmAway = { viewModel.armAwayQuick() },
+                    onEco = { ecoDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 20.dp, bottom = 108.dp),
                 )
-            }
-            if (ui.notifOpen) {
-                NotificationSheet(
-                    notifications = state.notifications,
-                    onDismiss = { viewModel.openNotif(false) },
-                )
-            }
-            if (ui.lightsOpen) {
-                LightsSheet(
-                    lights = state.lightsOn,
-                    onDismiss = { viewModel.openLights(false) },
-                    onToggle = { viewModel.toggle(it) },
-                )
-            }
-            if (ui.searchOpen) {
-                val q = ui.searchQuery.trim().lowercase()
-                val results = if (q.isEmpty()) emptyList()
-                else viewModel.searchableDevices().filter {
-                    it.label.lowercase().contains(q) || it.entityId.lowercase().contains(q)
-                }.take(30)
-                DeviceSearchView(
-                    query = ui.searchQuery,
-                    onQuery = { viewModel.onSearchQuery(it) },
-                    results = results,
-                    onToggle = { viewModel.toggle(it) },
-                    onBack = { viewModel.openSearch(false) },
-                )
+
+                // Sheet phong
+                ui.selectedRoom?.let { room ->
+                    val live = state.rooms.firstOrNull { it.key == room.key } ?: room
+                    RoomSheet(
+                        room = live,
+                        notifications = state.notifications,
+                        onDismiss = { viewModel.selectRoom(null) },
+                        onToggle = { viewModel.toggle(it) },
+                        onClimateTemp = { id, t -> viewModel.setClimateTemp(id, t) },
+                        onHvacMode = { id, m -> viewModel.setHvacMode(id, m) },
+                        onToggleClimate = { viewModel.toggleClimate(it) },
+                    )
+                }
+                if (ui.notifOpen) {
+                    NotificationSheet(
+                        notifications = state.notifications,
+                        onDismiss = { viewModel.openNotif(false) },
+                    )
+                }
+                if (ui.lightsOpen) {
+                    LightsSheet(
+                        lights = state.lightsOn,
+                        onDismiss = { viewModel.openLights(false) },
+                        onToggle = { viewModel.toggle(it) },
+                    )
+                }
+                if (ui.searchOpen) {
+                    // Demo: query rong hien TOAN BO thiet bi
+                    val q = ui.searchQuery.trim().lowercase()
+                    val results = viewModel.searchableDevices().filter {
+                        q.isEmpty() ||
+                            it.label.lowercase().contains(q) ||
+                            it.entityId.lowercase().contains(q)
+                    }.take(50)
+                    DeviceSearchView(
+                        query = ui.searchQuery,
+                        onQuery = { viewModel.onSearchQuery(it) },
+                        results = results,
+                        onToggle = { viewModel.toggle(it) },
+                        onBack = { viewModel.openSearch(false) },
+                    )
+                }
+                // Dialog xac nhan tiet kiem dien
+                if (ecoDialog) {
+                    EcoDialog(
+                        onDismiss = { ecoDialog = false },
+                        onConfirm = {
+                            ecoDialog = false
+                            viewModel.ecoMode()
+                        },
+                    )
+                }
             }
         }
     }
 }
 
-/** h3 section title: 16px/700 nhu demo. */
+/** h3 section title theo demo (.sec h3): 16px/700/-0.1px, margin 20px 4px 10px. */
 @Composable
 private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.1).sp,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(top = 4.dp, bottom = 2.dp),
+        modifier = modifier.padding(top = 20.dp, bottom = 10.dp, start = 4.dp, end = 4.dp),
     )
 }
 
 /**
- * Hieu ung vao .rise cua demo: opacity 0→1 + translateY 22dp→0, 700ms,
- * stagger theo index.
+ * Hieu ung vao .rise cua demo: dung Modifier.riseIn (giua layout on dinh,
+ * chi animate alpha + translationY), stagger theo delayMs rieng
+ * (.02/.14/.155/.165/.2/.22/.24/.34s).
  */
 @Composable
-private fun RiseIn(index: Int, content: @Composable () -> Unit) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
-    val offsetPx = with(androidx.compose.ui.platform.LocalDensity.current) { 22.dp.roundToPx() }
-    androidx.compose.animation.AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(tween(700, delayMillis = index * 60)) +
-                slideInVertically(tween(700, delayMillis = index * 60)) { offsetPx },
-    ) {
+private fun RiseIn(delayMs: Int, content: @Composable () -> Unit) {
+    Box(Modifier.riseIn(delayMs)) {
         content()
+    }
+}
+
+/**
+ * Pull-to-refresh indicator mo phong #ptr .morphloader cua demo:
+ * blob 34px morph lien tuc, hien theo luc keo / khi dang refresh.
+ */
+@Composable
+private fun BoxScope.MorphLoaderIndicator(
+    isRefreshing: Boolean,
+    state: PullToRefreshState,
+    modifier: Modifier = Modifier,
+) {
+    val t = rememberInfiniteTransition(label = "morph")
+    val f by t.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "morphF",
+    )
+    val pull = state.distanceFraction
+    val alpha = if (isRefreshing) 1f else (pull * 3f).coerceIn(0f, 1f)
+    if (alpha <= 0f && !isRefreshing) return
+    val scale = if (isRefreshing) 1f else pull.coerceIn(0.2f, 1f)
+    Box(
+        modifier = modifier
+            .padding(top = 16.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
+            .size(34.dp)
+            .clip(RoundedCornerShape(percent = (32 + (28 * f)).toInt()))
+            .background(MaterialTheme.colorScheme.primary),
+    )
+}
+
+/**
+ * Snackbar tonal theo demo (.snack): surfaceContainerHigh + chu onSurface +
+ * action primary, bo 20dp. Vi tri bottom 104px (Scaffold slot + padding 18dp).
+ */
+@Composable
+private fun M3ESnackbar(data: SnackbarData) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = cs.surfaceContainerHigh,
+        shadowElevation = 6.dp,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+        ) {
+            Text(
+                data.visuals.message,
+                fontSize = 14.sp,
+                color = cs.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            data.visuals.actionLabel?.let { label ->
+                Text(
+                    label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.primary,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { data.performAction() }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Dialog "Bat tiet kiem dien?" theo demo v4 (.dialog/.dscrim):
+ * surfaceContainerHigh, bo 28px, padding 24px, icon bolt 24px secondary;
+ * vao: fade + scale(.92) spring; dscrim dong khi bam ngoai.
+ */
+@Composable
+private fun EcoDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    val scope = rememberCoroutineScope()
+    var vis by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { vis = true }
+    fun close(action: () -> Unit) {
+        vis = false
+        scope.launch {
+            delay(280)
+            action()
+        }
+    }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        AnimatedVisibility(
+            visible = vis,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(280)),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(cs.scrim)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { close(onDismiss) },
+            )
+        }
+        AnimatedVisibility(
+            visible = vis,
+            enter = fadeIn(tween(250)) +
+                scaleIn(
+                    animationSpec = tween(400, easing = M3EMotion.spring),
+                    initialScale = 0.92f,
+                ),
+            exit = fadeOut(tween(200)) +
+                scaleOut(
+                    animationSpec = tween(250, easing = M3EMotion.emphasizedAcc),
+                    targetScale = 0.92f,
+                ),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = cs.surfaceContainerHigh,
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .padding(horizontal = 32.dp)
+                    .offset(y = (-60).dp),
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Icon(
+                        Icons.Outlined.Bolt, null,
+                        tint = cs.secondary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Bật tiết kiệm điện?",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = cs.onSurface,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Sẽ tắt các thiết bị không cần thiết và giảm độ sáng đèn còn 50%.",
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = cs.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Spacer(Modifier.weight(1f))
+                        DialogButton("Hủy") { close(onDismiss) }
+                        DialogButton("Bật") { close(onConfirm) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** .dbtn: text button primary 14px/700, padding 10px 14px, bo 99px. */
+@Composable
+private fun DialogButton(label: String, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val haptic = rememberHaptic()
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(if (pressed) cs.primaryContainer else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+            ) {
+                haptic()
+                onClick()
+            }
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Text(
+            label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = cs.primary,
+        )
     }
 }

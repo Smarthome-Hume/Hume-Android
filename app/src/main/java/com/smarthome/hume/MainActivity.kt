@@ -6,15 +6,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.data.HumeGraph
+import com.smarthome.hume.core.datastore.ThemeSettings
 import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.model.AuthSession
 import com.smarthome.hume.core.storage.HumeSettings
+import com.smarthome.hume.core.ui.theme.HumeM3ETheme
+import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.auth.LoginScreen
 import com.smarthome.hume.ui.root.M3ERootScreen
 
@@ -66,7 +70,15 @@ class MainActivity : ComponentActivity() {
                     settings = settings,
                 )
             } else {
-                LoginScreen()
+                // Theme mot lan o root (thay cho wrapper long trong LoginScreen).
+                val themeSettings by graph.themeStore.settings.collectAsState(
+                    initial = ThemeSettings(),
+                )
+                val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }
+                    .getOrDefault(M3ESeed.Cam)
+                HumeM3ETheme(seed = seed, darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()) {
+                    LoginScreen()
+                }
             }
         }
     }

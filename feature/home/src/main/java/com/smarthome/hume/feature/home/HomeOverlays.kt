@@ -1,5 +1,18 @@
 package com.smarthome.hume.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,87 +25,201 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Doorbell
-import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeNotification
-import com.smarthome.hume.core.ui.components.M3ECard
+import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.rememberHaptic
+import kotlinx.coroutines.delay
 
-/** Sheet thong bao dieu kien. */
+/**
+ * Sheet thong bao dieu kien theo demo rev12 (.sheet + .nfeed/.nfi):
+ * nen surfaceContainer, grab, sub "Cua, cam bien & thiet bi moi hoat dong";
+ * feed surfaceHighest bo 30px padding 8px;
+ * hang: icon tron 46px primaryContainer + tieu de 13.5px/700 + sub 12px/500;
+ * vao: nfin (translateY(-10px) scale(.98), .5s emphasized).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationSheet(
     notifications: List<HomeNotification>,
     onDismiss: () -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = cs.surfaceContainer,
+        dragHandle = { GrabHandle() },
     ) {
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            Text("Thông báo", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(12.dp))
+        LazyColumn(
+            modifier = Modifier.padding(horizontal = 20.dp),
+        ) {
+            item {
+                Text(
+                    "Thông báo",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurface,
+                )
+                Text(
+                    "Cửa, cảm biến & thiết bị mới hoạt động",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                )
+            }
             if (notifications.isEmpty()) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 40.dp),
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Outlined.NotificationsOff, null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(40.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Không có thông báo mới",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                item {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 40.dp),
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Outlined.NotificationsOff, null,
+                                tint = cs.onSurfaceVariant,
+                                modifier = Modifier.size(40.dp),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Không có thông báo mới",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = cs.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(notifications, key = { it.id }) { n ->
-                        M3ECard(contentPadding = 16.dp) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Doorbell, null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(26.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(n.title, style = MaterialTheme.typography.titleSmall)
-                                    Text(n.body, style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                if (n.timeText.isNotBlank()) {
-                                    Text(n.timeText, style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
+                item {
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30.dp))
+                            .background(cs.surfaceContainerHighest)
+                            .padding(8.dp),
+                    ) {
+                        notifications.forEachIndexed { i, n ->
+                            NotifRow(n, i)
                         }
                     }
-                    item { Spacer(Modifier.height(24.dp)) }
+                    Spacer(Modifier.height(24.dp))
                 }
+            }
+        }
+    }
+}
+
+private fun notifIcon(n: HomeNotification): ImageVector = when {
+    n.title.contains("Cửa", ignoreCase = true) -> M3EIcons.Door
+    n.title.contains("chuyển động", ignoreCase = true) -> M3EIcons.Motion
+    n.title.contains("khói", ignoreCase = true) -> M3EIcons.Smoke
+    n.title.contains("nước", ignoreCase = true) -> M3EIcons.Leak
+    else -> M3EIcons.Bell
+}
+
+@Composable
+private fun NotifRow(n: HomeNotification, index: Int) {
+    val cs = MaterialTheme.colorScheme
+    val density = LocalDensity.current
+    var vis by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(index * 60L)
+        vis = true
+    }
+    AnimatedVisibility(
+        visible = vis,
+        enter = fadeIn(tween(500, easing = M3EMotion.emphasized)) +
+            slideInVertically(
+                animationSpec = tween(500, easing = M3EMotion.emphasized),
+            ) { with(density) { (-10).dp.roundToPx() } } +
+            scaleIn(
+                animationSpec = tween(500, easing = M3EMotion.emphasized),
+                initialScale = 0.98f,
+            ),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(RoundedCornerShape(22.dp))
+                .padding(horizontal = 10.dp, vertical = 12.dp),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(cs.primaryContainer),
+            ) {
+                Icon(
+                    notifIcon(n), null,
+                    tint = cs.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    n.title,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onSurface,
+                )
+                Text(
+                    n.body,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            if (n.timeText.isNotBlank()) {
+                Text(
+                    n.timeText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurfaceVariant,
+                )
             }
         }
     }
@@ -106,33 +233,49 @@ fun LightsSheet(
     onDismiss: () -> Unit,
     onToggle: (String) -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = cs.surfaceContainer,
+        dragHandle = { GrabHandle() },
     ) {
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Lightbulb, null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("${lights.size} đèn đang sáng",
-                    style = MaterialTheme.typography.headlineSmall)
-            }
-            Spacer(Modifier.height(12.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(lights, key = { it.entityId }) { d ->
-                    DeviceRow(d, onToggle = { onToggle(d.entityId) })
+        LazyColumn(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        M3EIcons.Light, null,
+                        tint = cs.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "${lights.size} đèn đang sáng",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = cs.onSurface,
+                    )
                 }
-                item { Spacer(Modifier.height(24.dp)) }
+                Spacer(Modifier.height(6.dp))
             }
+            itemsIndexed(lights, key = { _, d -> d.entityId }) { _, d ->
+                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+            }
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
 
-/** Tim kiem thiet bi toan man hinh. */
+/**
+ * Tim kiem thiet bi theo demo rev12 (.searchview): truot tu duoi len
+ * (translateY(100%), .45s emphasized), bo top 56px, padding 14px 16px 0;
+ * thanh tim kiem tran: back + input + clear;
+ * nhan "TIM GAN DAY" + chips (Dieu hoa/Den ngu/Rem cua), nhan "THIET BI".
+ */
 @Composable
 fun DeviceSearchView(
     query: String,
@@ -141,31 +284,177 @@ fun DeviceSearchView(
     onToggle: (String) -> Unit,
     onBack: () -> Unit,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxSize(),
+    val cs = MaterialTheme.colorScheme
+    val haptic = rememberHaptic()
+    var vis by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { vis = true }
+    fun close() {
+        if (!vis) return
+        vis = false
+        scope.launch {
+            delay(450)
+            onBack()
+        }
+    }
+    AnimatedVisibility(
+        visible = vis,
+        enter = slideInVertically(
+            animationSpec = tween(450, easing = M3EMotion.emphasized),
+        ) { it },
+        exit = slideOutVertically(
+            animationSpec = tween(450, easing = M3EMotion.emphasizedAcc),
+        ) { it } + fadeOut(tween(300)),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Outlined.ArrowBack, contentDescription = "Đóng")
+        Surface(
+            color = cs.surface,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(topStart = 56.dp, topEnd = 56.dp))
+                    .background(cs.surface)
+                    .padding(top = 14.dp, start = 16.dp, end = 16.dp),
+            ) {
+                // .svbar: back + input tran + clear
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .pressMorph(pressedScale = 0.88f) {
+                                haptic()
+                                close()
+                            },
+                    ) {
+                        Icon(Icons.Outlined.ArrowBack, "Quay lại", tint = cs.onSurface)
+                    }
+                    BasicTextField(
+                        value = query,
+                        onValueChange = onQuery,
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = cs.onSurface,
+                        ),
+                        cursorBrush = SolidColor(cs.primary),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { inner ->
+                            Box(contentAlignment = Alignment.CenterStart) {
+                                if (query.isEmpty()) {
+                                    Text(
+                                        "Tìm thiết bị…",
+                                        fontSize = 16.sp,
+                                        color = cs.onSurfaceVariant,
+                                    )
+                                }
+                                inner()
+                            }
+                        },
+                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .pressMorph(pressedScale = 0.88f) {
+                                haptic()
+                                onQuery("")
+                            },
+                    ) {
+                        Icon(Icons.Outlined.Close, "Xóa", tint = cs.onSurfaceVariant)
+                    }
                 }
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQuery,
-                    placeholder = { Text("Tìm đèn, công tắc, điều hòa…") },
-                    leadingIcon = { Icon(Icons.Outlined.Search, null) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.weight(1f),
+                Text(
+                    "TÌM GẦN ĐÂY",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.6.sp,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 8.dp),
                 )
-            }
-            Spacer(Modifier.height(12.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(results, key = { it.entityId }) { d ->
-                    DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(start = 4.dp),
+                ) {
+                    listOf("Điều hoà", "Đèn ngủ", "Rèm cửa").forEach { chip ->
+                        SearchChip(chip) {
+                            haptic()
+                            onQuery(chip)
+                        }
+                    }
+                }
+                Text(
+                    "THIẾT BỊ",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.6.sp,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 8.dp),
+                )
+                if (results.isEmpty()) {
+                    Text(
+                        "Không tìm thấy thiết bị",
+                        fontSize = 14.sp,
+                        color = cs.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                    )
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .fillMaxWidth(),
+                    ) {
+                        itemsIndexed(results, key = { _, d -> d.entityId }) { _, d ->
+                            DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+/** .svchip: vien 1px outline, nen trong suot, 13px/600, padding 9px 16px,
+ *  bo 999px; :active nen secondaryContainer + bo 12px. */
+@Composable
+private fun SearchChip(label: String, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val radius by animateDpAsState(
+        targetValue = if (pressed) 12.dp else 999.dp,
+        animationSpec = tween(300, easing = M3EMotion.spring),
+        label = "chipR",
+    )
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .clip(RoundedCornerShape(radius))
+            .background(if (pressed) cs.secondaryContainer else Color.Transparent)
+            .border(1.dp, cs.outline, RoundedCornerShape(radius))
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+    ) {
+        Text(
+            label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = cs.onSurface,
+        )
     }
 }

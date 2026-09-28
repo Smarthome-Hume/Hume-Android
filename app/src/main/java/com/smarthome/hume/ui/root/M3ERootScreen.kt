@@ -1,7 +1,10 @@
 package com.smarthome.hume.ui.root
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
@@ -43,6 +48,9 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HumeTab
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.home.HomeScreen
@@ -104,9 +112,11 @@ fun M3ERootScreen(
 
 /**
  * Navbar M3E theo demo v4 (.nav/.navit): FLOATING — cach 2 canh 16dp,
- * cach day 20dp, bo 34dp, nen surfaceLowest 82% + shadow;
+ * cach day 20dp, bo 34dp, nen surfaceContainerLowest 82% + shadow;
  * item chon highlight TOAN O primaryContainer (khong pill tach roi),
- * icon outlined, label dam khi chon.
+ * icon outlined (scale 1.12 khi chon), label dam khi chon;
+ * neighbor-press: item dang nhan no rong (spring), 2 item ke co lai;
+ * :active nen surfaceContainer. Backdrop blur bo qua (ghi nhan gioi han).
  */
 @Composable
 private fun M3ENavBar(
@@ -114,7 +124,10 @@ private fun M3ENavBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val cs = MaterialTheme.colorScheme
     val pill = RoundedCornerShape(34.dp)
+    val np = rememberNeighborPress(navItems.size)
+    val haptic = rememberHaptic()
     Box(
         modifier
             .fillMaxWidth()
@@ -128,28 +141,53 @@ private fun M3ENavBar(
             modifier = Modifier
                 .shadow(8.dp, pill)
                 .clip(pill)
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.82f))
+                .background(cs.surfaceContainerLowest.copy(alpha = 0.82f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->
                 val isSel = i == selected
+                val pressed = np.pressedIndex == i
+                // Selected flex-grow + neighbor shrink, mo phong .navit flex-grow transition
+                val weight by animateFloatAsState(
+                    targetValue = np.weightFor(i),
+                    animationSpec = tween(500, easing = M3EMotion.spring),
+                    label = "navW$i",
+                )
+                val iconSize by animateDpAsState(
+                    targetValue = if (isSel) 27.dp else 24.dp,
+                    animationSpec = tween(300, easing = M3EMotion.spring),
+                    label = "navI$i",
+                )
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(weight)
                         .clip(RoundedCornerShape(24.dp))
                         .background(
-                            if (isSel) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0f),
+                            when {
+                                pressed -> cs.surfaceContainer
+                                isSel -> cs.primaryContainer
+                                else -> Color.Transparent
+                            },
                         )
-                        .clickable { onSelect(i) }
+                        .pointerInput(i) {
+                            detectTapGestures(
+                                onPress = {
+                                    haptic()
+                                    np.press(i)
+                                    tryAwaitRelease()
+                                    np.release()
+                                },
+                                onTap = { onSelect(i) },
+                            )
+                        }
                         .padding(vertical = 9.dp),
                 ) {
                     Icon(
                         item.icon, contentDescription = item.tab.label,
-                        tint = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(if (isSel) 27.dp else 24.dp),
+                        tint = if (isSel) cs.onPrimaryContainer
+                        else cs.onSurfaceVariant,
+                        modifier = Modifier.size(iconSize),
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
@@ -157,8 +195,8 @@ private fun M3ENavBar(
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 11.sp,
                         fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isSel) cs.onPrimaryContainer
+                        else cs.onSurfaceVariant,
                     )
                 }
             }

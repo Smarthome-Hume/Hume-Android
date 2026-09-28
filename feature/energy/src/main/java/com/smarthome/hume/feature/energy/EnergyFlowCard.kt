@@ -3,11 +3,12 @@ package com.smarthome.hume.feature.energy
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,13 +42,21 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyFlowState
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.blink
+import com.smarthome.hume.core.ui.components.pressMorph
+import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val VB_W = 360f
@@ -65,76 +75,128 @@ private fun battPath() = Path().apply {
     moveTo(198f, 202f); lineTo(198f, 274f); quadraticTo(198f, 290f, 214f, 290f); lineTo(236f, 290f)
 }
 
-/** Toc do sweep: 14s luc 0 kW -> 4s tu 3 kW tro len (theo demo). */
+/** Toc do sweep (demo): 18/v giay, clamp 4-14s — v la kW. */
 private fun sweepMs(powerKw: Double): Int =
-    (14000 - 10000 * (powerKw / 3.0).coerceIn(0.0, 1.0)).roundToInt()
+    (minOf(14.0, maxOf(4.0, 18.0 / maxOf(0.15, powerKw))) * 1000).roundToInt()
 
 /**
  * Flow card M3E: 4 node + hub bolt o giua, sweep tren elbow track.
  * Port tu demo v4 rev12 (.flx).
  */
 @Composable
-fun EnergyFlowCard(flow: EnergyFlowState, modifier: Modifier = Modifier) {
+fun EnergyFlowCard(
+    flow: EnergyFlowState,
+    ui: EnergyScreenUi,
+    vm: EnergyViewModel,
+    risePlayed: MutableSet<String>,
+    modifier: Modifier = Modifier,
+) {
+    val charging = ui.battChargeOverride ?: flow.battCharging
+    val soc = (flow.soc + ui.socDrift).coerceIn(5.0, 100.0)
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
-        modifier = modifier,
+        modifier = modifier
+            .riseOnce("sol-flow", 410, risePlayed)
+            .shadow(12.dp, RoundedCornerShape(32.dp)),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp)) {
-        // header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column {
-                Text("Năng lượng", style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold)
-                Text("Dòng chảy thời gian thực",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column {
+                    Text(
+                        "Năng lượng",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                    )
+                    Text(
+                        "Dòng chảy thời gian thực",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF22C55E))
+                            .blink(1600),
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        String.format(Locale.US, "%.1f", flow.todayKwh),
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum",
+                        ),
+                    )
+                    Text(
+                        " kWh",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 13.sp, fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF22C55E)),
-                )
-                Spacer(Modifier.width(7.dp))
+            Spacer(Modifier.height(6.dp))
+            FlowArea(flow = flow, charging = charging, soc = soc, vm = vm)
+            // footer: divider border-top 1px outlineVariant (demo .flfoot)
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            val footStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+            val footColor = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
                 Text(
-                    String.format("%.1f", flow.todayKwh),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    buildAnnotatedString {
+                        append("Hôm nay sản xuất ")
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )) {
+                            append("${String.format(Locale.US, "%.1f", flow.todayKwh)} kWh")
+                        }
+                    },
+                    style = footStyle,
+                    color = footColor,
                 )
-                Text(" kWh", style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    buildAnnotatedString {
+                        append("Tự dùng ")
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )) {
+                            append("${flow.selfUsePct.roundToInt()}%")
+                        }
+                    },
+                    style = footStyle,
+                    color = footColor,
+                )
             }
-        }
-        Spacer(Modifier.height(6.dp))
-        FlowArea(flow)
-        // footer
-        Spacer(Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text("Hôm nay sản xuất ${String.format("%.1f", flow.todayKwh)} kWh",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Tự dùng ${flow.selfUsePct.roundToInt()}%",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold)
-        }
         }
     }
 }
 
 @Composable
-private fun FlowArea(flow: EnergyFlowState) {
+private fun FlowArea(
+    flow: EnergyFlowState,
+    charging: Boolean,
+    soc: Double,
+    vm: EnergyViewModel,
+) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,7 +207,7 @@ private fun FlowArea(flow: EnergyFlowState) {
         fun fx(x: Float): Dp = w * (x / VB_W)
         fun fy(y: Float): Dp = h * (y / VB_H)
 
-        FlowTracks(flow)
+        FlowTracks(flow = flow, charging = charging)
 
         // nodes: 118x132px trong viewBox 360x340, cach ria 6px
         val nw = fx(118f); val nh = fy(132f)
@@ -205,28 +267,34 @@ private fun FlowArea(flow: EnergyFlowState) {
         }
         val battFg = Color(0xFF16A34A)
         FlowNode(
-            icon = if (flow.battCharging) M3EIcons.Battery else M3EIcons.BatteryFull,
+            icon = if (charging) M3EIcons.Battery else M3EIcons.BatteryFull,
             tintBg = battFg.copy(alpha = 0.16f),
             tintFg = battFg,
             label = "Pin", valueKw = flow.battKw,
-            badge = if (flow.battCharging) "Đang sạc" else "Đang xả",
+            badge = if (charging) "Đang sạc" else "Đang xả",
             badgeBg = battFg.copy(alpha = 0.16f),
             badgeFg = battFg,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - 118f), fy(VB_H - 6f - 132f)),
+            onClick = { vm.toggleBattFlow() },
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("SOC", style = MaterialTheme.typography.labelSmall,
+                Text(
+                    "SOC",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.SemiBold)
-                Text("${flow.soc.roundToInt()}%",
-                    style = MaterialTheme.typography.labelSmall,
+                )
+                Text(
+                    "${soc.roundToInt()}%",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.SemiBold)
+                )
             }
             Spacer(Modifier.height(4.dp))
             Box(
@@ -238,7 +306,7 @@ private fun FlowArea(flow: EnergyFlowState) {
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth((flow.soc / 100).toFloat().coerceIn(0f, 1f))
+                        .fillMaxWidth((soc / 100).toFloat().coerceIn(0f, 1f))
                         .height(4.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF16A34A)),
@@ -246,26 +314,71 @@ private fun FlowArea(flow: EnergyFlowState) {
             }
         }
 
-        // hub bolt 64px o giua
+        // hub bolt 64px o giua + ping ring flping 2.2s (demo .flhub::before)
         val hub = fx(64f)
+        val primary = MaterialTheme.colorScheme.primary
+        val pingT = rememberInfiniteTransition(label = "flping")
+        val pScale by pingT.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.9f,
+            animationSpec = infiniteRepeatable(
+                animation = keyframes {
+                    durationMillis = 2200
+                    1f at 0
+                    1.9f at 1760 with LinearEasing
+                    1.9f at 2200
+                },
+            ),
+            label = "pingScale",
+        )
+        val pAlpha by pingT.animateFloat(
+            initialValue = 0.7f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = keyframes {
+                    durationMillis = 2200
+                    0.7f at 0
+                    0f at 1760
+                    0f at 2200
+                },
+            ),
+            label = "pingAlpha",
+        )
         Box(
-            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(hub)
-                .offset(fx(VB_W / 2 - 32f), fy(VB_H * 0.494f - 32f))
-                .shadow(8.dp, CircleShape)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .offset(fx(VB_W / 2 - 32f), fy(VB_H * 0.494f - 32f)),
         ) {
-            Icon(M3EIcons.Power, null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(hub * 0.47f))
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = pScale
+                        scaleY = pScale
+                        alpha = pAlpha
+                    }
+                    .border(2.dp, primary, CircleShape),
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .shadow(8.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+            ) {
+                Icon(
+                    M3EIcons.Power, null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(hub * 0.47f),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun FlowTracks(flow: EnergyFlowState) {
+private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
     val primary = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.outlineVariant
     val transition = rememberInfiniteTransition(label = "flsweep")
@@ -274,7 +387,7 @@ private fun FlowTracks(flow: EnergyFlowState) {
         Track(prodPath(), flow.prodKw, false),
         Track(gridPath(), flow.gridKw, false),
         Track(consPath(), flow.consKw, false),
-        Track(battPath(), flow.battKw, !flow.battCharging),
+        Track(battPath(), flow.battKw, !charging),
     )
     val phases = tracks.map { t ->
         val target = if (t.reverse) 1270f else -1270f
@@ -324,6 +437,7 @@ private fun FlowNode(
     badge: String? = null,
     badgeBg: Color = Color.Transparent,
     badgeFg: Color = Color.Transparent,
+    onClick: (() -> Unit)? = null,
     bottom: @Composable () -> Unit = {},
 ) {
     Column(
@@ -331,8 +445,8 @@ private fun FlowNode(
             .shadow(4.dp, RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .clickable { }
-            .padding(10.dp),
+            .pressMorph(pressedScale = 0.93f, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -345,28 +459,44 @@ private fun FlowNode(
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 10.5.sp, fontWeight = FontWeight.Normal),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (badge != null) {
                 Spacer(Modifier.width(5.dp))
-                Text(badge,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                Text(
+                    badge,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.sp, fontWeight = FontWeight.Bold),
                     color = badgeFg,
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(badgeBg)
-                        .padding(horizontal = 7.dp, vertical = 2.dp))
+                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                )
             }
         }
-        Row(verticalAlignment = Alignment.Bottom) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(top = 1.dp),
+        ) {
             Text(
-                String.format("%.1f", valueKw),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                String.format(Locale.US, "%.1f", valueKw),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum",
+                ),
             )
-            Text(" kW", style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                " kW",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Spacer(Modifier.weight(1f))
         bottom()
@@ -380,9 +510,12 @@ private fun SegLegend(items: List<Pair<String, Color>>) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(6.dp).clip(CircleShape).background(c))
                 Spacer(Modifier.width(3.dp))
-                Text(name, style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    name,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

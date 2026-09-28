@@ -10,7 +10,6 @@ import androidx.compose.material.icons.outlined.Bed
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.FiberManualRecord
 import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material.icons.outlined.Lock
@@ -24,15 +23,18 @@ import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.Whatshot
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SmokeFree
 import androidx.compose.material.icons.outlined.FlightTakeoff
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Desk
+import androidx.compose.material.icons.outlined.DoorFront
 import androidx.compose.material.icons.outlined.ElectricMeter
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -66,10 +68,10 @@ object M3EIcons {
     val BatteryFull = Icons.Outlined.BatteryFull
     val SolarPower = Icons.Outlined.SolarPower
     val ElectricMeter = Icons.Outlined.ElectricMeter
-    val Door = Icons.Outlined.MeetingRoom
-    val Motion = Icons.Outlined.DirectionsWalk
+    val Door = Icons.Outlined.DoorFront
+    val Motion = Icons.Outlined.Sensors
     val Presence = Icons.Outlined.PersonSearch
-    val Smoke = Icons.Outlined.Whatshot
+    val Smoke = Icons.Outlined.SmokeFree
     val Leak = Icons.Outlined.WaterDrop
     val Videocam = Icons.Outlined.Videocam
     val Rec = Icons.Outlined.FiberManualRecord
