@@ -239,12 +239,3 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
         }
     }
 }
-
-private data class AlarmMode(val service: String, val label: String, val icon: ImageVector)
-
-private val alarmModes = listOf(
-    AlarmMode("home", "Ở nhà", Icons.Outlined.Home),
-    AlarmMode("away", "Vắng nhà", Icons.Outlined.Logout),
-    AlarmMode("night", "Ban đêm", Icons.Outlined.DarkMode),
-    AlarmMode("disarm", "Tắt", Icons.Outlined.PowerSettingsNew),
-)
