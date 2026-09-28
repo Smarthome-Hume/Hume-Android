@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,14 +86,10 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
-    val aiState by viewModel.aiState.collectAsState()
     val cs = MaterialTheme.colorScheme
     val snack = remember { SnackbarHostState() }
     var fabOpen by rememberSaveable { mutableStateOf(false) }
     var ecoDialog by remember { mutableStateOf(false) }
-    // Avatar user tu HA (qua token dang nhap)
-    val session by com.smarthome.hume.core.data.HumeGraph.get().sessionStore.session
-        .collectAsState(initial = com.smarthome.hume.core.model.AuthSession())
 
     ui.snackbar?.let { s ->
         LaunchedEffect(s) {
@@ -108,16 +105,17 @@ fun HomeScreen(
             // (~100dp) nen padding bottom 4dp de cach navbar 4px nhu demo;
             // vao: fade .25s + translateY(16->0) .35s; ra: nguoc lai.
             var lastData by remember { mutableStateOf<SnackbarData?>(null) }
-            val current by snack.currentSnackbarData
+            val current = snack.currentSnackbarData
             if (current != null) lastData = current
+            val density = LocalDensity.current
             AnimatedVisibility(
                 visible = current != null,
                 enter = fadeIn(tween(250)) + slideInVertically(
                     tween(350, easing = M3EMotion.emphasized),
-                ) { 16.dp.roundToPx() },
+                ) { with(density) { 16.dp.roundToPx() } },
                 exit = fadeOut(tween(250)) + slideOutVertically(
                     tween(350, easing = M3EMotion.emphasizedAcc),
-                ) { 16.dp.roundToPx() },
+                ) { with(density) { 16.dp.roundToPx() } },
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
             ) {
                 lastData?.let { M3ESnackbar(it) }
@@ -125,12 +123,13 @@ fun HomeScreen(
         },
         containerColor = cs.surface,
         modifier = modifier.fillMaxSize(),
-    ) { _ ->
+    ) { padding ->
         val pullState = rememberPullToRefreshState()
         PullToRefreshBox(
             isRefreshing = ui.isRefreshing,
             onRefresh = { viewModel.refresh() },
             state = pullState,
+            modifier = Modifier.padding(padding),
             indicator = {
                 MorphLoaderIndicator(
                     isRefreshing = ui.isRefreshing,
@@ -153,8 +152,6 @@ fun HomeScreen(
                             RiseIn(20) {
                                 HomeHeader(
                                     state = state,
-                                    avatarUrl = session.avatarUrl,
-                                    avatarToken = session.token,
                                     onSearch = { viewModel.openSearch(true) },
                                     onNotif = { viewModel.openNotif(true) },
                                 )
@@ -187,7 +184,6 @@ fun HomeScreen(
                             RiseIn(165) {
                                 SuggestCard(
                                     state,
-                                    aiState = aiState,
                                     onTipAction = { key ->
                                         if (key == "ac") viewModel.ac26()
                                     },

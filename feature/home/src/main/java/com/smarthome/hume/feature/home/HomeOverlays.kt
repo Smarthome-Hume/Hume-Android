@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeNotification
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph

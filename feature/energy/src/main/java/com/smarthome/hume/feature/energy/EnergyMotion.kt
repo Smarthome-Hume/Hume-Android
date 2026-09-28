@@ -5,7 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.composed.composed
+import androidx.compose.ui.composed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember

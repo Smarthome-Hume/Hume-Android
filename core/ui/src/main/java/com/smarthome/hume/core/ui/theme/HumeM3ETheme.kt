@@ -77,7 +77,7 @@ private fun extraColors(seed: M3ESeed, dark: Boolean): HumeExtraColors {
     )
 }
 
-val LocalHumeExtraColors = staticCompositionLocalOf {
+public val LocalHumeExtraColors = staticCompositionLocalOf {
     HumeExtraColors(
         success = Color.Unspecified, successContainer = Color.Unspecified,
         onSuccessContainer = Color.Unspecified, info = Color.Unspecified,

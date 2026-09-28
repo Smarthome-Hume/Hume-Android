@@ -1,7 +1,7 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +53,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlinx.coroutines.delay

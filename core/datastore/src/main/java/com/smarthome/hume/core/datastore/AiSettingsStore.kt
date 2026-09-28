@@ -40,12 +40,14 @@ data class AiSettings(
         AiProvider.OpenAI -> "https://api.openai.com/v1"
         AiProvider.Anthropic -> "https://api.anthropic.com/v1"
         AiProvider.Google -> "https://generativelanguage.googleapis.com/v1beta/openai"
-        AiProvider.Custom -> customBaseUrl.trim().trimEnd('/'),
+        AiProvider.Custom -> customBaseUrl.trim().trimEnd('/')
     }
 
     /** Model mac dinh neu user chua nhap. */
-    val effectiveModel: String get() = model.trim().ifBlank {
-        when (provider) {
+    val effectiveModel: String get() {
+        val trimmed = model.trim()
+        if (trimmed.isNotBlank()) return trimmed
+        return when (provider) {
             AiProvider.OpenAI -> "gpt-4o-mini"
             AiProvider.Anthropic -> "claude-3-5-haiku-latest"
             AiProvider.Google -> "gemini-2.0-flash"
@@ -80,6 +82,7 @@ class AiSettingsStore(private val context: Context) {
 
     private fun encryptedPrefs(): SharedPreferences = encryptedPrefsLazy
 
+    @Suppress("DEPRECATION")
     private fun createEncryptedPrefs(): SharedPreferences = try {
         val masterKey = MasterKey.Builder(context, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)

@@ -199,7 +199,7 @@ private fun NavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        MsIcon(
+        Icon(
             HumeIcons.tab(item),
             contentDescription = item.label,
             tint = contentColor,

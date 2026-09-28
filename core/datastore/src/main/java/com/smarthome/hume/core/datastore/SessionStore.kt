@@ -38,6 +38,7 @@ class SessionStore(private val context: Context) {
         const val DEFAULT_URL = "http://192.168.102.22:8123"
     }
 
+    @Suppress("DEPRECATION")
     private fun encryptedPrefs(): SharedPreferences = try {
         val masterKey = MasterKey.Builder(context, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)

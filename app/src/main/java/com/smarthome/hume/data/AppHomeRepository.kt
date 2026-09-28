@@ -19,6 +19,8 @@ import com.smarthome.hume.core.model.RoomUi
 import com.smarthome.hume.core.model.SolarDay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -278,16 +280,17 @@ class AppHomeRepository(
         if (missing.isNotEmpty()) {
             // Buoc 1: moi ngay thieu = 1 query nho, chay song song
             val perDay: Map<Long, Double> = kotlinx.coroutines.coroutineScope {
-                missing.map { start ->
-                    kotlinx.coroutines.async(kotlinx.coroutines.Dispatchers.IO) {
+                val deferreds = missing.map { start ->
+                    async(Dispatchers.IO) {
                         val pts = runCatching {
                             HistoryFetcher.fetchRange(HumeConfig.PV_TODAY, start, start + dayMs)
                         }.getOrDefault(emptyList())
                         // sensor "today energy" reset moi ngay -> max trong ngay = san luong ngay do
                         start to (pts.maxOfOrNull { it.value } ?: 0.0)
                     }
-                }.awaitAll()
-            }.toMap()
+                }
+                deferreds.awaitAll().toMap()
+            }
             perDay.forEach { (start, v) ->
                 if (v > 0) {
                     snapshots.set(HumeConfig.PV_TODAY, start, v)

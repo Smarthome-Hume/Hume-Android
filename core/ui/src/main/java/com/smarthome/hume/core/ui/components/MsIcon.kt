@@ -43,7 +43,7 @@ fun MsIcon(
         contentAlignment = Alignment.Center,
     ) {
         val side = minOf(maxWidth, maxHeight)
-        val fs = if (side.isFinite()) {
+        val fs = if (side.isFinite) {
             with(LocalDensity.current) { side.toSp() }
         } else {
             24.sp

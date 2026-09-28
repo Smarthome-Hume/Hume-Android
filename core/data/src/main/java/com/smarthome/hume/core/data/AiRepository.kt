@@ -291,7 +291,7 @@ class AiRepositoryImpl(
     }
 
     companion object {
-        private const val SYSTEM_PROMPT = """
+        private val SYSTEM_PROMPT = """
 Bạn là trợ lý nhà thông minh Hume. Dựa trên trạng thái nhà, đưa ra 1-3 gợi ý NGẮN GỌN, thiết thực bằng tiếng Việt để tiết kiệm điện, tăng an toàn, tiện nghi.
 Chỉ trả về JSON thuần (không markdown, không giải thích thêm), đúng định dạng:
 [{"title":"Tiêu đề ngắn","sub":"Mô tả 1 câu, có số liệu cụ thể nếu được","action":"Nhãn nút ≤4 từ"}]

@@ -37,6 +37,7 @@ class SettingsStore(private val context: Context) {
 
     private val tokenFlow = MutableStateFlow(migrateTokenIfNeeded())
 
+    @Suppress("DEPRECATION")
     private fun encryptedPrefs(): SharedPreferences = try {
         val masterKey = MasterKey.Builder(context, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
