@@ -48,7 +48,7 @@ import coil.request.ImageRequest
 import com.smarthome.hume.core.model.RecordingUi
 import com.smarthome.hume.core.model.SensorKind
 import com.smarthome.hume.core.model.SensorUi
-import com.smarthome.hume.core.ui.components.ConnectedButtonGroup
+import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
@@ -89,11 +89,11 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
 
                 // Camera picker (esub)
                 if (state.cameras.isNotEmpty()) {
-                    ConnectedButtonGroup(
+                    EsubGroup(
                         items = state.cameras.map { it.name },
                         selectedIndex = selectedCam,
                         onSelect = vm::selectCamera,
-                        leadingIcon = { M3EIcons.Check },
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(12.dp))
                     val cam = state.cameras[selectedCam]
@@ -173,8 +173,8 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
         }
     }
 
-    M3ECard(corner = 32.dp) {
-        Column(Modifier.padding(12.dp)) {
+    M3ECard(shape = RoundedCornerShape(32.dp), contentPadding = 12.dp) {
+        Column {
             Box(
                 Modifier
                     .fillMaxWidth()

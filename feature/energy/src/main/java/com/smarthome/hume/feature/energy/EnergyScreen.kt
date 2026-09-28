@@ -26,7 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 
 /**
@@ -60,7 +60,14 @@ fun EnergyScreen(
                     )
                 }
             }
-            item { EnergySubTabs(selected = ui.tab, onSelect = vm::setTab) }
+            item {
+                EsubGroup(
+                    items = listOf("Tiêu thụ", "Điện mặt trời"),
+                    selectedIndex = ui.tab.ordinal,
+                    onSelect = { vm.setTab(EnergySubTab.entries[it]) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             item {
                 when (ui.tab) {
                     EnergySubTab.Cons -> EnergyConsTab(state = state, ui = ui, vm = vm)
@@ -72,61 +79,3 @@ fun EnergyScreen(
     }
 }
 
-/**
- * esub: connected pill group 2 tab, tab chon dung primaryContainer + icon check hien.
- */
-@Composable
-fun EnergySubTabs(
-    selected: EnergySubTab,
-    onSelect: (EnergySubTab) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(999.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        EnergySubTab.entries.forEach { tab ->
-            val isSel = tab == selected
-            val label = if (tab == EnergySubTab.Cons) "Tiêu thụ" else "Điện mặt trời"
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(
-                        if (isSel) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0f),
-                    )
-                    .clickable { onSelect(tab) }
-                    .padding(vertical = 10.dp, horizontal = 10.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    if (isSel) {
-                        Icon(
-                            M3EIcons.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier
-                                .padding(end = 6.dp)
-                                .size(17.dp),
-                        )
-                    }
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
