@@ -73,7 +73,6 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlinx.coroutines.delay
 
 /**
