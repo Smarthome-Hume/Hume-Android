@@ -67,6 +67,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Sheet thong bao dieu kien theo demo rev12 (.sheet + .nfeed/.nfi):
@@ -87,7 +88,7 @@ fun NotificationSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
         containerColor = cs.surfaceContainer,
-        dragHandle = { GrabHandle() },
+        dragHandle = { SheetGrabHandle() },
     ) {
         LazyColumn(
             modifier = Modifier.padding(horizontal = 20.dp),
@@ -239,7 +240,7 @@ fun LightsSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
         containerColor = cs.surfaceContainer,
-        dragHandle = { GrabHandle() },
+        dragHandle = { SheetGrabHandle() },
     ) {
         LazyColumn(
             modifier = Modifier.padding(horizontal = 20.dp),
@@ -457,4 +458,18 @@ private fun SearchChip(label: String, onClick: () -> Unit) {
             color = cs.onSurface,
         )
     }
+}
+
+/**
+ * Tay cam sheet theo demo (44x5dp), M3 khong co GrabHandle public.
+ */
+@Composable
+private fun SheetGrabHandle() {
+    Box(
+        Modifier
+            .padding(top = 12.dp, bottom = 4.dp)
+            .size(44.dp, 5.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
+    )
 }

@@ -1,6 +1,7 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -55,6 +56,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
+    val charging = battery.isCharging
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
@@ -73,7 +75,6 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.weight(1f))
             // Badge .bstat: demo chi co 2 trang thai (Sac/Xa), 11px/800/ls.6
-            val charging = battery.isCharging
             val (badgeText, badgeBg, badgeFg) = if (charging) {
                 Triple("ĐANG SẠC", extra.successContainer, extra.onSuccessContainer)
             } else {
