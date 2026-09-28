@@ -49,13 +49,15 @@ fun M3ESwitch(
         label = "swKnobSize",
     )
     // demo: tat (left 6, top 6) -> bat (left 24, top 4)
+    // HTML tinh tu TRONG vien (border 2px), Compose offset tinh tu NGOAI vien
+    // -> cong them 2dp de khop
     val knobX by animateDpAsState(
-        if (checked) 24.dp else 6.dp,
+        if (checked) 26.dp else 8.dp,
         tween(450, easing = M3EMotion.spring),
         label = "swKnobX",
     )
     val knobY by animateDpAsState(
-        if (checked) 4.dp else 6.dp,
+        if (checked) 6.dp else 8.dp,
         tween(300, easing = M3EMotion.spring),
         label = "swKnobY",
     )
