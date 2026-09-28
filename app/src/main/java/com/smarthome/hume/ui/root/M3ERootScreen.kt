@@ -38,7 +38,7 @@ import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.feature.home.HomeScreen
-import com.smarthome.hume.ui.energy.EnergyScreen
+import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
 import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 
@@ -80,7 +80,7 @@ fun M3ERootScreen(
             ) {
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen()
-                    HumeTab.Energy -> EnergyScreen(ha)
+                    HumeTab.Energy -> M3EEnergyScreen()
                     HumeTab.Security -> SecurityScreen(ha)
                     HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
                 }

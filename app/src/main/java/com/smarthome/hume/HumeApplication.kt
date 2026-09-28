@@ -5,6 +5,7 @@ import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.storage.SensorDatabase
 import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.data.AppEnergyRepository
 import com.smarthome.hume.data.AppHomeRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,8 @@ class HumeApplication : Application() {
         HumeGraph.init(this)
         // Dang ky HomeRepository that (adapter tren HomeAssistantRepository cu).
         HumeGraph.get().registerHomeRepository(AppHomeRepository(haRepository, appScope))
+        // Dang ky EnergyRepository that (adapter tren HomeAssistantRepository cu).
+        HumeGraph.get().registerEnergyRepository(AppEnergyRepository(haRepository, appScope))
         settingsStore = SettingsStore(this)
         sensorDatabase = SensorDatabase(this)
         // Watched numeric sensors are cached locally so charts still work offline.

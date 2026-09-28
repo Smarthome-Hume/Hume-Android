@@ -8,14 +8,18 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryFull
 import androidx.compose.material.icons.outlined.Bed
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Desk
+import androidx.compose.material.icons.outlined.ElectricMeter
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.LocalLaundryService
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Power
 import androidx.compose.material.icons.outlined.SoupKitchen
+import androidx.compose.material.icons.outlined.SolarPower
 import androidx.compose.material.icons.outlined.Stairs
 import androidx.compose.material.icons.outlined.Weekend
 import androidx.compose.material.icons.outlined.WbSunny
@@ -34,6 +38,11 @@ object M3EIcons {
     val Plug = Icons.Outlined.Power
     val Home = Icons.Outlined.Home
     val Climate = Icons.Outlined.AcUnit
+    val Check = Icons.Outlined.Check
+    val ChevronDown = Icons.Outlined.ExpandMore
+    val BatteryFull = Icons.Outlined.BatteryFull
+    val SolarPower = Icons.Outlined.SolarPower
+    val ElectricMeter = Icons.Outlined.ElectricMeter
 
     fun room(key: String): ImageVector = when (key) {
         "bed" -> Icons.Outlined.Bed

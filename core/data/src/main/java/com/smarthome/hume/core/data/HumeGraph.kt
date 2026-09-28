@@ -22,6 +22,14 @@ class HumeGraph private constructor(context: Context) {
         homeRepository = repo
     }
 
+    /** Do :app dang ky sau init (implementation nam o app module). */
+    lateinit var energyRepository: EnergyRepository
+        private set
+
+    fun registerEnergyRepository(repo: EnergyRepository) {
+        energyRepository = repo
+    }
+
     companion object {
         @Volatile
         private var instance: HumeGraph? = null
