@@ -2,9 +2,11 @@ package com.smarthome.hume.core.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -136,21 +139,22 @@ fun WavyBatteryBar(
 /** Legend cham tron dac / icon song mini cho the pin. */
 @Composable
 fun BatteryLegend(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.layout.Row(
+    val primaryColor = MaterialTheme.colorScheme.primary
+    Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
-            androidx.compose.material3.Text(
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(10.dp).background(primaryColor, CircleShape))
+            Text(
                 text = "Dự trữ",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 6.dp),
             )
         }
-        androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Canvas(Modifier.size(22.dp, 10.dp)) {
                 val cy = size.height / 2f
                 val path = Path().apply {
@@ -158,9 +162,9 @@ fun BatteryLegend(modifier: Modifier = Modifier) {
                     quadraticBezierTo(size.width * 0.25f, 0f, size.width * 0.5f, cy)
                     quadraticBezierTo(size.width * 0.75f, size.height, size.width, cy)
                 }
-                drawPath(path, MaterialTheme.colorScheme.primary, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(path, primaryColor, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
             }
-            androidx.compose.material3.Text(
+            Text(
                 text = "Sử dụng",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

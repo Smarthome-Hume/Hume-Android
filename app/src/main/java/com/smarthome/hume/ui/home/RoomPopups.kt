@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Thermostat
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -142,7 +143,7 @@ private val climateModes = listOf(
     ClimateMode("cool", "M\u00e1t", Icons.Outlined.AcUnit, Color(0xFF73B9F2)),
     ClimateMode("dry", "Kh\u00f4", Icons.Outlined.WaterDrop, Color(0xFFF2D26F)),
     ClimateMode("fan_only", "Qu\u1ea1t", Icons.Outlined.Air, Color(0xFF66D19E)),
-    ClimateMode("heat_cool", "T\u1ef1 \u0111\u1ed9ng", Icons.Outlined.Thermometer, Color(0xFFF9784C)),
+    ClimateMode("heat_cool", "T\u1ef1 \u0111\u1ed9ng", Icons.Outlined.Thermostat, Color(0xFFF9784C)),
 )
 
 @Composable

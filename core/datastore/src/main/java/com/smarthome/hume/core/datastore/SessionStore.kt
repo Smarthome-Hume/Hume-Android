@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
-private val Context.humeDataStore by preferencesDataStore("hume_settings")
+val Context.humeDataStore by preferencesDataStore("hume_settings")
 
 /**
  * Phien dang nhap HA: URL (DataStore plaintext) + token (EncryptedSharedPreferences).

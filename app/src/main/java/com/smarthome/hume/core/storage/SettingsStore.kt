@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import com.smarthome.hume.core.datastore.humeDataStore
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
-private val Context.humeDataStore by preferencesDataStore("hume_settings")
+
 
 data class HumeSettings(val haUrl: String = "http://192.168.102.22:8123", val haToken: String = "") {
     val hasToken: Boolean get() = haToken.isNotBlank() && haToken != "ĐIỀN_TOKEN_VÀO_ĐÂY"

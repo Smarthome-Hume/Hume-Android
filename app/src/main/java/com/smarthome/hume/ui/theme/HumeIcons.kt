@@ -22,7 +22,7 @@ import androidx.compose.material.icons.outlined.Power
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SoupKitchen
 import androidx.compose.material.icons.outlined.Stairs
-import androidx.compose.material.icons.outlined.Thermometer
+import androidx.compose.material.icons.outlined.Thermostat
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.WbTwilight
@@ -41,7 +41,7 @@ import com.smarthome.hume.core.model.HumeTab
  */
 object HumeIcons {
     val Light = Icons.Outlined.Lightbulb
-    val Temperature = Icons.Outlined.Thermometer
+    val Temperature = Icons.Outlined.Thermostat
     val Humidity = Icons.Outlined.WaterDrop
     val Climate = Icons.Outlined.AcUnit
     val Door = Icons.Outlined.MeetingRoom

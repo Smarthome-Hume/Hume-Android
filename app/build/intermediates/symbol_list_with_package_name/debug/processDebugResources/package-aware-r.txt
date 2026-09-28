@@ -1,9 +1,15 @@
 com.smarthome.hume
+array com_google_android_gms_fonts_certs
+array com_google_android_gms_fonts_certs_dev
+array com_google_android_gms_fonts_certs_prod
 array exo_controls_playback_speeds
+array preloaded_fonts
+attr action
 attr ad_marker_color
 attr ad_marker_width
 attr alpha
 attr animation_enabled
+attr argType
 attr artwork_display_mode
 attr auto_show
 attr backgroundTint
@@ -11,7 +17,12 @@ attr bar_gravity
 attr bar_height
 attr buffered_color
 attr controller_layout_id
+attr data
+attr dataPattern
 attr default_artwork
+attr destination
+attr enterAnim
+attr exitAnim
 attr fastScrollEnabled
 attr fastScrollHorizontalThumbDrawable
 attr fastScrollHorizontalTrackDrawable
@@ -32,19 +43,29 @@ attr fontVariationSettings
 attr fontWeight
 attr fullscreen_enter_icon
 attr fullscreen_exit_icon
+attr graph
 attr hide_during_ads
 attr hide_on_touch
 attr image_display_mode
 attr keep_content_on_player_reset
 attr lStar
+attr launchSingleTop
 attr layoutManager
+attr mimeType
+attr navGraph
 attr nestedScrollViewStyle
 attr next_icon
+attr nullable
 attr pause_icon
 attr play_icon
 attr played_ad_marker_color
 attr played_color
 attr player_layout_id
+attr popEnterAnim
+attr popExitAnim
+attr popUpTo
+attr popUpToInclusive
+attr popUpToSaveState
 attr previous_icon
 attr queryPatterns
 attr recyclerViewStyle
@@ -53,8 +74,10 @@ attr repeat_off_icon
 attr repeat_one_icon
 attr repeat_toggle_modes
 attr resize_mode
+attr restoreState
 attr reverseLayout
 attr rewind_icon
+attr route
 attr scrubber_color
 attr scrubber_disabled_size
 attr scrubber_dragged_size
@@ -75,13 +98,16 @@ attr shuffle_on_icon
 attr shutter_background_color
 attr spanCount
 attr stackFromEnd
+attr startDestination
 attr subtitle_off_icon
 attr subtitle_on_icon
 attr surface_type
+attr targetPackage
 attr time_bar_min_update_interval
 attr touch_target_height
 attr ttcIndex
 attr unplayed_color
+attr uri
 attr use_artwork
 attr use_controller
 attr vr_icon
@@ -96,6 +122,8 @@ color exo_edit_mode_background_color
 color exo_styled_error_message_background
 color exo_white
 color exo_white_opacity_70
+color hume_background
+color ic_launcher_background
 color notification_action_color_filter
 color notification_icon_bg_color
 color notification_material_background_media_default_color
@@ -254,6 +282,7 @@ drawable ic_call_answer_video
 drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
+drawable ic_launcher_foreground
 drawable notification_action_background
 drawable notification_bg
 drawable notification_bg_low
@@ -267,6 +296,11 @@ drawable notification_template_icon_bg
 drawable notification_template_icon_low_bg
 drawable notification_tile_bg
 drawable notify_panel_notification_icon_bg
+font montserrat_bold
+font montserrat_light
+font montserrat_medium
+font montserrat_regular
+font montserrat_semibold
 font roboto_medium_numbers
 id accessibility_action_clickable_span
 id accessibility_custom_action_0
@@ -391,6 +425,7 @@ id line1
 id line3
 id media_actions
 id media_controller_compat_view_tag
+id nav_controller_view_tag
 id never
 id none
 id normal
@@ -465,6 +500,8 @@ layout notification_template_media
 layout notification_template_media_custom
 layout notification_template_part_chronometer
 layout notification_template_part_time
+mipmap ic_launcher
+mipmap ic_launcher_round
 plurals exo_controls_fastforward_by_amount_description
 plurals exo_controls_rewind_by_amount_description
 string androidx_startup
@@ -655,6 +692,7 @@ style TextAppearance_Compat_Notification_Title_Media
 style Theme_Hume
 style Widget_Compat_NotificationActionContainer
 style Widget_Compat_NotificationActionText
+styleable ActivityNavigator android_name action data dataPattern targetPackage
 styleable AnimatedStateListDrawableCompat android_dither android_visible android_variablePadding android_constantSize android_enterFadeDuration android_exitFadeDuration
 styleable AnimatedStateListDrawableItem android_id android_drawable
 styleable AnimatedStateListDrawableTransition android_drawable android_toId android_fromId android_reversible
@@ -667,6 +705,13 @@ styleable FontFamilyFont android_font android_fontWeight android_fontStyle andro
 styleable GradientColor android_startColor android_endColor android_type android_centerX android_centerY android_gradientRadius android_tileMode android_centerColor android_startX android_startY android_endX android_endY
 styleable GradientColorItem android_color android_offset
 styleable LegacyPlayerControlView ad_marker_color ad_marker_width bar_gravity bar_height buffered_color controller_layout_id played_ad_marker_color played_color repeat_toggle_modes scrubber_color scrubber_disabled_size scrubber_dragged_size scrubber_drawable scrubber_enabled_size show_fastforward_button show_next_button show_previous_button show_rewind_button show_shuffle_button show_timeout time_bar_min_update_interval touch_target_height unplayed_color
+styleable NavAction android_id destination enterAnim exitAnim launchSingleTop popEnterAnim popExitAnim popUpTo popUpToInclusive popUpToSaveState restoreState
+styleable NavArgument android_name android_defaultValue argType nullable
+styleable NavDeepLink android_autoVerify action mimeType uri
+styleable NavGraphNavigator startDestination
+styleable NavHost navGraph
+styleable NavInclude graph
+styleable Navigator android_label android_id route
 styleable PlayerControlView ad_marker_color ad_marker_width animation_enabled bar_gravity bar_height buffered_color controller_layout_id fastforward_icon fullscreen_enter_icon fullscreen_exit_icon next_icon pause_icon play_icon played_ad_marker_color played_color previous_icon repeat_all_icon repeat_off_icon repeat_one_icon repeat_toggle_modes rewind_icon scrubber_color scrubber_disabled_size scrubber_dragged_size scrubber_drawable scrubber_enabled_size show_fastforward_button show_next_button show_previous_button show_rewind_button show_shuffle_button show_subtitle_button show_timeout show_vr_button shuffle_off_icon shuffle_on_icon subtitle_off_icon subtitle_on_icon time_bar_min_update_interval touch_target_height unplayed_color vr_icon
 styleable PlayerView ad_marker_color ad_marker_width animation_enabled artwork_display_mode auto_show bar_gravity bar_height buffered_color controller_layout_id default_artwork fastforward_icon fullscreen_enter_icon fullscreen_exit_icon hide_during_ads hide_on_touch image_display_mode keep_content_on_player_reset next_icon pause_icon play_icon played_ad_marker_color played_color player_layout_id previous_icon repeat_all_icon repeat_off_icon repeat_one_icon repeat_toggle_modes resize_mode rewind_icon scrubber_color scrubber_disabled_size scrubber_dragged_size scrubber_drawable scrubber_enabled_size show_buffering show_shuffle_button show_subtitle_button show_timeout show_vr_button shuffle_off_icon shuffle_on_icon shutter_background_color subtitle_off_icon subtitle_on_icon surface_type time_bar_min_update_interval touch_target_height unplayed_color use_artwork use_controller vr_icon
 styleable RecyclerView android_orientation android_clipToPadding android_descendantFocusability fastScrollEnabled fastScrollHorizontalThumbDrawable fastScrollHorizontalTrackDrawable fastScrollVerticalThumbDrawable fastScrollVerticalTrackDrawable layoutManager reverseLayout spanCount stackFromEnd
