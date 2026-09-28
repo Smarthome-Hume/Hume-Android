@@ -5,6 +5,10 @@ import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.storage.SensorDatabase
 import com.smarthome.hume.core.storage.SettingsStore
+import com.smarthome.hume.data.AppHomeRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class HumeApplication : Application() {
     lateinit var settingsStore: SettingsStore
@@ -12,11 +16,14 @@ class HumeApplication : Application() {
     lateinit var sensorDatabase: SensorDatabase
         private set
     val haRepository = HomeAssistantRepository()
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
         super.onCreate()
         // Graph moi (multi-module M3E): khoi tao 1 lan, cac feature lay qua HumeGraph.get().
         HumeGraph.init(this)
+        // Dang ky HomeRepository that (adapter tren HomeAssistantRepository cu).
+        HumeGraph.get().registerHomeRepository(AppHomeRepository(haRepository, appScope))
         settingsStore = SettingsStore(this)
         sensorDatabase = SensorDatabase(this)
         // Watched numeric sensors are cached locally so charts still work offline.

@@ -16,8 +16,7 @@ import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.model.AuthSession
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.feature.auth.LoginScreen
-import com.smarthome.hume.ui.root.HumeRootScreen
-import com.smarthome.hume.ui.theme.HumeTheme
+import com.smarthome.hume.ui.root.M3ERootScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,31 +44,29 @@ class MainActivity : ComponentActivity() {
         })
 
         setContent {
-            HumeTheme {
-                // Nguon su that cho gate dang nhap: AuthRepository cua kien truc moi.
-                // (Doc chung file "hume_settings"/"hume_secrets" voi SettingsStore cu.)
-                val session by graph.authRepository.session.collectAsState(initial = AuthSession())
-                val settings by app.settingsStore.settings.collectAsState(initial = HumeSettings())
-                LaunchedEffect(session.isLoggedIn) {
-                    if (session.isLoggedIn) {
-                        // Dong bo lai SettingsStore cu (tokenFlow cua no khong tu refresh).
-                        app.settingsStore.refresh()
-                        app.haRepository.configure(session.serverUrl, session.token)
-                        // Duong lay lich su rieng (timeout dai) cho bieu do 7 ngay.
-                        HistoryFetcher.configure(session.serverUrl, session.token)
-                        app.haRepository.connect()
-                    }
-                }
-                // Chua dang nhap -> man hinh login M3E moi (feature/auth).
+            // Nguon su that cho gate dang nhap: AuthRepository cua kien truc moi.
+            // (Doc chung file "hume_settings"/"hume_secrets" voi SettingsStore cu.)
+            val session by graph.authRepository.session.collectAsState(initial = AuthSession())
+            val settings by app.settingsStore.settings.collectAsState(initial = HumeSettings())
+            LaunchedEffect(session.isLoggedIn) {
                 if (session.isLoggedIn) {
-                    HumeRootScreen(
-                        settingsStore = app.settingsStore,
-                        ha = app.haRepository,
-                        settings = settings,
-                    )
-                } else {
-                    LoginScreen()
+                    // Dong bo lai SettingsStore cu (tokenFlow cua no khong tu refresh).
+                    app.settingsStore.refresh()
+                    app.haRepository.configure(session.serverUrl, session.token)
+                    // Duong lay lich su rieng (timeout dai) cho bieu do 7 ngay.
+                    HistoryFetcher.configure(session.serverUrl, session.token)
+                    app.haRepository.connect()
                 }
+            }
+            // Chua dang nhap -> man hinh login M3E moi (feature/auth).
+            if (session.isLoggedIn) {
+                M3ERootScreen(
+                    settingsStore = app.settingsStore,
+                    ha = app.haRepository,
+                    settings = settings,
+                )
+            } else {
+                LoginScreen()
             }
         }
     }

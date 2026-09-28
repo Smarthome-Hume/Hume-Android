@@ -1,4 +1,4 @@
-package com.smarthome.hume.core.model
+package com.smarthome.hume.core.model.domain
 
 /**
  * Domain model trung tam — UI khong bao gio thay entity_id tho cua HA.

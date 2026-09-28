@@ -14,6 +14,14 @@ class HumeGraph private constructor(context: Context) {
     val sessionStore: SessionStore by lazy { SessionStore(appContext) }
     val authRepository: AuthRepository by lazy { AuthRepository(sessionStore) }
 
+    /** Do :app dang ky sau init (implementation nam o app module). */
+    lateinit var homeRepository: HomeRepository
+        private set
+
+    fun registerHomeRepository(repo: HomeRepository) {
+        homeRepository = repo
+    }
+
     companion object {
         @Volatile
         private var instance: HumeGraph? = null
