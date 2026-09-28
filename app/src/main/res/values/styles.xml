@@ -1,1 +1,18 @@
-<resources><style name="Theme.Hume" parent="android:style/Theme.Material.Light.NoActionBar" /></resources>
+<resources>
+    <!--
+        Day variant. The night variant lives in res/values-night/styles.xml, so
+        the platform theme follows the system appearance just like the SwiftUI
+        app, which resolves Color.dynamic per trait collection.
+        Bars are transparent because Android 15 always draws edge to edge; the
+        insets are handled in HumeRootScreen.
+    -->
+    <style name="Theme.Hume" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/hume_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+    </style>
+</resources>

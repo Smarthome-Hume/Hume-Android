@@ -1,0 +1,6 @@
+<resources>
+    <!-- Color(.systemBackground) in light appearance. Same value as
+         HumeColors.PageBG so the first frame before Compose draws already
+         matches the app. The night value lives in res/values-night/. -->
+    <color name="hume_background">#FFFFFF</color>
+</resources>
