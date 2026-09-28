@@ -247,7 +247,7 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 12.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest, // demo .seccam: surfaceHighest
+        containerColor = cs.surfaceContainerHighest, // demo .seccam: surfaceHighest
         modifier = Modifier.riseIn(440),
     ) {
         Box(
@@ -471,7 +471,7 @@ private fun RecCard(rec: RecordingUi, onClick: () -> Unit) {
         Modifier
             .width(132.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(LocalHumeExtraColors.current.surfaceHighest) // demo .rec: surfaceHighest
+            .background(cs.surfaceContainerHighest) // demo .rec: surfaceHighest
             .pressMorph(pressedScale = 0.94f, onClick = onClick) // demo .rec:active scale(.94)
             .padding(8.dp),
     ) {
@@ -530,7 +530,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val bg = when {
         on && s.warn -> cs.tertiaryContainer
         on -> cs.errorContainer
-        else -> LocalHumeExtraColors.current.surfaceHighest
+        else -> cs.surfaceContainerHighest
     }
     // demo .scard.on .sic: trang 55%; .warn.on chi doi mau icon
     val iconBg = if (on) Color.White.copy(alpha = 0.55f) else cs.surfaceContainer
