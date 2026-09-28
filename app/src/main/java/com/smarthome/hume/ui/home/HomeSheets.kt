@@ -62,7 +62,7 @@ import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import com.smarthome.hume.ui.theme.glassSurface
 import com.smarthome.hume.ui.theme.rememberHumeHaptics
 import java.util.Locale
@@ -145,7 +145,7 @@ fun RoomBottomSheet(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Icons.Filled.Close,
+                        Icons.Outlined.Close,
                         contentDescription = "\u0110\u00f3ng",
                         tint = HumeColors.TextPrimary,
                         modifier = Modifier.size(16.dp),
@@ -272,7 +272,7 @@ private fun ClimateSquareCard(
         else -> "T\u1eaeT"
     }
     SquareCard(
-        icon = Icons.Filled.AcUnit,
+        icon = Icons.Outlined.AcUnit,
         label = device.label,
         sub = device.sub,
         isOn = isOn,
@@ -354,7 +354,7 @@ private fun SquareCard(
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            Icons.Filled.TouchApp,
+                            Icons.Outlined.TouchApp,
                             contentDescription = null,
                             tint = accent,
                             modifier = Modifier.size(9.dp),
@@ -496,7 +496,7 @@ private fun SensorBigCard(
                 Text(name, fontSize = 11.sp, lineHeight = 13.sp, color = HumeColors.TextSecondary)
             }
             Icon(
-                Icons.Filled.NorthEast,
+                Icons.Outlined.NorthEast,
                 contentDescription = null,
                 tint = color,
                 modifier = Modifier.size(20.dp),
@@ -583,17 +583,17 @@ private fun smoothPath(points: List<Offset>, tension: Float): Path {
 /** IconMapper.swift equivalents \u2014 toan bo dung Phosphor net mong. */
 private fun deviceIcon(key: String): ImageVector = when (key) {
     "bulb", "lightbulb" -> HumeIcons.Light
-    "sun" -> Icons.Filled.WbSunny
-    "desk" -> Icons.Filled.Desk
-    "switch" -> Icons.Filled.ToggleOn
-    "fan" -> Icons.Filled.Air
-    "stairs" -> Icons.Filled.Stairs
-    "plug" -> Icons.Filled.Power
-    "fire" -> Icons.Filled.Whatshot
-    "cooking" -> Icons.Filled.SoupKitchen
-    "snowflake" -> Icons.Filled.AcUnit
-    "washer", "dryer", "dishwasher" -> Icons.Filled.LocalLaundryService
-    else -> Icons.Filled.ToggleOn
+    "sun" -> Icons.Outlined.WbSunny
+    "desk" -> Icons.Outlined.Desk
+    "switch" -> Icons.Outlined.ToggleOn
+    "fan" -> Icons.Outlined.Air
+    "stairs" -> Icons.Outlined.Stairs
+    "plug" -> Icons.Outlined.Power
+    "fire" -> Icons.Outlined.Whatshot
+    "cooking" -> Icons.Outlined.SoupKitchen
+    "snowflake" -> Icons.Outlined.AcUnit
+    "washer", "dryer", "dishwasher" -> Icons.Outlined.LocalLaundryService
+    else -> Icons.Outlined.ToggleOn
 }
 
 private val LightsPopupYellow = Color(0xFFFFC107)
@@ -654,7 +654,7 @@ fun LightsBottomSheet(
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { manage = true }) {
                     Icon(
-                        Icons.Filled.Settings,
+                        Icons.Outlined.Settings,
                         contentDescription = "Qu\u1ea3n l\u00fd \u0111\u00e8n",
                         tint = HumeColors.Orange,
                         modifier = Modifier.size(18.dp),
@@ -716,7 +716,7 @@ fun LightsBottomSheet(
                                 },
                             ) {
                                 Icon(
-                                    Icons.Filled.PowerSettingsNew,
+                                    Icons.Outlined.PowerSettingsNew,
                                     contentDescription = "T\u1eaft",
                                     tint = HumeColors.TextSecondary,
                                     modifier = Modifier.size(18.dp),

@@ -1,81 +1,76 @@
 package com.smarthome.hume.ui.theme
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AcUnit
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bathtub
-import androidx.compose.material.icons.filled.BatteryChargingFull
-import androidx.compose.material.icons.filled.BatteryFull
-import androidx.compose.material.icons.filled.Bed
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.ChildCare
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Desk
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.LocalLaundryService
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.MeetingRoom
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Power
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.SoupKitchen
-import androidx.compose.material.icons.filled.Stairs
-import androidx.compose.material.icons.filled.Thermometer
-import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.WbTwilight
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.Weekend
-import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material.icons.outlined.Bolt as BoltOutlined
-import androidx.compose.material.icons.outlined.Home as HomeOutlined
-import androidx.compose.material.icons.outlined.Person as PersonOutlined
-import androidx.compose.material.icons.outlined.Shield as ShieldOutlined
+import androidx.compose.material.icons.outlined.AcUnit
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Bathtub
+import androidx.compose.material.icons.outlined.BatteryChargingFull
+import androidx.compose.material.icons.outlined.BatteryFull
+import androidx.compose.material.icons.outlined.Bed
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Desk
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.LocalLaundryService
+import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.MeetingRoom
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Power
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SoupKitchen
+import androidx.compose.material.icons.outlined.Stairs
+import androidx.compose.material.icons.outlined.Thermometer
+import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.outlined.WbTwilight
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.Weekend
+import androidx.compose.material.icons.outlined.Whatshot
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.smarthome.hume.core.model.HumeTab
 
 /*
- * Icon he thong: Material Icons (filled/outlined) — thay the Phosphor tu ve.
- * Quyet dinh 2026-09-28: Material Design dung icon phang Material Symbols;
- * tren Compose dung material-icons-extended (ImageVector), khong doi API.
+ * Icon he thong: Material Icons OUTLINED (net manh, mem mai) — thay Phosphor tu ve.
+ * Quyet dinh 2026-09-28 (user chon outlined manh): Material Design icon net manh;
+ * tren Compose dung material-icons-extended (ImageVector).
  *
- * Navbar: tab DANG CHON dung ban filled, tab con lai dung outlined
- * - dung cach One UI / iOS 26 phan biet tab active.
+ * Navbar: tat ca outlined; tab active nhan manh bang pill + label SemiBold.
  */
 object HumeIcons {
-    val Light = Icons.Filled.Lightbulb
-    val Temperature = Icons.Filled.Thermometer
-    val Humidity = Icons.Filled.WaterDrop
-    val Climate = Icons.Filled.AcUnit
-    val Door = Icons.Filled.MeetingRoom
-    val DoorClosed = Icons.Filled.MeetingRoom
-    val Alarm = Icons.Filled.Shield
-    val AlarmOk = Icons.Filled.VerifiedUser
-    val Bell = Icons.Filled.Notifications
-    val Night = Icons.Filled.DarkMode
-    val Solar = Icons.Filled.WbSunny
-    val Battery = Icons.Filled.BatteryChargingFull
-    val BatteryFull = Icons.Filled.BatteryFull
-    val Desk = Icons.Filled.Desk
-    val Sunrise = Icons.Filled.WbTwilight
-    val Leaving = Icons.Filled.Logout
-    val Coming = Icons.Filled.Home
-    val Power = Icons.Filled.Bolt
-    val Plug = Icons.Filled.Power
-    val House = Icons.Filled.Home
+    val Light = Icons.Outlined.Lightbulb
+    val Temperature = Icons.Outlined.Thermometer
+    val Humidity = Icons.Outlined.WaterDrop
+    val Climate = Icons.Outlined.AcUnit
+    val Door = Icons.Outlined.MeetingRoom
+    val DoorClosed = Icons.Outlined.MeetingRoom
+    val Alarm = Icons.Outlined.Shield
+    val AlarmOk = Icons.Outlined.VerifiedUser
+    val Bell = Icons.Outlined.Notifications
+    val Night = Icons.Outlined.DarkMode
+    val Solar = Icons.Outlined.WbSunny
+    val Battery = Icons.Outlined.BatteryChargingFull
+    val BatteryFull = Icons.Outlined.BatteryFull
+    val Desk = Icons.Outlined.Desk
+    val Sunrise = Icons.Outlined.WbTwilight
+    val Leaving = Icons.Outlined.Logout
+    val Coming = Icons.Outlined.Home
+    val Power = Icons.Outlined.Bolt
+    val Plug = Icons.Outlined.Power
+    val House = Icons.Outlined.Home
 
     fun room(key: String): ImageVector = when (key) {
-        "bed" -> Icons.Filled.Bed
-        "child" -> Icons.Filled.ChildCare
-        "sparkles" -> Icons.Filled.AutoAwesome
-        "sofa" -> Icons.Filled.Weekend
-        "bath" -> Icons.Filled.Bathtub
-        "kitchen" -> Icons.Filled.SoupKitchen
-        "washer" -> Icons.Filled.LocalLaundryService
-        "hallway" -> Icons.Filled.Stairs
-        else -> Icons.Filled.Home
+        "bed" -> Icons.Outlined.Bed
+        "child" -> Icons.Outlined.ChildCare
+        "sparkles" -> Icons.Outlined.AutoAwesome
+        "sofa" -> Icons.Outlined.Weekend
+        "bath" -> Icons.Outlined.Bathtub
+        "kitchen" -> Icons.Outlined.SoupKitchen
+        "washer" -> Icons.Outlined.LocalLaundryService
+        "hallway" -> Icons.Outlined.Stairs
+        else -> Icons.Outlined.Home
     }
 
     /** Icon keys used by the sensor/device cards. */
@@ -88,9 +83,9 @@ object HumeIcons {
         "desk" -> Desk
         "door" -> DoorClosed
         "snowflake" -> Climate
-        "fire" -> Icons.Filled.Whatshot
-        "cooking" -> Icons.Filled.SoupKitchen
-        "dishwasher", "washer", "dryer" -> Icons.Filled.LocalLaundryService
+        "fire" -> Icons.Outlined.Whatshot
+        "cooking" -> Icons.Outlined.SoupKitchen
+        "dishwasher", "washer", "dryer" -> Icons.Outlined.LocalLaundryService
         "bulb", "lightbulb" -> Light
         else -> Power
     }
@@ -109,24 +104,13 @@ object HumeIcons {
         }
     }
 
-    /** Tab DANG CHON: icon filled. */
+    /** Navbar: outlined manh — tab active phan biet bang pill + label dam. */
     fun tab(tab: HumeTab): ImageVector = when (tab) {
-        HumeTab.Home -> Icons.Filled.Home
-        HumeTab.Energy -> Icons.Filled.Bolt
-        HumeTab.Security -> Icons.Filled.Shield
-        HumeTab.Profile -> Icons.Filled.Person
+        HumeTab.Home -> Icons.Outlined.Home
+        HumeTab.Energy -> Icons.Outlined.Bolt
+        HumeTab.Security -> Icons.Outlined.Shield
+        HumeTab.Profile -> Icons.Outlined.Person
     }
-
-    /** Tab khong chon: outlined. */
-    fun tabOutline(tab: HumeTab): ImageVector = when (tab) {
-        HumeTab.Home -> HomeOutlined
-        HumeTab.Energy -> BoltOutlined
-        HumeTab.Security -> ShieldOutlined
-        HumeTab.Profile -> PersonOutlined
-    }
-
-    fun tab(tab: HumeTab, selected: Boolean): ImageVector =
-        if (selected) tab(tab) else tabOutline(tab)
 
     /** Icon for a scene, guessed from its name. */
     fun scene(label: String): ImageVector {
@@ -136,7 +120,7 @@ object HumeIcons {
             text.contains("ngủ") || text.contains("night") || text.contains("sleep") -> Night
             text.contains("ra khỏi") || text.contains("away") || text.contains("leave") -> Leaving
             text.contains("về nhà") || text.contains("home") || text.contains("arrive") -> Coming
-            else -> Icons.Filled.AutoAwesome
+            else -> Icons.Outlined.AutoAwesome
         }
     }
 }

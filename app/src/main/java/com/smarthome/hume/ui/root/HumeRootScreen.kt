@@ -199,7 +199,7 @@ private fun NavItem(
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            HumeIcons.tab(item, active),
+            HumeIcons.tab(item),
             contentDescription = item.label,
             tint = contentColor,
             modifier = Modifier.size(21.dp),

@@ -40,7 +40,7 @@ import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.HumeSurfaces
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.rememberHumeHaptics
 import kotlinx.serialization.json.JsonArray
@@ -138,11 +138,11 @@ private fun CloseButton(onDismiss: () -> Unit) {
 private data class ClimateMode(val key: String, val label: String, val icon: ImageVector, val color: Color)
 
 private val climateModes = listOf(
-    ClimateMode("off", "T\u1eaft", Icons.Filled.PowerSettingsNew, Color(0xFF8E8E93)),
-    ClimateMode("cool", "M\u00e1t", Icons.Filled.AcUnit, Color(0xFF73B9F2)),
-    ClimateMode("dry", "Kh\u00f4", Icons.Filled.WaterDrop, Color(0xFFF2D26F)),
-    ClimateMode("fan_only", "Qu\u1ea1t", Icons.Filled.Air, Color(0xFF66D19E)),
-    ClimateMode("heat_cool", "T\u1ef1 \u0111\u1ed9ng", Icons.Filled.Thermometer, Color(0xFFF9784C)),
+    ClimateMode("off", "T\u1eaft", Icons.Outlined.PowerSettingsNew, Color(0xFF8E8E93)),
+    ClimateMode("cool", "M\u00e1t", Icons.Outlined.AcUnit, Color(0xFF73B9F2)),
+    ClimateMode("dry", "Kh\u00f4", Icons.Outlined.WaterDrop, Color(0xFFF2D26F)),
+    ClimateMode("fan_only", "Qu\u1ea1t", Icons.Outlined.Air, Color(0xFF66D19E)),
+    ClimateMode("heat_cool", "T\u1ef1 \u0111\u1ed9ng", Icons.Outlined.Thermometer, Color(0xFFF9784C)),
 )
 
 @Composable
@@ -178,7 +178,7 @@ fun ClimatePopup(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                StepButton(Icons.Filled.Remove, isOn && target > 16) {
+                StepButton(Icons.Outlined.Remove, isOn && target > 16) {
                     haptics.tap()
                     ha.setClimateTemperature(entityId, target - 1)
                 }
@@ -198,7 +198,7 @@ fun ClimatePopup(
                         )
                     }
                 }
-                StepButton(Icons.Filled.Add, isOn && target < 31) {
+                StepButton(Icons.Outlined.Add, isOn && target < 31) {
                     haptics.tap()
                     ha.setClimateTemperature(entityId, target + 1)
                 }
