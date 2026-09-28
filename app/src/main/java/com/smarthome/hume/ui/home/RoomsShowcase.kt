@@ -47,7 +47,8 @@ import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.NeonDotRed
-import com.smarthome.hume.ui.theme.Ph
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import com.smarthome.hume.ui.theme.humeMarquee
 import com.smarthome.hume.ui.theme.neonGlowCircle
 import com.smarthome.hume.ui.theme.rememberHumeHaptics
@@ -393,7 +394,7 @@ private fun TargetStepper(
             },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Ph.CaretUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(15.dp))
+            Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "T\u0103ng", tint = foreground, modifier = Modifier.size(15.dp))
         }
         Box(Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
             Text(
@@ -412,7 +413,7 @@ private fun TargetStepper(
             },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Ph.CaretDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(15.dp))
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Gi\u1ea3m", tint = foreground, modifier = Modifier.size(15.dp))
         }
     }
 }

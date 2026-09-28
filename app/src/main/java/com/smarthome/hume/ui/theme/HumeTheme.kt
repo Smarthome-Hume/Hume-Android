@@ -19,7 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 object HumeColors {
     var isDark by mutableStateOf(false)
@@ -152,22 +154,26 @@ private fun schemeFor(dark: Boolean) = if (dark) {
     )
 }
 
+/* M3 Expressive: goc bo lon, bieu cam hon — card hero, sheet, FAB. */
 private val HumeMaterialShapes = Shapes(
-    extraSmall = RoundedCornerShape(10.dp),
-    small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(26.dp),
-    extraLarge = RoundedCornerShape(30.dp),
+    extraSmall = RoundedCornerShape(12.dp),
+    small = RoundedCornerShape(16.dp),
+    medium = RoundedCornerShape(24.dp),
+    large = RoundedCornerShape(32.dp),
+    extraLarge = RoundedCornerShape(40.dp),
 )
 
 private fun typographyFor(family: FontFamily): Typography {
     fun TextStyle.withHumeFont() = copy(fontFamily = family)
     val t = Typography()
     return Typography(
-        displayLarge = t.displayLarge.withHumeFont(),
-        displayMedium = t.displayMedium.withHumeFont(),
+        // M3 Expressive: display to, dam, nhan manh so lieu (nhiet do, kWh).
+        displayLarge = t.displayLarge.withHumeFont()
+            .copy(fontSize = 64.sp, fontWeight = FontWeight.Bold),
+        displayMedium = t.displayMedium.withHumeFont()
+            .copy(fontSize = 52.sp, fontWeight = FontWeight.Bold),
         displaySmall = t.displaySmall.withHumeFont(),
-        headlineLarge = t.headlineLarge.withHumeFont(),
+        headlineLarge = t.headlineLarge.withHumeFont().copy(fontSize = 36.sp),
         headlineMedium = t.headlineMedium.withHumeFont(),
         headlineSmall = t.headlineSmall.withHumeFont(),
         titleLarge = t.titleLarge.withHumeFont(),

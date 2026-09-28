@@ -49,7 +49,8 @@ import com.smarthome.hume.ui.theme.GlassCard
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
 import com.smarthome.hume.ui.theme.HumeShapes
-import com.smarthome.hume.ui.theme.Ph
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import com.smarthome.hume.ui.theme.humeMarquee
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -339,7 +340,7 @@ private fun ExpanderGroup(
         ) {
             Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = HumeColors.TextPrimary, modifier = Modifier.weight(1f))
             Icon(
-                Ph.CaretDown,
+                Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
                 tint = HumeColors.TextSecondary,
                 modifier = Modifier.size(20.dp).rotate(if (open) 180f else 0f),
@@ -407,7 +408,7 @@ private fun ValueRow(
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Ph.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
             }
         } else {
             Row(

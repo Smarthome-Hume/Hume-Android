@@ -61,7 +61,8 @@ import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
-import com.smarthome.hume.ui.theme.Ph
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import com.smarthome.hume.ui.theme.glassSurface
 import com.smarthome.hume.ui.theme.humeMarquee
 import com.smarthome.hume.ui.theme.neonGlow
@@ -108,28 +109,28 @@ private enum class SensorKind { Door, Motion, Smoke, Leak }
 
 /** DOOR_SENSORS */
 private val doorSensors = listOf(
-    SensorDef("binary_sensor.cam_bien_cua_kinh_contact", "C\u1eeda k\u00ednh", Ph.Door, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_chinh_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 ch\u00ednh", Ph.Door, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_be_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 b\u00e9", Ph.Door, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_phong_tam_contact", "C\u1eeda ph\u00f2ng t\u1eafm", Ph.Door, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_cua_ban_cong_tt2_contact", "C\u1eeda ban c\u00f4ng T2", Ph.Door, SensorKind.Door),
-    SensorDef("binary_sensor.cam_bien_ban_cong_t3_contact", "C\u1eeda ban c\u00f4ng T3", Ph.Door, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_kinh_contact", "C\u1eeda k\u00ednh", Icons.Filled.MeetingRoom, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_chinh_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 ch\u00ednh", Icons.Filled.MeetingRoom, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_phong_ngu_be_contact", "C\u1eeda ph\u00f2ng ng\u1ee7 b\u00e9", Icons.Filled.MeetingRoom, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_phong_tam_contact", "C\u1eeda ph\u00f2ng t\u1eafm", Icons.Filled.MeetingRoom, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_cua_ban_cong_tt2_contact", "C\u1eeda ban c\u00f4ng T2", Icons.Filled.MeetingRoom, SensorKind.Door),
+    SensorDef("binary_sensor.cam_bien_ban_cong_t3_contact", "C\u1eeda ban c\u00f4ng T3", Icons.Filled.MeetingRoom, SensorKind.Door),
 )
 
 /** MOTION_SENSORS */
 private val motionSensors = listOf(
-    SensorDef("binary_sensor.cam_bien_pir_t1_occupancy", "PIR T\u1ea7ng 1", Ph.Walk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_pir_t2_occupancy", "PIR T\u1ea7ng 2", Ph.Walk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_pir_t3_occupancy", "PIR T\u1ea7ng 3", Ph.Walk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_hien_dien_presence", "C\u1ea3m bi\u1ebfn hi\u1ec7n di\u1ec7n", Ph.Walk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_pir_phong_tho_occupancy", "PIR ph\u00f2ng th\u1edd", Ph.Walk, SensorKind.Motion),
-    SensorDef("binary_sensor.cam_bien_tuong_t2_occupancy", "C\u1ea3m bi\u1ebfn t\u01b0\u1eddng T2", Ph.Walk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_t1_occupancy", "PIR T\u1ea7ng 1", Icons.Filled.DirectionsWalk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_t2_occupancy", "PIR T\u1ea7ng 2", Icons.Filled.DirectionsWalk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_t3_occupancy", "PIR T\u1ea7ng 3", Icons.Filled.DirectionsWalk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_hien_dien_presence", "C\u1ea3m bi\u1ebfn hi\u1ec7n di\u1ec7n", Icons.Filled.DirectionsWalk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_pir_phong_tho_occupancy", "PIR ph\u00f2ng th\u1edd", Icons.Filled.DirectionsWalk, SensorKind.Motion),
+    SensorDef("binary_sensor.cam_bien_tuong_t2_occupancy", "C\u1ea3m bi\u1ebfn t\u01b0\u1eddng T2", Icons.Filled.DirectionsWalk, SensorKind.Motion),
 )
 
 /** ENV_SENSORS */
 private val envSensors = listOf(
-    SensorDef("binary_sensor.cam_bien_khoi_smoke", "Kh\u00f3i", Ph.Fire, SensorKind.Smoke, Color(0xFFFF6D00)),
-    SensorDef("binary_sensor.cam_bien_nuoc_water_leak", "R\u00f2 r\u1ec9 n\u01b0\u1edbc", Ph.Drop, SensorKind.Leak, Color(0xFF2196F3)),
+    SensorDef("binary_sensor.cam_bien_khoi_smoke", "Kh\u00f3i", Icons.Filled.Whatshot, SensorKind.Smoke, Color(0xFFFF6D00)),
+    SensorDef("binary_sensor.cam_bien_nuoc_water_leak", "R\u00f2 r\u1ec9 n\u01b0\u1edbc", Icons.Filled.WaterDrop, SensorKind.Leak, Color(0xFF2196F3)),
 )
 
 /**
@@ -274,7 +275,7 @@ private fun CameraCard(camera: SecurityCamera) {
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Icon(
-                        Ph.Warning,
+                        Icons.Filled.Warning,
                         contentDescription = null,
                         tint = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.size(22.dp),
@@ -294,7 +295,7 @@ private fun CameraCard(camera: SecurityCamera) {
                 }
             } else if (!unlocked) {
                 Icon(
-                    Ph.VideoCamera,
+                    Icons.Filled.Videocam,
                     contentDescription = null,
                     tint = Color.White.copy(alpha = 0.65f),
                     modifier = Modifier.align(Alignment.Center).size(26.dp),
@@ -324,7 +325,7 @@ private fun CameraCard(camera: SecurityCamera) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Ph.CaretUp,
+                        Icons.Filled.KeyboardArrowUp,
                         contentDescription = "Xem tr\u1ef1c ti\u1ebfp",
                         tint = Color.White.copy(alpha = 0.85f),
                         modifier = Modifier.size(20.dp),
@@ -392,7 +393,7 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Ph.VideoCamera,
+                Icons.Filled.Videocam,
                 contentDescription = null,
                 tint = HumeColors.Orange,
                 modifier = Modifier.size(14.dp),
@@ -415,7 +416,7 @@ private fun FrigateEventsSection(camera: SecurityCamera) {
                 )
             } else {
                 Icon(
-                    Ph.Download,
+                    Icons.Filled.Download,
                     contentDescription = "T\u1ea3i video m\u1edbi nh\u1ea5t",
                     tint = HumeColors.Orange,
                     modifier = Modifier
@@ -516,7 +517,7 @@ private fun RecordingThumb(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Ph.Play,
+                    Icons.Filled.PlayArrow,
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(14.dp),

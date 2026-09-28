@@ -61,7 +61,8 @@ import com.smarthome.hume.core.scene.ManagedListsStore
 import com.smarthome.hume.ui.manage.ManageListSheet
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import com.smarthome.hume.ui.theme.Ph
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import com.smarthome.hume.ui.theme.glassSurface
 import com.smarthome.hume.ui.theme.rememberHumeHaptics
 import java.util.Locale
@@ -144,7 +145,7 @@ fun RoomBottomSheet(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Ph.X,
+                        Icons.Filled.Close,
                         contentDescription = "\u0110\u00f3ng",
                         tint = HumeColors.TextPrimary,
                         modifier = Modifier.size(16.dp),
@@ -271,7 +272,7 @@ private fun ClimateSquareCard(
         else -> "T\u1eaeT"
     }
     SquareCard(
-        icon = Ph.Snowflake,
+        icon = Icons.Filled.AcUnit,
         label = device.label,
         sub = device.sub,
         isOn = isOn,
@@ -353,7 +354,7 @@ private fun SquareCard(
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            Ph.HandTap,
+                            Icons.Filled.TouchApp,
                             contentDescription = null,
                             tint = accent,
                             modifier = Modifier.size(9.dp),
@@ -495,7 +496,7 @@ private fun SensorBigCard(
                 Text(name, fontSize = 11.sp, lineHeight = 13.sp, color = HumeColors.TextSecondary)
             }
             Icon(
-                Ph.ArrowUpRight,
+                Icons.Filled.NorthEast,
                 contentDescription = null,
                 tint = color,
                 modifier = Modifier.size(20.dp),
@@ -581,19 +582,18 @@ private fun smoothPath(points: List<Offset>, tension: Float): Path {
 
 /** IconMapper.swift equivalents \u2014 toan bo dung Phosphor net mong. */
 private fun deviceIcon(key: String): ImageVector = when (key) {
-    // DIEM 3: bong den dung ban ve lai theo HTML (PhHtml qua HumeIcons.Light).
     "bulb", "lightbulb" -> HumeIcons.Light
-    "sun" -> Ph.Sun
-    "desk" -> Ph.Desk
-    "switch" -> Ph.ToggleRight
-    "fan" -> Ph.Fan
-    "stairs" -> Ph.Stairs
-    "plug" -> Ph.Plug
-    "fire" -> Ph.Fire
-    "cooking" -> Ph.CookingPot
-    "snowflake" -> Ph.Snowflake
-    "washer", "dryer", "dishwasher" -> Ph.Washer
-    else -> Ph.ToggleRight
+    "sun" -> Icons.Filled.WbSunny
+    "desk" -> Icons.Filled.Desk
+    "switch" -> Icons.Filled.ToggleOn
+    "fan" -> Icons.Filled.Air
+    "stairs" -> Icons.Filled.Stairs
+    "plug" -> Icons.Filled.Power
+    "fire" -> Icons.Filled.Whatshot
+    "cooking" -> Icons.Filled.SoupKitchen
+    "snowflake" -> Icons.Filled.AcUnit
+    "washer", "dryer", "dishwasher" -> Icons.Filled.LocalLaundryService
+    else -> Icons.Filled.ToggleOn
 }
 
 private val LightsPopupYellow = Color(0xFFFFC107)
@@ -654,7 +654,7 @@ fun LightsBottomSheet(
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { manage = true }) {
                     Icon(
-                        Ph.Gear,
+                        Icons.Filled.Settings,
                         contentDescription = "Qu\u1ea3n l\u00fd \u0111\u00e8n",
                         tint = HumeColors.Orange,
                         modifier = Modifier.size(18.dp),
@@ -716,7 +716,7 @@ fun LightsBottomSheet(
                                 },
                             ) {
                                 Icon(
-                                    Ph.PowerButton,
+                                    Icons.Filled.PowerSettingsNew,
                                     contentDescription = "T\u1eaft",
                                     tint = HumeColors.TextSecondary,
                                     modifier = Modifier.size(18.dp),

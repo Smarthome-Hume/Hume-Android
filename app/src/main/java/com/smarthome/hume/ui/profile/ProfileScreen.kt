@@ -50,7 +50,8 @@ import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeShapes
-import com.smarthome.hume.ui.theme.Ph
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import com.smarthome.hume.ui.theme.glassPill
 import com.smarthome.hume.ui.theme.glassSurface
 import kotlinx.coroutines.CoroutineScope
@@ -107,24 +108,24 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            ProfileRow(Ph.Badge, "ID Ng\u01b0\u1eddi d\u00f9ng", userId, copy = true)
-            ProfileRow(Ph.User, "T\u00ean ng\u01b0\u1eddi d\u00f9ng", personName, copy = true)
+            ProfileRow(Icons.Filled.Badge, "ID Ng\u01b0\u1eddi d\u00f9ng", userId, copy = true)
+            ProfileRow(Icons.Filled.Person, "T\u00ean ng\u01b0\u1eddi d\u00f9ng", personName, copy = true)
             ProfileRow(
-                Ph.Envelope,
+                Icons.Filled.Email,
                 "Email",
                 email.ifEmpty { "Ch\u01b0a c\u1eadp nh\u1eadt" },
                 copy = false,
                 onClick = { editing = "email" },
             )
             ProfileRow(
-                Ph.Phone,
+                Icons.Filled.Phone,
                 "\u0110i\u1ec7n tho\u1ea1i",
                 phone.ifEmpty { "Ch\u01b0a c\u1eadp nh\u1eadt" },
                 copy = false,
                 onClick = { editing = "phone" },
             )
             ProfileRow(
-                Ph.MapPin,
+                Icons.Filled.Place,
                 "V\u1ecb tr\u00ed",
                 locationName(person?.state),
                 copy = true,
@@ -241,7 +242,7 @@ private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> U
                         modifier = Modifier.size(60.dp).clip(CircleShape),
                     )
                 } else {
-                    Icon(Ph.User, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Filled.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
             }
             Spacer(Modifier.width(14.dp))
@@ -265,16 +266,16 @@ private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> U
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Ph.DeviceMobile, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.Smartphone, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, maxLines = 1, softWrap = false, modifier = Modifier.weight(1f))
-                Icon(Ph.CaretRight, contentDescription = null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
             }
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Ph.Chat, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.Chat, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -334,7 +335,7 @@ private fun ProfileRow(
                 Text("\u0110\u00e3 copy", fontSize = 11.sp, color = HumeColors.TextSecondary, maxLines = 1, softWrap = false)
             } else {
                 Icon(
-                    if (copy) Ph.Copy else Ph.Pencil,
+                    if (copy) Icons.Filled.ContentCopy else Icons.Filled.Edit,
                     contentDescription = null,
                     tint = HumeColors.TextPrimary,
                     modifier = Modifier.size(18.dp),

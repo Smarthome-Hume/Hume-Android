@@ -41,7 +41,8 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
-import com.smarthome.hume.ui.theme.Ph
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import com.smarthome.hume.ui.theme.humeMarquee
 import com.smarthome.hume.ui.theme.neonGlow
 import com.smarthome.hume.ui.theme.neonGlowCircle
@@ -276,11 +277,11 @@ private fun ModePill(
 }
 
 private fun modeIcon(service: String): ImageVector = when (service) {
-    "arm_home" -> Ph.House
-    "arm_away" -> Ph.SignOut
-    "arm_night" -> Ph.Moon
-    "arm_custom_bypass" -> Ph.SunHorizon
-    else -> Ph.Shield
+    "arm_home" -> Icons.Filled.Home
+    "arm_away" -> Icons.Filled.Logout
+    "arm_night" -> Icons.Filled.DarkMode
+    "arm_custom_bypass" -> Icons.Filled.WbTwilight
+    else -> Icons.Filled.Shield
 }
 
 private fun modeColor(service: String): Color = when (service) {
