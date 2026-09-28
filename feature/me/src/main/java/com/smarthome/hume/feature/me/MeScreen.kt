@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
@@ -208,9 +209,9 @@ private fun SyncCard(syncing: Boolean, onSync: () -> Unit) {
 private fun MorphLoader() {
     val primary = MaterialTheme.colorScheme.primary
     val spinT = rememberInfiniteTransition(label = "mspin")
-    val rot by spinT.animateFloat(0f, 360f, infiniteRepeatable(tween(4400, LinearEasing)), label = "rot")
+    val rot by spinT.animateFloat(0f, 360f, infiniteRepeatable(tween(4400, easing = LinearEasing)), label = "rot")
     val blobT = rememberInfiniteTransition(label = "mmorph")
-    val phase by blobT.animateFloat(0f, 1f, infiniteRepeatable(tween(4550, LinearEasing)), label = "phase")
+    val phase by blobT.animateFloat(0f, 1f, infiniteRepeatable(tween(4550, easing = LinearEasing)), label = "phase")
     Canvas(Modifier.size(38.dp)) {
         rotate(rot) {
             val s = size.minDimension
@@ -246,13 +247,13 @@ private fun WavyProgress(syncing: Boolean) {
     LaunchedEffect(syncing) {
         if (syncing) {
             fillFrac.snapTo(0f)
-            fillFrac.animateTo(1f, tween(4000, LinearEasing))
+            fillFrac.animateTo(1f, tween(4000, easing = LinearEasing))
         }
     }
     val waveT = rememberInfiniteTransition(label = "wave")
     val slide by waveT.animateFloat(
         0f, -40f,
-        infiniteRepeatable(tween(1200, LinearEasing)),
+        infiniteRepeatable(tween(1200, easing = LinearEasing)),
         label = "slide",
     )
     Canvas(
@@ -382,7 +383,7 @@ private fun RowScope.NButton(
     val bg = when {
         primary && pressed -> MaterialTheme.colorScheme.primaryContainer
         primary -> MaterialTheme.colorScheme.primary
-        pressed -> MaterialTheme.colorScheme.surfaceHigh
+        pressed -> LocalHumeExtraColors.current.surfaceHigh
         else -> MaterialTheme.colorScheme.surfaceContainer
     }
     val fg = when {
