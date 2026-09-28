@@ -439,10 +439,10 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     // 4 mau slice RIENG BIET: primary (theme) + 3 mau co dinh (xanh duong, ho phach, tim)
     // de tranh trung nhau nhu vu primary==tertiary o theme xanh la
     val sliceColors = listOf(
-        MaterialTheme.colorScheme.primary,
-        Color(0xFF5B8DEF),
-        Color(0xFFE8A838),
-        Color(0xFF9B7EDE),
+        Color(0xFFE8734A), // cam do (khac primary cua moi theme)
+        Color(0xFF5B8DEF), // xanh duong
+        Color(0xFFE8A838), // vang
+        Color(0xFF9B7EDE), // tim
     )
     // Legend entrance: tu phai sang, stagger (demo .dli)
     var legendShown by remember { mutableStateOf(false) }

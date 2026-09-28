@@ -58,6 +58,12 @@ fun MsIcon(
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 color = tint,
                 textAlign = TextAlign.Center,
+                // Them shadow cung mau de gia day net
+                shadow = androidx.compose.ui.graphics.Shadow(
+                    color = tint,
+                    offset = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),
+                    blurRadius = 0.8f,
+                ),
             ),
         )
     }

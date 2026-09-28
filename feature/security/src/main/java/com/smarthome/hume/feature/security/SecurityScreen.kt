@@ -500,11 +500,15 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
         animationSpec = tween(300),
         label = "scIconTint",
     )
-    val nameColor = when {
-        on && s.warn -> cs.onTertiaryContainer
-        on -> cs.onErrorContainer
-        else -> cs.onSurface
-    }
+    val nameColor by animateColorAsState(
+        targetValue = when {
+            on && s.warn -> cs.onTertiaryContainer
+            on -> cs.onErrorContainer
+            else -> cs.onSurface
+        },
+        animationSpec = tween(300),
+        label = "scNameColor",
+    )
     val chipLabel = when (s.kind) {
         SensorKind.Door -> if (on) "MỞ" else "ĐÓNG"
         SensorKind.Motion -> if (on) "PHÁT HIỆN" else "TRỐNG"
