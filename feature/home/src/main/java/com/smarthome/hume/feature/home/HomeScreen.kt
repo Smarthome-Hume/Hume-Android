@@ -18,6 +18,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -286,6 +287,7 @@ private fun RiseIn(delayMs: Int, content: @Composable () -> Unit) {
  * Pull-to-refresh indicator mo phong #ptr .morphloader cua demo:
  * blob 34px morph lien tuc, hien theo luc keo / khi dang refresh.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BoxScope.MorphLoaderIndicator(
     isRefreshing: Boolean,
