@@ -43,7 +43,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +55,7 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.MsIcon
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -367,7 +367,7 @@ private fun FlowArea(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
-                Icon(
+                MsIcon(
                     M3EIcons.Power, null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(hub * 0.47f),
@@ -428,7 +428,7 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
 
 @Composable
 private fun FlowNode(
-    icon: ImageVector,
+    icon: String,
     tintBg: Color,
     tintFg: Color,
     label: String,
@@ -455,7 +455,7 @@ private fun FlowNode(
                 .clip(CircleShape)
                 .background(tintBg),
         ) {
-            Icon(icon, null, tint = tintFg, modifier = Modifier.size(20.dp))
+            MsIcon(icon, null, tint = tintFg, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {

@@ -31,8 +31,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +63,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -421,8 +421,8 @@ private fun EcoDialog(
                     .offset(y = (-60).dp),
             ) {
                 Column(Modifier.padding(24.dp)) {
-                    Icon(
-                        Icons.Outlined.Bolt, null,
+                    MsIcon(
+                        Ms.bolt, null,
                         tint = cs.secondary,
                         modifier = Modifier.size(24.dp),
                     )

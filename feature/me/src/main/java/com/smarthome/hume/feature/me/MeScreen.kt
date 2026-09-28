@@ -58,7 +58,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -72,6 +71,7 @@ import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
+import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import kotlinx.coroutines.delay
@@ -314,7 +314,7 @@ private fun NotifCard(onViewCamera: () -> Unit) {
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            MsIcon(
                 M3EIcons.Shield,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -362,7 +362,7 @@ private fun NotifCard(onViewCamera: () -> Unit) {
 private fun RowScope.NButton(
     index: Int,
     np: NeighborPressState,
-    icon: ImageVector,
+    icon: String,
     text: String,
     primary: Boolean,
     onClick: () -> Unit,
@@ -401,7 +401,7 @@ private fun RowScope.NButton(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(20.dp))
+        MsIcon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
         Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = fg)
     }
@@ -519,7 +519,7 @@ private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
+                    MsIcon(
                         M3EIcons.Check,
                         contentDescription = seedNames[s],
                         tint = Color.White,

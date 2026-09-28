@@ -20,10 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -54,6 +50,8 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 
@@ -92,7 +90,7 @@ fun HomeHeader(
                     .clip(CircleShape)
                     .background(cs.surfaceContainerHighest),
             ) {
-                Icon(
+                MsIcon(
                     M3EIcons.Person, null,
                     tint = cs.onSurfaceVariant,
                     modifier = Modifier.size(28.dp),
@@ -136,8 +134,8 @@ fun HomeHeader(
                 .background(cs.surfaceContainerHighest)
                 .pressMorph(pressedScale = 0.88f, onClick = onSearch),
         ) {
-            Icon(
-                Icons.Outlined.Search, null,
+            MsIcon(
+                Ms.search, null,
                 tint = cs.onSurfaceVariant,
                 modifier = Modifier.size(22.dp),
             )
@@ -153,8 +151,8 @@ fun HomeHeader(
                     .background(cs.surfaceContainerHighest)
                     .pressMorph(pressedScale = 0.88f, onClick = onNotif),
             ) {
-                Icon(
-                    Icons.Outlined.Notifications, null,
+                MsIcon(
+                    Ms.notifications, null,
                     tint = cs.onSurface,
                     modifier = Modifier.size(22.dp),
                 )
@@ -222,8 +220,8 @@ fun SuggestCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 2.dp),
         ) {
-            Icon(
-                Icons.Outlined.AutoAwesome, null,
+            MsIcon(
+                Ms.auto_awesome, null,
                 tint = cs.onTertiaryContainer,
                 modifier = Modifier.size(30.dp),
             )
@@ -463,7 +461,7 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.35f)),
             ) {
-                Icon(
+                MsIcon(
                     M3EIcons.Solar, null,
                     tint = cs.onTertiaryContainer,
                     modifier = Modifier.size(26.dp),

@@ -18,12 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.PowerSettingsNew
-import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material.icons.outlined.Thermostat
-import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +36,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +51,8 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 
 /**
  * Luoi the phong theo demo rev12 (.roomc): layout DOC — nut den 48px tren,
@@ -133,7 +128,7 @@ private fun RoomCard(
                             onToggleLight()
                         },
                 ) {
-                    Icon(
+                    MsIcon(
                         M3EIcons.room(room.iconKey), null,
                         tint = if (room.lightOn) cs.onPrimary
                         else cs.onSurfaceVariant,
@@ -218,7 +213,7 @@ fun RoomSheet(
             item {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
+                        MsIcon(
                             M3EIcons.room(room.iconKey), null,
                             tint = cs.primary,
                             modifier = Modifier.size(30.dp),
@@ -244,14 +239,14 @@ fun RoomSheet(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     EnvTile(
-                        icon = Icons.Outlined.Thermostat, label = "Nhiệt độ",
+                        icon = Ms.thermostat, label = "Nhiệt độ",
                         value = room.tempC?.let { "%.1f°".format(it) } ?: "—",
                         container = cs.primaryContainer,
                         onContainer = cs.onPrimaryContainer,
                         modifier = Modifier.weight(1f),
                     )
                     EnvTile(
-                        icon = Icons.Outlined.WaterDrop, label = "Độ ẩm",
+                        icon = Ms.water_drop, label = "Độ ẩm",
                         value = room.humidityPct?.let { "%.0f%%".format(it) } ?: "—",
                         container = LocalHumeExtraColors.current.infoContainer,
                         onContainer = LocalHumeExtraColors.current.onInfoContainer,
@@ -289,7 +284,7 @@ fun RoomSheet(
 
 @Composable
 private fun EnvTile(
-    icon: ImageVector,
+    icon: String,
     label: String,
     value: String,
     container: Color,
@@ -311,7 +306,7 @@ private fun EnvTile(
                     .clip(CircleShape)
                     .background(container),
             ) {
-                Icon(icon, null, tint = onContainer, modifier = Modifier.size(24.dp))
+                MsIcon(icon, null, tint = onContainer, modifier = Modifier.size(24.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column {
@@ -372,7 +367,7 @@ private fun ClimateCard(
         ) {
             // Stepper: - | nhiet do muc tieu | +
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepperButton(Icons.Outlined.Remove, enabled = c.isOn) {
+                StepperButton(Ms.remove, enabled = c.isOn) {
                     haptic()
                     onTemp(c.entityId, (target - 1).coerceIn(16.0, 31.0))
                 }
@@ -393,7 +388,7 @@ private fun ClimateCard(
                         color = cs.onSurfaceVariant,
                     )
                 }
-                StepperButton(Icons.Outlined.Add, enabled = c.isOn) {
+                StepperButton(Ms.add, enabled = c.isOn) {
                     haptic()
                     onTemp(c.entityId, (target + 1).coerceIn(16.0, 31.0))
                 }
@@ -410,8 +405,8 @@ private fun ClimateCard(
                         onToggle(c.entityId)
                     },
             ) {
-                Icon(
-                    Icons.Outlined.PowerSettingsNew, null,
+                MsIcon(
+                    Ms.power_settings_new, null,
                     tint = if (c.isOn) cs.onPrimaryContainer else cs.onSurfaceVariant,
                     modifier = Modifier.size(26.dp),
                 )
@@ -434,7 +429,7 @@ private fun ClimateCard(
 
 @Composable
 private fun StepperButton(
-    icon: ImageVector,
+    icon: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
@@ -447,7 +442,7 @@ private fun StepperButton(
             .background(cs.surfaceContainerHighest)
             .pressMorph(pressedScale = 0.85f, onClick = if (enabled) onClick else null),
     ) {
-        Icon(
+        MsIcon(
             icon, null,
             tint = cs.onSurface,
             modifier = Modifier.size(20.dp),
@@ -567,7 +562,7 @@ fun DeviceRow(
                     else extra.surfaceHigh,
                 ),
         ) {
-            Icon(
+            MsIcon(
                 M3EIcons.device(d.iconKey), null,
                 tint = if (d.isOn) cs.onPrimaryContainer
                 else cs.onSurfaceVariant,

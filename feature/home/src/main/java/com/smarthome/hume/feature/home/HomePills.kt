@@ -44,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,6 +54,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
 
 /**
@@ -220,7 +220,7 @@ private fun PillShell(
 
 @Composable
 private fun PillIcon(
-    icon: ImageVector,
+    icon: String,
     container: androidx.compose.ui.graphics.Color,
     tint: androidx.compose.ui.graphics.Color,
 ) {
@@ -231,7 +231,7 @@ private fun PillIcon(
             .clip(CircleShape)
             .background(container),
     ) {
-        Icon(
+        MsIcon(
             icon, contentDescription = null,
             tint = tint,
             modifier = Modifier.size(24.dp),
@@ -317,7 +317,7 @@ private fun SecurityModes(
                         }
                         .padding(horizontal = 10.dp, vertical = 14.dp),
                 ) {
-                    Icon(
+                    MsIcon(
                         icon, contentDescription = null,
                         tint = if (selected) cs.onPrimaryContainer
                         else cs.onSurfaceVariant,

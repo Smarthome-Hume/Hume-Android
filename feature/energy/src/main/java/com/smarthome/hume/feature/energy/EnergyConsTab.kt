@@ -17,12 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DonutLarge
-import androidx.compose.material.icons.outlined.DoorFront
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.SettingsRemote
-import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -60,6 +53,8 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.text.NumberFormat
 import java.util.Locale
@@ -470,8 +465,8 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.tertiaryContainer),
             ) {
-                Icon(
-                    Icons.Outlined.DonutLarge, null,
+                MsIcon(
+                    Ms.donut_large, null,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(28.dp),
                 )
@@ -611,7 +606,7 @@ private fun DevicesCard(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isSel) {
-                                    Icon(M3EIcons.Check, null,
+                                    MsIcon(M3EIcons.Check, null,
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier
                                             .padding(end = 6.dp)
@@ -734,13 +729,13 @@ private fun DeviceRow(
 
 // ---------- 6. Pin thiet bi yeu ----------
 
-private fun lowBattIcon(name: String): ImageVector {
+private fun lowBattIcon(name: String): String {
     val n = name.lowercase()
     return when {
-        "remote" in n -> Icons.Outlined.SettingsRemote
-        "khoá" in n || "khóa" in n || "khoa" in n -> Icons.Outlined.Lock
-        "cảm biến" in n || "cam bien" in n || "pir" in n -> Icons.Outlined.Sensors
-        "cửa" in n || "cua" in n -> Icons.Outlined.DoorFront
+        "remote" in n -> Ms.settings_remote
+        "khoá" in n || "khóa" in n || "khoa" in n -> Ms.lock
+        "cảm biến" in n || "cam bien" in n || "pir" in n -> Ms.sensors
+        "cửa" in n || "cua" in n -> Ms.door_front
         else -> M3EIcons.Battery
     }
 }
@@ -779,7 +774,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     modifier = Modifier.padding(vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
+                    MsIcon(
                         lowBattIcon(b.name), null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(22.dp),

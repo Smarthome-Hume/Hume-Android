@@ -29,11 +29,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.NotificationsOff
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +60,8 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -117,8 +113,8 @@ fun NotificationSheet(
                             .padding(vertical = 40.dp),
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Outlined.NotificationsOff, null,
+                            MsIcon(
+                                Ms.notifications_off, null,
                                 tint = cs.onSurfaceVariant,
                                 modifier = Modifier.size(40.dp),
                             )
@@ -151,7 +147,7 @@ fun NotificationSheet(
     }
 }
 
-private fun notifIcon(n: HomeNotification): ImageVector = when {
+private fun notifIcon(n: HomeNotification): String = when {
     n.title.contains("Cửa", ignoreCase = true) -> M3EIcons.Door
     n.title.contains("chuyển động", ignoreCase = true) -> M3EIcons.Motion
     n.title.contains("khói", ignoreCase = true) -> M3EIcons.Smoke
@@ -192,7 +188,7 @@ private fun NotifRow(n: HomeNotification, index: Int) {
                     .clip(CircleShape)
                     .background(cs.primaryContainer),
             ) {
-                Icon(
+                MsIcon(
                     notifIcon(n), null,
                     tint = cs.onPrimaryContainer,
                     modifier = Modifier.size(24.dp),
@@ -248,7 +244,7 @@ fun LightsSheet(
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
+                    MsIcon(
                         M3EIcons.Light, null,
                         tint = cs.primary,
                         modifier = Modifier.size(28.dp),
@@ -333,7 +329,7 @@ fun DeviceSearchView(
                                 close()
                             },
                     ) {
-                        Icon(Icons.Outlined.ArrowBack, "Quay lại", tint = cs.onSurface)
+                        MsIcon(Ms.arrow_back, "Quay lại", tint = cs.onSurface)
                     }
                     BasicTextField(
                         value = query,
@@ -369,7 +365,7 @@ fun DeviceSearchView(
                                 onQuery("")
                             },
                     ) {
-                        Icon(Icons.Outlined.Close, "Xóa", tint = cs.onSurfaceVariant)
+                        MsIcon(Ms.close, "Xóa", tint = cs.onSurfaceVariant)
                     }
                 }
                 Text(

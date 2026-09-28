@@ -34,7 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.MsIcon
 
 /**
  * FAB speed-dial trang Nha theo demo v4 (.fabwrap/.fab/.fmi + .fabscrim):
@@ -136,7 +136,7 @@ fun HomeFabMenu(
                     onOpenChange(!open)
                 },
         ) {
-            Icon(
+            MsIcon(
                 if (open) M3EIcons.Close else M3EIcons.Add,
                 contentDescription = null,
                 tint = if (open) cs.onPrimary else cs.onPrimaryContainer,
@@ -149,7 +149,7 @@ fun HomeFabMenu(
 @Composable
 private fun FabMenuItem(
     label: String,
-    icon: ImageVector,
+    icon: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -175,7 +175,7 @@ private fun FabMenuItem(
                 .padding(horizontal = 24.dp)
                 .align(Alignment.Center),
         ) {
-            Icon(
+            MsIcon(
                 icon, contentDescription = null,
                 tint = cs.onPrimaryContainer,
                 modifier = Modifier.size(24.dp),

@@ -43,6 +43,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlin.math.roundToInt
 
@@ -275,7 +276,7 @@ private fun MiniBox(label: String, value: String, modifier: Modifier = Modifier)
 
 @Composable
 private fun Expander(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: String,
     title: String,
     subtitle: String,
     open: Boolean,
@@ -312,7 +313,7 @@ private fun Expander(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
-                Icon(
+                MsIcon(
                     icon, null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(24.dp),
@@ -333,7 +334,7 @@ private fun Expander(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Icon(
+            MsIcon(
                 M3EIcons.ChevronDown, null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier

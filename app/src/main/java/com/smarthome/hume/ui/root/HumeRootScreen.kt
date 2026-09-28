@@ -63,6 +63,7 @@ import com.smarthome.hume.ui.profile.ProfileScreen
 import com.smarthome.hume.ui.security.SecurityScreen
 import com.smarthome.hume.ui.theme.HumeColors
 import com.smarthome.hume.ui.theme.HumeIcons
+import com.smarthome.hume.core.ui.components.MsIcon
 
 /*
  * Navbar One UI - doi chieu 2 anh chup thanh nav app Dien thoai (light + dark).
@@ -198,7 +199,7 @@ private fun NavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
+        MsIcon(
             HumeIcons.tab(item),
             contentDescription = item.label,
             tint = contentColor,

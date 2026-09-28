@@ -48,7 +48,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -73,6 +72,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
 
 /**
@@ -364,7 +364,7 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon(
+                    MsIcon(
                         M3EIcons.Lock,
                         contentDescription = null,
                         tint = Color.White,
@@ -413,7 +413,7 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
  */
 @Composable
 private fun ToolbarBtn(
-    icon: ImageVector,
+    icon: String,
     label: String,
     tint: Color,
     onClick: () -> Unit,
@@ -452,7 +452,7 @@ private fun ToolbarBtn(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
+        MsIcon(
             icon,
             contentDescription = label,
             tint = tint,
@@ -486,7 +486,7 @@ private fun RecCard(rec: RecordingUi, onClick: () -> Unit) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            MsIcon(
                 M3EIcons.PlayCircle,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.75f),
@@ -569,7 +569,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     .background(iconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+                MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
             }
             Spacer(Modifier.height(10.dp))
             Row(
@@ -671,7 +671,7 @@ private fun ClipOverlay(label: String, onClose: () -> Unit) {
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
+                    MsIcon(
                         M3EIcons.Videocam,
                         contentDescription = null,
                         tint = Color.White.copy(alpha = 0.4f),

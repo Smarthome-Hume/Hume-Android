@@ -20,13 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,6 +45,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 
 /**
  * Man hinh dang nhap M3E: nhap URL + Long-Lived Access Token cua Home Assistant.
@@ -81,8 +76,8 @@ fun LoginScreen(
                         .size(76.dp)
                         .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Home,
+                    MsIcon(
+                        glyph = Ms.home,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(38.dp),
@@ -116,7 +111,7 @@ fun LoginScreen(
                             onValueChange = viewModel::onUrlChange,
                             label = { Text("Địa chỉ máy chủ") },
                             placeholder = { Text("http://192.168.1.10:8123") },
-                            leadingIcon = { Icon(Icons.Outlined.Link, null) },
+                            leadingIcon = { MsIcon(Ms.link, null) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Uri,
@@ -133,12 +128,12 @@ fun LoginScreen(
                             value = state.token,
                             onValueChange = viewModel::onTokenChange,
                             label = { Text("Long-Lived Access Token") },
-                            leadingIcon = { Icon(Icons.Outlined.Key, null) },
+                            leadingIcon = { MsIcon(Ms.key, null) },
                             trailingIcon = {
                                 IconButton(onClick = viewModel::onToggleTokenVisibility) {
-                                    Icon(
-                                        if (state.tokenVisible) Icons.Outlined.VisibilityOff
-                                        else Icons.Outlined.Visibility,
+                                    MsIcon(
+                                        if (state.tokenVisible) Ms.visibility_off
+                                        else Ms.visibility,
                                         contentDescription = if (state.tokenVisible) "Ẩn token" else "Hiện token",
                                     )
                                 }
@@ -183,8 +178,8 @@ fun LoginScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(16.dp),
                         ) {
-                            Icon(
-                                Icons.Outlined.ErrorOutline,
+                            MsIcon(
+                                Ms.error,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onErrorContainer,
                             )

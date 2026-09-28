@@ -1,0 +1,134 @@
+package com.smarthome.hume.core.ui.components
+
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.R
+
+private val MsFontFamily = FontFamily(Font(R.font.material_symbols_rounded))
+
+/**
+ * Icon Material Symbols Rounded, da pin wght=200 / FILL=0 / GRAD=0 / opsz=24
+ * — giong he t icon .ms trong demo HTML (net manh, tron, outlined-only).
+ * Thay cho Icons.Outlined (material-icons-extended ve net day hon).
+ *
+ * Dung: MsIcon(M3EIcons.Search, null, tint = ..., modifier = Modifier.size(22.dp))
+ * Kich thuoc chu = canh nho nhat cua modifier (thuong la Modifier.size);
+ * neu modifier khong co kich thuoc co dinh thi mac dinh 24.sp.
+ */
+@Composable
+fun MsIcon(
+    glyph: String,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+) {
+    BoxWithConstraints(
+        modifier = modifier.semantics {
+            if (contentDescription != null) this.contentDescription = contentDescription
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        val side = minOf(maxWidth, maxHeight)
+        val fs = if (side.isFinite()) {
+            with(LocalDensity.current) { side.toSp() }
+        } else {
+            24.sp
+        }
+        BasicText(
+            text = glyph,
+            style = TextStyle(
+                fontFamily = MsFontFamily,
+                fontSize = fs,
+                lineHeight = fs,
+                color = tint,
+                textAlign = TextAlign.Center,
+            ),
+        )
+    }
+}
+
+/**
+ * Bang glyph PUA (font material_symbols_rounded.ttf trong res/font).
+ * Ten = ten ligature goc cua Material Symbols.
+ */
+object Ms {
+    val ac_unit = "\uEB3B"
+    val add = "\uE145"
+    val arrow_back = "\uE5C4"
+    val auto_awesome = "\uE65F"
+    val bathtub = "\uEA41"
+    val battery_charging_full = "\uE1A3"
+    val battery_full = "\uE1A4"
+    val bed = "\uEFDF"
+    val bedtime = "\uE1F9"
+    val bolt = "\uEA0B"
+    val check = "\uE5CA"
+    val chevron_right = "\uE409"
+    val child_care = "\uEB41"
+    val close = "\uE14C"
+    val dark_mode = "\uE51C"
+    val desk = "\uF8F4"
+    val device_thermostat = "\uE1FF"
+    val donut_large = "\uE917"
+    val door_front = "\uEFFD"
+    val electric_meter = "\uEC1B"
+    val error = "\uE000"
+    val expand_more = "\uE5CF"
+    val fiber_manual_record = "\uE061"
+    val flight_takeoff = "\uE905"
+    val fullscreen = "\uE5D0"
+    val home = "\uE88A"
+    val info = "\uE88E"
+    val key = "\uE73C"
+    val language = "\uE894"
+    val light_mode = "\uE518"
+    val lightbulb = "\uE0F0"
+    val link = "\uE157"
+    val local_laundry_service = "\uE54A"
+    val lock = "\uE88D"
+    val logout = "\uE9BA"
+    val meeting_room = "\uEB4F"
+    val mic = "\uE029"
+    val notifications = "\uE7F4"
+    val notifications_off = "\uE7F6"
+    val palette = "\uE3B7"
+    val person = "\uE7FD"
+    val person_search = "\uF106"
+    val photo_camera = "\uE3B0"
+    val play_circle = "\uE038"
+    val power = "\uE63C"
+    val power_settings_new = "\uE8AC"
+    val remove = "\uE15B"
+    val search = "\uE8B6"
+    val sensors = "\uE51E"
+    val settings_remote = "\uE8C7"
+    val shield = "\uE75B"
+    val signal_cellular_alt = "\uE202"
+    val smoke_free = "\uEB4A"
+    val solar_power = "\uEC0F"
+    val soup_kitchen = "\uE7D3"
+    val stairs = "\uF1A9"
+    val thermostat = "\uF076"
+    val videocam = "\uE04B"
+    val visibility = "\uE417"
+    val visibility_off = "\uE8F5"
+    val water_drop = "\uE798"
+    val wb_sunny = "\uE430"
+    val weekend = "\uE16B"
+    val whatshot = "\uE80E"
+    val wifi = "\uE63E"
+}

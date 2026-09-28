@@ -1,116 +1,68 @@
 package com.smarthome.hume.core.ui.components
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AcUnit
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Bathtub
-import androidx.compose.material.icons.outlined.BatteryChargingFull
-import androidx.compose.material.icons.outlined.BatteryFull
-import androidx.compose.material.icons.outlined.Bed
-import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.FiberManualRecord
-import androidx.compose.material.icons.outlined.Fullscreen
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.MeetingRoom
-import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.PersonSearch
-import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material.icons.outlined.WaterDrop
-import androidx.compose.material.icons.outlined.Whatshot
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.SmokeFree
-import androidx.compose.material.icons.outlined.FlightTakeoff
-import androidx.compose.material.icons.outlined.Bedtime
-import androidx.compose.material.icons.outlined.PowerSettingsNew
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Sensors
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.ChildCare
-import androidx.compose.material.icons.outlined.Desk
-import androidx.compose.material.icons.outlined.DoorFront
-import androidx.compose.material.icons.outlined.ElectricMeter
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Lightbulb
-import androidx.compose.material.icons.outlined.LocalLaundryService
-import androidx.compose.material.icons.outlined.MeetingRoom
-import androidx.compose.material.icons.outlined.Power
-import androidx.compose.material.icons.outlined.SoupKitchen
-import androidx.compose.material.icons.outlined.SolarPower
-import androidx.compose.material.icons.outlined.Stairs
-import androidx.compose.material.icons.outlined.Weekend
-import androidx.compose.material.icons.outlined.WbSunny
-import androidx.compose.material.icons.outlined.Whatshot
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.ui.graphics.vector.ImageVector
-
 /**
- * Icon he thong M3E: Material Symbols Rounded outlined-only tuyet doi.
- * Trang thai bat/chon the hien bang pill/container + chu dam, khong doi filled.
+ * Icon glyph dung chung — Material Symbols Rounded, da pin wght=200 / FILL=0
+ * (net manh kieu Gemini, giong he t .ms trong demo HTML).
+ * Moi entry la mot glyph PUA trong font res/font/material_symbols_rounded.ttf,
+ * dung voi [MsIcon]. KHONG dung Icons.Outlined truc tiep nua
+ * (material-icons-extended ve net day hon, khac style HTML).
  */
 object M3EIcons {
-    val Light = Icons.Outlined.Lightbulb
-    val Solar = Icons.Outlined.WbSunny
-    val Battery = Icons.Outlined.BatteryChargingFull
-    val Power = Icons.Outlined.Bolt
-    val Plug = Icons.Outlined.Power
-    val Home = Icons.Outlined.Home
-    val Climate = Icons.Outlined.AcUnit
-    val Check = Icons.Outlined.Check
-    val ChevronDown = Icons.Outlined.ExpandMore
-    val BatteryFull = Icons.Outlined.BatteryFull
-    val SolarPower = Icons.Outlined.SolarPower
-    val ElectricMeter = Icons.Outlined.ElectricMeter
-    val Door = Icons.Outlined.DoorFront
-    val Motion = Icons.Outlined.Sensors
-    val Presence = Icons.Outlined.PersonSearch
-    val Smoke = Icons.Outlined.SmokeFree
-    val Leak = Icons.Outlined.WaterDrop
-    val Videocam = Icons.Outlined.Videocam
-    val Rec = Icons.Outlined.FiberManualRecord
-    val Mic = Icons.Outlined.Mic
-    val PhotoCamera = Icons.Outlined.PhotoCamera
-    val Fullscreen = Icons.Outlined.Fullscreen
-    val PlayCircle = Icons.Outlined.PlayCircle
-    val Lock = Icons.Outlined.Lock
-    val Shield = Icons.Outlined.Shield
-    val Close = Icons.Outlined.Close
-    val FlightTakeoff = Icons.Outlined.FlightTakeoff
-    val Bedtime = Icons.Outlined.Bedtime
-    val PowerSettingsNew = Icons.Outlined.PowerSettingsNew
-    val AutoAwesome = Icons.Outlined.AutoAwesome
-    val Add = Icons.Outlined.Add
-    val Search = Icons.Outlined.Search
-    val Bell = Icons.Outlined.Notifications
-    val Person = Icons.Outlined.Person
+    val Light = Ms.lightbulb
+    val Solar = Ms.wb_sunny
+    val Battery = Ms.battery_charging_full
+    val Power = Ms.bolt
+    val Plug = Ms.power
+    val Home = Ms.home
+    val Climate = Ms.ac_unit
+    val Check = Ms.check
+    val ChevronDown = Ms.expand_more
+    val BatteryFull = Ms.battery_full
+    val SolarPower = Ms.solar_power
+    val ElectricMeter = Ms.electric_meter
+    val Door = Ms.door_front
+    val Motion = Ms.sensors
+    val Presence = Ms.person_search
+    val Smoke = Ms.smoke_free
+    val Leak = Ms.water_drop
+    val Videocam = Ms.videocam
+    val Rec = Ms.fiber_manual_record
+    val Mic = Ms.mic
+    val PhotoCamera = Ms.photo_camera
+    val Fullscreen = Ms.fullscreen
+    val PlayCircle = Ms.play_circle
+    val Lock = Ms.lock
+    val Shield = Ms.shield
+    val Close = Ms.close
+    val FlightTakeoff = Ms.flight_takeoff
+    val Bedtime = Ms.bedtime
+    val PowerSettingsNew = Ms.power_settings_new
+    val AutoAwesome = Ms.auto_awesome
+    val Add = Ms.add
+    val Search = Ms.search
+    val Bell = Ms.notifications
+    val Person = Ms.person
 
-    fun room(key: String): ImageVector = when (key) {
-        "bed" -> Icons.Outlined.Bed
-        "child" -> Icons.Outlined.ChildCare
-        "sparkles" -> Icons.Outlined.AutoAwesome
-        "sofa" -> Icons.Outlined.Weekend
-        "bath" -> Icons.Outlined.Bathtub
-        "kitchen" -> Icons.Outlined.SoupKitchen
-        "washer" -> Icons.Outlined.LocalLaundryService
-        "hallway" -> Icons.Outlined.Stairs
-        else -> Icons.Outlined.Home
+    fun room(key: String): String = when (key) {
+        "bed" -> Ms.bed
+        "child" -> Ms.child_care
+        "sparkles" -> Ms.auto_awesome
+        "sofa" -> Ms.weekend
+        "bath" -> Ms.bathtub
+        "kitchen" -> Ms.soup_kitchen
+        "washer" -> Ms.local_laundry_service
+        "hallway" -> Ms.stairs
+        else -> Ms.home
     }
 
-    fun device(key: String): ImageVector = when (key) {
+    fun device(key: String): String = when (key) {
         "sun" -> Solar
         "plug" -> Plug
         "house" -> Home
-        "desk" -> Icons.Outlined.Desk
-        "door" -> Icons.Outlined.MeetingRoom
+        "desk" -> Ms.desk
+        "door" -> Ms.meeting_room
         "snowflake" -> Climate
-        "fire" -> Icons.Outlined.Whatshot
+        "fire" -> Ms.whatshot
         "bulb", "lightbulb" -> Light
         "switch" -> Power
         else -> Power

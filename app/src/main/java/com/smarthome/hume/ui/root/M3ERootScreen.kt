@@ -17,11 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,7 +35,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.data.HumeGraph
@@ -51,6 +45,8 @@ import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.home.HomeScreen
@@ -58,13 +54,13 @@ import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
 import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
 
-private data class NavItem(val tab: HumeTab, val icon: ImageVector)
+private data class NavItem(val tab: HumeTab, val icon: String)
 
 private val navItems = listOf(
-    NavItem(HumeTab.Home, Icons.Outlined.Home),
-    NavItem(HumeTab.Energy, Icons.Outlined.Bolt),
-    NavItem(HumeTab.Security, Icons.Outlined.Shield),
-    NavItem(HumeTab.Profile, Icons.Outlined.Person),
+    NavItem(HumeTab.Home, Ms.home),
+    NavItem(HumeTab.Energy, Ms.bolt),
+    NavItem(HumeTab.Security, Ms.shield),
+    NavItem(HumeTab.Profile, Ms.person),
 )
 
 /**
@@ -183,7 +179,7 @@ private fun M3ENavBar(
                         }
                         .padding(vertical = 9.dp),
                 ) {
-                    Icon(
+                    MsIcon(
                         item.icon, contentDescription = item.tab.label,
                         tint = if (isSel) cs.onPrimaryContainer
                         else cs.onSurfaceVariant,
