@@ -1,4 +1,4 @@
-package com.smarthome.hume.core.storage
+package com.smarthome.hume.core.datastore
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.smarthome.hume.core.model.AuthSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,24 +19,23 @@ import kotlinx.coroutines.runBlocking
 
 private val Context.humeDataStore by preferencesDataStore("hume_settings")
 
-data class HumeSettings(val haUrl: String = "http://192.168.102.22:8123", val haToken: String = "") {
-    val hasToken: Boolean get() = haToken.isNotBlank() && haToken != "ĐIỀN_TOKEN_VÀO_ĐÂY"
-}
-
 /**
- * URL luu plaintext trong DataStore (khong nhay cam).
- * HA token luu trong EncryptedSharedPreferences (Android Keystore, AES256-GCM).
- * Migration mot lan: token cu dang plaintext trong DataStore se duoc chuyen
- * sang kho ma hoa roi xoa ban plaintext.
+ * Phien dang nhap HA: URL (DataStore plaintext) + token (EncryptedSharedPreferences).
+ *
+ * DUNG CHUNG file/key voi SettingsStore cu (app module):
+ * "hume_settings"/ha_url, "hume_secrets"/ha_token — de UI cu va moi doc
+ * cung mot nguon, khong lech du lieu trong luc migrate.
  */
-class SettingsStore(private val context: Context) {
+class SessionStore(private val context: Context) {
+
     private object Keys {
         val HaUrl = stringPreferencesKey("ha_url")
-        /** Chi doc de migration, khong bao gio ghi nua. */
         val HaTokenLegacy = stringPreferencesKey("ha_token")
     }
 
-    private val tokenFlow = MutableStateFlow(migrateTokenIfNeeded())
+    companion object {
+        const val DEFAULT_URL = "http://192.168.102.22:8123"
+    }
 
     private fun encryptedPrefs(): SharedPreferences = try {
         val masterKey = MasterKey.Builder(context, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
@@ -49,16 +49,14 @@ class SettingsStore(private val context: Context) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
     } catch (e: Exception) {
-        // Keystore khong kha dung (rat hiem): fallback ve SharedPreferences
-        // thuong de app van chay duoc, ghi log canh bao.
-        Log.w("SettingsStore", "EncryptedSharedPreferences unavailable, falling back", e)
+        Log.w("SessionStore", "EncryptedSharedPreferences unavailable, falling back", e)
         context.getSharedPreferences("hume_secrets_fallback", Context.MODE_PRIVATE)
     }
 
-    private fun migrateTokenIfNeeded(): String {
+    private fun readToken(): String {
         val prefs = encryptedPrefs()
         prefs.getString("ha_token", null)?.let { return it }
-        // Token cu dang plaintext trong DataStore -> chuyen sang kho ma hoa.
+        // Migration 1 lan: token cu dang plaintext trong DataStore.
         val legacy = runBlocking(Dispatchers.IO) {
             context.humeDataStore.data.map { it[Keys.HaTokenLegacy] ?: "" }.first()
         }.trim()
@@ -67,16 +65,18 @@ class SettingsStore(private val context: Context) {
             runBlocking(Dispatchers.IO) {
                 context.humeDataStore.edit { it.remove(Keys.HaTokenLegacy) }
             }
-            Log.i("SettingsStore", "Migrated HA token from plaintext DataStore to encrypted storage")
+            Log.i("SessionStore", "Migrated HA token from plaintext DataStore to encrypted storage")
         }
         return legacy
     }
 
-    val settings: Flow<HumeSettings> =
-        context.humeDataStore.data.map { it[Keys.HaUrl] ?: "http://192.168.102.22:8123" }
-            .combine(tokenFlow) { url, token -> HumeSettings(url, token) }
+    private val tokenFlow = MutableStateFlow(readToken())
 
-    suspend fun saveHomeAssistant(url: String, token: String) {
+    val session: Flow<AuthSession> =
+        context.humeDataStore.data.map { it[Keys.HaUrl] ?: DEFAULT_URL }
+            .combine(tokenFlow) { url, token -> AuthSession(url, token) }
+
+    suspend fun save(url: String, token: String) {
         val cleanUrl = url.trim().trimEnd('/')
         val cleanToken = token.trim()
         context.humeDataStore.edit { prefs -> prefs[Keys.HaUrl] = cleanUrl }
@@ -84,16 +84,13 @@ class SettingsStore(private val context: Context) {
         tokenFlow.value = cleanToken
     }
 
-    suspend fun logout() {
+    suspend fun clear() {
         encryptedPrefs().edit().remove("ha_token").apply()
         tokenFlow.value = ""
     }
 
-    /**
-     * Doc lai token tu disk (dung khi noi khac — vi du AuthRepository cua
-     * kien truc moi — vua ghi de token).
-     */
+    /** Doc lai tu disk (dung sau khi noi khac ghi de). */
     fun refresh() {
-        tokenFlow.value = migrateTokenIfNeeded()
+        tokenFlow.value = readToken()
     }
 }

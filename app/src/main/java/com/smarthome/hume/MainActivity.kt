@@ -11,9 +11,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ha.HistoryFetcher
+import com.smarthome.hume.core.model.AuthSession
 import com.smarthome.hume.core.storage.HumeSettings
-import com.smarthome.hume.ui.login.LoginScreen
+import com.smarthome.hume.feature.auth.LoginScreen
 import com.smarthome.hume.ui.root.HumeRootScreen
 import com.smarthome.hume.ui.theme.HumeTheme
 
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         val app = application as HumeApplication
+        val graph = HumeGraph.get()
 
         // Lifecycle-aware connection: socket only while the UI is visible.
         lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -43,24 +46,29 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             HumeTheme {
+                // Nguon su that cho gate dang nhap: AuthRepository cua kien truc moi.
+                // (Doc chung file "hume_settings"/"hume_secrets" voi SettingsStore cu.)
+                val session by graph.authRepository.session.collectAsState(initial = AuthSession())
                 val settings by app.settingsStore.settings.collectAsState(initial = HumeSettings())
-                LaunchedEffect(settings.haUrl, settings.haToken) {
-                    if (settings.hasToken) {
-                        app.haRepository.configure(settings.haUrl, settings.haToken)
+                LaunchedEffect(session.isLoggedIn) {
+                    if (session.isLoggedIn) {
+                        // Dong bo lai SettingsStore cu (tokenFlow cua no khong tu refresh).
+                        app.settingsStore.refresh()
+                        app.haRepository.configure(session.serverUrl, session.token)
                         // Duong lay lich su rieng (timeout dai) cho bieu do 7 ngay.
-                        HistoryFetcher.configure(settings.haUrl, settings.haToken)
+                        HistoryFetcher.configure(session.serverUrl, session.token)
                         app.haRepository.connect()
                     }
                 }
-                // Same gate as HumeApp.swift: no token means the login screen.
-                if (settings.hasToken) {
+                // Chua dang nhap -> man hinh login M3E moi (feature/auth).
+                if (session.isLoggedIn) {
                     HumeRootScreen(
                         settingsStore = app.settingsStore,
                         ha = app.haRepository,
                         settings = settings,
                     )
                 } else {
-                    LoginScreen(settingsStore = app.settingsStore, settings = settings)
+                    LoginScreen()
                 }
             }
         }

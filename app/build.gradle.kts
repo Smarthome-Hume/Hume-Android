@@ -73,5 +73,6 @@ dependencies {
     implementation(project(":feature:energy"))
     implementation(project(":feature:security"))
     implementation(project(":feature:me"))
+    implementation(project(":feature:auth"))
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
