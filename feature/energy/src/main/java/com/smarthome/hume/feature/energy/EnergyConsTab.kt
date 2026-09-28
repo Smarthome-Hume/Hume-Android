@@ -278,7 +278,7 @@ private fun DonutCard(state: EnergyUiState) {
                                 .background(colors[i % colors.size]),
                         )
                         Spacer(Modifier.width(10.dp))
-                        Text(s.label, style = MaterialTheme.typography.bodySmall,
+                        Text(s.name, style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.weight(1f))
@@ -379,7 +379,7 @@ private fun DeviceRow(d: EnergyDevice, mode: DeviceMode) {
             Text(d.name, style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1)
-            Text(if (mode == DeviceMode.Power) d.sub else "Hôm nay",
+            Text(if (mode == DeviceMode.Power) d.ago else "Hôm nay",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -396,12 +396,13 @@ private fun DeviceRow(d: EnergyDevice, mode: DeviceMode) {
             Text(unit, style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (mode == DeviceMode.Energy && d.vnd != null) {
+        val cost = d.costVnd
+        if (mode == DeviceMode.Energy && cost != null) {
             Column(
                 horizontalAlignment = Alignment.End,
                 modifier = Modifier.padding(start = 12.dp),
             ) {
-                Text(vnd(d.vnd), fontWeight = FontWeight.Bold,
+                Text(vnd(cost), fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFF16A34A))
                 Text("VND", style = MaterialTheme.typography.labelSmall,

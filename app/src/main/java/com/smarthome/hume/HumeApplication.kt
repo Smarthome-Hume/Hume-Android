@@ -7,6 +7,8 @@ import com.smarthome.hume.core.storage.SensorDatabase
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.data.AppEnergyRepository
 import com.smarthome.hume.data.AppHomeRepository
+import com.smarthome.hume.data.AppSecurityRepository
+import com.smarthome.hume.data.AppSyncRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
