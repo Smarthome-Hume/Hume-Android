@@ -77,9 +77,10 @@ private fun sweepMs(powerKw: Double): Int =
 fun EnergyFlowCard(flow: EnergyFlowState, modifier: Modifier = Modifier) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        contentPadding = 0.dp,
         modifier = modifier,
     ) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp)) {
         // header
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -127,6 +128,7 @@ fun EnergyFlowCard(flow: EnergyFlowState, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold)
+        }
         }
     }
 }

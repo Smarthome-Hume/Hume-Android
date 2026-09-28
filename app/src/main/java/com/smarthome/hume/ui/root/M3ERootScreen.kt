@@ -1,16 +1,18 @@
 package com.smarthome.hume.ui.root
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Home
@@ -27,10 +29,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -100,8 +102,10 @@ fun M3ERootScreen(
 }
 
 /**
- * Navbar M3E: nen surfaceLowest chim 82% (+ blur tren Android 12+),
- * item duoc chon highlight TOAN O bang primaryContainer.
+ * Navbar M3E theo demo v4 (.nav/.navit): FLOATING — cach 2 canh 16dp,
+ * cach day 20dp, bo 34dp, nen surfaceLowest 82% + shadow;
+ * item chon highlight TOAN O primaryContainer (khong pill tach roi),
+ * icon outlined, label dam khi chon.
  */
 @Composable
 private fun M3ENavBar(
@@ -109,55 +113,52 @@ private fun M3ENavBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val bg = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.82f)
-    val blurMod = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        Modifier.blur(24.dp)
-    } else Modifier
+    val pill = RoundedCornerShape(34.dp)
     Box(
         modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .then(blurMod)
-            .background(bg),
+            .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+        contentAlignment = Alignment.BottomCenter,
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .shadow(8.dp, pill)
+                .clip(pill)
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.82f))
+                .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->
                 val isSel = i == selected
-                Box(
-                    contentAlignment = Alignment.Center,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .weight(1f)
-                        .clip(MaterialTheme.shapes.medium) // 28dp
+                        .clip(RoundedCornerShape(24.dp))
                         .background(
                             if (isSel) MaterialTheme.colorScheme.primaryContainer
                             else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0f),
                         )
                         .clickable { onSelect(i) }
-                        .padding(vertical = 10.dp),
+                        .padding(vertical = 9.dp),
                 ) {
-                    androidx.compose.foundation.layout.Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(
-                            item.icon, contentDescription = item.tab.label,
-                            tint = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            item.tab.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    Icon(
+                        item.icon, contentDescription = item.tab.label,
+                        tint = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(if (isSel) 27.dp else 24.dp),
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        item.tab.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
