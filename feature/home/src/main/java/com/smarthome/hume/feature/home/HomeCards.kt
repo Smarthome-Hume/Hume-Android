@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -367,7 +368,8 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
  * Bieu do cot mo phong SVG demo: viewBox 320x150, PT=14, PB=10, bw=30,
  * maxV=7 CO DINH. SVG width:100% nen toa do X scale theo be rong thuc te
  * (sx = w/320); Y giu nguyen vi cao co dinh 150dp.
- * Cot hom nay = primary, cac ngay khac = primaryContainer.
+ * Mau cot theo GIA TRI TUONG DOI: today = primary; cac ngay khac =
+ * lerp(primaryContainer -> primary, v/maxTuan) de nhin ra ngay cao/thap.
  * Cham cot hien tooltip "T2: 4.2 kWh" (surfaceContainerHigh, bo 12px).
  */
 @Composable
@@ -382,6 +384,8 @@ private fun SolarBars(
         if (i == vals.lastIndex) minOf(6.8f, v + tickGrow) else v
     }
     val maxV = 7f
+    // mau theo gia tri tuong doi so voi max tuan (tranh chia 0)
+    val maxWeek = (shown.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -397,13 +401,16 @@ private fun SolarBars(
             val today = i == shown.lastIndex
             val top = y(v)
             val h = (140.dp - top).coerceAtLeast(4.dp)
+            // today: primary dac; ngay khac: dam nhat theo gia tri tuong doi
+            val barColor = if (today) cs.primary
+            else lerp(cs.primaryContainer, cs.primary, (v / maxWeek).coerceIn(0f, 1f) * 0.85f)
             Box(
                 modifier = Modifier
                     .offset(x = x(i) - bw / 2, y = top)
                     .width(bw)
                     .height(h)
                     .clip(RoundedCornerShape(50))
-                    .background(if (today) cs.primary else cs.primaryContainer)
+                    .background(barColor)
                     .pointerInput(i) {
                         detectTapGestures(onTap = {
                             selected = if (selected == i) null else i

@@ -256,11 +256,16 @@ class AppHomeRepository(
         val days = (6 downTo 1).map { ago ->
             val date = today.minusDays(ago.toLong())
             val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
-            val v = weekCache.getOrPut(start) {
-                runCatching {
+            // Chi cache khi fetch duoc data that (>0 diem); khong cache 0 do loi
+            // de lan refresh sau thu lai (tranh cache poisoning).
+            val v = weekCache[start] ?: run {
+                val pts = runCatching {
                     HistoryFetcher.fetchRange(HumeConfig.PV_TODAY, start, start + dayMs)
-                        .maxOfOrNull { it.value } ?: 0.0
-                }.getOrDefault(0.0)
+                }.getOrDefault(emptyList())
+                // sensor "today energy" reset moi ngay -> max trong ngay = san luong ngay do
+                val total = pts.maxOfOrNull { it.value } ?: 0.0
+                if (pts.isNotEmpty() && total > 0) weekCache[start] = total
+                total
             }
             SolarDay(labels[date.dayOfWeek.value - 1], v.toFloat())
         } + SolarDay(

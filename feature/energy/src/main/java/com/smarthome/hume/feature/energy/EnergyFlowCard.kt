@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -481,6 +482,9 @@ private fun FlowNode(
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontSize = 10.5.sp, fontWeight = FontWeight.Normal),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             if (badge != null) {
                 Spacer(Modifier.width(5.dp))
@@ -489,6 +493,10 @@ private fun FlowNode(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 9.sp, fontWeight = FontWeight.Bold),
                     color = badgeFg,
+                    // demo .flbdir{white-space:nowrap}: badge khong duoc xuong dong
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(badgeBg)
@@ -507,12 +515,16 @@ private fun FlowNode(
                     fontWeight = FontWeight.Bold,
                     fontFeatureSettings = "tnum",
                 ),
+                maxLines = 1,
+                softWrap = false,
             )
             Text(
                 " kW",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp, fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
             )
         }
         Spacer(Modifier.weight(1f))
@@ -532,6 +544,8 @@ private fun SegLegend(items: List<Pair<String, Color>>) {
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }
