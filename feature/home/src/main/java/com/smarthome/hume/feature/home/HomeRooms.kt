@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -218,8 +220,12 @@ fun RoomSheet(
         containerColor = cs.surfaceContainer,
         dragHandle = { GrabHandle() },
     ) {
+        // Gioi han chieu cao sheet 85% man hinh (cach top 15%)
+        val maxSheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .heightIn(max = maxSheetH),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -504,6 +510,7 @@ private fun ClimateModeGroup(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(w)
+                    .height(44.dp)
                     .graphicsLayer(scaleX = scale, scaleY = scale)
                     .clip(RoundedCornerShape(18.dp))
                     .background(if (sel) cs.primaryContainer else cs.surfaceContainer)
@@ -527,10 +534,13 @@ private fun ClimateModeGroup(
             ) {
                 Text(
                     hvacLabels[m] ?: m,
-                    fontSize = 12.5.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (sel) cs.onPrimaryContainer else cs.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
         }

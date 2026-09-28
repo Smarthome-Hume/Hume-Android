@@ -78,7 +78,7 @@ class AppHomeRepository(
     override fun setClimateTemp(entityId: String, tempC: Double) =
         ha.setClimateTemperature(entityId, tempC)
     override fun setHvacMode(entityId: String, mode: String) = ha.setHvacMode(entityId, mode)
-    override fun toggleClimate(entityId: String) = ha.toggle(entityId)
+    override fun toggleClimate(entityId: String) = ha.toggleClimate(entityId)
     override fun alarmArm(mode: String) {
         val entity = alarmEntityId() ?: return
         ha.alarmArm(entity, mode.trim().removePrefix("arm_"), HumeConfig.ALARM_CODE)

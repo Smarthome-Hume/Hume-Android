@@ -807,6 +807,25 @@ class HomeAssistantRepository {
         callService(entityId.substringBefore('.'), "toggle", serviceData(entityId), entityId)
     }
 
+    /**
+     * Climate KHONG co service "toggle" trong HA. Phai dung turn_on/turn_off
+     * tuy theo hvac_mode hien tai (off = dang tat, khac off = dang bat).
+     */
+    fun toggleClimate(entityId: String) {
+        val currentState = _entities.value[entityId]?.state ?: "off"
+        val isOn = currentState != "off"
+        if (isOn) {
+            applyLocalState(entityId, "off")
+            callService("climate", "turn_off", serviceData(entityId), entityId)
+        } else {
+            // Bat lai voi mode truoc do (neu co) hoac "cool"
+            val lastMode = _entities.value[entityId]?.attributes?.get("hvac_modes")
+                ?.toString()?.takeIf { it.contains("cool") }?.let { "cool" } ?: "cool"
+            applyLocalState(entityId, lastMode)
+            callService("climate", "turn_on", serviceData(entityId), entityId)
+        }
+    }
+
     fun setLightBrightness(entityId: String, percent: Int) =
         callService("light", "turn_on", serviceData(entityId) { put("brightness_pct", percent) }, entityId)
 

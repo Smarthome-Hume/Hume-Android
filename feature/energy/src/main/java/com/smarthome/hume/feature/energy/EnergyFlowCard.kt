@@ -464,16 +464,16 @@ private fun FlowNode(
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .pressMorph(pressedScale = 0.93f, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(36.dp)
+                .size(44.dp)
                 .clip(CircleShape)
                 .background(tintBg),
         ) {
-            MsIcon(icon, null, tint = tintFg, modifier = Modifier.size(20.dp))
+            MsIcon(icon, null, tint = tintFg, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -511,7 +511,7 @@ private fun FlowNode(
             Text(
                 String.format(Locale.US, "%.1f", valueKw),
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 15.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     fontFeatureSettings = "tnum",
                 ),

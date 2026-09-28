@@ -122,7 +122,7 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp)
-                .padding(bottom = 110.dp),
+                .padding(bottom = 100.dp),
         ) {
             // Header (demo .phdr: padding 12px 2px 6px; h2 26px/700/-0.3px; p 13px)
             Column(
@@ -149,7 +149,16 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
             if (state.cameras.isNotEmpty()) {
                 EsubGroup(
                     items = state.cameras.map { it.name },
-                    icons = state.cameras.map { Ms.videocam },
+                    icons = state.cameras.map { cam ->
+                        M3EIcons.room(when (cam.key) {
+                            "living" -> "sofa"
+                            "kitchen" -> "kitchen"
+                            "outdoor" -> "home"
+                            "server" -> "sparkles"
+                            "bedroom" -> "bed"
+                            else -> "home"
+                        })
+                    },
                     selectedIndex = selectedCam,
                     onSelect = { vm.selectCamera(it); haptic() }, // demo vibrate(6) doi camera
                     modifier = Modifier

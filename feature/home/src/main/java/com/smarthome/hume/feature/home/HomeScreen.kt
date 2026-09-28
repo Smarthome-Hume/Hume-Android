@@ -141,7 +141,7 @@ fun HomeScreen(
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
                     contentPadding = PaddingValues(
-                        start = 18.dp, end = 18.dp, top = 4.dp, bottom = 110.dp,
+                        start = 18.dp, end = 18.dp, top = 4.dp, bottom = 100.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
@@ -191,6 +191,22 @@ fun HomeScreen(
                             }
                         }
                     }
+                    // The thong bao (chuyen tu trang Toi) - duoi Goi y de truy cap nhanh
+                    if (state.notifications.isNotEmpty()) {
+                        item {
+                            Column(Modifier.padding(bottom = 14.dp)) {
+                                RiseIn(175) {
+                                    val notifAiSummary by viewModel.notifAiSummary.collectAsState()
+                                    NotificationCard(
+                                        notifications = state.notifications,
+                                        aiSummary = notifAiSummary,
+                                        onViewAll = { /* TODO: mo sheet thong bao */ },
+                                        onDismiss = { id -> viewModel.dismissNotification(id) },
+                                    )
+                                }
+                            }
+                        }
+                    }
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
                             RiseIn(200) { SolarWeekCard(state) }
@@ -232,7 +248,7 @@ fun HomeScreen(
                     onEco = { ecoDialog = true },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 88.dp),
+                        .padding(end = 20.dp, bottom = 110.dp),
                 )
 
                 // Sheet phong

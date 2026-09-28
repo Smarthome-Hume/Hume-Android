@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.SolarDay
 import com.smarthome.hume.core.ui.components.M3ECard
@@ -57,7 +59,6 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
-import kotlinx.coroutines.delay
 
 fun greeting(): String = when (LocalTime.now().hour) {
     in 5..10 -> "Chào buổi sáng"
@@ -335,16 +336,10 @@ fun SuggestCard(
 fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val week: List<SolarDay> = state.solarWeek
-    var tickGrow by remember { mutableStateOf(0f) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(8000)
-            tickGrow += 0.06f
-        }
-    }
+
     val vals = week.map { it.kwh }
-    val todayBase = state.solarTodayKwh?.toFloat() ?: vals.lastOrNull() ?: 0f
-    val todayShown = minOf(6.8f, todayBase + tickGrow)
+    // Gia tri hom nay that tu HA (khong mo phong tang dan)
+    val todayShown = state.solarTodayKwh?.toFloat() ?: vals.lastOrNull() ?: 0f
 
     M3ECard(
         modifier = modifier.fillMaxWidth(),
@@ -352,21 +347,13 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         contentPadding = 20.dp,
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "Điện mặt trời",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.onSurface,
-                )
-                Text(
-                    "Sản lượng hôm nay · trực tiếp",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
+            Text(
+                "Điện mặt trời",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurface,
+                modifier = Modifier.weight(1f),
+            )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     "%.1f".format(todayShown),
@@ -389,7 +376,6 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             SolarBars(
                 vals = vals,
                 labels = week.map { it.label },
-                tickGrow = tickGrow,
             )
         } else {
             Text(
@@ -402,27 +388,21 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 }
 
 /**
- * Bieu do cot mo phong SVG demo: viewBox 320x150, PT=14, PB=10, bw=30,
- * maxV=7 CO DINH. SVG width:100% nen toa do X scale theo be rong thuc te
- * (sx = w/320); Y giu nguyen vi cao co dinh 150dp.
+ * Bieu do cot: chieu cao ty le voi gia tri / maxValue cua tuan.
+ * Neu maxValue=0 thi cot cao 0 (chi hien cham 4dp toi thieu).
  * Mau cot theo GIA TRI TUONG DOI: today = primary; cac ngay khac =
- * lerp(primaryContainer -> primary, v/maxTuan) de nhin ra ngay cao/thap.
- * Cham cot hien tooltip "T2: 4.2 kWh" (surfaceContainerHigh, bo 12px).
+ * lerp(primaryContainer -> primary, v/maxValue) de nhin ra ngay cao/thap.
  */
 @Composable
 private fun SolarBars(
     vals: List<Float>,
     labels: List<String>,
-    tickGrow: Float,
 ) {
     val cs = MaterialTheme.colorScheme
     var selected by remember { mutableStateOf<Int?>(null) }
-    val shown = vals.mapIndexed { i, v ->
-        if (i == vals.lastIndex) minOf(6.8f, v + tickGrow) else v
-    }
-    val maxV = 7f
-    // mau theo gia tri tuong doi so voi max tuan (tranh chia 0)
-    val maxWeek = (shown.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
+    val shown = vals
+    // maxValue that cua tuan (tranh chia 0)
+    val maxValue = (shown.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -432,7 +412,8 @@ private fun SolarBars(
         val sx = w / 320.dp
         // X(i) = 20 + i*(280/6) (don vi viewBox) -> nhan sx ra dp thuc te
         fun x(i: Int): androidx.compose.ui.unit.Dp = (20f + i * (280f / 6f)).dp * sx
-        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxV).coerceIn(0f, 1f))
+        // Chieu cao = (v / maxValue) * 126dp (vung ve tu y=14 den y=140)
+        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxValue).coerceIn(0f, 1f))
         val bw = 30.dp * sx
         shown.forEachIndexed { i, v ->
             val today = i == shown.lastIndex
@@ -440,7 +421,7 @@ private fun SolarBars(
             val h = (140.dp - top).coerceAtLeast(4.dp)
             // today: primary dac; ngay khac: dam nhat theo gia tri tuong doi
             val barColor = if (today) cs.primary
-            else lerp(cs.primaryContainer, cs.primary, (v / maxWeek).coerceIn(0f, 1f) * 0.85f)
+            else lerp(cs.primaryContainer, cs.primary, (v / maxValue).coerceIn(0f, 1f) * 0.85f)
             Box(
                 modifier = Modifier
                     .offset(x = x(i) - bw / 2, y = top)
@@ -492,6 +473,8 @@ private fun SolarBars(
                 fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
                 color = if (today) cs.primary else cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -574,5 +557,96 @@ private fun Sparkline(color: Color, modifier: Modifier = Modifier) {
             color = color,
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
         )
+    }
+}
+
+/**
+ * The thong bao moi nhat - dat duoi "Goi y cho ban" de truy cap nhanh.
+ * Neu AI duoc cau hinh, hien tom tat AI ve thong bao.
+ */
+@Composable
+fun NotificationCard(
+    notifications: List<HomeNotification>,
+    aiSummary: String?,
+    onViewAll: () -> Unit,
+    onDismiss: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cs = MaterialTheme.colorScheme
+    val latest = notifications.firstOrNull() ?: return
+
+    M3ECard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(30.dp),
+        contentPadding = 18.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(cs.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                MsIcon(
+                    M3EIcons.Bell,
+                    contentDescription = null,
+                    tint = cs.onPrimaryContainer,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    latest.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "${latest.body} · ${latest.timeText}",
+                    fontSize = 12.sp,
+                    color = cs.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+                // Tom tat AI (neu co)
+                aiSummary?.let { summary ->
+                    Text(
+                        summary,
+                        fontSize = 12.sp,
+                        color = cs.primary,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+                if (notifications.size > 1) {
+                    TextButton(onClick = onViewAll) {
+                        Text(
+                            "Xem tất cả (${notifications.size})",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+            IconButton(onClick = { onDismiss(latest.id) }) {
+                MsIcon(
+                    M3EIcons.Close,
+                    contentDescription = "Bỏ qua",
+                    tint = cs.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
     }
 }

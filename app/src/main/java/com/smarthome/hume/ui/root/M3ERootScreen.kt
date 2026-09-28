@@ -135,7 +135,7 @@ private fun M3ENavBar(
             modifier = Modifier
                 .shadow(12.dp, pill)
                 .clip(pill)
-                .background(extra.surfaceLowest.copy(alpha = 0.82f))
+                .background(extra.surfaceLowest.copy(alpha = 0.92f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->

@@ -23,6 +23,7 @@ enum class AiProvider(val label: String) {
     OpenAI("OpenAI"),
     Anthropic("Anthropic"),
     Google("Google (Gemini)"),
+    DeepSeek("DeepSeek"),
     Custom("Tùy chỉnh (OpenAI-compatible)"),
 }
 
@@ -40,6 +41,7 @@ data class AiSettings(
         AiProvider.OpenAI -> "https://api.openai.com/v1"
         AiProvider.Anthropic -> "https://api.anthropic.com/v1"
         AiProvider.Google -> "https://generativelanguage.googleapis.com/v1beta/openai"
+        AiProvider.DeepSeek -> "https://api.deepseek.com/v1"
         AiProvider.Custom -> customBaseUrl.trim().trimEnd('/')
     }
 
@@ -51,6 +53,7 @@ data class AiSettings(
             AiProvider.OpenAI -> "gpt-4o-mini"
             AiProvider.Anthropic -> "claude-3-5-haiku-latest"
             AiProvider.Google -> "gemini-2.0-flash"
+            AiProvider.DeepSeek -> "deepseek-chat"
             AiProvider.Custom -> ""
         }
     }

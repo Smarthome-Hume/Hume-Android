@@ -17,8 +17,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,7 +94,6 @@ fun PillsRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
             .then(
                 if (securityExpanded) Modifier.horizontalScroll(rememberScrollState())
                 else Modifier,
@@ -105,8 +102,9 @@ fun PillsRow(
         SecPill(
             mode = mode,
             onClick = onToggleSecurity,
-            modifier = if (securityExpanded) Modifier.widthIn(min = 150.dp)
-            else Modifier.weight(1f),
+            // Chieu cao co dinh = SecModeCard (80dp) de 3 the bang nhau khi mo rong
+            modifier = (if (securityExpanded) Modifier.widthIn(min = 150.dp)
+            else Modifier.weight(1f)).height(80.dp),
         )
         // .secmodes: chi hien khi expanded
         AnimatedVisibility(
@@ -354,7 +352,7 @@ private fun SecModeCard(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = modifier
                 .width(92.dp)
-                .fillMaxHeight()
+                .height(80.dp)
                 .clip(RoundedCornerShape(26.dp))
                 .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
                 .pressMorph(

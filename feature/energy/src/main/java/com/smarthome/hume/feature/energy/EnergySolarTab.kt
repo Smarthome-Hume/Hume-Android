@@ -410,6 +410,7 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
             c.name,
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         when (c.kind) {
@@ -448,6 +449,7 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
                 fontWeight = FontWeight.ExtraBold,
                 fontFeatureSettings = "tnum",
             ),
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 56.dp),
         )
@@ -469,6 +471,7 @@ private fun StepperBtn(text: String, onClick: () -> Unit) {
             text,
             style = MaterialTheme.typography.titleMedium.copy(
                 fontSize = 16.sp, fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
