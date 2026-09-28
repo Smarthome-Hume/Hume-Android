@@ -136,22 +136,53 @@ fun HomeHeader(
     }
 }
 
-/** The goi y theo ngu canh (pin yeu / cua mo / ...). */
+/** The goi y theo ngu canh — dung demo rev12: tertiaryContainer + nut hanh dong. */
 @Composable
 fun SuggestCard(state: HomeUiState, modifier: Modifier = Modifier) {
+    data class Tip(val icon: ImageVector, val title: String, val sub: String, val action: String)
     val tips = buildList {
-        if (state.battery.soc in 1..29) add("Pin còn ${state.battery.soc}% — hạn chế tải nặng chờ nắng lên.")
+        if (state.battery.soc in 1..29) add(Tip(
+            M3EIcons.Battery, "Pin còn ${state.battery.soc}%",
+            "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
         val doors = state.notifications.filter { it.title.contains("Cửa") }
-        if (doors.isNotEmpty()) add("${doors.first().body} — bạn có muốn đóng lại không?")
-        if (state.solarNowKw > 2.0) add("Đang nắng to (${"%.1f".format(state.solarNowKw)} kW) — tranh thủ chạy máy giặt.")
+        if (doors.isNotEmpty()) add(Tip(
+            M3EIcons.Door, doors.first().title, doors.first().body, "Đóng"))
+        if (state.solarNowKw > 2.0) add(Tip(
+            M3EIcons.Solar, "Trời đang nắng to",
+            "Bật điều hoà phòng khách 26°?", "Bật"))
     }
     if (tips.isEmpty()) return
-    M3ECard(modifier = modifier.fillMaxWidth()) {
-        Text("Gợi ý", style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(6.dp))
-        Text(tips.first(), style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val tip = tips.first()
+    val cs = MaterialTheme.colorScheme
+    M3ECard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = cs.tertiaryContainer,
+        shape = RoundedCornerShape(28.dp),
+        contentPadding = 18.dp,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(tip.icon, null, tint = cs.onTertiaryContainer,
+                modifier = Modifier.size(30.dp))
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(tip.title, style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold, color = cs.onTertiaryContainer)
+                Text(tip.sub, style = MaterialTheme.typography.bodyMedium,
+                    color = cs.onTertiaryContainer.copy(alpha = 0.75f))
+            }
+            Spacer(Modifier.width(12.dp))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cs.onTertiaryContainer)
+                    .clickable { /* TODO: hanh dong goi y */ }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            ) {
+                Text(tip.action, style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold, color = cs.tertiaryContainer)
+            }
+        }
     }
 }
 
@@ -188,53 +219,34 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
     }
 }
 
-/** The nho: cong suat dang phat (chuyen tu subtab solar sang trang Nha). */
+/** The nho: cong suat dang phat — dung demo rev12 (.solar): tertiaryContainer. */
 @Composable
 fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
-    M3ECard(modifier = modifier.fillMaxWidth()) {
+    val cs = MaterialTheme.colorScheme
+    M3ECard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = cs.tertiaryContainer,
+        shape = RoundedCornerShape(32.dp),
+        contentPadding = 18.dp,
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Đang phát", style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.weight(1f))
-            Text("%.1f kW".format(state.solarNowKw),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-/** The hieu nang pin voi WavyBatteryBar. */
-@Composable
-fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
-    M3ECard(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.Icon(
-                M3EIcons.Battery, null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text("Hiệu năng pin", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.weight(1f))
-            Text("${battery.soc}%", style = MaterialTheme.typography.headlineSmall)
-        }
-        Spacer(Modifier.height(12.dp))
-        WavyBatteryBar(soc = battery.soc, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(8.dp))
-        BatteryLegend(Modifier.fillMaxWidth().height(20.dp))
-        val flow = when {
-            battery.powerKw < -0.05 -> "Đang sạc %.1f kW".format(-battery.powerKw)
-            battery.powerKw > 0.05 -> "Đang xả %.1f kW".format(battery.powerKw)
-            else -> "Chờ"
-        }
-        Spacer(Modifier.height(8.dp))
-        Row {
-            Text(flow, style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.weight(1f))
-            battery.timeText?.let {
-                Text(it, style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(cs.onTertiaryContainer.copy(alpha = 0.25f)),
+            ) {
+                Icon(M3EIcons.Solar, null, tint = cs.onTertiaryContainer,
+                    modifier = Modifier.size(26.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Điện mặt trời", style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold, color = cs.onTertiaryContainer)
+                Text("Đang phát · ${"%.1f".format(state.solarNowKw)} kW",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = cs.onTertiaryContainer.copy(alpha = 0.75f))
             }
         }
     }
