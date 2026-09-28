@@ -122,26 +122,45 @@ private fun RoomCard(
             .padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
             Column {
-                // Nut den 48px (icon phong): tat = surfaceContainer, bat = primary
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (room.lightOn) cs.primary else cs.surfaceContainer,
-                        )
-                        .pressMorph(pressedScale = 0.85f) {
-                            haptic()
-                            onToggleLight()
-                        },
+                // Hang tren: icon phong + nhiet do lon (nhu Hume goc)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MsIcon(
-                        M3EIcons.room(room.iconKey), null,
-                        tint = if (room.lightOn) cs.onPrimary
-                        else cs.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp),
-                    )
+                    // Nut den 48px (icon phong): tat = surfaceContainer, bat = primary
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (room.lightOn) cs.primary else cs.surfaceContainer,
+                            )
+                            .pressMorph(pressedScale = 0.85f) {
+                                haptic()
+                                onToggleLight()
+                            },
+                    ) {
+                        MsIcon(
+                            M3EIcons.room(room.iconKey), null,
+                            tint = if (room.lightOn) cs.onPrimary
+                            else cs.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    // Nhiet do lon nhu Hume goc
+                    room.tempC?.let { temp ->
+                        Text(
+                            "%.1f°".format(temp),
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Light,
+                            color = if (room.lightOn) cs.onPrimaryContainer
+                            else cs.onSurface,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -154,11 +173,8 @@ private fun RoomCard(
                     softWrap = false,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
-                val sub = buildList {
-                    room.tempC?.let { add("%.1f°".format(it)) }
-                    add("${room.deviceCount} thiết bị")
-                    add("${room.devicesOn} bật")
-                }.joinToString(" · ")
+                // Subtitle chi con thiet bi (bo nhiet do ra) -> nhieu khong gian hon
+                val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
                 Text(
                     sub,
                     fontSize = 11.5.sp,
