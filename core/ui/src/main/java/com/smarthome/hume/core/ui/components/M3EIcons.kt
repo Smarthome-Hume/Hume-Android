@@ -73,6 +73,14 @@ object M3EIcons {
     val Lock = Icons.Outlined.Lock
     val Shield = Icons.Outlined.Shield
     val Close = Icons.Outlined.Close
+    val FlightTakeoff = Icons.Outlined.FlightTakeoff
+    val Bedtime = Icons.Outlined.Bedtime
+    val PowerSettingsNew = Icons.Outlined.PowerSettingsNew
+    val AutoAwesome = Icons.Outlined.AutoAwesome
+    val Add = Icons.Outlined.Add
+    val Search = Icons.Outlined.Search
+    val Bell = Icons.Outlined.Notifications
+    val Person = Icons.Outlined.Person
 
     fun room(key: String): ImageVector = when (key) {
         "bed" -> Icons.Outlined.Bed

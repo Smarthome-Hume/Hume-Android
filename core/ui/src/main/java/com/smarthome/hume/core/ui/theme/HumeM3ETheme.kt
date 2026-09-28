@@ -115,22 +115,43 @@ private val MontserratProvider = GoogleFont.Provider(
 )
 private val Montserrat = GoogleFont("Montserrat")
 
+/** Montserrat full weights — gan cho TOAN BO text styles, khong de style nao roi ve font he thong. */
+private val montserratFamily = androidx.compose.ui.text.font.FontFamily(
+    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Light),
+    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Normal),
+    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Medium),
+    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.SemiBold),
+    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Bold),
+    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.ExtraBold),
+)
+
 private fun montserrat(weight: FontWeight) = androidx.compose.ui.text.font.FontFamily(
     Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = weight)
 )
 
-val HumeTypography = Typography(
-    displayLarge = TextStyle(
-        fontFamily = montserrat(FontWeight.Bold),
-        fontWeight = FontWeight.Bold,
-        fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp,
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = montserrat(FontWeight.Medium),
-        fontWeight = FontWeight.Medium,
-        fontSize = 24.sp, lineHeight = 32.sp,
-    ),
-)
+val HumeTypography = with(Typography()) {
+    copy(
+        displayLarge = displayLarge.copy(
+            fontFamily = montserratFamily, fontWeight = FontWeight.Bold,
+            fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+        displayMedium = displayMedium.copy(fontFamily = montserratFamily),
+        displaySmall = displaySmall.copy(fontFamily = montserratFamily),
+        headlineLarge = headlineLarge.copy(fontFamily = montserratFamily),
+        headlineMedium = headlineMedium.copy(
+            fontFamily = montserratFamily, fontWeight = FontWeight.Medium,
+            fontSize = 24.sp, lineHeight = 32.sp),
+        headlineSmall = headlineSmall.copy(fontFamily = montserratFamily),
+        titleLarge = titleLarge.copy(fontFamily = montserratFamily),
+        titleMedium = titleMedium.copy(fontFamily = montserratFamily),
+        titleSmall = titleSmall.copy(fontFamily = montserratFamily),
+        bodyLarge = bodyLarge.copy(fontFamily = montserratFamily),
+        bodyMedium = bodyMedium.copy(fontFamily = montserratFamily),
+        bodySmall = bodySmall.copy(fontFamily = montserratFamily),
+        labelLarge = labelLarge.copy(fontFamily = montserratFamily),
+        labelMedium = labelMedium.copy(fontFamily = montserratFamily),
+        labelSmall = labelSmall.copy(fontFamily = montserratFamily),
+    )
+}
 
 // ---- Theme entry ----
 @Composable

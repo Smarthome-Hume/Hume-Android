@@ -67,6 +67,21 @@ fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth(),
     ) {
+        // Avatar 55px nhu demo .hava
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(55.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        ) {
+            androidx.compose.material3.Icon(
+                M3EIcons.Person, null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(28.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 text = greeting(),
@@ -233,88 +248,3 @@ private val alarmModes = listOf(
     AlarmMode("night", "Ban đêm", Icons.Outlined.DarkMode),
     AlarmMode("disarm", "Tắt", Icons.Outlined.PowerSettingsNew),
 )
-
-/**
- * Hang scroll-x: the An ninh + 4 the che do + the den dang sang.
- * Che do dang chon dung primaryContainer.
- */
-@Composable
-fun SecurityRow(
-    alarm: AlarmUi?,
-    lightsOnCount: Int,
-    onArm: (mode: String, label: String) -> Unit,
-    onDisarm: () -> Unit,
-    onLights: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = modifier.horizontalScroll(rememberScrollState()),
-    ) {
-        // The trang thai an ninh
-        M3ECard(
-            contentPadding = 16.dp,
-            modifier = Modifier.width(168.dp),
-        ) {
-            androidx.compose.material3.Icon(
-                if (alarm?.isArmed == true) Icons.Outlined.VerifiedUser else Icons.Outlined.Shield,
-                null,
-                tint = if (alarm?.isArmed == true) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(28.dp),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text("An ninh", style = MaterialTheme.typography.titleSmall)
-            Text(alarm?.label ?: "Chưa rõ",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        // 4 che do
-        alarmModes.forEach { m ->
-            val selected = when (m.service) {
-                "home" -> alarm?.state == "armed_home"
-                "away" -> alarm?.state == "armed_away"
-                "night" -> alarm?.state == "armed_night"
-                else -> alarm?.state == "disarmed"
-            }
-            M3ECard(
-                onClick = { if (m.service == "disarm") onDisarm() else onArm(m.service, m.label) },
-                shape = MaterialTheme.shapes.large, // 32dp
-                containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentPadding = 16.dp,
-                modifier = Modifier.width(104.dp),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    androidx.compose.material3.Icon(
-                        m.icon, null,
-                        tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(m.label, style = MaterialTheme.typography.labelLarge,
-                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurface)
-                }
-            }
-        }
-        // The den dang sang
-        M3ECard(
-            onClick = onLights,
-            contentPadding = 16.dp,
-            modifier = Modifier.width(132.dp),
-        ) {
-            androidx.compose.material3.Icon(
-                Icons.Outlined.Lightbulb, null,
-                tint = if (lightsOnCount > 0) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(28.dp),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text("$lightsOnCount đèn", style = MaterialTheme.typography.titleSmall)
-            Text("đang sáng", style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}

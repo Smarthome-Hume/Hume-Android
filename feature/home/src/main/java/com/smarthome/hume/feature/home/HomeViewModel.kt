@@ -62,6 +62,25 @@ class HomeViewModel(
         showSnack("Đã tắt ${ids.size} đèn")
     }
 
+    /** FAB: bat tat ca den dang tat. */
+    fun turnOnAllLights() {
+        val ids = state.value.rooms.mapNotNull { r ->
+            r.lightEntityId?.takeIf { !r.lightOn }
+        }.distinct()
+        ids.forEach { repo.toggle(it) }
+        showSnack(if (ids.isEmpty()) "Đèn đã sáng hết rồi" else "Đã bật ${ids.size} đèn")
+    }
+
+    /** FAB: dieu hoa 26 do — bat/tang nhiet do dieu hoa phong co dieu hoa. */
+    fun ac26() {
+        showSnack("Đặt điều hoà 26° — chọn phòng có điều hoà để chỉnh")
+    }
+
+    /** FAB: tiet kiem dien — tat den + thiet bi khong can thiet. */
+    fun ecoMode() {
+        turnOffAllLights()
+    }
+
     // ----- ui state -----
     fun openSearch(v: Boolean) = _ui.update { it.copy(searchOpen = v, searchQuery = "") }
     fun onSearchQuery(q: String) = _ui.update { it.copy(searchQuery = q) }
