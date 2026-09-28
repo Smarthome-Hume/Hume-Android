@@ -162,11 +162,15 @@ fun RoomSheet(
                     EnvTile(
                         icon = Icons.Outlined.Thermostat, label = "Nhiệt độ",
                         value = room.tempC?.let { "%.1f°".format(it) } ?: "—",
+                        container = MaterialTheme.colorScheme.primaryContainer,
+                        onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.weight(1f),
                     )
                     EnvTile(
                         icon = Icons.Outlined.WaterDrop, label = "Độ ẩm",
                         value = room.humidityPct?.let { "%.0f%%".format(it) } ?: "—",
+                        container = MaterialTheme.colorScheme.tertiaryContainer,
+                        onContainer = MaterialTheme.colorScheme.onTertiaryContainer,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -195,25 +199,28 @@ private fun EnvTile(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
+    container: androidx.compose.ui.graphics.Color,
+    onContainer: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,
 ) {
-    M3ECard(contentPadding = 16.dp, modifier = modifier) {
-        Column {
+    M3ECard(contentPadding = 16.dp, shape = RoundedCornerShape(30.dp), modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(30.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                    .background(container),
             ) {
-                Icon(icon, null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(18.dp))
+                Icon(icon, null, tint = onContainer, modifier = Modifier.size(24.dp))
             }
-            Spacer(Modifier.height(8.dp))
-            Text(value, style = MaterialTheme.typography.headlineSmall)
-            Text(label, style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(value, style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Medium)
+                Text(label, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -226,7 +233,7 @@ private val hvacLabels = mapOf(
     "dry" to "Hút ẩm",
 )
 
-/** The dieu hoa: stepper + nut nguon / 4 nut mode. */
+/** The dieu hoa — dung demo rev12 (.ac-top): stepper + nut nguon, khong title. */
 @Composable
 private fun ClimateCard(
     c: ClimateUi,
@@ -236,49 +243,49 @@ private fun ClimateCard(
 ) {
     val target = c.targetTemp ?: 26.0
     M3ECard(
+        shape = RoundedCornerShape(24.dp),
+        contentPadding = 16.dp,
         modifier = Modifier
             .fillMaxWidth()
             .alpha(if (c.isOn) 1f else 0.55f),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Điều hòa", style = MaterialTheme.typography.titleMedium)
-                Text("%.0f°".format(target), style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.primary)
-                c.currentTemp?.let {
-                    Text("Hiện tại %.1f°".format(it), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            // Stepper
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            // Stepper: - | nhiet do + "Muc tieu" | +
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StepperButton(Icons.Outlined.Remove) {
                     onTemp(c.entityId, (target - 1).coerceIn(16.0, 31.0))
                 }
-                Text("%.0f°".format(target),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 8.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                ) {
+                    Text("%.0f°".format(target),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold)
+                    Text("Mục tiêu", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 StepperButton(Icons.Outlined.Add) {
                     onTemp(c.entityId, (target + 1).coerceIn(16.0, 31.0))
                 }
             }
-            Spacer(Modifier.width(12.dp))
-            // Nut nguon tron 54px
+            // Nut nguon tron 54dp primaryContainer
+            val cs = MaterialTheme.colorScheme
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(54.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (c.isOn) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    )
+                    .background(if (c.isOn) cs.primaryContainer else cs.surfaceContainerHigh)
                     .clickable { onToggle(c.entityId) },
             ) {
                 Icon(
                     Icons.Outlined.PowerSettingsNew, null,
-                    tint = if (c.isOn) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (c.isOn) cs.onPrimaryContainer else cs.onSurfaceVariant,
                     modifier = Modifier.size(26.dp),
                 )
             }
@@ -315,43 +322,46 @@ private fun StepperButton(
     }
 }
 
-/** 1 hang thiet bi: icon + ten + cong suat + switch. */
+/** 1 hang thiet bi — dung demo rev12 (.dev): ten + trang thai + switch. */
 @Composable
 fun DeviceRow(
     d: DeviceUi,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    M3ECard(contentPadding = 12.dp, modifier = modifier.fillMaxWidth()) {
+    val cs = MaterialTheme.colorScheme
+    M3ECard(
+        contentPadding = 16.dp,
+        shape = RoundedCornerShape(28.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(
-                        if (d.isOn) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        if (d.isOn) cs.primaryContainer
+                        else cs.surfaceContainerHigh,
                     ),
             ) {
                 Icon(
                     M3EIcons.device(d.iconKey), null,
-                    tint = if (d.isOn) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp),
+                    tint = if (d.isOn) cs.onPrimaryContainer
+                    else cs.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp),
                 )
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
-                Text(d.label, style = MaterialTheme.typography.titleSmall)
-                val sub = buildList {
-                    if (d.sub.isNotBlank()) add(d.sub)
-                    d.powerW?.let { add("%.0f W".format(it)) }
-                }.joinToString(" · ")
-                if (sub.isNotBlank()) {
-                    Text(sub, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Text(d.label, style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold)
+                Text(
+                    if (d.isOn) "Đang bật" else "Đang tắt",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                )
             }
             M3ESwitch(checked = d.isOn, onCheckedChange = { onToggle() })
         }
