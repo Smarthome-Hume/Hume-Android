@@ -177,7 +177,7 @@ private fun M3ENavBar(
                                 onTap = { onSelect(i) },
                             )
                         }
-                        .padding(vertical = 9.dp),
+                        .padding(top = 9.dp, bottom = 7.dp),
                 ) {
                     MsIcon(
                         item.icon, contentDescription = item.tab.label,
@@ -190,6 +190,7 @@ private fun M3ENavBar(
                         item.tab.label,
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 11.sp,
+                        lineHeight = 13.sp,
                         fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
                         color = if (isSel) cs.onPrimaryContainer
                         else cs.onSurfaceVariant,

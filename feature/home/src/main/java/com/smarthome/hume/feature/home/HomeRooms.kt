@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -351,11 +352,11 @@ private fun ClimateCard(
     val target = c.targetTemp ?: 26.0
     val dim = if (c.isOn) 1f else 0.35f
     val haptic = rememberHaptic()
-    // .ac-top: surfaceHighest, bo 24px, padding 14px 16px
+    // .ac-top: surfaceHighest, bo 24px, padding 14px 16px.
+    // Tat dieu hoa: chi .tstep + .ac-modes mo di (opacity .35), nut nguon giu nguyen.
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(dim)
             .clip(RoundedCornerShape(24.dp))
             .background(cs.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -365,15 +366,24 @@ private fun ClimateCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Stepper: - | nhiet do muc tieu | +
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StepperButton(Ms.remove, enabled = c.isOn) {
+            // .tstep: pill surfaceContainer bo 999px, padding 4px, gap 6px
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .alpha(dim)
+                    .clip(CircleShape)
+                    .background(cs.surfaceContainer)
+                    .padding(4.dp),
+            ) {
+                StepperButton("−", enabled = c.isOn) {
                     haptic()
                     onTemp(c.entityId, (target - 1).coerceIn(16.0, 31.0))
                 }
+                // .tv: min-width 54px, "26°" 16px/800 + "Mục tiêu" 10px/600
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 8.dp),
+                    modifier = Modifier.widthIn(min = 54.dp),
                 ) {
                     Text(
                         "%.0f°".format(target),
@@ -388,7 +398,7 @@ private fun ClimateCard(
                         color = cs.onSurfaceVariant,
                     )
                 }
-                StepperButton(Ms.add, enabled = c.isOn) {
+                StepperButton("+", enabled = c.isOn) {
                     haptic()
                     onTemp(c.entityId, (target + 1).coerceIn(16.0, 31.0))
                 }
@@ -427,9 +437,13 @@ private fun ClimateCard(
     }
 }
 
+/**
+ * Nut stepper .tstep button: tron 34px, nen surfaceHighest,
+ * chu "−"/"+" 18px/700; :active scale(.85).
+ */
 @Composable
 private fun StepperButton(
-    icon: String,
+    label: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
@@ -442,10 +456,11 @@ private fun StepperButton(
             .background(cs.surfaceContainerHighest)
             .pressMorph(pressedScale = 0.85f, onClick = if (enabled) onClick else null),
     ) {
-        MsIcon(
-            icon, null,
-            tint = cs.onSurface,
-            modifier = Modifier.size(20.dp),
+        Text(
+            label,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = cs.onSurface,
         )
     }
 }
