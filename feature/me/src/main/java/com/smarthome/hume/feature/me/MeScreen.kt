@@ -35,7 +35,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -194,7 +196,7 @@ private fun WavyProgress(active: Boolean) {
             drawPath(
                 path = path,
                 color = primary,
-                style = androidx.compose.ui.graphics.Stroke(
+                style = Stroke(
                     width = 4.dp.toPx(),
                     cap = androidx.compose.ui.graphics.StrokeCap.Round,
                 ),
