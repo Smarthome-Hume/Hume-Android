@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -81,20 +80,14 @@ fun M3ERootScreen(
     val darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()
     HumeM3ETheme(seed = seed, darkTheme = darkTheme) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
-        Scaffold(
-            bottomBar = {
-                M3ENavBar(
-                    selected = selected,
-                    onSelect = { selected = it },
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.surface,
-        ) { inner ->
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .padding(inner),
-            ) {
+        // Navbar NOI tren be mat trang: dung Box overlay thay vi Scaffold bottomBar
+        // (Scaffold bottomBar van giu cho layout). Content full-bleed, navbar noi phia tren.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface),
+        ) {
+            Box(Modifier.fillMaxSize()) {
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen()
                     HumeTab.Energy -> M3EEnergyScreen()
@@ -102,6 +95,11 @@ fun M3ERootScreen(
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
                 }
             }
+            M3ENavBar(
+                selected = selected,
+                onSelect = { selected = it },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
@@ -179,12 +177,20 @@ private fun M3ENavBar(
                         }
                         .padding(top = 9.dp, bottom = 7.dp),
                 ) {
-                    MsIcon(
-                        item.icon, contentDescription = item.tab.label,
-                        tint = if (isSel) cs.onPrimaryContainer
-                        else cs.onSurfaceVariant,
-                        modifier = Modifier.size(iconSize),
-                    )
+                    // Active: icon fill dac (Canvas Path); inactive: outlined
+                    if (isSel) {
+                        FilledNavIcon(
+                            tab = item.tab,
+                            tint = cs.onPrimaryContainer,
+                            modifier = Modifier.size(iconSize),
+                        )
+                    } else {
+                        MsIcon(
+                            item.icon, contentDescription = item.tab.label,
+                            tint = cs.onSurfaceVariant,
+                            modifier = Modifier.size(iconSize),
+                        )
+                    }
                     Spacer(Modifier.height(3.dp))
                     Text(
                         item.tab.label,

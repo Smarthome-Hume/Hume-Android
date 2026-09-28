@@ -116,14 +116,14 @@ private fun RoomCard(
             .padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
             Column {
-                // Nut den 48px (icon phong): tat = trong suot, bat = primary
+                // Nut den 48px (icon phong): tat = surfaceContainer, bat = primary
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
                         .background(
-                            if (room.lightOn) cs.primary else Color.Transparent,
+                            if (room.lightOn) cs.primary else cs.surfaceContainer,
                         )
                         .pressMorph(pressedScale = 0.85f) {
                             haptic()
@@ -143,6 +143,9 @@ private fun RoomCard(
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
                 val sub = buildList {
                     room.tempC?.let { add("%.1f°".format(it)) }
@@ -154,6 +157,9 @@ private fun RoomCard(
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 3.dp),
                 )
             }
@@ -379,12 +385,16 @@ private fun ClimateCard(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = cs.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                     Text(
                         "Mục tiêu",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
                 StepperButton("+", enabled = c.isOn) {
@@ -589,7 +599,9 @@ fun DeviceRow(
                     contactOpen == false -> "Đang đóng"
                     d.isOn -> "Đang bật"
                     else -> "Đang tắt"
-                },
+                } + (if (d.isOn && d.powerW != null && d.powerW > 0)
+                    " · ${if (d.powerW >= 1000) "%.1f kW".format(d.powerW / 1000) else "%.0f W".format(d.powerW)}"
+                else ""),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,

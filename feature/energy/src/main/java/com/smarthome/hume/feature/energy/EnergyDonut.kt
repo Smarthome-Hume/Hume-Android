@@ -69,8 +69,10 @@ fun EnergyDonut(
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Giua donut: slice lon nhat (ten + gia tri), khong lap tong o duoi title
+            val top = slices.maxByOrNull { it.fraction }
             Text(
-                String.format(Locale.US, "%.1f", total),
+                top?.let { String.format(Locale.US, "%.1f", total * it.fraction) } ?: "0",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontSize = 19.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -78,10 +80,11 @@ fun EnergyDonut(
                 ),
             )
             Text(
-                "kWh hôm nay",
+                top?.name ?: "",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
     }

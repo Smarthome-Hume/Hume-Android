@@ -70,6 +70,8 @@ fun greeting(): String = when (LocalTime.now().hour) {
 @Composable
 fun HomeHeader(
     state: HomeUiState,
+    avatarUrl: String = "",
+    avatarToken: String = "",
     onSearch: () -> Unit,
     onNotif: () -> Unit,
     modifier: Modifier = Modifier,
@@ -91,11 +93,35 @@ fun HomeHeader(
                     .clip(CircleShape)
                     .background(extra.surfaceHighest),
             ) {
-                MsIcon(
-                    M3EIcons.Person, null,
-                    tint = cs.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp),
-                )
+                if (avatarUrl.isNotBlank()) {
+                    // Avatar HA can Bearer token -> gui Authorization header qua Coil
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    val req = remember(avatarUrl, avatarToken, ctx) {
+                        coil.request.ImageRequest.Builder(ctx)
+                            .data(avatarUrl)
+                            .apply {
+                                if (avatarToken.isNotBlank()) {
+                                    addHeader("Authorization", "Bearer $avatarToken")
+                                }
+                            }
+                            .crossfade(true)
+                            .build()
+                    }
+                    coil.compose.AsyncImage(
+                        model = req,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    )
+                } else {
+                    MsIcon(
+                        M3EIcons.Person, null,
+                        tint = cs.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
             }
             Box(
                 contentAlignment = Alignment.Center,
@@ -201,11 +227,25 @@ fun HomeHeader(
  * Nhan nut: rung nhe + goi onTipAction(key) + chuyen trang thai .done
  * (nen surfaceContainerHigh, chu onSurfaceVariant).
  */
+/**
+ * The goi y (.sgcard): bo 28px, padding 16px; nen tertiaryContainer;
+ * icon auto_awesome 30px; title 14px/700 + sub 12px/500;
+ * nut .sgbtn: nen onTertiaryContainer, chu tertiaryContainer, 13px/700, padding 20/12.
+ *
+ * Noi dung theo dieu kien thuc te (pin thap / cua mo / nang to);
+ * mac dinh (khong co dieu kien) hien noi dung demo "Trời đang nóng dần".
+ * Nhan nut: rung nhe + goi onTipAction(key) + chuyen trang thai .done
+ * (nen surfaceContainerHigh, chu onSurfaceVariant).
+ *
+ * AI: neu aiState = Loaded -> hien goi y tu AI (co nhan "AI");
+ * Loading -> hien "Đang phân tích…"; Unavailable/Idle -> luat co san.
+ */
 @Composable
 fun SuggestCard(
     state: HomeUiState,
     onTipAction: (key: String) -> Unit = {},
     modifier: Modifier = Modifier,
+    aiState: AiUiState = AiUiState.Idle,
 ) {
     data class Tip(val key: String, val title: String, val sub: String, val action: String)
     val tips = buildList {
@@ -219,8 +259,16 @@ fun SuggestCard(
             "ac", "Trời đang nắng to",
             "Bật điều hoà phòng khách 26°?", "Bật"))
     }
-    val tip = tips.firstOrNull() ?: Tip(
+    val ruleTip = tips.firstOrNull() ?: Tip(
         "ac", "Trời đang nóng dần", "Bật điều hoà phòng khách 26°?", "Bật")
+
+    // Chon nguon hien thi: AI uu tien, fallback luat
+    val aiTips = (aiState as? AiUiState.Loaded)?.tips
+    val isAiLoading = aiState == AiUiState.Loading
+    val tip = aiTips?.firstOrNull()?.let { Tip(it.key, it.title, it.sub, it.action) }
+        ?: ruleTip
+    val fromAi = aiTips?.isNotEmpty() == true
+
     var done by remember(tip.key) { mutableStateOf(false) }
     val haptic = rememberHaptic()
     val cs = MaterialTheme.colorScheme
@@ -241,47 +289,77 @@ fun SuggestCard(
             )
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(
-                    tip.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.onTertiaryContainer,
-                )
-                Text(
-                    tip.sub,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = cs.onTertiaryContainer.copy(alpha = 0.75f),
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+                if (isAiLoading) {
+                    // Trang thai dang phan tich
+                    Text(
+                        "Đang phân tích ngôi nhà…",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onTertiaryContainer,
+                    )
+                    Text(
+                        "AI đang đọc trạng thái thiết bị để đưa gợi ý.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                } else {
+                    if (fromAi) {
+                        // Nhan nho "AI" de phan biet nguon
+                        Text(
+                            "GỢI Ý TỪ AI",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.8.sp,
+                            color = cs.onTertiaryContainer.copy(alpha = 0.7f),
+                        )
+                        Spacer(Modifier.height(2.dp))
+                    }
+                    Text(
+                        tip.title,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onTertiaryContainer,
+                    )
+                    Text(
+                        tip.sub,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(12.dp))
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .pressMorphCard(
-                        pressedScale = 0.9f,
-                        corner = 20.dp,
-                        pressedCorner = 13.dp,
-                        onClick = if (done) null else {
-                            {
-                                haptic()
-                                onTipAction(tip.key)
-                                done = true
-                            }
-                        },
+            if (!isAiLoading) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .pressMorphCard(
+                            pressedScale = 0.9f,
+                            corner = 20.dp,
+                            pressedCorner = 13.dp,
+                            onClick = if (done) null else {
+                                {
+                                    haptic()
+                                    onTipAction(tip.key)
+                                    done = true
+                                }
+                            },
+                        )
+                        // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
+                        .alpha(if (done) 0.6f else 1f)
+                        .background(cs.onTertiaryContainer)
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                ) {
+                    Text(
+                        if (done) "Đã bật" else tip.action,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.tertiaryContainer,
                     )
-                    // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
-                    .alpha(if (done) 0.6f else 1f)
-                    .background(cs.onTertiaryContainer)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-            ) {
-                Text(
-                    if (done) "Đã bật" else tip.action,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.tertiaryContainer,
-                )
+                }
             }
         }
     }
@@ -321,13 +399,6 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
-                )
-                Text(
-                    "Sản lượng hôm nay · trực tiếp",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
             Row(verticalAlignment = Alignment.Bottom) {
@@ -455,6 +526,8 @@ private fun SolarBars(
                 fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
                 color = if (today) cs.primary else cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier.weight(1f),
             )
         }

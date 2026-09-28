@@ -31,6 +31,7 @@ class SessionStore(private val context: Context) {
     private object Keys {
         val HaUrl = stringPreferencesKey("ha_url")
         val HaTokenLegacy = stringPreferencesKey("ha_token")
+        val HaAvatarUrl = stringPreferencesKey("ha_avatar_url")
     }
 
     companion object {
@@ -73,19 +74,32 @@ class SessionStore(private val context: Context) {
     private val tokenFlow = MutableStateFlow(readToken())
 
     val session: Flow<AuthSession> =
-        context.humeDataStore.data.map { it[Keys.HaUrl] ?: DEFAULT_URL }
-            .combine(tokenFlow) { url, token -> AuthSession(url, token) }
+        context.humeDataStore.data.map { prefs ->
+            AuthSession(
+                serverUrl = prefs[Keys.HaUrl] ?: DEFAULT_URL,
+                avatarUrl = prefs[Keys.HaAvatarUrl] ?: "",
+            )
+        }.combine(tokenFlow) { s, token -> s.copy(token = token) }
 
-    suspend fun save(url: String, token: String) {
+    suspend fun save(url: String, token: String, avatarUrl: String = "") {
         val cleanUrl = url.trim().trimEnd('/')
         val cleanToken = token.trim()
-        context.humeDataStore.edit { prefs -> prefs[Keys.HaUrl] = cleanUrl }
+        context.humeDataStore.edit { prefs ->
+            prefs[Keys.HaUrl] = cleanUrl
+            // Luon ghi/xoa avatar key de khong giu avatar cu cua user truoc
+            if (avatarUrl.isNotBlank()) prefs[Keys.HaAvatarUrl] = avatarUrl
+            else prefs.remove(Keys.HaAvatarUrl)
+        }
         encryptedPrefs().edit().putString("ha_token", cleanToken).apply()
         tokenFlow.value = cleanToken
     }
 
     suspend fun clear() {
         encryptedPrefs().edit().remove("ha_token").apply()
+        context.humeDataStore.edit { prefs ->
+            prefs.remove(Keys.HaUrl)
+            prefs.remove(Keys.HaAvatarUrl)
+        }
         tokenFlow.value = ""
     }
 

@@ -66,6 +66,57 @@ class HaAuthValidator(
         false
     }
 
+    /**
+     * Lay avatar user tu HA: GET /api/auth/current_user -> user id,
+     * roi tim person entity co attributes.user_id khop -> attributes.entity_picture.
+     * Tra ve URL tuyet doi hoac "" neu khong co.
+     */
+    suspend fun fetchAvatarUrl(rawUrl: String, rawToken: String): String =
+        withContext(Dispatchers.IO) {
+            val url = normalizeUrl(rawUrl) ?: return@withContext ""
+            val token = rawToken.trim()
+            if (token.isEmpty()) return@withContext ""
+            try {
+                val userId = client.newCall(
+                    Request.Builder()
+                        .url("$url/api/auth/current_user")
+                        .header("Authorization", "Bearer $token")
+                        .get().build(),
+                ).execute().use { resp ->
+                    if (resp.code != 200) return@withContext ""
+                    val obj = Json.parseToJsonElement(resp.body?.string().orEmpty())
+                        as? kotlinx.serialization.json.JsonObject ?: return@withContext ""
+                    obj["id"]?.toString()?.trim('"').orEmpty()
+                }
+                if (userId.isEmpty()) return@withContext ""
+                client.newCall(
+                    Request.Builder()
+                        .url("$url/api/states")
+                        .header("Authorization", "Bearer $token")
+                        .get().build(),
+                ).execute().use { resp ->
+                    if (resp.code != 200) return@withContext ""
+                    val arr = Json.parseToJsonElement(resp.body?.string().orEmpty())
+                        as? kotlinx.serialization.json.JsonArray ?: return@withContext ""
+                    for (el in arr) {
+                        val obj = el as? kotlinx.serialization.json.JsonObject ?: continue
+                        val eid = obj["entity_id"]?.toString()?.trim('"').orEmpty()
+                        if (!eid.startsWith("person.")) continue
+                        val attrs = obj["attributes"]
+                            as? kotlinx.serialization.json.JsonObject ?: continue
+                        if (attrs["user_id"]?.toString()?.trim('"') != userId) continue
+                        val pic = attrs["entity_picture"]?.toString()?.trim('"').orEmpty()
+                        if (pic.isBlank()) return@withContext ""
+                        // entity_picture thuong la "/api/image/..." -> ghep base URL
+                        return@withContext if (pic.startsWith("http")) pic else "$url$pic"
+                    }
+                    ""
+                }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
     companion object {
         /** Chuan hoa URL: them http:// neu thieu scheme, bo dau / thua. */
         fun normalizeUrl(raw: String): String? {

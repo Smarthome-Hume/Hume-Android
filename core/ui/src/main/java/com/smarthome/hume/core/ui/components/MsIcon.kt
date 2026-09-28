@@ -54,6 +54,8 @@ fun MsIcon(
                 fontFamily = MsFontFamily,
                 fontSize = fs,
                 lineHeight = fs,
+                // Net day hon: synthetic bold (font static wght 200)
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 color = tint,
                 textAlign = TextAlign.Center,
             ),

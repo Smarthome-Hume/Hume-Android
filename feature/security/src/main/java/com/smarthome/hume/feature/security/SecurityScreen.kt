@@ -121,7 +121,7 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp)
-                .padding(bottom = 170.dp),
+                .padding(bottom = 110.dp),
         ) {
             // Header (demo .phdr: padding 12px 2px 6px; h2 26px/700/-0.3px; p 13px)
             Column(
@@ -144,9 +144,11 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
             }
 
             // Camera picker (demo .esub: margin-bottom 14px; rise .42s)
+            // Hien icon thay chu vi khong du chieu dai
             if (state.cameras.isNotEmpty()) {
                 EsubGroup(
                     items = state.cameras.map { it.name },
+                    icons = state.cameras.map { Ms.videocam },
                     selectedIndex = selectedCam,
                     onSelect = { vm.selectCamera(it); haptic() }, // demo vibrate(6) doi camera
                     modifier = Modifier
@@ -521,7 +523,16 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(26.dp))
             .background(bg),
     ) {
-        Column(Modifier.padding(14.dp)) {
+        // Layout moi: 1 hang [icon | ten+time | status]
+        // - Ten + time cung hang voi icon
+        // - Status chip o giua hang (can giua doc)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Box(
                 Modifier
                     .size(44.dp)
@@ -531,47 +542,38 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             ) {
                 MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
             }
-            Spacer(Modifier.height(10.dp))
-            // demo .srow: margin-top 2px
-            Spacer(Modifier.height(2.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        s.name,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = nameColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        s.lastChange,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (on) nameColor.copy(alpha = 0.75f) else cs.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px;
-                // .on (ke ca warn): nen error chu trang
+            Column(Modifier.weight(1f)) {
                 Text(
-                    chipLabel,
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 0.8.sp,
-                    color = if (on) Color.White else cs.onSurfaceVariant,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(if (on) cs.error else cs.surfaceContainer)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    s.name,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = nameColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    s.lastChange,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (on) nameColor.copy(alpha = 0.75f) else cs.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px;
+            // .on (ke ca warn): nen error chu trang
+            Text(
+                chipLabel,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 0.8.sp,
+                color = if (on) Color.White else cs.onSurfaceVariant,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (on) cs.error else cs.surfaceContainer)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
         }
         // demo .neon: absolute top/right 12px, 9px, error + glow, blink 1.2s khi on
         if (on) {

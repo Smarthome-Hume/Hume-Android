@@ -4,6 +4,7 @@ package com.smarthome.hume.core.model
 data class AuthSession(
     val serverUrl: String = "",
     val token: String = "",
+    val avatarUrl: String = "",
 ) {
     val isLoggedIn: Boolean get() = token.isNotBlank()
 }

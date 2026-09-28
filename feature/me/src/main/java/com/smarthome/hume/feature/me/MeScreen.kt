@@ -115,7 +115,7 @@ fun MeScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp)
-            .padding(bottom = 170.dp),
+            .padding(bottom = 110.dp),
     ) {
         // demo .phdr: padding 12px 2px 6px, cong page padding-top 4px => top 16dp
         Column(
@@ -138,6 +138,9 @@ fun MeScreen(
 
         Box(Modifier.riseEntrance(580)) { SecTitle("Thông báo") }
         Box(Modifier.riseEntrance(600)) { NotifCard(onViewCamera = onViewCamera) }
+
+        Box(Modifier.riseEntrance(620)) { SecTitle("Trí tuệ nhân tạo") }
+        Box(Modifier.riseEntrance(640)) { AiSettingsCard(vm = vm) }
 
         // demo: .sec.rise cua "Giao dien" khong co animation-delay
         Box(Modifier.riseEntrance(0)) { SecTitle("Giao diện") }

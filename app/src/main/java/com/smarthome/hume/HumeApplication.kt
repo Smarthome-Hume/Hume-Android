@@ -26,7 +26,7 @@ class HumeApplication : Application() {
         // Graph moi (multi-module M3E): khoi tao 1 lan, cac feature lay qua HumeGraph.get().
         HumeGraph.init(this)
         // Dang ky HomeRepository that (adapter tren HomeAssistantRepository cu).
-        HumeGraph.get().registerHomeRepository(AppHomeRepository(haRepository, appScope))
+        HumeGraph.get().registerHomeRepository(AppHomeRepository(haRepository, appScope, this))
         // Dang ky EnergyRepository that (adapter tren HomeAssistantRepository cu).
         HumeGraph.get().registerEnergyRepository(AppEnergyRepository(haRepository, appScope))
         settingsStore = SettingsStore(this)

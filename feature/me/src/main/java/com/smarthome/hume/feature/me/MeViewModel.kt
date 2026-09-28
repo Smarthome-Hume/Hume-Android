@@ -2,7 +2,10 @@ package com.smarthome.hume.feature.me
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.data.HumeGraph
+import com.smarthome.hume.core.datastore.AiProvider
+import com.smarthome.hume.core.datastore.AiSettings
 import com.smarthome.hume.core.datastore.ThemeStore
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import kotlinx.coroutines.delay
@@ -56,5 +59,45 @@ class MeViewModel : ViewModel() {
 
     fun setDarkMode(dark: Boolean) {
         viewModelScope.launch { themeStore.setDarkMode(dark) }
+    }
+
+    // ---------- AI ----------
+
+    private val aiSettingsStore = HumeGraph.get().aiSettingsStore
+    private val aiRepository = HumeGraph.get().aiRepository
+
+    val aiSettings: StateFlow<AiSettings> = aiSettingsStore.settings
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AiSettings())
+
+    private val _aiTesting = MutableStateFlow(false)
+    val aiTesting: StateFlow<Boolean> = _aiTesting.asStateFlow()
+
+    private val _aiTestResult = MutableStateFlow<String?>(null)
+    val aiTestResult: StateFlow<String?> = _aiTestResult.asStateFlow()
+
+    fun saveAi(
+        enabled: Boolean,
+        provider: AiProvider,
+        baseUrl: String,
+        model: String,
+        apiKey: String,
+    ) {
+        viewModelScope.launch {
+            aiSettingsStore.save(enabled, provider, baseUrl, model, apiKey)
+        }
+    }
+
+    fun testAiConnection() {
+        if (_aiTesting.value) return
+        viewModelScope.launch {
+            _aiTesting.value = true
+            _aiTestResult.value = null
+            val result = aiRepository.testConnection()
+            _aiTestResult.value = when (result) {
+                is AiResult.Ok -> result.value
+                is AiResult.Err -> result.message
+            }
+            _aiTesting.value = false
+        }
     }
 }

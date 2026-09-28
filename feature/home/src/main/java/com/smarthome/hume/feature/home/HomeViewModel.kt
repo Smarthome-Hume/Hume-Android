@@ -5,16 +5,29 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.smarthome.hume.core.data.AiRepository
+import com.smarthome.hume.core.data.AiTip
 import com.smarthome.hume.core.data.HomeRepository
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.RoomUi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/** Trang thai goi y AI cho SuggestCard. */
+sealed interface AiUiState {
+    data object Idle : AiUiState
+    data object Loading : AiUiState
+    data class Loaded(val tips: List<AiTip>) : AiUiState
+    /** Chua cau hinh / loi mang / parse that bai -> dung rule-based. */
+    data object Unavailable : AiUiState
+}
 
 /** UI-only state (chon phong, sheet, tim kiem) — du lieu that o HomeRepository. */
 data class Snack(
@@ -43,8 +56,43 @@ class HomeViewModel(
     private val _ui = MutableStateFlow(HomeScreenUi())
     val ui: StateFlow<HomeScreenUi> = _ui.asStateFlow()
 
+    private val aiRepository: AiRepository = HumeGraph.get().aiRepository
+
+    /** Goi y AI: Idle -> Loading -> Loaded | Unavailable (fallback rule-based). */
+    private val _aiState = MutableStateFlow<AiUiState>(AiUiState.Idle)
+    val aiState: StateFlow<AiUiState> = _aiState.asStateFlow()
+
     init {
         viewModelScope.launch { repo.refreshSolarWeek() }
+        // Doi state co data that (da ket noi HA) roi moi goi AI 1 lan
+        viewModelScope.launch {
+            val ready = try {
+                state.first { it.connected && it.rooms.isNotEmpty() }
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+            if (ready) refreshAiTips()
+        }
+    }
+
+    /** Goi AI phan tich nha; that bai -> Unavailable, SuggestCard dung luat co san. */
+    fun refreshAiTips() {
+        if (_aiState.value == AiUiState.Loading) return
+        viewModelScope.launch {
+            _aiState.value = AiUiState.Loading
+            val tips = try {
+                aiRepository.analyzeHome(state.value)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                emptyList()
+            }
+            _aiState.value =
+                if (tips.isNotEmpty()) AiUiState.Loaded(tips) else AiUiState.Unavailable
+        }
     }
 
     // ----- actions (uy thac xuong repo) -----

@@ -436,12 +436,13 @@ private fun PowerRow(
 private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     if (state.donut.isEmpty()) return
     val extra = LocalHumeExtraColors.current
-    // demo 3 mau goc: primary/tertiary/info; slice thu 4+ dung secondary de phan biet
+    // 4 mau slice RIENG BIET: primary (theme) + 3 mau co dinh (xanh duong, ho phach, tim)
+    // de tranh trung nhau nhu vu primary==tertiary o theme xanh la
     val sliceColors = listOf(
         MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.tertiary,
-        extra.info,
-        MaterialTheme.colorScheme.secondary,
+        Color(0xFF5B8DEF),
+        Color(0xFFE8A838),
+        Color(0xFF9B7EDE),
     )
     // Legend entrance: tu phai sang, stagger (demo .dli)
     var legendShown by remember { mutableStateOf(false) }
@@ -611,12 +612,13 @@ private fun DevicesCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Thiết bị tiêu thụ",
+                    "Thiết bị",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontSize = 17.sp, fontWeight = FontWeight.Bold),
                 )
                 Row(
                     modifier = Modifier
+                        .width(190.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                         .padding(4.dp),

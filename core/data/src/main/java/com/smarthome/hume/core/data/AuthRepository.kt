@@ -20,7 +20,10 @@ class AuthRepository(
         val result = validator.validate(rawUrl, rawToken)
         if (result is AuthResult.Success) {
             val url = HaAuthValidator.normalizeUrl(rawUrl) ?: rawUrl.trim().trimEnd('/')
-            sessionStore.save(url, rawToken.trim())
+            // Lay avatar user tu HA (khong bat buoc, that bai -> bo qua)
+            val avatar = runCatching { validator.fetchAvatarUrl(url, rawToken) }
+                .getOrDefault("")
+            sessionStore.save(url, rawToken.trim(), avatar)
         }
         return result
     }

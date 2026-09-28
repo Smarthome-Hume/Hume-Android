@@ -45,6 +45,8 @@ fun EsubGroup(
     fontWeight: FontWeight = FontWeight.Bold,
     itemPadding: PaddingValues = PaddingValues(vertical = 10.dp, horizontal = 10.dp),
     checkSize: Dp = 17.dp,
+    /** Neu co: hien icon thay vi chu (vd camera picker khong du cho). */
+    icons: List<String>? = null,
 ) {
     val pill = RoundedCornerShape(999.dp)
     Row(
@@ -72,32 +74,44 @@ fun EsubGroup(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    AnimatedVisibility(
-                        visible = isSel,
-                        enter = expandHorizontally() + fadeIn() + scaleIn(),
-                        exit = shrinkHorizontally() + fadeOut() + scaleOut(),
-                    ) {
+                    val iconKey = icons?.getOrNull(i)
+                    if (iconKey != null) {
+                        // Che do icon: hien icon thay chu
                         MsIcon(
-                            M3EIcons.Check,
-                            null,
-                            modifier = Modifier
-                                .padding(end = 6.dp)
-                                .size(checkSize),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            iconKey,
+                            contentDescription = label,
+                            modifier = Modifier.size(22.dp),
+                            tint = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        AnimatedVisibility(
+                            visible = isSel,
+                            enter = expandHorizontally() + fadeIn() + scaleIn(),
+                            exit = shrinkHorizontally() + fadeOut() + scaleOut(),
+                        ) {
+                            MsIcon(
+                                M3EIcons.Check,
+                                null,
+                                modifier = Modifier
+                                    .padding(end = 6.dp)
+                                    .size(checkSize),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                        Text(
+                            label,
+                            fontSize = fontSize,
+                            fontWeight = fontWeight,
+                            color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            // demo .esubi{white-space:nowrap}: nhan khong xuong dong
+                            // (camera "Phòng khách", "Phòng ngủ chính")
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    Text(
-                        label,
-                        fontSize = fontSize,
-                        fontWeight = fontWeight,
-                        color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        // demo .esubi{white-space:nowrap}: nhan khong xuong dong
-                        // (camera "Phòng khách", "Phòng ngủ chính")
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
                 }
             }
         }

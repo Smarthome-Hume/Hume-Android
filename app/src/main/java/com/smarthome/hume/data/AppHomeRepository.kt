@@ -40,12 +40,14 @@ import java.time.ZoneId
 class AppHomeRepository(
     private val ha: HomeAssistantRepository,
     private val scope: CoroutineScope,
+    appContext: android.content.Context,
 ) : HomeRepository {
 
     private val _homeState = MutableStateFlow(HomeUiState())
     override val homeState: StateFlow<HomeUiState> = _homeState.asStateFlow()
 
     private val weekCache = mutableMapOf<Long, Double>()
+    private val snapshots = com.smarthome.hume.core.storage.DailySnapshotStore.get(appContext)
 
     init {
         scope.launch {
@@ -248,26 +250,84 @@ class AppHomeRepository(
         return out.take(12)
     }
 
+    /**
+     * Pattern 3 buoc cua Hume goc (HomeViewModel.weekly):
+     * 1. Ngay nao thieu -> fetch history tung ngay (song song), lay max.
+     * 2. Ngay nao van thieu -> fetch 1 lan 7 ngay, trich max theo ngay,
+     *    fallback = diem moi nhat truoc cuoi ngay.
+     * 3. Luu DailySnapshotStore (persistent) + weekCache (memory).
+     */
     private suspend fun loadSolarWeek() {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         val dayMs = 86_400_000L
         val labels = arrayOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
-        val days = (6 downTo 1).map { ago ->
-            val date = today.minusDays(ago.toLong())
-            val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
-            // Chi cache khi fetch duoc data that (>0 diem); khong cache 0 do loi
-            // de lan refresh sau thu lai (tranh cache poisoning).
-            val v = weekCache[start] ?: run {
-                val pts = runCatching {
-                    HistoryFetcher.fetchRange(HumeConfig.PV_TODAY, start, start + dayMs)
-                }.getOrDefault(emptyList())
-                // sensor "today energy" reset moi ngay -> max trong ngay = san luong ngay do
-                val total = pts.maxOfOrNull { it.value } ?: 0.0
-                if (pts.isNotEmpty() && total > 0) weekCache[start] = total
-                total
+        val dayStarts = (6 downTo 1).map { ago ->
+            today.minusDays(ago.toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
+        }
+
+        // Buoc 1: doc cache truoc
+        val resolved = HashMap<Long, Double>()
+        val missing = dayStarts.filter { start ->
+            val cached = snapshots.get(HumeConfig.PV_TODAY, start) ?: weekCache[start]
+            if (cached != null && cached > 0) {
+                resolved[start] = cached; false
+            } else true
+        }
+
+        if (missing.isNotEmpty()) {
+            // Buoc 1: moi ngay thieu = 1 query nho, chay song song
+            val perDay: Map<Long, Double> = kotlinx.coroutines.coroutineScope {
+                missing.map { start ->
+                    kotlinx.coroutines.async(kotlinx.coroutines.Dispatchers.IO) {
+                        val pts = runCatching {
+                            HistoryFetcher.fetchRange(HumeConfig.PV_TODAY, start, start + dayMs)
+                        }.getOrDefault(emptyList())
+                        // sensor "today energy" reset moi ngay -> max trong ngay = san luong ngay do
+                        start to (pts.maxOfOrNull { it.value } ?: 0.0)
+                    }
+                }.awaitAll()
+            }.toMap()
+            perDay.forEach { (start, v) ->
+                if (v > 0) {
+                    snapshots.set(HumeConfig.PV_TODAY, start, v)
+                    weekCache[start] = v
+                    resolved[start] = v
+                }
             }
-            SolarDay(labels[date.dayOfWeek.value - 1], v.toFloat())
+
+            // Buoc 2: ngay nao van thieu -> keo 1 lan ca tuan
+            val stillMissing = missing.filter { resolved[it] == null }
+            if (stillMissing.isNotEmpty()) {
+                val weekPts = runCatching {
+                    HistoryFetcher.fetchRange(
+                        HumeConfig.PV_TODAY,
+                        dayStarts.first(),
+                        dayStarts.last() + dayMs,
+                    )
+                }.getOrDefault(emptyList())
+                if (weekPts.isNotEmpty()) {
+                    stillMissing.forEach { start ->
+                        val dayEnd = start + dayMs
+                        val inDay = weekPts.filter { it.timeMs in start until dayEnd }
+                        val v = inDay.maxOfOrNull { it.value }
+                            ?: weekPts.filter { it.timeMs < dayEnd }
+                                .maxByOrNull { it.timeMs }?.value
+                            ?: 0.0
+                        if (v > 0) {
+                            snapshots.set(HumeConfig.PV_TODAY, start, v)
+                            weekCache[start] = v
+                            resolved[start] = v
+                        }
+                    }
+                }
+            }
+            snapshots.prune()
+        }
+
+        val days = dayStarts.map { start ->
+            val date = java.time.Instant.ofEpochMilli(start).atZone(zone).toLocalDate()
+            SolarDay(labels[date.dayOfWeek.value - 1], (resolved[start] ?: 0.0).toFloat())
         } + SolarDay(
             "Hôm nay",
             (ha.entities.value[HumeConfig.PV_TODAY]?.numericState ?: 0.0).toFloat(),

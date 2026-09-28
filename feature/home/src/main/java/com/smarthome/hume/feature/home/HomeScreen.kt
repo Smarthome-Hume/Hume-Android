@@ -85,10 +85,14 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
+    val aiState by viewModel.aiState.collectAsState()
     val cs = MaterialTheme.colorScheme
     val snack = remember { SnackbarHostState() }
     var fabOpen by rememberSaveable { mutableStateOf(false) }
     var ecoDialog by remember { mutableStateOf(false) }
+    // Avatar user tu HA (qua token dang nhap)
+    val session by com.smarthome.hume.core.data.HumeGraph.get().sessionStore.session
+        .collectAsState(initial = com.smarthome.hume.core.model.AuthSession())
 
     ui.snackbar?.let { s ->
         LaunchedEffect(s) {
@@ -138,7 +142,7 @@ fun HomeScreen(
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
                     contentPadding = PaddingValues(
-                        start = 18.dp, end = 18.dp, top = 4.dp, bottom = 170.dp,
+                        start = 18.dp, end = 18.dp, top = 4.dp, bottom = 110.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
@@ -149,6 +153,8 @@ fun HomeScreen(
                             RiseIn(20) {
                                 HomeHeader(
                                     state = state,
+                                    avatarUrl = session.avatarUrl,
+                                    avatarToken = session.token,
                                     onSearch = { viewModel.openSearch(true) },
                                     onNotif = { viewModel.openNotif(true) },
                                 )
@@ -179,9 +185,13 @@ fun HomeScreen(
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
                             RiseIn(165) {
-                                SuggestCard(state, onTipAction = { key ->
-                                    if (key == "ac") viewModel.ac26()
-                                })
+                                SuggestCard(
+                                    state,
+                                    aiState = aiState,
+                                    onTipAction = { key ->
+                                        if (key == "ac") viewModel.ac26()
+                                    },
+                                )
                             }
                         }
                     }
@@ -215,24 +225,8 @@ fun HomeScreen(
                     }
                 }
 
-                // Scrim khi mo FAB (.fabscrim)
-                AnimatedVisibility(
-                    visible = fabOpen,
-                    enter = fadeIn(tween(300)),
-                    exit = fadeOut(tween(300)),
-                ) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(cs.scrim)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { fabOpen = false },
-                    )
-                }
-
-                // FAB tuyet doi: right 20px bottom 108px (demo .fabwrap)
+                // FAB tuyet doi: right 20px bottom 88px (ha thap hon 108px cu)
+                // Khong dung scrim che nen khi mo (theo yeu cau moi)
                 HomeFabMenu(
                     open = fabOpen,
                     onOpenChange = { fabOpen = it },
@@ -242,7 +236,7 @@ fun HomeScreen(
                     onEco = { ecoDialog = true },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 108.dp),
+                        .padding(end = 20.dp, bottom = 88.dp),
                 )
 
                 // Sheet phong
