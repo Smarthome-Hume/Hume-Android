@@ -24,6 +24,13 @@ import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.Whatshot
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.FlightTakeoff
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Desk
 import androidx.compose.material.icons.outlined.ElectricMeter
