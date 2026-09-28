@@ -28,6 +28,12 @@ class HumeApplication : Application() {
         // Dang ky EnergyRepository that (adapter tren HomeAssistantRepository cu).
         HumeGraph.get().registerEnergyRepository(AppEnergyRepository(haRepository, appScope))
         settingsStore = SettingsStore(this)
+        // Dang ky SecurityRepository that (camera Frigate + sensor HA that).
+        HumeGraph.get().registerSecurityRepository(
+            AppSecurityRepository(this, haRepository, settingsStore, appScope),
+        )
+        // Dang ky SyncRepository (trang thai ket noi cho tab Toi).
+        HumeGraph.get().registerSyncRepository(AppSyncRepository(haRepository))
         sensorDatabase = SensorDatabase(this)
         // Watched numeric sensors are cached locally so charts still work offline.
         haRepository.sensorSink = { entityId, value, timeMs ->

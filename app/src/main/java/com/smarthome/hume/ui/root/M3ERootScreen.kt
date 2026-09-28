@@ -27,20 +27,25 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HumeTab
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
+import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.home.HomeScreen
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
-import com.smarthome.hume.ui.profile.ProfileScreen
-import com.smarthome.hume.ui.security.SecurityScreen
+import com.smarthome.hume.feature.me.MeScreen
+import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
 
 private data class NavItem(val tab: HumeTab, val icon: ImageVector)
 
@@ -62,7 +67,12 @@ fun M3ERootScreen(
     ha: HomeAssistantRepository,
     settings: HumeSettings,
 ) {
-    HumeM3ETheme {
+    val themeSettings by HumeGraph.get().themeStore.settings.collectAsState(
+        initial = com.smarthome.hume.core.datastore.ThemeSettings(),
+    )
+    val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }.getOrDefault(M3ESeed.Cam)
+    val darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()
+    HumeM3ETheme(seed = seed, darkTheme = darkTheme) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
         Scaffold(
             bottomBar = {
@@ -81,8 +91,8 @@ fun M3ERootScreen(
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen()
                     HumeTab.Energy -> M3EEnergyScreen()
-                    HumeTab.Security -> SecurityScreen(ha)
-                    HumeTab.Profile -> ProfileScreen(settingsStore, settings, ha)
+                    HumeTab.Security -> M3ESecurityScreen()
+                    HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
                 }
             }
         }

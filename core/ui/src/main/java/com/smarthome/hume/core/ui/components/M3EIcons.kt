@@ -10,6 +10,20 @@ import androidx.compose.material.icons.outlined.Bed
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.DirectionsWalk
+import androidx.compose.material.icons.outlined.FiberManualRecord
+import androidx.compose.material.icons.outlined.Fullscreen
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.MeetingRoom
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.PersonSearch
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.Whatshot
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Desk
 import androidx.compose.material.icons.outlined.ElectricMeter
@@ -24,6 +38,8 @@ import androidx.compose.material.icons.outlined.Stairs
 import androidx.compose.material.icons.outlined.Weekend
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.Whatshot
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -43,6 +59,20 @@ object M3EIcons {
     val BatteryFull = Icons.Outlined.BatteryFull
     val SolarPower = Icons.Outlined.SolarPower
     val ElectricMeter = Icons.Outlined.ElectricMeter
+    val Door = Icons.Outlined.MeetingRoom
+    val Motion = Icons.Outlined.DirectionsWalk
+    val Presence = Icons.Outlined.PersonSearch
+    val Smoke = Icons.Outlined.Whatshot
+    val Leak = Icons.Outlined.WaterDrop
+    val Videocam = Icons.Outlined.Videocam
+    val Rec = Icons.Outlined.FiberManualRecord
+    val Mic = Icons.Outlined.Mic
+    val PhotoCamera = Icons.Outlined.PhotoCamera
+    val Fullscreen = Icons.Outlined.Fullscreen
+    val PlayCircle = Icons.Outlined.PlayCircle
+    val Lock = Icons.Outlined.Lock
+    val Shield = Icons.Outlined.Shield
+    val Close = Icons.Outlined.Close
 
     fun room(key: String): ImageVector = when (key) {
         "bed" -> Icons.Outlined.Bed

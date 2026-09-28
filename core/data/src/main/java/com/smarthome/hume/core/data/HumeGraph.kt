@@ -2,6 +2,7 @@ package com.smarthome.hume.core.data
 
 import android.content.Context
 import com.smarthome.hume.core.datastore.SessionStore
+import com.smarthome.hume.core.datastore.ThemeStore
 
 /**
  * Service locator don gian cho kien truc multi-module.
@@ -13,6 +14,7 @@ class HumeGraph private constructor(context: Context) {
 
     val sessionStore: SessionStore by lazy { SessionStore(appContext) }
     val authRepository: AuthRepository by lazy { AuthRepository(sessionStore) }
+    val themeStore: ThemeStore by lazy { ThemeStore(appContext) }
 
     /** Do :app dang ky sau init (implementation nam o app module). */
     lateinit var homeRepository: HomeRepository
@@ -28,6 +30,22 @@ class HumeGraph private constructor(context: Context) {
 
     fun registerEnergyRepository(repo: EnergyRepository) {
         energyRepository = repo
+    }
+
+    /** Do :app dang ky sau init (implementation nam o app module). */
+    lateinit var securityRepository: SecurityRepository
+        private set
+
+    fun registerSecurityRepository(repo: SecurityRepository) {
+        securityRepository = repo
+    }
+
+    /** Do :app dang ky sau init (implementation nam o app module). */
+    lateinit var syncRepository: SyncRepository
+        private set
+
+    fun registerSyncRepository(repo: SyncRepository) {
+        syncRepository = repo
     }
 
     companion object {
