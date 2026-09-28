@@ -6,10 +6,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -45,7 +43,6 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -85,7 +82,7 @@ import kotlinx.coroutines.delay
 
 /**
  * Tab An ninh — port 1:1 demo v4 rev12 (#page-security):
- * chon camera, feed Frigate (khoa/mo), toolbar overlay, clip gan day,
+ * chon camera, feed Frigate (khoa/mo), clip gan day,
  * grid Cua/Chuyen dong/Moi truong.
  */
 
@@ -407,87 +404,8 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
                     )
                 }
             }
-
-            // Toolbar: overlay day feed, pill kinh (demo .ftoolbar absolute bottom-center)
-            // nen surfaceLowest 72%, vien trang 25%,
-            // radius 26px, padding 12px 4px 4px, shadow var(--shadow)
-            Row(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.dp)
-                    .shadow(12.dp, RoundedCornerShape(26.dp))
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(LocalHumeExtraColors.current.surfaceLowest.copy(alpha = 0.72f))
-                    .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(26.dp))
-                    .padding(top = 12.dp, start = 4.dp, end = 4.dp, bottom = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ToolbarBtn(
-                    icon = M3EIcons.Rec,
-                    label = "Ghi hình",
-                    tint = Color(0xFFE53935), // demo .ftbtn.rec: LUON do #E53935
-                    onClick = {}, // demo: nut rec khong co JS toggle
-                )
-                ToolbarBtn(icon = M3EIcons.Mic, label = "Đàm thoại", tint = cs.onSurfaceVariant, onClick = {})
-                ToolbarBtn(icon = M3EIcons.PhotoCamera, label = "Chụp ảnh", tint = cs.onSurfaceVariant, onClick = {})
-                ToolbarBtn(icon = M3EIcons.Fullscreen, label = "Toàn màn hình", tint = cs.onSurfaceVariant, onClick = {})
-            }
+            // (da bo floating toolbar theo yeu cau user)
         }
-    }
-}
-
-/**
- * Nut toolbar camera: 46x46 tron, nen surfaceContainer, icon 22px.
- * Press: scale .85 (.25s spring) + nen primaryContainer + radius 15px.
- */
-@Composable
-private fun ToolbarBtn(
-    icon: String,
-    label: String,
-    tint: Color,
-    onClick: () -> Unit,
-) {
-    val cs = MaterialTheme.colorScheme
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.85f else 1f,
-        animationSpec = tween(250, easing = M3EMotion.spring),
-        label = "tbScale",
-    )
-    val radius by animateDpAsState(
-        targetValue = if (pressed) 15.dp else 23.dp, // 50% cua 46dp = tron
-        animationSpec = tween(350, easing = M3EMotion.spring),
-        label = "tbRadius",
-    )
-    val bg by animateColorAsState(
-        targetValue = if (pressed) cs.primaryContainer else cs.surfaceContainer,
-        animationSpec = tween(250),
-        label = "tbBg",
-    )
-    Box(
-        Modifier
-            .size(46.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(RoundedCornerShape(radius))
-            .background(bg)
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        MsIcon(
-            icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(22.dp),
-        )
     }
 }
 

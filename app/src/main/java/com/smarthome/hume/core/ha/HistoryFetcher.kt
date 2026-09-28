@@ -58,7 +58,7 @@ object HistoryFetcher {
     suspend fun fetchRange(entityId: String, startMs: Long, endMs: Long): List<HistoryPoint> =
         withContext(Dispatchers.IO) {
             if (!isConfigured) return@withContext emptyList()
-            val start = Instant.ofEpochMilli(startMs).toString()
+            val start = URLEncoder.encode(Instant.ofEpochMilli(startMs).toString(), "UTF-8")
             val end = URLEncoder.encode(Instant.ofEpochMilli(endMs).toString(), "UTF-8")
             val url = "$baseUrl/api/history/period/$start" +
                 "?filter_entity_id=$entityId&end_time=$end&minimal_response&no_attributes"

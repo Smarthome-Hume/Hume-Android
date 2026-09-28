@@ -8,6 +8,8 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -429,14 +431,17 @@ private fun PowerRow(
 
 // ---------- 4. Co cau tieu thu (donut) ----------
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     if (state.donut.isEmpty()) return
     val extra = LocalHumeExtraColors.current
+    // demo 3 mau goc: primary/tertiary/info; slice thu 4+ dung secondary de phan biet
     val sliceColors = listOf(
         MaterialTheme.colorScheme.primary,
         MaterialTheme.colorScheme.tertiary,
         extra.info,
+        MaterialTheme.colorScheme.secondary,
     )
     // Legend entrance: tu phai sang, stagger (demo .dli)
     var legendShown by remember { mutableStateOf(false) }
@@ -521,13 +526,18 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                                 .background(sliceColors[i % sliceColors.size]),
                         )
                         Spacer(Modifier.width(10.dp))
+                        // chu thich dai -> chay chu (marquee), 1 dong
                         Text(
                             s.name,
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .basicMarquee(),
                         )
-                        Spacer(Modifier.weight(1f))
+                        // cot % rong co dinh, can phai -> cac hang dóng thẳng
                         Text(
                             "${(s.fraction * 100).roundToInt()}%",
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -535,6 +545,9 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onSurface,
                             ).tnum(),
+                            maxLines = 1,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.width(44.dp),
                         )
                     }
                 }
@@ -641,6 +654,10 @@ private fun DevicesCard(
                                         fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                                     color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    // demo .dvsegi{white-space:nowrap}: khong de vo 2 dong
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }

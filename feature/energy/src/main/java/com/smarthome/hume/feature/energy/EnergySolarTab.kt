@@ -63,7 +63,6 @@ fun EnergySolarTab(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        EnergyFlowCard(flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed)
         SunsynkCard(state, risePlayed)
         Expander(
             icon = M3EIcons.Battery,
@@ -101,6 +100,7 @@ fun EnergySolarTab(
                 ControlRow(c, vm)
             }
         }
+        EnergyFlowCard(flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed)
     }
 }
 
