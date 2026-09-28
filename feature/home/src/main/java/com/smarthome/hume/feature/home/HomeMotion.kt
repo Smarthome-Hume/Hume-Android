@@ -53,6 +53,8 @@ fun Modifier.riseIn(delayMs: Int): Modifier = composed {
  * Press morph theo demo rev12: khi nhan, scale xuong [pressedScale] DONG THOI
  * giam bo goc tu [corner] ve [pressedCorner] (giam 1 nac, khong nhay pill ->
  * chu nhat), easing spring. Dung thay clickable mac dinh cho moi the.
+ * CHI tao interaction/clickable khi onClick != null (the tinh nhu .dev
+ * khong co hieu ung nhan).
  */
 fun Modifier.pressMorphCard(
     pressedScale: Float = 0.95f,
@@ -60,6 +62,10 @@ fun Modifier.pressMorphCard(
     pressedCorner: Dp = 20.dp,
     onClick: (() -> Unit)? = null,
 ): Modifier = composed {
+    if (onClick == null) {
+        // The tinh: chi clip bo goc, khong interaction/clickable
+        return@composed this.clip(RoundedCornerShape(corner))
+    }
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -78,7 +84,7 @@ fun Modifier.pressMorphCard(
         .clickable(
             interactionSource = interaction,
             indication = null,
-            onClick = { onClick?.invoke() },
+            onClick = onClick,
         )
 }
 

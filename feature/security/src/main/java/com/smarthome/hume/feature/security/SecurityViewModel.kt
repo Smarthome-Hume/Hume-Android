@@ -24,9 +24,6 @@ class SecurityViewModel : ViewModel() {
     private val _unlocked = MutableStateFlow(false)
     val unlocked: StateFlow<Boolean> = _unlocked.asStateFlow()
 
-    private val _recording = MutableStateFlow(false)
-    val recording: StateFlow<Boolean> = _recording.asStateFlow()
-
     private val _clip = MutableStateFlow<RecordingUi?>(null)
     val clip: StateFlow<RecordingUi?> = _clip.asStateFlow()
 
@@ -62,10 +59,6 @@ class SecurityViewModel : ViewModel() {
 
     fun unlock() {
         _unlocked.value = true
-    }
-
-    fun toggleRec() {
-        _recording.value = !_recording.value
     }
 
     fun snapshotUrl(cameraKey: String): String = repo.snapshotUrl(cameraKey)

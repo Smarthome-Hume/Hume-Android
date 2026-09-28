@@ -8,14 +8,12 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.sp
 
 /**
@@ -38,6 +39,11 @@ fun EsubGroup(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** Cho phep spec khac nhau giua cac tab (Dien: 12.5sp/700/pad 10-10/icon 17; An ninh: 12sp/600/pad 8-10/icon 16). */
+    fontSize: TextUnit = 12.5.sp,
+    fontWeight: FontWeight = FontWeight.Bold,
+    itemPadding: PaddingValues = PaddingValues(vertical = 10.dp, horizontal = 10.dp),
+    checkSize: Dp = 17.dp,
 ) {
     val pill = RoundedCornerShape(999.dp)
     Row(
@@ -58,8 +64,8 @@ fun EsubGroup(
                         if (isSel) MaterialTheme.colorScheme.primaryContainer
                         else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0f),
                     )
-                    .clickable { onSelect(i) }
-                    .padding(vertical = 10.dp, horizontal = 10.dp),
+                    .pressMorph(0.94f) { onSelect(i) }
+                    .padding(itemPadding),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -70,19 +76,19 @@ fun EsubGroup(
                         enter = expandHorizontally() + fadeIn() + scaleIn(),
                         exit = shrinkHorizontally() + fadeOut() + scaleOut(),
                     ) {
-                        Icon(
+                        MsIcon(
                             M3EIcons.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            null,
                             modifier = Modifier
                                 .padding(end = 6.dp)
-                                .size(17.dp),
+                                .size(checkSize),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                     Text(
                         label,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = fontSize,
+                        fontWeight = fontWeight,
                         color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     )

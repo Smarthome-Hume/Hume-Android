@@ -2,6 +2,7 @@ package com.smarthome.hume.feature.energy
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -26,11 +27,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,8 +54,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyFlowState
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -96,6 +101,7 @@ fun EnergyFlowCard(
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = modifier
             .riseOnce("sol-flow", 410, risePlayed)
             .shadow(12.dp, RoundedCornerShape(32.dp)),
@@ -117,6 +123,7 @@ fun EnergyFlowCard(
                         "Dòng chảy thời gian thực",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 3.dp),
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -297,6 +304,12 @@ private fun FlowArea(
                 )
             }
             Spacer(Modifier.height(4.dp))
+            // demo .flsocbar i{transition:width .6s ease}
+            val socFrac by animateFloatAsState(
+                targetValue = (soc / 100).toFloat().coerceIn(0f, 1f),
+                animationSpec = tween(600),
+                label = "flSoc",
+            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -306,7 +319,7 @@ private fun FlowArea(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth((soc / 100).toFloat().coerceIn(0f, 1f))
+                        .fillMaxWidth(socFrac)
                         .height(4.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF16A34A)),
@@ -389,12 +402,16 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
         Track(consPath(), flow.consKw, false),
         Track(battPath(), flow.battKw, !charging),
     )
-    val phases = tracks.map { t ->
+    val phases = tracks.mapIndexed { idx, t ->
+        // demo: chi set lai --dur khi toc do lech >12% de tranh restart animation
+        var dur by remember(idx) { mutableIntStateOf(sweepMs(t.powerKw)) }
+        val ms = sweepMs(t.powerKw)
+        if (kotlin.math.abs(ms - dur) / dur.toFloat() > 0.12f) dur = ms
         val target = if (t.reverse) 1270f else -1270f
         transition.animateFloat(
             initialValue = 0f, targetValue = target,
             animationSpec = infiniteRepeatable(
-                animation = tween(sweepMs(t.powerKw), easing = LinearEasing),
+                animation = tween(dur, easing = LinearEasing),
             ),
             label = "sweep",
         )
@@ -413,10 +430,10 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
             val dash = PathEffect.dashPathEffect(floatArrayOf(70f * sx, 1200f * sx), phases[i].value * sx)
-            // glow underlay
+            // glow underlay (demo: drop-shadow(0 0 7px primary 70%) tren net sweep 5px)
             drawPath(
-                path = path, color = primary.copy(alpha = 0.25f),
-                style = Stroke(width = 9.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash),
+                path = path, color = primary.copy(alpha = 0.5f),
+                style = Stroke(width = 11.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash),
             )
             drawPath(
                 path = path, color = primary,
@@ -533,9 +550,15 @@ private fun SegBar(segs: List<Pair<Float, Color>>) {
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         segs.forEach { (frac, c) ->
+            // demo .flsegbar i{transition:width .8s emphasized}
+            val w by animateFloatAsState(
+                targetValue = frac.coerceAtLeast(0.05f),
+                animationSpec = tween(800, easing = M3EMotion.emphasized),
+                label = "segW",
+            )
             Box(
                 modifier = Modifier
-                    .weight(frac.coerceAtLeast(0.05f))
+                    .weight(w)
                     .height(4.dp)
                     .clip(CircleShape)
                     .background(c),

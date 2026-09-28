@@ -1,6 +1,11 @@
 package com.smarthome.hume.feature.energy
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +23,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,9 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -112,6 +114,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-week", 420, risePlayed),
     ) {
         Row(
@@ -149,7 +152,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 )
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -181,8 +184,7 @@ private fun WeekBar(p: EnergyWeekPoint, kwh: Double, modifier: Modifier = Modifi
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .pressMorph(pressedScale = 0.92f, onClick = {})
-            .semantics { role = Role.Button; contentDescription = "$label: ${kwh1(kwh)} kWh" },
+            .semantics { contentDescription = "$label: ${kwh1(kwh)} kWh" },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom,
     ) {
@@ -190,7 +192,7 @@ private fun WeekBar(p: EnergyWeekPoint, kwh: Double, modifier: Modifier = Modifi
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 34.dp)
-                .height((100 * h).dp)
+                .height((120 * h).dp)
                 .shadow(
                     if (p.isToday) 4.dp else 0.dp,
                     CircleShape,
@@ -219,9 +221,21 @@ private fun WeekBar(p: EnergyWeekPoint, kwh: Double, modifier: Modifier = Modifi
 
 @Composable
 private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
+    // Tick 9s nhu demo (cGrid=18450+rand(120), cHome=26880+rand(200)):
+    // chi nhich hien thi, khong doi du lieu HA goc.
+    var tick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(9000)
+            tick++
+        }
+    }
+    val gridJit = Random(tick * 71 + 3).nextInt(120)
+    val homeJit = Random(tick * 131 + 7).nextInt(200)
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-cost", 440, risePlayed),
     ) {
         Text(
@@ -233,12 +247,12 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat2(
                 label = "Điện lưới",
-                value = vnd(state.cost.gridVnd),
+                value = vnd(state.cost.gridVnd + gridJit),
                 modifier = Modifier.weight(1f),
             )
             Stat2(
                 label = "Điện tiêu thụ",
-                value = vnd(state.cost.homeVnd),
+                value = vnd(state.cost.homeVnd + homeJit),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -327,6 +341,7 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-power", 460, risePlayed),
     ) {
         Text(
@@ -334,6 +349,7 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             style = MaterialTheme.typography.titleSmall.copy(
                 fontSize = 14.sp, fontWeight = FontWeight.Bold),
         )
+        Spacer(Modifier.height(4.dp))
         Text(
             "Chuẩn hoá theo 7.000 W · trực tiếp",
             style = MaterialTheme.typography.bodySmall.copy(
@@ -428,6 +444,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(40.dp),
         contentPadding = 20.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-donut", 480, risePlayed),
     ) {
         Row(
@@ -491,8 +508,8 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         modifier = Modifier.staggerEnter(
                             index = i,
                             visible = legendShown,
-                            baseDelayMs = 250,
-                            staggerMs = 150,
+                            baseDelayMs = 0,
+                            staggerMs = 200,
                             fromX = 12f,
                             fromY = 0f,
                         ),
@@ -566,6 +583,7 @@ private fun DevicesCard(
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = modifier
             .riseOnce("cons-dev", 440, risePlayed)
             .shadow(12.dp, RoundedCornerShape(32.dp)),
@@ -596,6 +614,7 @@ private fun DevicesCard(
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
+                                .weight(1f)
                                 .clip(RoundedCornerShape(999.dp))
                                 .background(
                                     if (isSel) MaterialTheme.colorScheme.primaryContainer
@@ -605,7 +624,11 @@ private fun DevicesCard(
                                 .padding(vertical = 8.dp, horizontal = 10.dp),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (isSel) {
+                                AnimatedVisibility(
+                                    visible = isSel,
+                                    enter = expandHorizontally() + fadeIn(),
+                                    exit = shrinkHorizontally() + fadeOut(),
+                                ) {
                                     MsIcon(M3EIcons.Check, null,
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier
@@ -624,7 +647,7 @@ private fun DevicesCard(
                     }
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             if (devs.isEmpty()) {
                 Text(
                     "Chưa có dữ liệu thiết bị",
@@ -732,7 +755,7 @@ private fun DeviceRow(
 private fun lowBattIcon(name: String): String {
     val n = name.lowercase()
     return when {
-        "remote" in n -> Ms.settings_remote
+        "remote" in n -> Ms.remote_gen
         "khoá" in n || "khóa" in n || "khoa" in n -> Ms.lock
         "cảm biến" in n || "cam bien" in n || "pir" in n -> Ms.sensors
         "cửa" in n || "cua" in n -> Ms.door_front
@@ -745,6 +768,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
+        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-blw", 500, risePlayed),
     ) {
         Column(

@@ -25,7 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,13 +40,22 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.BatteryUi
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
+import java.time.LocalDateTime
+import kotlinx.coroutines.delay
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * The pin theo demo rev12 (.batcard): bo 32px, padding 20px;
@@ -57,6 +70,23 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
     val charging = battery.isCharging
+    // Tick mo phong demo: moi 2.8s soc += +0.4 (sac) / -0.3 (xa), tran 5..100
+    var tickSoc by remember(battery.soc, charging) { mutableFloatStateOf(battery.soc.toFloat()) }
+    LaunchedEffect(charging) {
+        while (true) {
+            delay(2800)
+            tickSoc = min(100f, max(5f, tickSoc + if (charging) 0.4f else -0.3f))
+        }
+    }
+    val soc = tickSoc.roundToInt()
+    val reserve = min(soc, 20)
+    val usage = max(0, soc - 20)
+    // Footer demo: "Con khoang XhYY" + "Ket thuc luc HH:MM"
+    val mins = if (charging) ((100 - soc) / 0.4 * 2.8).roundToInt()
+    else (soc / 0.3 * 2.8).roundToInt()
+    val timeText = "${mins / 60}h${(mins % 60).toString().padStart(2, '0')}"
+    val end = LocalDateTime.now().plusMinutes(mins.toLong())
+    val endText = "%02d:%02d".format(end.hour, end.minute)
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
@@ -105,7 +135,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    "${battery.soc}",
+                    "$soc",
                     fontSize = 34.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.5).sp,
@@ -124,7 +154,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                 // model: powerKw<0 = dang sac, >0 = dang xa
                 val sign = if (charging) "+" else "\u2212"
                 Text(
-                    "$sign${"%.1f".format(kotlin.math.abs(battery.powerKw))} kW",
+                    "$sign${"%.1f".format(abs(battery.powerKw))} kW",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = if (charging) extra.success else Color(0xFFD97706),
@@ -140,7 +170,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.height(10.dp))
         // Thanh wavy song chay
-        AnimatedWavyBar(soc = battery.soc, modifier = Modifier.fillMaxWidth())
+        AnimatedWavyBar(soc = soc, modifier = Modifier.fillMaxWidth())
         // .batleg: space-between, 11.5px/600, margin-top 8px
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -164,7 +194,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     color = cs.onSurfaceVariant,
                 )
                 Text(
-                    "${battery.reservePct}%",
+                    "$reserve%",
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = cs.onSurface,
@@ -172,14 +202,18 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icon song demo: viewBox 28x14, scale ve 24dp
                 Canvas(Modifier.size(24.dp, 12.dp)) {
-                    val cy = size.height / 2f
+                    val s = size.width / 28f
+                    fun X(v: Float) = v * s
+                    fun Y(v: Float) = v * s
                     val path = Path().apply {
-                        moveTo(2.dp.toPx(), cy)
-                        quadraticBezierTo(5.dp.toPx(), 0f, 8.dp.toPx(), cy)
-                        quadraticBezierTo(11.dp.toPx(), size.height, 14.dp.toPx(), cy)
-                        quadraticBezierTo(17.dp.toPx(), 0f, 20.dp.toPx(), cy)
-                        quadraticBezierTo(23.dp.toPx(), size.height, 26.dp.toPx(), cy)
+                        // M2 7 Q5 -1 8 7 T14 7 T20 7 T26 7 (T = phan xa control)
+                        moveTo(X(2f), Y(7f))
+                        quadraticBezierTo(X(5f), Y(-1f), X(8f), Y(7f))
+                        quadraticBezierTo(X(11f), Y(15f), X(14f), Y(7f))
+                        quadraticBezierTo(X(17f), Y(-1f), X(20f), Y(7f))
+                        quadraticBezierTo(X(23f), Y(15f), X(26f), Y(7f))
                     }
                     drawPath(
                         path, cs.primary,
@@ -194,7 +228,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     color = cs.onSurfaceVariant,
                 )
                 Text(
-                    "${battery.usagePct}%",
+                    "$usage%",
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = cs.onSurface,
@@ -202,14 +236,36 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                 )
             }
         }
-        // .batfoot: 12px/500
-        battery.timeText?.let {
+        // .batfoot: 2 cot space-between, 12px/500, b 700 onSurface
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+        ) {
             Text(
-                it,
+                buildAnnotatedString {
+                    append("Còn khoảng ")
+                    withStyle(SpanStyle(
+                        color = cs.onSurface,
+                        fontWeight = FontWeight.Bold,
+                    )) { append(timeText) }
+                },
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
-                modifier = Modifier.padding(top = 12.dp),
+            )
+            Text(
+                buildAnnotatedString {
+                    append("Kết thúc lúc ")
+                    withStyle(SpanStyle(
+                        color = cs.onSurface,
+                        fontWeight = FontWeight.Bold,
+                    )) { append(endText) }
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = cs.onSurfaceVariant,
             )
         }
     }

@@ -93,24 +93,38 @@ fun Modifier.blink(periodMs: Int = 1400): Modifier = composed {
  * Nhan giu item i: item i weight 1.45, 2 item ke weight 0.82 (giong demo .rmm).
  */
 @Composable
-fun rememberNeighborPress(count: Int): NeighborPressState {
-    return remember(count) { NeighborPressState(count) }
+fun rememberNeighborPress(
+    count: Int,
+    pressedWeight: Float = 1.45f,
+    neighborWeight: Float = 0.82f,
+): NeighborPressState {
+    return remember(count, pressedWeight, neighborWeight) {
+        NeighborPressState(count, pressedWeight, neighborWeight)
+    }
 }
 
-class NeighborPressState(val count: Int) {
+class NeighborPressState(
+    val count: Int,
+    val pressedWeight: Float = 1.45f,
+    val neighborWeight: Float = 0.82f,
+) {
     var pressedIndex: Int by mutableStateOf(-1)
         private set
 
     fun press(i: Int) { pressedIndex = i }
     fun release() { pressedIndex = -1 }
 
-    /** Weight cho item i: 1.45 neu dang nhan, 0.82 neu ke ben, 1.0 con lai. */
+    /** Weight cho item i: pressedWeight neu dang nhan, neighborWeight neu ke ben, 1.0 con lai. */
     fun weightFor(i: Int): Float = when {
         pressedIndex < 0 -> 1f
-        i == pressedIndex -> 1.45f
-        kotlin.math.abs(i - pressedIndex) == 1 -> 0.82f
+        i == pressedIndex -> pressedWeight
+        kotlin.math.abs(i - pressedIndex) == 1 -> neighborWeight
         else -> 1f
     }
+
+    /** True neu item i la nut ke ben nut dang nhan (de scaleX nhu .nbtn.press-nei). */
+    fun isNeighbor(i: Int): Boolean =
+        pressedIndex >= 0 && kotlin.math.abs(i - pressedIndex) == 1
 }
 
 /**

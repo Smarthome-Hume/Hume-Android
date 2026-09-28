@@ -61,7 +61,7 @@ fun EnergyDonut(
                 if (sweep > 1f) {
                     drawArc(
                         color = sliceColors[i % sliceColors.size],
-                        startAngle = start, sweepAngle = sweep - 3f,
+                        startAngle = start, sweepAngle = sweep,
                         useCenter = false, style = Stroke(stroke, cap = StrokeCap.Round),
                     )
                 }

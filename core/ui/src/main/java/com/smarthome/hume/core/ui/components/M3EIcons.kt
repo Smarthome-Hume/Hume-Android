@@ -61,7 +61,7 @@ object M3EIcons {
         "house" -> Home
         "desk" -> Ms.desk
         "door" -> Ms.meeting_room
-        "snowflake" -> Climate
+        "snowflake" -> Ms.snowflake
         "fire" -> Ms.whatshot
         "bulb", "lightbulb" -> Light
         "switch" -> Power

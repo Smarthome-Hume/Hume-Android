@@ -61,7 +61,7 @@ fun EnergyScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 18.dp),
+            .padding(top = 4.dp, start = 18.dp, end = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {

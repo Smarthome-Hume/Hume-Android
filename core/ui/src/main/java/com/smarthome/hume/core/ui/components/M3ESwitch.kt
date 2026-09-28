@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +23,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import androidx.compose.ui.unit.dp
 
 /**
@@ -82,7 +82,7 @@ fun M3ESwitch(
             .clip(shape)
             .background(
                 if (checked) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceContainerHighest
+                else LocalHumeExtraColors.current.surfaceHighest
             )
             .border(
                 2.dp,
@@ -109,14 +109,14 @@ fun M3ESwitch(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = M3EIcons.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            MsIcon(
+                M3EIcons.Check,
+                null,
                 modifier = Modifier
                     .size(13.dp)
                     .scale(checkScale)
                     .alpha(checkAlpha),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     }

@@ -33,17 +33,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -54,6 +50,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -68,7 +68,6 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.NeighborPressState
-import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -115,11 +114,15 @@ fun MeScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 96.dp),
+            .padding(horizontal = 18.dp)
+            .padding(bottom = 170.dp),
     ) {
-        Spacer(Modifier.height(20.dp))
-        Column(Modifier.riseEntrance(0)) {
+        // demo .phdr: padding 12px 2px 6px, cong page padding-top 4px => top 16dp
+        Column(
+            Modifier
+                .riseEntrance(0)
+                .padding(start = 2.dp, end = 2.dp, top = 16.dp, bottom = 6.dp),
+        ) {
             // demo .phdr h2: 26px/700 ls -.3px ; p: 13px
             Text("Tôi", fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
             Text(
@@ -136,7 +139,8 @@ fun MeScreen(
         Box(Modifier.riseEntrance(580)) { SecTitle("Thông báo") }
         Box(Modifier.riseEntrance(600)) { NotifCard(onViewCamera = onViewCamera) }
 
-        SecTitle("Giao diện")
+        // demo: .sec.rise cua "Giao dien" khong co animation-delay
+        Box(Modifier.riseEntrance(0)) { SecTitle("Giao diện") }
         DarkModeRow(
             darkMode = darkMode,
             onToggle = { haptic(); vm.setDarkMode(it) },
@@ -151,7 +155,12 @@ fun MeScreen(
         )
         SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
         Text(
-            "Mỗi seed sinh ra cả dải tonal light/dark — primary family và neutrals (nền, viền, chữ) đều đổi theo đúng quy tắc M3.",
+            // demo .tnote: "primary family <b>và</b> neutrals"
+            buildAnnotatedString {
+                append("Mỗi seed sinh ra cả dải tonal light/dark — primary family ")
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("và") }
+                append(" neutrals (nền, viền, chữ) đều đổi theo đúng quy tắc M3.")
+            },
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
@@ -169,7 +178,7 @@ private fun SecTitle(title: String) {
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         letterSpacing = (-0.1).sp,
-        modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp),
+        modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 12.dp),
     )
 }
 
@@ -177,10 +186,16 @@ private fun SecTitle(title: String) {
 
 @Composable
 private fun SyncCard(syncing: Boolean, onSync: () -> Unit) {
+    // demo .syncrow: margin-top 4px; khong co press scale (chi cursor:pointer)
     Column(
         Modifier
             .fillMaxWidth()
-            .pressMorph(onClick = onSync)
+            .padding(top = 4.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onSync,
+            )
             .clip(RoundedCornerShape(26.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(horizontal = 18.dp, vertical = 14.dp),
@@ -293,15 +308,20 @@ private fun WavyProgress(syncing: Boolean) {
 
 @Composable
 private fun NotifCard(onViewCamera: () -> Unit) {
-    var dismissed by rememberSaveable { mutableStateOf(false) }
-    if (dismissed) return
     val haptic = rememberHaptic()
-    val np = rememberNeighborPress(2)
+    // demo .nbtn: press-main flex-grow 1.18 / press-nei flex-grow .93 + scaleX(.95)
+    val np = rememberNeighborPress(2, 1.18f, 0.93f)
     val surfaceLow = LocalHumeExtraColors.current.surfaceLow
     Row(
         Modifier
             .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(30.dp))
+            // demo --shadow light: 0 12px 32px rgba(25,20,18,.10)
+            .shadow(
+                12.dp,
+                RoundedCornerShape(30.dp),
+                spotColor = Color(0x1A191412),
+                ambientColor = Color(0x1A191412),
+            )
             .clip(RoundedCornerShape(30.dp))
             .background(surfaceLow)
             .padding(18.dp),
@@ -345,8 +365,8 @@ private fun NotifCard(onViewCamera: () -> Unit) {
                     icon = M3EIcons.Close,
                     text = "Bỏ qua",
                     primary = false,
-                    // "Bo qua" = loai bo thong bao nay (hanh dong that, khong de chet)
-                    onClick = { haptic(); dismissed = true },
+                    // demo: "Bo qua" khong co handler (chi animation press)
+                    onClick = { haptic() },
                 )
             }
         }
@@ -375,6 +395,12 @@ private fun RowScope.NButton(
         tween(500, easing = M3EMotion.spring),
         label = "nbtnWeight",
     )
+    // demo .nbtn.press-nei: scaleX(.95) — cung nhip voi flex-grow
+    val neiScaleX by animateFloatAsState(
+        if (np.isNeighbor(index)) 0.95f else 1f,
+        tween(500, easing = M3EMotion.spring),
+        label = "nbtnNeiScaleX",
+    )
     val corner by animateDpAsState(
         if (pressed) 13.dp else 20.dp,
         tween(400, easing = M3EMotion.spring),
@@ -394,6 +420,7 @@ private fun RowScope.NButton(
     Row(
         Modifier
             .weight(weight)
+            .graphicsLayer { scaleX = neiScaleX }
             .clip(RoundedCornerShape(corner))
             .background(bg)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
@@ -415,7 +442,7 @@ private fun DarkModeRow(darkMode: Boolean?, onToggle: (Boolean) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(top = 18.dp)
+            .padding(top = 18.dp, bottom = 4.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -432,9 +459,9 @@ private fun DarkModeRow(darkMode: Boolean?, onToggle: (Boolean) -> Unit) {
                 modifier = Modifier.padding(top = 3.dp),
             )
         }
-        // darkMode null = theo he thong → hien thi theo he thong, bat toggle = dat thu cong
+        // demo: .tgl luon bat dau OFF (light), khong follow system
         M3ESwitch(
-            checked = darkMode ?: androidx.compose.foundation.isSystemInDarkTheme(),
+            checked = darkMode ?: false,
             onCheckedChange = onToggle,
         )
     }
@@ -470,9 +497,10 @@ private val seedNames = mapOf(
 @Composable
 private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
     FlowRow(
+        // demo .seeds: padding 2px 4px 8px
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {

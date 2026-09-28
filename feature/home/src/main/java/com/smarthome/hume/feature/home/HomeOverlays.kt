@@ -30,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -87,7 +86,7 @@ fun NotificationSheet(
         dragHandle = { SheetGrabHandle() },
     ) {
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier.padding(horizontal = 22.dp),
         ) {
             item {
                 Text(
@@ -133,7 +132,7 @@ fun NotificationSheet(
                     Column(
                         modifier = Modifier
                             .clip(RoundedCornerShape(30.dp))
-                            .background(cs.surfaceContainerHighest)
+                            .background(LocalHumeExtraColors.current.surfaceHighest)
                             .padding(8.dp),
                     ) {
                         notifications.forEachIndexed { i, n ->
@@ -147,18 +146,74 @@ fun NotificationSheet(
     }
 }
 
-private fun notifIcon(n: HomeNotification): String = when {
-    n.title.contains("Cửa", ignoreCase = true) -> M3EIcons.Door
-    n.title.contains("chuyển động", ignoreCase = true) -> M3EIcons.Motion
-    n.title.contains("khói", ignoreCase = true) -> M3EIcons.Smoke
-    n.title.contains("nước", ignoreCase = true) -> M3EIcons.Leak
-    else -> M3EIcons.Bell
+/** Palette icon thong bao theo JS demo (npool): door primary, motion tertiary,
+ * light secondary, AC info, lock error, camera violet. */
+private enum class NotifKind { Door, Motion, Light, Ac, Lock, Camera, Other }
+
+private fun notifKind(n: HomeNotification): NotifKind {
+    val t = n.title.lowercase()
+    return when {
+        "cửa" in t -> NotifKind.Door
+        "chuyển động" in t -> NotifKind.Motion
+        "đèn" in t || "ổ cắm" in t -> NotifKind.Light
+        "điều hoà" in t -> NotifKind.Ac
+        "khoá" in t -> NotifKind.Lock
+        "camera" in t -> NotifKind.Camera
+        else -> NotifKind.Other
+    }
+}
+
+/** Icon thong bao theo npool cua demo: door_front / door_open phan biet. */
+private fun notifIcon(n: HomeNotification): String {
+    val t = n.title.lowercase()
+    return when (notifKind(n)) {
+        NotifKind.Door -> if ("cửa sổ" in t) Ms.door_open else M3EIcons.Door
+        NotifKind.Motion -> M3EIcons.Motion
+        NotifKind.Light -> M3EIcons.Light
+        NotifKind.Ac -> M3EIcons.Climate
+        NotifKind.Lock -> Ms.lock_open
+        NotifKind.Camera -> M3EIcons.Videocam
+        NotifKind.Other -> M3EIcons.Bell
+    }
+}
+
+@Composable
+private fun notifContainer(kind: NotifKind): Color {
+    val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
+    return when (kind) {
+        NotifKind.Door -> cs.primaryContainer
+        NotifKind.Motion -> cs.tertiaryContainer
+        NotifKind.Light -> cs.secondaryContainer
+        NotifKind.Ac -> extra.infoContainer
+        NotifKind.Lock -> cs.errorContainer
+        NotifKind.Camera -> extra.violetContainer
+        NotifKind.Other -> cs.primaryContainer
+    }
+}
+
+@Composable
+private fun notifOnContainer(kind: NotifKind): Color {
+    val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
+    return when (kind) {
+        NotifKind.Door -> cs.onPrimaryContainer
+        NotifKind.Motion -> cs.onTertiaryContainer
+        NotifKind.Light -> cs.onSecondaryContainer
+        NotifKind.Ac -> extra.onInfoContainer
+        NotifKind.Lock -> cs.onErrorContainer
+        NotifKind.Camera -> extra.onVioletContainer
+        NotifKind.Other -> cs.onPrimaryContainer
+    }
 }
 
 @Composable
 private fun NotifRow(n: HomeNotification, index: Int) {
     val cs = MaterialTheme.colorScheme
     val density = LocalDensity.current
+    val kind = notifKind(n)
+    val container = notifContainer(kind)
+    val onContainer = notifOnContainer(kind)
     var vis by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(index * 60L)
@@ -186,11 +241,11 @@ private fun NotifRow(n: HomeNotification, index: Int) {
                 modifier = Modifier
                     .size(46.dp)
                     .clip(CircleShape)
-                    .background(cs.primaryContainer),
+                    .background(container),
             ) {
                 MsIcon(
                     notifIcon(n), null,
-                    tint = cs.onPrimaryContainer,
+                    tint = onContainer,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -329,7 +384,11 @@ fun DeviceSearchView(
                                 close()
                             },
                     ) {
-                        MsIcon(Ms.arrow_back, "Quay lại", tint = cs.onSurface)
+                        MsIcon(
+                            Ms.arrow_back, "Quay lại",
+                            tint = cs.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                     BasicTextField(
                         value = query,
@@ -365,7 +424,11 @@ fun DeviceSearchView(
                                 onQuery("")
                             },
                     ) {
-                        MsIcon(Ms.close, "Xóa", tint = cs.onSurfaceVariant)
+                        MsIcon(
+                            Ms.close, "Xóa",
+                            tint = cs.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                 }
                 Text(
@@ -457,15 +520,16 @@ private fun SearchChip(label: String, onClick: () -> Unit) {
 }
 
 /**
- * Tay cam sheet theo demo (44x5dp), M3 khong co GrabHandle public.
+ * Tay cam sheet theo demo (.grab): 44x5, bo 3px, mau outline,
+ * margin 4px auto 16px. M3 khong co GrabHandle public.
  */
 @Composable
 private fun SheetGrabHandle() {
     Box(
         Modifier
-            .padding(top = 12.dp, bottom = 4.dp)
+            .padding(top = 4.dp, bottom = 16.dp)
             .size(44.dp, 5.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
+            .clip(RoundedCornerShape(3.dp))
+            .background(MaterialTheme.colorScheme.outline),
     )
 }

@@ -8,6 +8,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.alignByBaseline
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +32,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -108,19 +112,25 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
+        containerColor = extra.surfaceHighest,
         modifier = Modifier.riseOnce("sol-syn", 420, risePlayed),
     ) {
+        // demo .yt{align-items:baseline}
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.Top,
         ) {
             Text(
                 "Tải tiêu thụ",
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.alignByBaseline(),
             )
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.alignByBaseline(),
+            ) {
                 Text(
                     String.format("%.1f", state.loadTotalKw),
                     style = MaterialTheme.typography.headlineSmall.copy(
@@ -160,7 +170,8 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 )
             }
             Spacer(Modifier.height(5.dp))
-            val maxTier = (state.tiers.maxOfOrNull { it.kw } ?: 1.0).coerceAtLeast(0.01)
+            // demo: width = v/tong (khong phai v/max)
+            val sumTier = state.tiers.sumOf { it.kw }.coerceAtLeast(0.01)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -170,7 +181,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth((t.kw / maxTier).toFloat().coerceIn(0f, 1f))
+                        .fillMaxWidth((t.kw / sumTier).toFloat().coerceIn(0f, 1f))
                         .height(8.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.tertiary),
@@ -204,6 +215,12 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             )
         }
         Spacer(Modifier.height(8.dp))
+        // demo .socbar2 i{transition:width .8s}
+        val socFrac by animateFloatAsState(
+            targetValue = (state.battery.soc / 100).toFloat().coerceIn(0f, 1f),
+            animationSpec = tween(800),
+            label = "socBar",
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -213,7 +230,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth((state.battery.soc / 100).toFloat().coerceIn(0f, 1f))
+                    .fillMaxWidth(socFrac)
                     .height(8.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF16A34A)),
@@ -223,12 +240,15 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             MiniBox(
                 "Công suất",
-                "${String.format("%.1f", kotlin.math.abs(state.battery.powerW) / 1000)} kW",
+                miniVal(
+                    String.format("%.1f", kotlin.math.abs(state.battery.powerW) / 1000) to "kW"),
                 Modifier.weight(1f),
             )
             MiniBox(
                 "Dòng · Áp",
-                "${state.battery.currentA.roundToInt()} A · ${state.battery.voltageV.roundToInt()} V",
+                miniVal(
+                    state.battery.currentA.roundToInt().toString() to "A",
+                    state.battery.voltageV.roundToInt().toString() to "V"),
                 Modifier.weight(1f),
             )
         }
@@ -236,18 +256,35 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             MiniBox(
                 "Sạc giới hạn",
-                "${state.battery.chargeLimitA.roundToInt()} A", Modifier.weight(1f),
+                miniVal(state.battery.chargeLimitA.roundToInt().toString() to "A"),
+                Modifier.weight(1f),
             )
             MiniBox(
                 "Xả giới hạn",
-                "${state.battery.dischargeLimitA.roundToInt()} A", Modifier.weight(1f),
+                miniVal(state.battery.dischargeLimitA.roundToInt().toString() to "A"),
+                Modifier.weight(1f),
             )
         }
     }
 }
 
+/** Gia tri + don vi kieu demo .mini .v small (11sp/600 onSurfaceVariant). */
 @Composable
-private fun MiniBox(label: String, value: String, modifier: Modifier = Modifier) {
+private fun miniVal(vararg parts: Pair<String, String>): AnnotatedString =
+    buildAnnotatedString {
+        parts.forEachIndexed { i, (num, unit) ->
+            if (i > 0) append(" · ")
+            append(num)
+            withStyle(SpanStyle(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )) { append(" $unit") }
+        }
+    }
+
+@Composable
+private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
@@ -297,7 +334,7 @@ private fun Expander(
             .fillMaxWidth()
             .riseOnce(riseKey, riseDelay, risePlayed)
             .clip(RoundedCornerShape(32.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            .background(LocalHumeExtraColors.current.surfaceHighest),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -368,6 +405,7 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
             .fillMaxWidth()
             .padding(vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             c.name,

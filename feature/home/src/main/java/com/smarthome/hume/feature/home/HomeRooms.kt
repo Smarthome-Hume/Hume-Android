@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,7 +21,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -69,9 +69,9 @@ fun RoomGrid(
     onToggleLight: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rooms.chunked(2).forEachIndexed { ri, row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEachIndexed { ci, room ->
                     RoomCard(
                         room = room,
@@ -98,6 +98,7 @@ private fun RoomCard(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     val haptic = rememberHaptic()
     Box(
         modifier = modifier
@@ -110,7 +111,7 @@ private fun RoomCard(
             )
             .background(
                 if (room.lightOn) cs.primaryContainer
-                else cs.surfaceContainerHighest,
+                else extra.surfaceHighest,
             )
             .padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
@@ -141,8 +142,7 @@ private fun RoomCard(
                     room.name,
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (room.lightOn) cs.onPrimaryContainer
-                    else cs.onSurface,
+                    color = cs.onSurface,
                 )
                 val sub = buildList {
                     room.tempC?.let { add("%.1f°".format(it)) }
@@ -153,16 +153,16 @@ private fun RoomCard(
                     sub,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (room.lightOn) cs.onPrimaryContainer
-                    else cs.onSurfaceVariant,
+                    color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 3.dp),
                 )
             }
-            // Cham bao cua mo .rdot2 9px
+            // Cham bao cua mo .rdot2 9px, top/right 14px
             if (doorOpen) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
+                        .offset(x = (-14).dp, y = 14.dp)
                         .shadow(6.dp, CircleShape, ambientColor = cs.error, spotColor = cs.error)
                         .size(9.dp)
                         .clip(CircleShape)
@@ -208,39 +208,31 @@ fun RoomSheet(
         dragHandle = { GrabHandle() },
     ) {
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            // .sheet{padding:12px 22px 34px}; nhip margin-collapse theo CSS
+            modifier = Modifier.padding(horizontal = 22.dp),
         ) {
             item {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        MsIcon(
-                            M3EIcons.room(room.iconKey), null,
-                            tint = cs.primary,
-                            modifier = Modifier.size(30.dp),
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            room.name,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = cs.onSurface,
-                        )
-                    }
-                    Text(
-                        "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = cs.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-                    )
-                }
+                // h2 (khong margin) + .shsub{margin:4px 0 16px}
+                Text(
+                    room.name,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurface,
+                )
+                Text(
+                    "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Spacer(Modifier.height(16.dp))
             }
-            // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
+            // 2 tile nhiet do / do am (.shenv{margin:14px 0 6px} -> collapse 16px)
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     EnvTile(
-                        icon = Ms.thermostat, label = "Nhiệt độ",
+                        icon = Ms.device_thermostat, label = "Nhiệt độ",
                         value = room.tempC?.let { "%.1f°".format(it) } ?: "—",
                         container = cs.primaryContainer,
                         onContainer = cs.onPrimaryContainer,
@@ -254,31 +246,27 @@ fun RoomSheet(
                         modifier = Modifier.weight(1f),
                     )
                 }
+                Spacer(Modifier.height(6.dp))
             }
-            // Dieu hoa
+            // Dieu hoa (.ac-modes{margin-bottom:12px})
             room.climate?.let { c ->
-                item { ClimateCard(c, onClimateTemp, onHvacMode, onToggleClimate) }
-            }
-            // Thiet bi
-            if (room.devices.isNotEmpty()) {
                 item {
-                    Text(
-                        "Thiết bị",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = cs.onSurface,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                    ClimateCard(c, onClimateTemp, onHvacMode, onToggleClimate)
+                    Spacer(Modifier.height(12.dp))
                 }
+            }
+            // Thiet bi (.dev{margin-bottom:10px}); KHONG heading "Thiet bi"
+            if (room.devices.isNotEmpty()) {
                 items(room.devices, key = { it.entityId }) { d ->
                     DeviceRow(
                         d,
                         contactOpen = contactOpenForDevice(d.iconKey, d.label, notifications),
                         onToggle = { onToggle(d.entityId) },
                     )
+                    Spacer(Modifier.height(10.dp))
                 }
             }
-            item { Spacer(Modifier.height(24.dp)) }
+            item { Spacer(Modifier.height(34.dp)) }
         }
     }
 }
@@ -293,10 +281,11 @@ private fun EnvTile(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(30.dp))
-            .background(cs.surfaceContainerHighest)
+            .background(extra.surfaceHighest)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -329,12 +318,11 @@ private fun EnvTile(
     }
 }
 
-private val hvacLabels = mapOf(
-    "cool" to "Làm lạnh",
-    "heat" to "Sưởi",
-    "auto" to "Tự động",
+private val climateModes = listOf(
+    "cool" to "Lạnh",
+    "dry" to "Khô",
     "fan_only" to "Quạt",
-    "dry" to "Hút ẩm",
+    "auto" to "Tự động",
 )
 
 /**
@@ -349,16 +337,17 @@ private fun ClimateCard(
     onToggle: (String) -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     val target = c.targetTemp ?: 26.0
     val dim = if (c.isOn) 1f else 0.35f
     val haptic = rememberHaptic()
-    // .ac-top: surfaceHighest, bo 24px, padding 14px 16px.
+    // .ac-top: surfaceHighest, bo 24px, padding 14px 16px, mb 10px.
     // Tat dieu hoa: chi .tstep + .ac-modes mo di (opacity .35), nut nguon giu nguyen.
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(cs.surfaceContainerHighest)
+            .background(extra.surfaceHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(
@@ -378,7 +367,7 @@ private fun ClimateCard(
             ) {
                 StepperButton("−", enabled = c.isOn) {
                     haptic()
-                    onTemp(c.entityId, (target - 1).coerceIn(16.0, 31.0))
+                    onTemp(c.entityId, (target - 1).coerceIn(16.0, 30.0))
                 }
                 // .tv: min-width 54px, "26°" 16px/800 + "Mục tiêu" 10px/600
                 Column(
@@ -400,7 +389,7 @@ private fun ClimateCard(
                 }
                 StepperButton("+", enabled = c.isOn) {
                     haptic()
-                    onTemp(c.entityId, (target + 1).coerceIn(16.0, 31.0))
+                    onTemp(c.entityId, (target + 1).coerceIn(16.0, 30.0))
                 }
             }
             // Nut nguon tron 54px: bat = primaryContainer, tat = surfaceContainer
@@ -430,7 +419,7 @@ private fun ClimateCard(
             .fillMaxWidth()
             .alpha(dim)
             .clip(RoundedCornerShape(24.dp))
-            .background(cs.surfaceContainerHighest)
+            .background(extra.surfaceHighest)
             .padding(14.dp),
     ) {
         ClimateModeGroup(c = c, enabled = c.isOn, onMode = onMode)
@@ -448,12 +437,13 @@ private fun StepperButton(
     onClick: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(34.dp)
             .clip(CircleShape)
-            .background(cs.surfaceContainerHighest)
+            .background(extra.surfaceHighest)
             .pressMorph(pressedScale = 0.85f, onClick = if (enabled) onClick else null),
     ) {
         Text(
@@ -466,8 +456,9 @@ private fun StepperButton(
 }
 
 /**
- * Cum che do dieu hoa (.ac-modes .rmm): khong vien, chu 12.5px/700,
- * padding 14px 6px, bo 18px; chon = primaryContainer, KHONG check;
+ * Cum che do dieu hoa (.ac-modes .rmm): CO DINH 4 che do nhu demo
+ * (Lanh/Kho/Quat/Tu dong); khong vien, chu 12.5px/700, padding 14px 6px,
+ * bo 18px; chon = primaryContainer, KHONG check; unselected = trong suot;
  * neighbor-press (nhan: 1.45, ke ben: 0.82), :active scale(.9) spring.
  */
 @Composable
@@ -478,8 +469,8 @@ private fun ClimateModeGroup(
 ) {
     val cs = MaterialTheme.colorScheme
     val haptic = rememberHaptic()
-    val modes = c.modes.filter { it in hvacLabels }.takeIf { it.isNotEmpty() }
-        ?: listOf("cool", "heat", "auto", "fan_only")
+    val modes = climateModes.map { it.first }
+    val labels = climateModes.toMap()
     val selectedMode = c.hvacMode.takeIf { it in modes } ?: modes.first()
     val np = rememberNeighborPress(modes.size)
     Row(
@@ -505,7 +496,7 @@ private fun ClimateModeGroup(
                     .weight(w)
                     .graphicsLayer(scaleX = scale, scaleY = scale)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(if (sel) cs.primaryContainer else cs.surfaceContainer)
+                    .background(if (sel) cs.primaryContainer else Color.Transparent)
                     .pointerInput(i, enabled) {
                         if (!enabled) return@pointerInput
                         detectTapGestures(
@@ -525,7 +516,7 @@ private fun ClimateModeGroup(
                     .padding(vertical = 14.dp, horizontal = 6.dp),
             ) {
                 Text(
-                    hvacLabels[m] ?: m,
+                    labels[m] ?: m,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (sel) cs.onPrimaryContainer else cs.onSurfaceVariant,
@@ -564,7 +555,7 @@ fun DeviceRow(
                 pressedCorner = 18.dp,
                 onClick = null,
             )
-            .background(cs.surfaceContainerHighest)
+            .background(extra.surfaceHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Box(

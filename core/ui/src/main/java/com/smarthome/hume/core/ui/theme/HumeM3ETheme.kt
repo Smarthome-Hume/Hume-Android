@@ -49,6 +49,10 @@ data class HumeExtraColors(
     /** Nen trang / surface goc cua demo (dung cho tonal layering). */
     val surfaceLow: Color,
     val surfaceHigh: Color,
+    /** --surfaceHighest cua demo: the (card) — #FFFFFF light / #35302A dark. */
+    val surfaceHighest: Color,
+    /** --surfaceLowest cua demo: navbar — #F4F2EF light / #28211B dark. */
+    val surfaceLowest: Color,
 )
 
 private fun extraColors(seed: M3ESeed, dark: Boolean): HumeExtraColors {
@@ -68,6 +72,8 @@ private fun extraColors(seed: M3ESeed, dark: Boolean): HumeExtraColors {
         pink = t("pink"), pinkContainer = t("pinkContainer"),
         onPinkContainer = t("onPinkContainer"),
         surfaceLow = t("surfaceLow"), surfaceHigh = t("surfaceHigh"),
+        surfaceHighest = t("surfaceHighest"),
+        surfaceLowest = t("surfaceLowest"),
     )
 }
 
@@ -80,6 +86,8 @@ val LocalHumeExtraColors = staticCompositionLocalOf {
         onVioletContainer = Color.Unspecified, pink = Color.Unspecified,
         pinkContainer = Color.Unspecified, onPinkContainer = Color.Unspecified,
         surfaceLow = Color.Unspecified, surfaceHigh = Color.Unspecified,
+        surfaceHighest = Color.Unspecified,
+        surfaceLowest = Color.Unspecified,
     )
 }
 

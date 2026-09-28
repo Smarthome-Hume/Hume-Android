@@ -8,9 +8,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +30,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,10 +45,16 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -71,6 +78,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
@@ -115,8 +123,8 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 96.dp),
+                .padding(horizontal = 18.dp)
+                .padding(bottom = 170.dp),
         ) {
             // Header (demo .phdr: padding 12px 2px 6px; h2 26px/700/-0.3px; p 13px)
             Column(
@@ -147,6 +155,11 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .riseIn(420),
+                    // demo .dvsegi: 12px/600, padding 8px 10px, icon check 16px
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    itemPadding = PaddingValues(vertical = 8.dp, horizontal = 10.dp),
+                    checkSize = 16.dp,
                 )
                 Spacer(Modifier.height(14.dp))
                 val cam = state.cameras[selectedCam]
@@ -157,6 +170,8 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                 SecHeader(title = "Video ghi hình gần đây", action = "Tải 10 clip", delayMs = 460)
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    // demo .reclist: padding 2px 2px 6px
+                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 2.dp, bottom = 6.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .riseIn(480),
@@ -195,17 +210,24 @@ private fun SecHeader(title: String, action: String? = null, delayMs: Int = 0) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 10.dp)
+            .padding(top = 20.dp, bottom = 12.dp)
             .padding(horizontal = 4.dp)
             .riseIn(delayMs),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        // demo .sec: align-items baseline
+        verticalAlignment = Alignment.Bottom,
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            title,
+            // demo .sec h3: 16px/700/ls -.1px
+            style = MaterialTheme.typography.titleMedium.copy(letterSpacing = (-0.1).sp),
+            fontWeight = FontWeight.Bold,
+        )
         if (action != null) {
             Text(
                 action,
-                style = MaterialTheme.typography.labelMedium,
+                // demo .secmore: 12px/700/ls 0
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -221,7 +243,6 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
     val haptic = rememberHaptic()
     val cs = MaterialTheme.colorScheme
     var frame by remember(camKey) { mutableStateOf(0L) }
-    var failed by remember(camKey) { mutableStateOf(false) }
 
     LaunchedEffect(camKey, unlocked) {
         if (!unlocked) return@LaunchedEffect
@@ -246,7 +267,7 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 12.dp,
-        containerColor = cs.surfaceContainerHighest, // demo .seccam: surfaceHighest
+        containerColor = LocalHumeExtraColors.current.surfaceHighest, // demo .seccam: surfaceHighest
         modifier = Modifier.riseIn(440),
     ) {
         Box(
@@ -280,12 +301,28 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
                         center = Offset(size.width * 0.75f, size.height * 0.7f),
                     )
                 }
+                // demo scfeed keyboard: Enter/Space mo khoa
+                .focusable()
+                .onKeyEvent {
+                    if ((it.key == Key.Enter || it.key == Key.Spacebar) && it.type == KeyEventType.KeyUp) {
+                        vm.unlock(); haptic(); true
+                    } else false
+                }
                 .pressMorph(
                     onClick = { vm.unlock(); haptic() }, // demo vibrate(8) mo khoa
                 ),
         ) {
             val context = LocalContext.current
             val url = vm.snapshotUrl(camKey)
+            // demo .scview .ms: placeholder videocam 64px trang 35%, luon render duoi anh
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                MsIcon(
+                    M3EIcons.Videocam,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.35f),
+                    modifier = Modifier.size(64.dp),
+                )
+            }
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(if (unlocked) "$url?t=$frame" else url)
@@ -293,8 +330,6 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
                     .build(),
                 contentDescription = camName,
                 contentScale = ContentScale.Fit,
-                onSuccess = { failed = false },
-                onError = { failed = true },
                 modifier = Modifier
                     .fillMaxSize()
                     .blur(blurDp),
@@ -348,14 +383,7 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
 
-            if (failed) {
-                Text(
-                    "Không lấy được hình từ Frigate",
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 12.sp,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            } else if (!unlocked) {
+            if (!unlocked) {
                 // unlock overlay (demo .scunlock: 13px/600, icon 34px, gap 8px)
                 Column(
                     Modifier
@@ -381,35 +409,37 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
             }
 
             // Toolbar: overlay day feed, pill kinh (demo .ftoolbar absolute bottom-center)
-            // surfaceContainerLowest 72% + vien trang 25%, radius 26px, padding 5px
+            // nen surfaceLowest 72%, vien trang 25%,
+            // radius 26px, padding 12px 4px 4px, shadow var(--shadow)
             Row(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 12.dp)
+                    .shadow(12.dp, RoundedCornerShape(26.dp))
                     .clip(RoundedCornerShape(26.dp))
-                    .background(cs.surfaceContainerLowest.copy(alpha = 0.72f))
+                    .background(LocalHumeExtraColors.current.surfaceLowest.copy(alpha = 0.72f))
                     .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(26.dp))
-                    .padding(5.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    .padding(top = 12.dp, start = 4.dp, end = 4.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 ToolbarBtn(
                     icon = M3EIcons.Rec,
                     label = "Ghi hình",
-                    tint = cs.error, // demo .ftbtn.rec: LUON do #E53935
-                    onClick = vm::toggleRec,
+                    tint = Color(0xFFE53935), // demo .ftbtn.rec: LUON do #E53935
+                    onClick = {}, // demo: nut rec khong co JS toggle
                 )
-                ToolbarBtn(icon = M3EIcons.Mic, label = "Đàm thoại", tint = cs.onSurface, onClick = {})
-                ToolbarBtn(icon = M3EIcons.PhotoCamera, label = "Chụp ảnh", tint = cs.onSurface, onClick = {})
-                ToolbarBtn(icon = M3EIcons.Fullscreen, label = "Toàn màn hình", tint = cs.onSurface, onClick = {})
+                ToolbarBtn(icon = M3EIcons.Mic, label = "Đàm thoại", tint = cs.onSurfaceVariant, onClick = {})
+                ToolbarBtn(icon = M3EIcons.PhotoCamera, label = "Chụp ảnh", tint = cs.onSurfaceVariant, onClick = {})
+                ToolbarBtn(icon = M3EIcons.Fullscreen, label = "Toàn màn hình", tint = cs.onSurfaceVariant, onClick = {})
             }
         }
     }
 }
 
 /**
- * Nut toolbar camera: 48x48 squircle radius 22px, nen transparent, icon 24px.
- * Press morph: scale .85 + nen primaryContainer + radius 22->15 (spring).
+ * Nut toolbar camera: 46x46 tron, nen surfaceContainer, icon 22px.
+ * Press: scale .85 (.25s spring) + nen primaryContainer + radius 15px.
  */
 @Composable
 private fun ToolbarBtn(
@@ -423,22 +453,22 @@ private fun ToolbarBtn(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.85f else 1f,
-        animationSpec = tween(300, easing = M3EMotion.spring),
+        animationSpec = tween(250, easing = M3EMotion.spring),
         label = "tbScale",
     )
     val radius by animateDpAsState(
-        targetValue = if (pressed) 15.dp else 22.dp,
+        targetValue = if (pressed) 15.dp else 23.dp, // 50% cua 46dp = tron
         animationSpec = tween(350, easing = M3EMotion.spring),
         label = "tbRadius",
     )
     val bg by animateColorAsState(
-        targetValue = if (pressed) cs.primaryContainer else Color.Transparent,
+        targetValue = if (pressed) cs.primaryContainer else cs.surfaceContainer,
         animationSpec = tween(250),
         label = "tbBg",
     )
     Box(
         Modifier
-            .size(48.dp)
+            .size(46.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -456,7 +486,7 @@ private fun ToolbarBtn(
             icon,
             contentDescription = label,
             tint = tint,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -465,12 +495,11 @@ private fun ToolbarBtn(
 
 @Composable
 private fun RecCard(rec: RecordingUi, onClick: () -> Unit) {
-    val cs = MaterialTheme.colorScheme
     Column(
         Modifier
             .width(132.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(cs.surfaceContainerHighest) // demo .rec: surfaceHighest
+            .background(LocalHumeExtraColors.current.surfaceHighest) // demo .rec: surfaceHighest
             .pressMorph(pressedScale = 0.94f, onClick = onClick) // demo .rec:active scale(.94)
             .padding(8.dp),
     ) {
@@ -525,19 +554,32 @@ private fun SensorGrid(sensors: List<SensorUi>) {
 private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val on = s.isOn
-    // demo .scard: surfaceHighest; .on: errorContainer; .warn.on: tertiaryContainer
-    val bg = when {
-        on && s.warn -> cs.tertiaryContainer
-        on -> cs.errorContainer
-        else -> cs.surfaceContainerHighest
-    }
-    // demo .scard.on .sic: trang 55%; .warn.on chi doi mau icon
-    val iconBg = if (on) Color.White.copy(alpha = 0.55f) else cs.surfaceContainer
-    val iconTint = when {
-        on && s.warn -> cs.onTertiaryContainer
-        on -> cs.onErrorContainer
-        else -> cs.onSurfaceVariant
-    }
+    // demo .scard: surfaceHighest; .on: errorContainer; .warn.on: tertiaryContainer;
+    // transition background .3s
+    val bg by animateColorAsState(
+        targetValue = when {
+            on && s.warn -> cs.tertiaryContainer
+            on -> cs.errorContainer
+            else -> LocalHumeExtraColors.current.surfaceHighest
+        },
+        animationSpec = tween(300),
+        label = "scBg",
+    )
+    // demo .scard.on .sic: trang 55%; .warn.on chi doi mau icon; transition .3s
+    val iconBg by animateColorAsState(
+        targetValue = if (on) Color.White.copy(alpha = 0.55f) else cs.surfaceContainer,
+        animationSpec = tween(300),
+        label = "scIconBg",
+    )
+    val iconTint by animateColorAsState(
+        targetValue = when {
+            on && s.warn -> cs.onTertiaryContainer
+            on -> cs.onErrorContainer
+            else -> cs.onSurfaceVariant
+        },
+        animationSpec = tween(300),
+        label = "scIconTint",
+    )
     val nameColor = when {
         on && s.warn -> cs.onTertiaryContainer
         on -> cs.onErrorContainer
@@ -572,6 +614,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                 MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
             }
             Spacer(Modifier.height(10.dp))
+            // demo .srow: margin-top 2px
+            Spacer(Modifier.height(2.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -678,7 +722,14 @@ private fun ClipOverlay(label: String, onClose: () -> Unit) {
                         modifier = Modifier.size(72.dp),
                     )
                 }
-                Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                // demo .ct: margin-bottom 12px (gap 18 + 12 = 30px toi nut)
+                Text(
+                    label,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
                 Text(
                     "Đóng",
                     color = Color.White,

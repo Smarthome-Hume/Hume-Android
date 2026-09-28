@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +44,7 @@ import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
@@ -108,7 +108,7 @@ fun M3ERootScreen(
 
 /**
  * Navbar M3E theo demo v4 (.nav/.navit): FLOATING — cach 2 canh 16dp,
- * cach day 20dp, bo 34dp, nen surfaceContainerLowest 82% + shadow;
+ * cach day 20dp, bo 34dp, nen surfaceLowest 82% + shadow;
  * item chon highlight TOAN O primaryContainer (khong pill tach roi),
  * icon outlined (scale 1.12 khi chon), label dam khi chon;
  * neighbor-press: item dang nhan no rong (spring), 2 item ke co lai;
@@ -121,8 +121,9 @@ private fun M3ENavBar(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     val pill = RoundedCornerShape(34.dp)
-    val np = rememberNeighborPress(navItems.size)
+    val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
     Box(
         modifier
@@ -132,12 +133,11 @@ private fun M3ENavBar(
         contentAlignment = Alignment.BottomCenter,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .shadow(8.dp, pill)
+                .shadow(12.dp, pill)
                 .clip(pill)
-                .background(cs.surfaceContainerLowest.copy(alpha = 0.82f))
+                .background(extra.surfaceLowest.copy(alpha = 0.82f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->

@@ -15,16 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -41,7 +37,7 @@ fun <T> M3EConnectedButtonGroup(
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
     label: (T) -> String = { it.toString() },
-    icon: ((T) -> ImageVector)? = null,
+    icon: ((T) -> String)? = null,
 ) {
     val pill = RoundedCornerShape(50)
     Row(
@@ -68,22 +64,22 @@ fun <T> M3EConnectedButtonGroup(
                     enter = fadeIn() + scaleIn(),
                     exit = fadeOut() + scaleOut(),
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    MsIcon(
+                        M3EIcons.Check,
+                        null,
                         modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                 }
                 icon?.let {
-                    Icon(
-                        imageVector = it(opt),
-                        contentDescription = null,
-                        tint = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    MsIcon(
+                        it(opt),
+                        null,
                         modifier = Modifier
                             .size(20.dp)
                             .padding(end = 4.dp),
+                        tint = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(

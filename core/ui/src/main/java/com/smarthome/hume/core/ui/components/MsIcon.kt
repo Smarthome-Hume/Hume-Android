@@ -131,4 +131,8 @@ object Ms {
     val weekend = "\uE16B"
     val whatshot = "\uE80E"
     val wifi = "\uE63E"
+    val remote_gen = "\uE83E"
+    val snowflake = "\uF16F"
+    val lock_open = "\uE898"
+    val door_open = "\uE77C"
 }

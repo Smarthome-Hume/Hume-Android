@@ -129,6 +129,7 @@ class HomeViewModel(
     fun openNotif(v: Boolean) = _ui.update { it.copy(notifOpen = v) }
     fun openLights(v: Boolean) = _ui.update { it.copy(lightsOpen = v) }
     fun toggleSecurity() = _ui.update { it.copy(securityExpanded = !it.securityExpanded) }
+    fun collapseSecurity() = _ui.update { it.copy(securityExpanded = false) }
     fun showSnack(msg: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) =
         _ui.update { it.copy(snackbar = Snack(msg, actionLabel, onAction)) }
     fun clearSnack() = _ui.update { it.copy(snackbar = null) }

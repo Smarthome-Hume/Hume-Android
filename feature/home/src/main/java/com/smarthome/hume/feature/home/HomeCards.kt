@@ -1,7 +1,6 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +50,7 @@ import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 
@@ -75,20 +74,21 @@ fun HomeHeader(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 8.dp, bottom = 2.dp, start = 2.dp, end = 2.dp),
     ) {
-        // Avatar 55px + presence dot
+        // .hava 55px surfaceHighest + .pdot 16px + vien ngoai 3px = 22px
         Box(Modifier.size(55.dp)) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
-                    .background(cs.surfaceContainerHighest),
+                    .background(extra.surfaceHighest),
             ) {
                 MsIcon(
                     M3EIcons.Person, null,
@@ -97,16 +97,25 @@ fun HomeHeader(
                 )
             }
             Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(16.dp)
+                    .size(22.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF22C55E))
-                    .border(3.dp, cs.surface, CircleShape),
-            )
+                    .background(cs.surface),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF22C55E)),
+                )
+            }
         }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
+        Spacer(Modifier.width(10.dp))
+        Column(
+            Modifier.weight(1f),
+        ) {
             val name = state.userName.ifBlank { "Gia đình" }
             Text(
                 text = "Hi, $name",
@@ -125,13 +134,14 @@ fun HomeHeader(
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        // Nut tim kiem tron 46px
+        // Nut tim kiem tron 46px, nen surfaceHighest, icon 22px
+        Spacer(Modifier.width(10.dp))
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(46.dp)
                 .clip(CircleShape)
-                .background(cs.surfaceContainerHighest)
+                .background(extra.surfaceHighest)
                 .pressMorph(pressedScale = 0.88f, onClick = onSearch),
         ) {
             MsIcon(
@@ -148,7 +158,7 @@ fun HomeHeader(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
-                    .background(cs.surfaceContainerHighest)
+                    .background(extra.surfaceHighest)
                     .pressMorph(pressedScale = 0.88f, onClick = onNotif),
             ) {
                 MsIcon(
@@ -185,7 +195,10 @@ fun HomeHeader(
  * The goi y theo demo rev12 (.suggest/.sgbtn): padding 16px 18px,
  * icon auto_awesome 30px co dinh, tieu de 14px/700, sub 12px/500,
  * nut 13px/700 padding 12px 20px bo 20px, :active scale(.9) + bo 13px spring.
- * Nhan nut: rung nhe + goi onTipAction + chuyen "Da xong" (disabled).
+ * Noi dung theo dieu kien thuc te (pin thap / cua mo / nang to);
+ * mac dinh (khong co dieu kien) hien noi dung demo "Trời đang nóng dần".
+ * Nhan nut: rung nhe + goi onTipAction(key) + chuyen trang thai .done
+ * (nen surfaceContainerHigh, chu onSurfaceVariant).
  */
 @Composable
 fun SuggestCard(
@@ -205,8 +218,8 @@ fun SuggestCard(
             "ac", "Trời đang nắng to",
             "Bật điều hoà phòng khách 26°?", "Bật"))
     }
-    if (tips.isEmpty()) return
-    val tip = tips.first()
+    val tip = tips.firstOrNull() ?: Tip(
+        "ac", "Trời đang nóng dần", "Bật điều hoà phòng khách 26°?", "Bật")
     var done by remember(tip.key) { mutableStateOf(false) }
     val haptic = rememberHaptic()
     val cs = MaterialTheme.colorScheme
@@ -245,7 +258,6 @@ fun SuggestCard(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .alpha(if (done) 0.6f else 1f)
                     .pressMorphCard(
                         pressedScale = 0.9f,
                         corner = 20.dp,
@@ -258,11 +270,13 @@ fun SuggestCard(
                             }
                         },
                     )
+                    // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
+                    .alpha(if (done) 0.6f else 1f)
                     .background(cs.onTertiaryContainer)
                     .padding(horizontal = 20.dp, vertical = 12.dp),
             ) {
                 Text(
-                    if (done) "Đã xong" else tip.action,
+                    if (done) "Đã bật" else tip.action,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = cs.tertiaryContainer,
@@ -332,7 +346,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
                 )
             }
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(14.dp)) // .stop mb 6 + .solsvg mt 8
         if (vals.isNotEmpty()) {
             SolarBars(
                 vals = vals,
@@ -351,7 +365,9 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 
 /**
  * Bieu do cot mo phong SVG demo: viewBox 320x150, PT=14, PB=10, bw=30,
- * maxV=7 CO DINH. Cot hom nay = primary, cac ngay khac = primaryContainer.
+ * maxV=7 CO DINH. SVG width:100% nen toa do X scale theo be rong thuc te
+ * (sx = w/320); Y giu nguyen vi cao co dinh 150dp.
+ * Cot hom nay = primary, cac ngay khac = primaryContainer.
  * Cham cot hien tooltip "T2: 4.2 kWh" (surfaceContainerHigh, bo 12px).
  */
 @Composable
@@ -372,17 +388,19 @@ private fun SolarBars(
             .height(150.dp),
     ) {
         val w = maxWidth
-        // X(i) = 20 + i*(280/6); Y(v) = 14 + 126*(1 - v/7)  (don vi dp)
-        fun x(i: Int): androidx.compose.ui.unit.Dp = 20.dp + i * (280.dp / 6)
+        val sx = w / 320.dp
+        // X(i) = 20 + i*(280/6) (don vi viewBox) -> nhan sx ra dp thuc te
+        fun x(i: Int): androidx.compose.ui.unit.Dp = (20f + i * (280f / 6f)).dp * sx
         fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxV).coerceIn(0f, 1f))
+        val bw = 30.dp * sx
         shown.forEachIndexed { i, v ->
             val today = i == shown.lastIndex
             val top = y(v)
             val h = (140.dp - top).coerceAtLeast(4.dp)
             Box(
                 modifier = Modifier
-                    .offset(x = x(i) - 15.dp, y = top)
-                    .width(30.dp)
+                    .offset(x = x(i) - bw / 2, y = top)
+                    .width(bw)
                     .height(h)
                     .clip(RoundedCornerShape(50))
                     .background(if (today) cs.primary else cs.primaryContainer)

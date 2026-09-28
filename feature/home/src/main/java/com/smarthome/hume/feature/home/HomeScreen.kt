@@ -11,6 +11,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,11 +35,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarData
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -99,10 +100,24 @@ fun HomeScreen(
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(
-                snack,
-                modifier = Modifier.padding(bottom = 18.dp),
-            ) { data -> M3ESnackbar(data) }
+            // .snack{left:16;right:16;bottom:104}: slot nam ngay tren navbar
+            // (~100dp) nen padding bottom 4dp de cach navbar 4px nhu demo;
+            // vao: fade .25s + translateY(16->0) .35s; ra: nguoc lai.
+            var lastData by remember { mutableStateOf<SnackbarData?>(null) }
+            val current by snack.currentSnackbarData
+            if (current != null) lastData = current
+            AnimatedVisibility(
+                visible = current != null,
+                enter = fadeIn(tween(250)) + slideInVertically(
+                    tween(350, easing = M3EMotion.emphasized),
+                ) { 16.dp.roundToPx() },
+                exit = fadeOut(tween(250)) + slideOutVertically(
+                    tween(350, easing = M3EMotion.emphasizedAcc),
+                ) { 16.dp.roundToPx() },
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+            ) {
+                lastData?.let { M3ESnackbar(it) }
+            }
         },
         containerColor = cs.surface,
         modifier = modifier.fillMaxSize(),
@@ -125,41 +140,71 @@ fun HomeScreen(
                     contentPadding = PaddingValues(
                         start = 18.dp, end = 18.dp, top = 4.dp, bottom = 170.dp,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    // Nhịp margin-collapse theo CSS (khong spacedBy):
+                    // card->card 14; pills->sec 20; sec->card 12
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     item {
-                        RiseIn(20) {
-                            HomeHeader(
-                                state = state,
-                                onSearch = { viewModel.openSearch(true) },
-                                onNotif = { viewModel.openNotif(true) },
-                            )
+                        Column(Modifier.padding(bottom = 14.dp)) {
+                            RiseIn(20) {
+                                HomeHeader(
+                                    state = state,
+                                    onSearch = { viewModel.openSearch(true) },
+                                    onNotif = { viewModel.openNotif(true) },
+                                )
+                            }
                         }
                     }
                     item {
-                        RiseIn(140) {
-                            PillsRow(
-                                alarm = state.alarm,
-                                lightsOnCount = state.lightsOn.size,
-                                onArm = { mode, label -> viewModel.armAlarm(mode, label) },
-                                onDisarm = { viewModel.disarmAlarm() },
-                                onLights = { viewModel.openLights(true) },
-                            )
+                        Column(Modifier.padding(bottom = 20.dp)) {
+                            RiseIn(140) {
+                                PillsRow(
+                                    alarm = state.alarm,
+                                    lightsOnCount = state.lightsOn.size,
+                                    securityExpanded = ui.securityExpanded,
+                                    onToggleSecurity = { viewModel.toggleSecurity() },
+                                    onAutoCollapse = { viewModel.collapseSecurity() },
+                                    onArm = { mode, label -> viewModel.armAlarm(mode, label) },
+                                    onDisarm = { viewModel.disarmAlarm() },
+                                    onLights = { viewModel.openLights(true) },
+                                )
+                            }
                         }
                     }
-                    item { RiseIn(155) { SectionTitle("Gợi ý cho bạn") } }
                     item {
-                        RiseIn(165) {
-                            SuggestCard(state, onTipAction = { key ->
-                                if (key == "ac") viewModel.ac26()
-                            })
+                        Column(Modifier.padding(bottom = 12.dp)) {
+                            RiseIn(155) { SectionTitle("Gợi ý cho bạn") }
                         }
                     }
-                    item { RiseIn(200) { SolarWeekCard(state) } }
-                    item { RiseIn(220) { SolarLiveCard(state) } }
-                    item { RiseIn(240) { BatteryCard(state.battery) } }
-                    item { RiseIn(340) { SectionTitle("Phòng") } }
+                    item {
+                        Column(Modifier.padding(bottom = 14.dp)) {
+                            RiseIn(165) {
+                                SuggestCard(state, onTipAction = { key ->
+                                    if (key == "ac") viewModel.ac26()
+                                })
+                            }
+                        }
+                    }
+                    item {
+                        Column(Modifier.padding(bottom = 14.dp)) {
+                            RiseIn(200) { SolarWeekCard(state) }
+                        }
+                    }
+                    item {
+                        Column(Modifier.padding(bottom = 14.dp)) {
+                            RiseIn(220) { SolarLiveCard(state) }
+                        }
+                    }
+                    item {
+                        Column(Modifier.padding(bottom = 20.dp)) {
+                            RiseIn(240) { BatteryCard(state.battery) }
+                        }
+                    }
+                    item {
+                        Column(Modifier.padding(bottom = 12.dp)) {
+                            RiseIn(340) { SectionTitle("Phòng") }
+                        }
+                    }
                     item {
                         RoomGrid(
                             rooms = state.rooms,
@@ -168,7 +213,6 @@ fun HomeScreen(
                             onToggleLight = { viewModel.toggle(it) },
                         )
                     }
-                    item { Spacer(Modifier.height(8.dp)) }
                 }
 
                 // Scrim khi mo FAB (.fabscrim)
@@ -258,7 +302,8 @@ fun HomeScreen(
     }
 }
 
-/** h3 section title theo demo (.sec h3): 16px/700/-0.1px, margin 20px 4px 10px. */
+/** h3 section title theo demo (.sec h3): 16px/700/-0.1px, margin 20px 4px 10px
+ * (margin-top 20px duoc hap thu vao bottom cua item truoc; bottom de thanh 12px). */
 @Composable
 private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
@@ -267,7 +312,7 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         fontWeight = FontWeight.Bold,
         letterSpacing = (-0.1).sp,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(top = 20.dp, bottom = 10.dp, start = 4.dp, end = 4.dp),
+        modifier = modifier.padding(start = 4.dp, end = 4.dp),
     )
 }
 
@@ -323,8 +368,8 @@ private fun BoxScope.MorphLoaderIndicator(
 }
 
 /**
- * Snackbar tonal theo demo (.snack): surfaceContainerHigh + chu onSurface +
- * action primary, bo 20dp. Vi tri bottom 104px (Scaffold slot + padding 18dp).
+ * Snackbar tonal theo demo (.snack): surfaceContainerHigh + chu onSurface 14/500 +
+ * action primary 14/700, bo 20dp, min-height 48, padding 6/6/6/18.
  */
 @Composable
 private fun M3ESnackbar(data: SnackbarData) {
@@ -333,14 +378,16 @@ private fun M3ESnackbar(data: SnackbarData) {
         shape = RoundedCornerShape(20.dp),
         color = cs.surfaceContainerHigh,
         shadowElevation = 6.dp,
+        modifier = Modifier.heightIn(min = 48.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            modifier = Modifier.padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
         ) {
             Text(
                 data.visuals.message,
                 fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),
             )
@@ -355,7 +402,7 @@ private fun M3ESnackbar(data: SnackbarData) {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                         ) { data.performAction() }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                 )
             }
         }
@@ -406,9 +453,9 @@ private fun EcoDialog(
                     animationSpec = tween(400, easing = M3EMotion.spring),
                     initialScale = 0.92f,
                 ),
-            exit = fadeOut(tween(200)) +
+            exit = fadeOut(tween(250)) +
                 scaleOut(
-                    animationSpec = tween(250, easing = M3EMotion.emphasizedAcc),
+                    animationSpec = tween(400, easing = M3EMotion.spring),
                     targetScale = 0.92f,
                 ),
         ) {
