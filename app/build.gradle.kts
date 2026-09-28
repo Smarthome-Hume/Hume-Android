@@ -63,5 +63,15 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
+    // M3E modules (nhanh feat/m3e-dashboard): UI + data tach theo Clean Architecture.
+    implementation(project(":core:ui"))
+    implementation(project(":core:model"))
+    implementation(project(":core:data"))
+    implementation(project(":core:network"))
+    implementation(project(":core:datastore"))
+    implementation(project(":feature:home"))
+    implementation(project(":feature:energy"))
+    implementation(project(":feature:security"))
+    implementation(project(":feature:me"))
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
