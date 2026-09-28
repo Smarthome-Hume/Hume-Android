@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -57,6 +58,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,6 +123,8 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .padding(top = 8.dp)
                 .padding(horizontal = 18.dp)
                 .padding(bottom = 100.dp),
         ) {
@@ -537,43 +541,48 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(26.dp))
             .background(bg),
     ) {
-        // Layout moi: 1 hang [icon | ten+time | status]
-        // - Ten + time cung hang voi icon
-        // - Status chip o giua hang (can giua doc)
-        Row(
+        // Layout 2 hang theo yeu cau:
+        // - Hang 1: [icon 44.dp | Column(name 13.sp Bold + time 11.sp, weight 1f)]
+        // - Hang 2: status chip doc lap mot dong o duoi cung (full width, can giua)
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(iconBg),
-                contentAlignment = Alignment.Center,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    s.name,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = nameColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    s.lastChange,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (on) nameColor.copy(alpha = 0.75f) else cs.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(iconBg),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        s.name,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = nameColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        s.lastChange,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (on) nameColor.copy(alpha = 0.75f) else cs.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px;
             // .on (ke ca warn): nen error chu trang
@@ -582,8 +591,10 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.8.sp,
+                textAlign = TextAlign.Center,
                 color = if (on) Color.White else cs.onSurfaceVariant,
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(CircleShape)
                     .background(if (on) cs.error else cs.surfaceContainer)
                     .padding(horizontal = 12.dp, vertical = 6.dp),

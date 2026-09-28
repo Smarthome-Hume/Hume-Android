@@ -151,12 +151,17 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     t.name,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
                 )
                 Text(
                     "${String.format("%.1f", t.kw)} kW",

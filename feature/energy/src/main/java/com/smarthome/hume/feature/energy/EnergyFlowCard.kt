@@ -66,19 +66,19 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val VB_W = 360f
-private const val VB_H = 340f
+private const val VB_H = 348f
 
 private fun prodPath() = Path().apply {
-    moveTo(124f, 50f); lineTo(146f, 50f); quadraticTo(162f, 50f, 162f, 66f); lineTo(162f, 134f)
+    moveTo(138f, 55f); lineTo(148f, 55f); quadraticTo(164f, 55f, 164f, 71f); lineTo(164f, 140f)
 }
 private fun gridPath() = Path().apply {
-    moveTo(198f, 134f); lineTo(198f, 66f); quadraticTo(198f, 50f, 214f, 50f); lineTo(236f, 50f)
+    moveTo(196f, 140f); lineTo(196f, 71f); quadraticTo(196f, 55f, 212f, 55f); lineTo(222f, 55f)
 }
 private fun consPath() = Path().apply {
-    moveTo(162f, 202f); lineTo(162f, 274f); quadraticTo(162f, 290f, 146f, 290f); lineTo(124f, 290f)
+    moveTo(164f, 208f); lineTo(164f, 273f); quadraticTo(164f, 289f, 148f, 289f); lineTo(138f, 289f)
 }
 private fun battPath() = Path().apply {
-    moveTo(198f, 202f); lineTo(198f, 274f); quadraticTo(198f, 290f, 214f, 290f); lineTo(236f, 290f)
+    moveTo(196f, 208f); lineTo(196f, 273f); quadraticTo(196f, 289f, 212f, 289f); lineTo(222f, 289f)
 }
 
 /** Toc do sweep (demo): 18/v giay, clamp 4-14s — v la kW. */
@@ -217,8 +217,8 @@ private fun FlowArea(
 
         FlowTracks(flow = flow, charging = charging)
 
-        // nodes: 118x132px trong viewBox 360x340, cach ria 6px
-        val nw = fx(118f); val nh = fy(132f)
+        // nodes: 132x140px trong viewBox 360x348, cach ria 6px
+        val nw = fx(132f); val nh = fy(140f)
         FlowNode(
             icon = M3EIcons.SolarPower,
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
@@ -248,7 +248,7 @@ private fun FlowArea(
             label = "Lưới điện", valueKw = flow.gridKw,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(VB_W - 6f - 118f), fy(6f)),
+                .offset(fx(VB_W - 6f - 132f), fy(6f)),
         )
         FlowNode(
             icon = M3EIcons.Home,
@@ -257,7 +257,7 @@ private fun FlowArea(
             label = "Tiêu thụ", valueKw = flow.consKw,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(6f), fy(VB_H - 6f - 132f)),
+                .offset(fx(6f), fy(VB_H - 6f - 140f)),
         ) {
             SegLegend(
                 listOf("CB1" to MaterialTheme.colorScheme.primary,
@@ -284,7 +284,7 @@ private fun FlowArea(
             badgeFg = battFg,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(VB_W - 6f - 118f), fy(VB_H - 6f - 132f)),
+                .offset(fx(VB_W - 6f - 132f), fy(VB_H - 6f - 140f)),
             onClick = { vm.toggleBattFlow() },
         ) {
             Row(
@@ -361,7 +361,7 @@ private fun FlowArea(
         Box(
             modifier = Modifier
                 .size(hub)
-                .offset(fx(VB_W / 2 - 32f), fy(VB_H * 0.494f - 32f)),
+                .offset(fx(VB_W / 2 - 32f), fy(VB_H / 2 - 32f)),
         ) {
             Box(
                 modifier = Modifier

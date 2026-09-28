@@ -106,7 +106,8 @@ fun M3ERootScreen(
 
 /**
  * Navbar M3E theo demo v4 (.nav/.navit): FLOATING — cach 2 canh 16dp,
- * cach day 20dp, bo 34dp, nen surfaceLowest 82% + shadow;
+ * cach day 20dp, bo 34dp, nen surfaceLowest 98% + shadow (gan nhu dac,
+ * M3E khong co thiet ke trong suot);
  * item chon highlight TOAN O primaryContainer (khong pill tach roi),
  * icon outlined (scale 1.12 khi chon), label dam khi chon;
  * neighbor-press: item dang nhan no rong (spring), 2 item ke co lai;
@@ -135,7 +136,7 @@ private fun M3ENavBar(
             modifier = Modifier
                 .shadow(12.dp, pill)
                 .clip(pill)
-                .background(extra.surfaceLowest.copy(alpha = 0.92f))
+                .background(extra.surfaceLowest.copy(alpha = 0.98f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->

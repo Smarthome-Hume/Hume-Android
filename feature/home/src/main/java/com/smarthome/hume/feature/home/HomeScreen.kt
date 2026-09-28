@@ -24,13 +24,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -100,6 +103,9 @@ fun HomeScreen(
     }
 
     Scaffold(
+        // Loai status bar khoi insets mac dinh cua Scaffold de tu xu ly:
+        // statusBarsPadding() + contentPadding top 8dp = status bar + 8dp.
+        contentWindowInsets = WindowInsets.navigationBars,
         snackbarHost = {
             // .snack{left:16;right:16;bottom:104}: slot nam ngay tren navbar
             // (~100dp) nen padding bottom 4dp de cach navbar 4px nhu demo;
@@ -129,7 +135,7 @@ fun HomeScreen(
             isRefreshing = ui.isRefreshing,
             onRefresh = { viewModel.refresh() },
             state = pullState,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).statusBarsPadding(),
             indicator = {
                 MorphLoaderIndicator(
                     isRefreshing = ui.isRefreshing,
@@ -141,7 +147,7 @@ fun HomeScreen(
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
                     contentPadding = PaddingValues(
-                        start = 18.dp, end = 18.dp, top = 4.dp, bottom = 100.dp,
+                        start = 18.dp, end = 18.dp, top = 8.dp, bottom = 100.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12

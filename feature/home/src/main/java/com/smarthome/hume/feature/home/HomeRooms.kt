@@ -546,7 +546,7 @@ private fun ClimateModeGroup(
                             },
                         )
                     }
-                    .padding(vertical = 14.dp, horizontal = 6.dp),
+                    .padding(horizontal = 6.dp),
             ) {
                 Text(
                     hvacLabels[m] ?: m,
