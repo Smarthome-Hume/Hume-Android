@@ -92,12 +92,6 @@ fun EnergyScreen(
                         ),
                     )
                 }
-                Text(
-                    "Dòng chảy & tiêu thụ thời gian thực",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, top = 6.dp),
-                )
             }
         }
         item {

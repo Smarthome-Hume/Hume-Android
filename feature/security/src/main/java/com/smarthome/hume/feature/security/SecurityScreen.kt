@@ -133,7 +133,7 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                 .statusBarsPadding()
                 .padding(top = 8.dp)
                 .padding(horizontal = 18.dp)
-                .padding(bottom = 110.dp),
+                .padding(bottom = 130.dp),
         ) {
             // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
             Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp)) {
@@ -151,12 +151,6 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                         letterSpacing = (-0.3).sp,
                     )
                 }
-                Text(
-                    "Camera & trạng thái bảo vệ",
-                    fontSize = 13.sp,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, top = 6.dp),
-                )
             }
 
             // Camera picker (demo .esub: margin-bottom 14px; rise .42s)
@@ -496,13 +490,21 @@ private fun SensorGrid(sensors: List<SensorUi>) {
 private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val on = s.isOn
-    // User yeu cau: active KHONG fill ca the nua — the luon surfaceHighest,
-    // chi status pill doi mau (nen rieng). Mau dung theme tokens de dong bo moi theme.
-    val bg = LocalHumeExtraColors.current.surfaceHighest
-    val iconBg by animateColorAsState(
+    // Spec HTML .scard: active = ca the doi mau (errorContainer / tertiaryContainer),
+    // icon bg = trang 55% mo, icon + chu = onErrorContainer, pill = error dac + chu trang.
+    // Inactive: the surfaceHighest, icon/pill = surfaceContainer.
+    val cardBg by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.tertiaryContainer
             on -> cs.errorContainer
+            else -> LocalHumeExtraColors.current.surfaceHighest
+        },
+        animationSpec = tween(300),
+        label = "scCardBg",
+    )
+    val iconBg by animateColorAsState(
+        targetValue = when {
+            on -> androidx.compose.ui.graphics.Color.White.copy(alpha = 0.55f)
             else -> cs.surfaceContainer
         },
         animationSpec = tween(300),
@@ -517,11 +519,30 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
         animationSpec = tween(300),
         label = "scIconTint",
     )
-    // Pill trang thai: nen rieng, doi mau theo active — giong trang thai deactive
+    val nameColor by animateColorAsState(
+        targetValue = when {
+            on && s.warn -> cs.onTertiaryContainer
+            on -> cs.onErrorContainer
+            else -> cs.onSurface
+        },
+        animationSpec = tween(300),
+        label = "scName",
+    )
+    val timeColor by animateColorAsState(
+        targetValue = when {
+            on && s.warn -> cs.onTertiaryContainer.copy(alpha = 0.75f)
+            on -> cs.onErrorContainer.copy(alpha = 0.75f)
+            else -> cs.onSurfaceVariant
+        },
+        animationSpec = tween(300),
+        label = "scTime",
+    )
+    // Pill trang thai: active = nen dac (error/tertiary) + chu trang/onContainer;
+    // inactive = surfaceContainer + onSurfaceVariant (giong HTML .sst).
     val pillBg by animateColorAsState(
         targetValue = when {
-            on && s.warn -> cs.tertiaryContainer
-            on -> cs.errorContainer
+            on && s.warn -> cs.tertiary
+            on -> cs.error
             else -> cs.surfaceContainer
         },
         animationSpec = tween(300),
@@ -529,8 +550,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     )
     val pillText by animateColorAsState(
         targetValue = when {
-            on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
+            on && s.warn -> cs.onTertiary
+            on -> cs.onError
             else -> cs.onSurfaceVariant
         },
         animationSpec = tween(300),
@@ -552,7 +573,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     Box(
         modifier
             .clip(RoundedCornerShape(26.dp))
-            .background(bg),
+            .background(cardBg),
     ) {
         // Layout 2 hang:
         // - Hang 1: [icon 44.dp | Column(name + time, weight 1f)] — ten dai dung marquee
@@ -582,7 +603,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                         s.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = cs.onSurface,
+                        color = nameColor,
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),
                     )
@@ -591,7 +612,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                         s.lastChange,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = cs.onSurfaceVariant,
+                        color = timeColor,
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),
                     )

@@ -229,7 +229,7 @@ private fun FlowArea(
                 .offset(fx(6f), fy(6f)),
         ) {
             val prodTot = flow.prodKw.coerceAtLeast(0.01)
-            MiniBars(
+            SegBar(
                 items = listOf(
                     Triple("PV1", flow.pv1Kw, MaterialTheme.colorScheme.primary),
                     Triple("PV2", flow.pv2Kw, MaterialTheme.colorScheme.tertiary),
@@ -256,7 +256,7 @@ private fun FlowArea(
                 .offset(fx(6f), fy(VB_H - 6f - 160f)),
         ) {
             val tot = (flow.cb1Kw + flow.cb2Kw + flow.cb3Kw).coerceAtLeast(0.01)
-            MiniBars(
+            SegBar(
                 items = listOf(
                     Triple("CB1", flow.cb1Kw, MaterialTheme.colorScheme.primary),
                     Triple("CB2", flow.cb2Kw, MaterialTheme.colorScheme.tertiary),
@@ -526,58 +526,66 @@ private fun FlowNode(
 }
 
 /**
- * Cac thanh progress mong rieng le cho PV1/PV2, CB1/CB2/CB3.
- * Moi thanh: label + value nho, bar mong 4dp.
+ * Segment bar giong HTML .segbar/.segleg: thanh ngang 4dp chia doan theo ty le,
+ * ben duoi la legend cham mau + label (PV1/PV2, CB1/CB2/CB3).
  */
 @Composable
-private fun MiniBars(
+private fun SegBar(
     items: List<Triple<String, Double, Color>>,
     total: Double,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        items.forEach { (name, kw, c) ->
-            val frac by animateFloatAsState(
-                targetValue = (kw / total.coerceAtLeast(0.01)).toFloat().coerceIn(0f, 1f),
-                animationSpec = tween(800, easing = M3EMotion.emphasized),
-                label = "miniBar",
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    name,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    softWrap = false,
+    val cs = MaterialTheme.colorScheme
+    val safeTotal = total.coerceAtLeast(0.01)
+    Column {
+        // Thanh segment: cac doan mau theo ty le, gap 2dp, min-width tuong duong 8px
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(CircleShape)
+                .background(cs.surfaceContainerHigh),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            items.forEach { (_, kw, c) ->
+                val frac by animateFloatAsState(
+                    targetValue = (kw / safeTotal).toFloat().coerceIn(0f, 1f),
+                    animationSpec = tween(800, easing = M3EMotion.emphasized),
+                    label = "segFrac",
                 )
-                Text(
-                    String.format(Locale.US, "%.1f kW", kw),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum"),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(frac)
+                        .weight(frac.coerceAtLeast(0.001f))
                         .height(4.dp)
                         .clip(CircleShape)
                         .background(c),
                 )
+            }
+        }
+        // Legend: cham mau 6dp + label
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items.forEach { (name, _, c) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(c),
+                    )
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(start = 3.dp),
+                    )
+                }
             }
         }
     }

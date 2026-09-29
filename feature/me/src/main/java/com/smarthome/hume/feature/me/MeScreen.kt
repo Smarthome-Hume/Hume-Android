@@ -2,16 +2,19 @@ package com.smarthome.hume.feature.me
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +58,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -123,7 +127,7 @@ fun MeScreen(
             .padding(horizontal = 18.dp)
             .padding(bottom = 100.dp),
     ) {
-        // Title: chi title duoc boc nen (subtitle de ngoai, khong nen)
+        // Title: chi title duoc boc nen
         Column(Modifier.fillMaxWidth()) {
             Box(
                 Modifier
@@ -132,15 +136,9 @@ fun MeScreen(
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
             ) {
-                // demo .phdr h2: 26px/700 ls -.3px ; p: 13px
+                // demo .phdr h2: 26px/700 ls -.3px
                 Text("Thông tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
             }
-            Text(
-                "Đồng bộ, thông báo & hệ thống",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, top = 6.dp),
-            )
         }
 
         Box(Modifier.riseEntrance(500)) { SecTitle("Đồng bộ") }
@@ -453,29 +451,94 @@ private fun RowScope.NButton(
  */
 @Composable
 private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
-    // demo .trow: margin 18px 0 4px, bo 28px, padding 14/16
+    // demo .ac-modes: nen surfaceHighest bo 24dp padding 14dp;
+    // 3 che do moi cai boc nen rieng (surfaceContainer, selected = primaryContainer)
+    // + animation press scale + flex-grow spring giong cum dieu hoa.
+    val cs = MaterialTheme.colorScheme
+    val options = listOf(null, false, true)
+    val labels = listOf("Hệ thống", "Sáng", "Tối")
+    val icons = listOf("settings_suggest", "light_mode", "dark_mode")
     Column(
         Modifier
             .fillMaxWidth()
             .padding(top = 18.dp, bottom = 4.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .background(cs.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text("Chế độ hiển thị", fontSize = 14.sp, fontWeight = FontWeight.Bold)
         Text(
             "Hệ thống = theo cài đặt điện thoại",
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = cs.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(top = 3.dp, bottom = 12.dp),
         )
-        M3EConnectedButtonGroup(
-            options = listOf(null, false, true),
-            selected = mode,
-            onSelect = onSelect,
-            label = { m -> if (m == null) "Hệ thống" else if (m) "Tối" else "Sáng" },
-        )
+        // Cum 3 che do: nen surfaceHighest bo 24, moi option nen rieng
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(LocalHumeExtraColors.current.surfaceHighest)
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEachIndexed { i, opt ->
+                val selected = mode == opt
+                var pressed by remember { mutableStateOf(false) }
+                val bg by animateColorAsState(
+                    if (selected) cs.primaryContainer else cs.surfaceContainer,
+                    tween(300), label = "tmBg",
+                )
+                val fg by animateColorAsState(
+                    if (selected) cs.onPrimaryContainer else cs.onSurfaceVariant,
+                    tween(300), label = "tmFg",
+                )
+                // flex-grow spring: selected/pressed no ra nhu .rmm.press-main
+                val grow by animateFloatAsState(
+                    if (pressed) 1.45f else 1f,
+                    spring(dampingRatio = 0.6f, stiffness = 400f), label = "tmGrow",
+                )
+                val scale by animateFloatAsState(
+                    if (pressed) 0.9f else 1f,
+                    spring(dampingRatio = 0.6f, stiffness = 400f), label = "tmScale",
+                )
+                Box(
+                    Modifier
+                        .weight(grow)
+                        .graphicsLayer { scaleX = scale; scaleY = scale }
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(bg)
+                        .pointerInput(opt) {
+                            detectTapGestures(
+                                onPress = {
+                                    pressed = true
+                                    tryAwaitRelease()
+                                    pressed = false
+                                },
+                                onTap = { onSelect(opt) },
+                            )
+                        }
+                        .padding(vertical = 14.dp, horizontal = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MsIcon(
+                            icons[i], null, tint = fg,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            labels[i],
+                            fontSize = 12.5.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                            color = fg,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
@@ -62,6 +63,7 @@ import com.smarthome.hume.core.model.SolarDay
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
@@ -234,7 +236,8 @@ fun HomeHeader(
                 )
             }
             if (state.notifications.isNotEmpty()) {
-                // Badge: rong co gian theo so chu so (1-2 chu so deu can giua)
+                // Badge: rong co gian theo so chu so (1-2 chu so deu can giua).
+                // lineHeight = fontSize de glyph can giua doc chuan (khong lech do font metrics).
                 val count = state.notifications.size.coerceAtMost(99)
                 Box(
                     contentAlignment = Alignment.Center,
@@ -250,10 +253,12 @@ fun HomeHeader(
                     Text(
                         "$count",
                         fontSize = 11.sp,
+                        lineHeight = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -483,7 +488,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(14.dp)) // .stop mb 6 + .solsvg mt 8
         // Chi ve chart khi co data that (>0); khong thi placeholder gon, tranh 150dp trang
         if (vals.isNotEmpty() && vals.any { it > 0f }) {
-            SolarBars(
+            WeekChartD(
                 vals = vals,
                 labels = week.map { it.label },
             )
@@ -498,98 +503,6 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 }
 
 /**
- * Bieu do cot: chieu cao ty le voi gia tri / maxValue cua tuan.
- * Neu maxValue=0 thi cot cao 0 (chi hien cham 4dp toi thieu).
- * Mau cot theo GIA TRI TUONG DOI: today = primary; cac ngay khac =
- * lerp(primaryContainer -> primary, v/maxValue) de nhin ra ngay cao/thap.
- */
-@Composable
-private fun SolarBars(
-    vals: List<Float>,
-    labels: List<String>,
-) {
-    val cs = MaterialTheme.colorScheme
-    var selected by remember { mutableStateOf<Int?>(null) }
-    val shown = vals
-    // maxValue that cua tuan (tranh chia 0)
-    val maxValue = (shown.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp),
-    ) {
-        val w = maxWidth
-        val sx = w / 320.dp
-        // X(i) = 20 + i*(280/6) (don vi viewBox) -> nhan sx ra dp thuc te
-        fun x(i: Int): androidx.compose.ui.unit.Dp = (20f + i * (280f / 6f)).dp * sx
-        // Chieu cao = (v / maxValue) * 126dp (vung ve tu y=14 den y=140)
-        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxValue).coerceIn(0f, 1f))
-        val bw = 30.dp * sx
-        shown.forEachIndexed { i, v ->
-            val today = i == shown.lastIndex
-            val top = y(v)
-            val h = (140.dp - top).coerceAtLeast(4.dp)
-            // today: primary dac; ngay khac: dam nhat theo gia tri tuong doi
-            val barColor = if (today) cs.primary
-            else lerp(cs.primaryContainer, cs.primary, (v / maxValue).coerceIn(0f, 1f) * 0.85f)
-            Box(
-                modifier = Modifier
-                    .offset(x = x(i) - bw / 2, y = top)
-                    .width(bw)
-                    .height(h)
-                    .clip(RoundedCornerShape(50))
-                    .background(barColor)
-                    .pointerInput(i) {
-                        detectTapGestures(onTap = {
-                            selected = if (selected == i) null else i
-                        })
-                    },
-            )
-            // Tooltip phia tren cot duoc cham
-            if (selected == i) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = x(i) - 60.dp, y = (top - 40.dp).coerceAtLeast(0.dp))
-                        .width(120.dp)
-                        .heightIn(min = 24.dp)
-                        .shadow(6.dp, RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(cs.surfaceContainerHigh)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} kWh",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = cs.onSurface,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(2.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        labels.forEachIndexed { i, l ->
-            val today = i == labels.lastIndex
-            Text(
-                l,
-                fontSize = 10.5.sp,
-                fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
-                color = if (today) cs.primary else cs.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
 
 /**
  * The nho cong suat dang phat (.solar): tertiaryContainer, bo 32px,
@@ -599,6 +512,13 @@ private fun SolarBars(
 @Composable
 fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
+    // Buffer lich su cong suat PV (tong PV1+PV2 tu sensor.solis_s6_eh1p_total_pv_power_2),
+    // lay mau moi khi solarNowKw thay doi, giu 30 diem gan nhat de ve line realtime.
+    var history by remember { mutableStateOf(listOf<Double>()) }
+    LaunchedEffect(state.solarNowKw) {
+        val v = state.solarNowKw.coerceAtLeast(0.0)
+        history = (history + v).takeLast(30)
+    }
     M3ECard(
         modifier = modifier.fillMaxWidth(),
         containerColor = cs.tertiaryContainer,
@@ -639,6 +559,7 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
                 )
             }
             Sparkline(
+                values = history,
                 color = cs.onTertiaryContainer,
                 modifier = Modifier.size(90.dp, 34.dp),
             )
@@ -646,26 +567,27 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
     }
 }
 
-/** Sparkline mo phong path SVG demo (viewBox 90x34). */
+/** Sparkline ve line that tu lich su cong suat PV (realtime, 30 diem gan nhat). */
 @Composable
-private fun Sparkline(color: Color, modifier: Modifier = Modifier) {
+private fun Sparkline(values: List<Double>, color: Color, modifier: Modifier = Modifier) {
     androidx.compose.foundation.Canvas(modifier = modifier) {
-        val sx = size.width / 90f
-        val sy = size.height / 34f
-        fun X(v: Float) = v * sx
-        fun Y(v: Float) = v * sy
+        if (values.size < 2) return@Canvas
+        val maxV = (values.maxOrNull() ?: 1.0).coerceAtLeast(0.01)
+        val n = values.size
+        val stepX = size.width / (n - 1).coerceAtLeast(1)
         val path = Path().apply {
-            moveTo(X(2f), Y(28f))
-            cubicTo(X(15f), Y(26f), X(20f), Y(12f), X(32f), Y(14f))
-            // S 50 26, 62 18: phan xa (20,12) qua (32,14) -> (44,16)
-            cubicTo(X(44f), Y(16f), X(50f), Y(26f), X(62f), Y(18f))
-            // S 80 6, 88 8: phan xa (50,26) qua (62,18) -> (74,10)
-            cubicTo(X(74f), Y(10f), X(80f), Y(6f), X(88f), Y(8f))
+            values.forEachIndexed { i, v ->
+                val x = i * stepX
+                // y dao nguoc: gia tri cao -> len tren; padding 2px tren/duoi
+                val y = size.height - 2.dp.toPx() -
+                    (v / maxV).toFloat() * (size.height - 4.dp.toPx())
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
         }
         drawPath(
             path = path,
             color = color,
-            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+            style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }
 }

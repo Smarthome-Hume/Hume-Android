@@ -58,6 +58,7 @@ import com.smarthome.hume.core.model.EnergyWeekPoint
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -111,39 +112,42 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-week", 420, risePlayed),
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 "Năng lượng sử dụng",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    kwh1(todayVal),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.3).sp,
-                    color = cs.onSurface,
-                    modifier = Modifier.alignByBaseline(),
-                )
-                Text(
-                    "kWh",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(start = 4.dp)
-                        .alignByBaseline(),
-                )
-            }
+            Text(
+                kwh1(todayVal),
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.3).sp,
+                color = cs.onSurface,
+                modifier = Modifier.alignByBaseline(),
+            )
+            Text(
+                "kWh",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .alignByBaseline(),
+            )
         }
         Spacer(Modifier.height(14.dp))
         val vals = state.week.map { if (it.isToday) todayVal.toFloat() else it.kwh.toFloat() }
         val labels = state.week.map { if (it.isToday) "HN" else it.label }
         if (vals.isNotEmpty()) {
-            ConsBars(vals = vals, labels = labels)
+            WeekChartD(vals = vals, labels = labels)
         } else {
             Text(
                 "Đang tải dữ liệu…",
@@ -154,91 +158,6 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     }
 }
 
-/**
- * Bieu do cot giong SolarWeekCard: chieu cao ty le value/max,
- * mau lerp theo gia tri tuong doi, an vao cot hien tooltip.
- */
-@Composable
-private fun ConsBars(
-    vals: List<Float>,
-    labels: List<String>,
-) {
-    val cs = MaterialTheme.colorScheme
-    var selected by remember { mutableStateOf<Int?>(null) }
-    val maxValue = (vals.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp),
-    ) {
-        val w = maxWidth
-        val sx = w / 320.dp
-        fun x(i: Int): androidx.compose.ui.unit.Dp = (20f + i * (280f / 6f)).dp * sx
-        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxValue).coerceIn(0f, 1f))
-        val bw = 30.dp * sx
-        vals.forEachIndexed { i, v ->
-            val today = i == vals.lastIndex
-            val top = y(v)
-            val h = (140.dp - top).coerceAtLeast(4.dp)
-            val barColor = if (today) cs.primary
-            else lerp(cs.primaryContainer, cs.primary, (v / maxValue).coerceIn(0f, 1f) * 0.85f)
-            Box(
-                modifier = Modifier
-                    .offset(x = x(i) - bw / 2, y = top)
-                    .width(bw)
-                    .height(h)
-                    .clip(RoundedCornerShape(50))
-                    .background(barColor)
-                    .pointerInput(i) {
-                        detectTapGestures(onTap = {
-                            selected = if (selected == i) null else i
-                        })
-                    },
-            )
-            if (selected == i) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = x(i) - 60.dp, y = (top - 40.dp).coerceAtLeast(0.dp))
-                        .width(120.dp)
-                        .heightIn(min = 24.dp)
-                        .shadow(6.dp, RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(cs.surfaceContainerHigh)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} kWh",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = cs.onSurface,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(2.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        labels.forEachIndexed { i, l ->
-            val today = i == labels.lastIndex
-            Text(
-                l,
-                fontSize = 10.5.sp,
-                fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
-                color = if (today) cs.primary else cs.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
 
 // ---------- 2. Chi phi dien ----------
 
