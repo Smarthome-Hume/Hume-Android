@@ -492,71 +492,43 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     // Spec HTML .scard: active = ca the doi mau (errorContainer / tertiaryContainer),
     // icon bg = trang 55% mo, icon + chu = onErrorContainer, pill = error dac + chu trang.
     // Inactive: the surfaceHighest, icon/pill = surfaceContainer.
-    // Doi mau theo theme (khong fix cung).
-    val cardBg by animateColorAsState(
-        targetValue = when {
-            on && s.warn -> cs.tertiaryContainer
-            on -> cs.errorContainer
-            else -> LocalHumeExtraColors.current.surfaceHighest
-        },
-        animationSpec = tween(300),
-        label = "scCardBg",
-    )
-    val iconBg by animateColorAsState(
-        targetValue = when {
-            on -> androidx.compose.ui.graphics.Color.White.copy(alpha = 0.55f)
-            else -> cs.surfaceContainer
-        },
-        animationSpec = tween(300),
-        label = "scIconBg",
-    )
-    val iconTint by animateColorAsState(
-        targetValue = when {
-            on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
-            else -> cs.onSurfaceVariant
-        },
-        animationSpec = tween(300),
-        label = "scIconTint",
-    )
-    val nameColor by animateColorAsState(
-        targetValue = when {
-            on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
-            else -> cs.onSurface
-        },
-        animationSpec = tween(300),
-        label = "scName",
-    )
-    val timeColor by animateColorAsState(
-        targetValue = when {
-            on && s.warn -> cs.onTertiaryContainer.copy(alpha = 0.75f)
-            on -> cs.onErrorContainer.copy(alpha = 0.75f)
-            else -> cs.onSurfaceVariant
-        },
-        animationSpec = tween(300),
-        label = "scTime",
-    )
+    // Doi mau theo theme (khong fix cung, khong animation de tranh loi).
+    val cardBg = when {
+        on && s.warn -> cs.tertiaryContainer
+        on -> cs.errorContainer
+        else -> LocalHumeExtraColors.current.surfaceHighest
+    }
+    val iconBg = when {
+        on -> androidx.compose.ui.graphics.Color.White.copy(alpha = 0.55f)
+        else -> cs.surfaceContainer
+    }
+    val iconTint = when {
+        on && s.warn -> cs.onTertiaryContainer
+        on -> cs.onErrorContainer
+        else -> cs.onSurfaceVariant
+    }
+    val nameColor = when {
+        on && s.warn -> cs.onTertiaryContainer
+        on -> cs.onErrorContainer
+        else -> cs.onSurface
+    }
+    val timeColor = when {
+        on && s.warn -> cs.onTertiaryContainer.copy(alpha = 0.75f)
+        on -> cs.onErrorContainer.copy(alpha = 0.75f)
+        else -> cs.onSurfaceVariant
+    }
     // Pill trang thai: active = nen dac (error/tertiary) + chu trang/onContainer;
     // inactive = surfaceContainer + onSurfaceVariant (giong HTML .sst).
-    val pillBg by animateColorAsState(
-        targetValue = when {
-            on && s.warn -> cs.tertiary
-            on -> cs.error
-            else -> cs.surfaceContainer
-        },
-        animationSpec = tween(300),
-        label = "scPillBg",
-    )
-    val pillText by animateColorAsState(
-        targetValue = when {
-            on && s.warn -> cs.onTertiary
-            on -> cs.onError
-            else -> cs.onSurfaceVariant
-        },
-        animationSpec = tween(300),
-        label = "scPillText",
-    )
+    val pillBg = when {
+        on && s.warn -> cs.tertiary
+        on -> cs.error
+        else -> cs.surfaceContainer
+    }
+    val pillText = when {
+        on && s.warn -> cs.onTertiary
+        on -> cs.onError
+        else -> cs.onSurfaceVariant
+    }
     val chipLabel = when (s.kind) {
         SensorKind.Door -> if (on) "MỞ" else "ĐÓNG"
         SensorKind.Motion -> if (on) "PHÁT HIỆN" else "TRỐNG"
