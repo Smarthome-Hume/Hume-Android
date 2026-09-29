@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -25,10 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -156,13 +152,12 @@ fun AvatarViewerDialog(
 }
 
 /**
- * Video phong to trong khung tron: lap lai, tat tieng.
- * Nhan vao hinh tron de tam dung / phat tiep.
+ * Video phong to trong khung tron: lap lai vo han, tat tieng.
+ * Chi de ngam hieu ung phong dai - khong co tuong tac tam dung/phat.
  */
 @Composable
 private fun MagnifiedVideoAvatar(file: File) {
     val context = LocalContext.current
-    var playing by remember { mutableStateOf(true) }
     val player = remember(file) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
@@ -173,37 +168,15 @@ private fun MagnifiedVideoAvatar(file: File) {
         }
     }
     DisposableEffect(file) { onDispose { player.release() } }
-    LaunchedEffect(playing) { player.playWhenReady = playing }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .clickable { playing = !playing },
-    ) {
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    this.player = player
-                    useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
-        if (!playing) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = "Phát",
-                    tint = Color.White,
-                    modifier = Modifier.size(64.dp),
-                )
+    AndroidView(
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                this.player = player
+                useController = false
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
             }
-        }
-    }
+        },
+        modifier = Modifier.fillMaxSize(),
+    )
 }
