@@ -597,6 +597,7 @@ fun SuggestCard(
                 SuggestTipRow(
                     tip = tip,
                     done = doneMap[tip.key] == true,
+                    batterySoc = state.battery.soc,
                     onAction = {
                         haptic()
                         when {
@@ -708,17 +709,28 @@ private fun SuggestTipRow(
     tip: SuggestTip,
     done: Boolean,
     onAction: () -> Unit,
+    /** % pin de hien icon pin dung muc (cho tip pin yeu). */
+    batterySoc: Int? = null,
 ) {
     val cs = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 2.dp),
     ) {
-        MsIcon(
-            Ms.auto_awesome, null,
-            tint = cs.onTertiaryContainer,
-            modifier = Modifier.size(30.dp),
-        )
+        // Tip pin yeu: icon pin theo muc % (2026-09-30, user yeu cau).
+        if (tip.key == "battery" && batterySoc != null) {
+            MsIcon(
+                M3EIcons.batteryLevel(batterySoc), null,
+                tint = cs.onTertiaryContainer,
+                modifier = Modifier.size(30.dp),
+            )
+        } else {
+            MsIcon(
+                Ms.auto_awesome, null,
+                tint = cs.onTertiaryContainer,
+                modifier = Modifier.size(30.dp),
+            )
+        }
         // Viewport marquee keo dai den sat mep icon (bo Spacer): chu chay
         // den mep icon moi an; luc nghi chu van dung yen nho startPadding.
         Column(Modifier.weight(1f)) {
