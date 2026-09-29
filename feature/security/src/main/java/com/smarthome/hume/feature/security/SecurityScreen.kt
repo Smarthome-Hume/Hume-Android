@@ -614,7 +614,10 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             .background(cardBg),
     ) {
         // Layout 2 hang:
-        // - Hang 1: [icon 44.dp | Column(name + time, weight 1f)] — ten dai dung marquee
+        // - Hang 1: [icon tron 44.dp | ten chay marquee] — viewport cua
+        //   MarqueeText keo dai den sat mep phai hinh tron (bo spacedBy,
+        //   dung startPadding 12.dp): chu chay den cham vien tron moi mo
+        //   dan, khong co buc tuong thang dung loi giua khong trung.
         // - Hang 2: status pill doc lap mot dong (nen rieng, doi mau khi active)
         Column(
             modifier = Modifier
@@ -625,7 +628,6 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(
                     Modifier
@@ -642,10 +644,12 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = nameColor,
+                        startPadding = 12.dp,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         s.lastChange,
+                        modifier = Modifier.padding(start = 12.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = timeColor,

@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.animateScrollTo
 import androidx.compose.foundation.gestures.scrollTo
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +34,9 @@ import kotlinx.coroutines.delay
  * Ban nay giu dang chu chay nhung lam dung:
  * - Fade 2 mep (DstIn) theo vi tri cuon: mep nao dang cat chu thi mo
  *   dan chu thay vi cat cung -> nhin la hieu chu dang cuon.
+ * - Mep trai fade neo vao hinh tron icon BG (startPadding): chu chay
+ *   den cham vien tron moi mo dan, khong co "buc tuong thang dung"
+ *   loi giua khong trung.
  * - Nhip: nghi 1.5s o dau (hien tron tu ky tu dau) -> cuon het
  *   (toc do ti le do tran) -> nghi 1.2s -> cuon ve mem -> lap lai.
  */
@@ -44,6 +48,12 @@ fun MarqueeText(
     color: Color,
     modifier: Modifier = Modifier,
     fadeWidth: Dp = 14.dp,
+    /**
+     * Khoang cach tu mep trai khung cuon den vi tri text luc nghi.
+     * Dung de mo rong viewport den sat vien icon tron: text chay den
+     * cham icon moi bat dau mo (fade neo o mep trai khung).
+     */
+    startPadding: Dp = 0.dp,
 ) {
     val scrollState = rememberScrollState()
     LaunchedEffect(text) {
@@ -82,6 +92,7 @@ fun MarqueeText(
             color = color,
             maxLines = 1,
             softWrap = false,
+            modifier = Modifier.padding(start = startPadding),
         )
     }
 }
