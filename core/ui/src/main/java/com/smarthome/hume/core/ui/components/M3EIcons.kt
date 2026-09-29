@@ -17,6 +17,8 @@ object M3EIcons {
     val Climate = Ms.ac_unit
     val Check = Ms.check
     val ChevronDown = Ms.expand_more
+    val ChevronRight = Ms.chevron_right
+    val Fab = Ms.power_settings_new
     val BatteryFull = Ms.battery_full
     val SolarPower = Ms.solar_power
     val ElectricMeter = Ms.electric_meter

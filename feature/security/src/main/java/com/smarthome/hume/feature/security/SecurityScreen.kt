@@ -609,7 +609,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                         fontWeight = FontWeight.Bold,
                         color = nameColor,
                         maxLines = 1,
-                        modifier = Modifier.basicMarquee(),
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = false,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(

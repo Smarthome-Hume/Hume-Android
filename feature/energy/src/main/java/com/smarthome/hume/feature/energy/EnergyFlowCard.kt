@@ -507,7 +507,6 @@ private fun FlowNode(
             }
         }
         Row(
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 1.dp),
         ) {
             Text(
@@ -519,6 +518,7 @@ private fun FlowNode(
                 ),
                 maxLines = 1,
                 softWrap = false,
+                modifier = Modifier.alignByBaseline(),
             )
             Text(
                 " kW",
@@ -527,6 +527,7 @@ private fun FlowNode(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
+                modifier = Modifier.alignByBaseline(),
             )
         }
         Spacer(Modifier.weight(1f))

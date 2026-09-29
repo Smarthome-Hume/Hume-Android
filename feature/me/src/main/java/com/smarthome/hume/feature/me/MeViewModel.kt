@@ -6,6 +6,7 @@ import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.datastore.AiProvider
 import com.smarthome.hume.core.datastore.AiSettings
+import com.smarthome.hume.core.datastore.FabMenuStore
 import com.smarthome.hume.core.datastore.ThemeStore
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import kotlinx.coroutines.delay
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 class MeViewModel : ViewModel() {
     private val themeStore: ThemeStore = HumeGraph.get().themeStore
     private val syncRepo = HumeGraph.get().syncRepository
+    val fabMenuStore: FabMenuStore = HumeGraph.get().fabMenuStore
 
     val isConnected = syncRepo.isConnected
 

@@ -3,6 +3,7 @@ package com.smarthome.hume.core.data
 import android.content.Context
 import com.smarthome.hume.core.datastore.AiSettingsStore
 import com.smarthome.hume.core.datastore.SessionStore
+import com.smarthome.hume.core.datastore.FabMenuStore
 import com.smarthome.hume.core.datastore.ThemeStore
 
 /**
@@ -16,6 +17,7 @@ class HumeGraph private constructor(context: Context) {
     val sessionStore: SessionStore by lazy { SessionStore(appContext) }
     val authRepository: AuthRepository by lazy { AuthRepository(sessionStore) }
     val themeStore: ThemeStore by lazy { ThemeStore(appContext) }
+    val fabMenuStore: FabMenuStore by lazy { FabMenuStore(appContext) }
     val aiSettingsStore: AiSettingsStore by lazy { AiSettingsStore(appContext) }
     val aiRepository: AiRepository by lazy { AiRepositoryImpl(aiSettingsStore) }
 

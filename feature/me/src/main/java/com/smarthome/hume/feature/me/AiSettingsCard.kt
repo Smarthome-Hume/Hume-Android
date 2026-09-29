@@ -208,7 +208,8 @@ fun AiSettingsCard(vm: MeViewModel) {
                     OutlinedTextField(
                         value = apiKey,
                         onValueChange = { apiKey = it; dirty = true },
-                        label = { Text(if (settings.hasApiKey) "API key mới (trống = giữ key cũ)" else "API key") },
+                        label = { Text("API key", maxLines = 1) },
+                        placeholder = { Text(if (settings.hasApiKey) "Trống = giữ key cũ" else "") },
                         leadingIcon = { MsIcon(Ms.key, null, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {
                             IconButton(onClick = { keyVisible = !keyVisible }) {

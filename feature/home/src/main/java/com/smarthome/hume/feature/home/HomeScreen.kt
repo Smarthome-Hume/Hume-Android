@@ -482,7 +482,6 @@ private fun EcoDialog(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(cs.scrim)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
