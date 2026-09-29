@@ -40,6 +40,8 @@ fun M3ESwitch(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    // Haptic khi bat/tat (2026-09-30, user yeu cau).
+    val haptic = rememberHaptic()
 
     val knobSize by animateDpAsState(
         if (checked) 20.dp else 16.dp,
@@ -84,7 +86,7 @@ fun M3ESwitch(
                 interactionSource = interaction,
                 indication = null,
                 enabled = enabled,
-                onClick = { onCheckedChange(!checked) },
+                onClick = { haptic(); onCheckedChange(!checked) },
             ),
     ) {
         Box(
