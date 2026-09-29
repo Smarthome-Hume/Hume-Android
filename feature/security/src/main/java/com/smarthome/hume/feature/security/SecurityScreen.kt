@@ -2,6 +2,7 @@ package com.smarthome.hume.feature.security
 
 import android.net.Uri
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -76,6 +77,7 @@ import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MsIcon
 import java.io.File
+import kotlinx.coroutines.delay
 
 /**
  * Tab An ninh — port 1:1 demo v4 rev12 (#page-security):
