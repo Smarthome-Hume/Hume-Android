@@ -89,7 +89,6 @@ import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MsIcon
-import com.smarthome.hume.core.ui.components.MarqueeText
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -614,9 +613,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             .background(cardBg),
     ) {
         // Layout 2 hang:
-        // - Hang 1: [icon tron 44.dp | ten chay marquee] — viewport cua
-        //   MarqueeText keo dai den sat mep phai hinh tron (bo spacedBy,
-        //   dung startPadding 12.dp). Khong fade mep: chu cat thang o bien.
+        // - Hang 1: [icon tron 44.dp | ten ellipsis] — ten dai thi an
+        //   bang dau "…" ngay khi cham mep (theo demo, khong chay marquee).
         // - Hang 2: status pill doc lap mot dong (nen rieng, doi mau khi active)
         Column(
             modifier = Modifier
@@ -638,12 +636,15 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    MarqueeText(
-                        text = s.name,
+                    Text(
+                        s.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = nameColor,
-                        startPadding = 12.dp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = false,
+                        modifier = Modifier.padding(start = 12.dp),
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
