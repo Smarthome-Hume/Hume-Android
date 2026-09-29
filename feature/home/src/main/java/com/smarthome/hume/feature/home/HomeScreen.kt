@@ -70,6 +70,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.avatar.AvatarStore
@@ -118,6 +119,9 @@ fun HomeScreen(
     }
     var avatarViewerOpen by remember { mutableStateOf(false) }
     var avatarRect by remember { mutableStateOf<Rect?>(null) }
+    // Popup camera tu the goi y "Xem camera" (mo ngay tren trang Nha)
+    var camPopup by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val secState by remember { HumeGraph.get().securityRepository.securityState }.collectAsState()
 
     ui.snackbar?.let { s ->
         LaunchedEffect(s) {
@@ -252,6 +256,8 @@ fun HomeScreen(
                                         },
                                         onOpenSecurity = onOpenSecurity,
                                         onOpenEnergy = onOpenEnergy,
+                                        cameras = secState.cameras,
+                                        onOpenCamera = { key, name -> camPopup = key to name },
                                     )
                                 }
                             }
@@ -380,6 +386,14 @@ fun HomeScreen(
                         haAvatarUrl = state.avatarUrl,
                         targetRect = avatarRect,
                         onDismiss = { avatarViewerOpen = false },
+                    )
+                }
+                // Popup camera tu the goi y (khong chuyen sang tab An ninh)
+                camPopup?.let { (key, name) ->
+                    CameraPopupOverlay(
+                        camKey = key,
+                        camName = name,
+                        onDismiss = { camPopup = null },
                     )
                 }
             }

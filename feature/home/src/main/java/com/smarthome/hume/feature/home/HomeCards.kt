@@ -2,6 +2,7 @@ package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -68,10 +69,13 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
+import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.ConnectionState
+import com.smarthome.hume.core.model.SecurityCamera
 import com.smarthome.hume.core.model.SolarDay
+import com.smarthome.hume.core.ui.camera.CameraFeedCard
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.M3ECard
@@ -350,6 +354,23 @@ internal fun roomNameForSensor(entityId: String): String? {
 }
 
 /**
+ * Camera phu hop nhat cho sensor chuyen dong: theo phong cua sensor;
+ * khong map duoc thi lay camera dau tien. Ten hien thi lay tu danh sach
+ * camera cua tab An ninh (AppSecurityRepository.CAMERAS).
+ */
+internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): SecurityCamera? {
+    if (cameras.isEmpty()) return null
+    val key = when (roomNameForSensor(sensorId)) {
+        "Phòng Khách" -> "living"
+        "Phòng Bếp" -> "kitchen"
+        "Phòng Ngủ" -> "bedroom"
+        "Phòng Thờ" -> "server"
+        else -> null
+    }
+    return key?.let { k -> cameras.firstOrNull { it.key == k } } ?: cameras.first()
+}
+
+/**
  * Dong goi y phan ung theo state truc tiep (khong can AI):
  * - Co chuyen dong o phong nao -> goi y xem camera phong do (key rieng theo sensor).
  * - Het chuyen dong (sensor off) -> thong bao mat khoi state -> goi y tu dong bien mat.
@@ -436,10 +457,14 @@ fun SuggestCard(
     state: HomeUiState,
     /** Goi y tu AI (LLM, phan tich dinh ky); hien sau cac goi y phan ung truc tiep. */
     aiTips: List<AiTip> = emptyList(),
+    /** Danh sach camera tu tab An ninh (de map phong -> camera khi bam "Xem camera"). */
+    cameras: List<SecurityCamera> = emptyList(),
     onTipAction: (key: String) -> Unit = {},
     onBatteryDetail: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
     onOpenEnergy: () -> Unit = {},
+    /** Mo popup camera ngay tren trang Nha (thay vi chuyen sang tab An ninh). */
+    onOpenCamera: (camKey: String, camName: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     // Goi y phan ung truc tiep theo state (chuyen dong -> camera, cua mo, pin yeu)
@@ -559,7 +584,13 @@ fun SuggestCard(
                         haptic()
                         when {
                             tip.key == "battery" -> onBatteryDetail()
-                            tip.key.startsWith("motion:") -> onOpenSecurity()
+                            tip.key.startsWith("motion:") -> {
+                                // Mo popup camera ngay tren trang Nha (khong chuyen tab).
+                                val sensorId = tip.key.removePrefix("motion:")
+                                cameraForSensor(sensorId, cameras)?.let { cam ->
+                                    onOpenCamera(cam.key, cam.name)
+                                } ?: onOpenSecurity()
+                            }
                             tip.key == "door" -> doneMap[tip.key] = true
                             tip.key == "sun" -> onOpenEnergy()
                             tip.key == "night" -> onOpenSecurity()
@@ -604,6 +635,48 @@ fun SuggestCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * Popup camera mo ngay tren trang Nha khi bam "Xem camera" o the goi y.
+ * Cham vung mo ben ngoai de dong; cham vao feed de mo khoa (giong tab An ninh).
+ */
+@Composable
+fun CameraPopupOverlay(
+    camKey: String,
+    camName: String,
+    onDismiss: () -> Unit,
+) {
+    var unlocked by remember { mutableStateOf(false) }
+    val secRepo = remember { HumeGraph.get().securityRepository }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.55f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        CameraFeedCard(
+            camKey = camKey,
+            camName = camName,
+            snapshotUrl = secRepo.snapshotUrl(camKey),
+            unlocked = unlocked,
+            onUnlock = { unlocked = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                // Chan tap xuyen qua the lam dong popup
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                ),
+        )
     }
 }
 
