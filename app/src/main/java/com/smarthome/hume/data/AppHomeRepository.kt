@@ -19,6 +19,8 @@ import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.model.RoomUi
 import com.smarthome.hume.core.model.SolarDay
 import com.smarthome.hume.core.model.cameraKeyForSensor
+import com.smarthome.hume.core.model.FRIGATE_CAMERA_KEYS
+import com.smarthome.hume.core.model.cameraNameVi
 import com.smarthome.hume.core.model.frigateLabelVi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,11 +56,18 @@ class AppHomeRepository(
 
     private val weekCache = mutableMapOf<Long, Double>()
     private val snapshots = com.smarthome.hume.core.storage.DailySnapshotStore.get(appContext)
+
+    companion object {
+        /** Event Frigate trong N phut moi duoc tong hop thanh goi y (khong co PIR). */
+        private const val FRIGATE_SUGGEST_MIN = 5
+    }
     private val settingsStore = com.smarthome.hume.core.storage.SettingsStore(appContext)
     private val frigateStore = com.smarthome.hume.core.frigate.FrigateStore.get(appContext)
     /** Lan cuoi goi Frigate lay nhan doi tuong (tranh spam moi lan entity doi). */
     private var motionFetchAt = 0L
     private var motionFetchIds: Set<String> = emptySet()
+    /** Goi y tong hop tu trigger Frigate truc tiep (khong qua PIR). */
+    private var frigateMotions: List<HomeNotification> = emptyList()
 
     init {
         scope.launch {
@@ -265,6 +274,10 @@ class AppHomeRepository(
      * dang active, de the goi y mo ta "Có người hoạt động lúc 06:25".
      * Chi goi Frigate khi tap sensor thay doi hoac qua 60s (moi camera 1
      * request /api/events nhe, khong tai clip); event qua 15 phut thi bo qua.
+     *
+     * Them (2026-09-30, user: dung trigger event cua Frigate): camera co event
+     * Frigate moi (<= FRIGATE_SUGGEST_MIN phut) nhung khong co sensor PIR nao
+     * active -> tu tao thong bao "frigate:<cam>" de goi y dung camera do.
      */
     private suspend fun enrichMotionObjects(
         state: HomeUiState, connected: Boolean,
@@ -273,14 +286,23 @@ class AppHomeRepository(
         val ids = motions.map { it.id }.toSet()
         if (ids.isEmpty() || !connected) {
             motionFetchIds = emptySet()
+            frigateMotions = emptyList()
             return if (state.motionObjects.isEmpty()) state
             else state.copy(motionObjects = emptyMap())
         }
         val now = System.currentTimeMillis()
-        if (ids == motionFetchIds && now - motionFetchAt < 60_000) {
-            // Giu nhan cu, loc theo sensor dang active.
-            val kept = _homeState.value.motionObjects.filterKeys { it in ids }
-            return if (kept == state.motionObjects) state else state.copy(motionObjects = kept)
+        // Goi y Frigate tong hop het han -> bat buoc fetch lai de loai bo.
+        val syntheticsStale = frigateMotions.isNotEmpty() &&
+            frigateMotions.all { (it.minutesAgo ?: 999) > FRIGATE_SUGGEST_MIN }
+        if (ids == motionFetchIds && now - motionFetchAt < 60_000 && !syntheticsStale) {
+            // Giu nhan cu, loc theo sensor dang active + goi y Frigate con han.
+            val fresh = frigateMotions.filter { (it.minutesAgo ?: 999) <= FRIGATE_SUGGEST_MIN }
+            val allIds = ids + fresh.map { it.id }
+            val kept = _homeState.value.motionObjects.filterKeys { it in allIds }
+            return state.copy(
+                notifications = (state.notifications + fresh).take(12),
+                motionObjects = kept,
+            )
         }
         motionFetchIds = ids
         motionFetchAt = now
@@ -292,16 +314,38 @@ class AppHomeRepository(
         val byCam = motions.mapNotNull { n ->
             cameraKeyForSensor(n.id)?.let { cam -> cam to n.id }
         }.groupBy({ it.first }, { it.second })
-        for ((cam, sensorIds) in byCam) {
+        val freshSynthetics = mutableListOf<HomeNotification>()
+        for (cam in FRIGATE_CAMERA_KEYS) {
             val (label, start) = runCatching {
                 frigateStore.latestEvent(cam, settings.haUrl, settings.haToken)
             }.getOrNull() ?: continue
             if (label.isBlank()) continue
-            if (now / 1000 - start > 900) continue // event cu > 15 phut: bo qua
+            val ageSec = now / 1000 - start
+            if (ageSec < 0) continue
             val vi = frigateLabelVi(label)
-            sensorIds.forEach { objects[it] = vi }
+            val sensorIds = byCam[cam]
+            if (sensorIds != null) {
+                // Nhan doi tuong cho sensor dang active (event <= 15 phut).
+                if (ageSec <= 900) sensorIds.forEach { objects[it] = vi }
+            } else if (ageSec <= FRIGATE_SUGGEST_MIN * 60) {
+                // Trigger truc tiep tu Frigate, khong co PIR nao: goi y tong hop.
+                val mins = (ageSec / 60).toInt()
+                val nid = "frigate:$cam"
+                freshSynthetics += HomeNotification(
+                    id = nid,
+                    title = "Phát hiện chuyển động",
+                    body = cameraNameVi(cam),
+                    timeText = if (mins < 1) "vừa xong" else "$mins phút trước",
+                    minutesAgo = mins,
+                )
+                objects[nid] = vi
+            }
         }
-        return state.copy(motionObjects = objects)
+        frigateMotions = freshSynthetics
+        return state.copy(
+            notifications = (state.notifications + freshSynthetics).take(12),
+            motionObjects = objects,
+        )
     }
 
     /**

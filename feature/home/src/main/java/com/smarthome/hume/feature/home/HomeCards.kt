@@ -343,13 +343,13 @@ internal data class SuggestTip(
 
 /**
  * Camera phu hop nhat cho sensor chuyen dong: theo key tu cameraKeyForSensor;
- * khong map duoc thi lay camera dau tien. Ten hien thi lay tu danh sach
- * camera cua tab An ninh (AppSecurityRepository.CAMERAS).
+ * phong khong co camera (phong tam, phong giat...) -> null, KHONG roi ve
+ * camera dau tien (2026-09-30, user: goi y sai phong).
  */
 internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): SecurityCamera? {
     if (cameras.isEmpty()) return null
-    val key = cameraKeyForSensor(sensorId)
-    return key?.let { k -> cameras.firstOrNull { it.key == k } } ?: cameras.first()
+    val key = cameraKeyForSensor(sensorId) ?: return null
+    return cameras.firstOrNull { it.key == key }
 }
 
 /**
@@ -383,7 +383,9 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
                 // Title: ten phong / vi tri xuat hien; Subtitle: doi tuong + gio.
                 title = room ?: n.body.ifBlank { "Phát hiện chuyển động" },
                 sub = sub,
-                action = "Xem camera",
+                // Phong co camera moi hien "Xem camera"; khong co -> "An ninh"
+                // (2026-09-30, user: phong tam lam gi co camera).
+                action = if (cameraKeyForSensor(n.id) != null) "Xem camera" else "An ninh",
             )
         }
     return buildList<SuggestTip> {
