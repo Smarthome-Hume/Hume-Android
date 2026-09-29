@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.BatteryControl
 import com.smarthome.hume.core.model.BatteryControlKind
 import com.smarthome.hume.core.model.EnergyUiState
+import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ESwitch
@@ -331,7 +332,7 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
 
 @Composable
 private fun Expander(
-    icon: String,
+    icon: @Composable () -> Unit,
     title: String,
     subtitle: String,
     open: Boolean,
