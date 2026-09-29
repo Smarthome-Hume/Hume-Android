@@ -387,6 +387,7 @@ private fun AvatarCard(
     }
 }
 
+@Composable
 private fun OwnerCard(
     name: String,
     avatar: UserAvatar?,

@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.smarthome.hume.core.ui.R
 
+@OptIn(ExperimentalTextApi::class)
 private val MsFontFamily = FontFamily(
     Font(
         R.font.material_symbols_rounded,
@@ -40,6 +42,7 @@ private val MsFontFamily = FontFamily(
 )
 
 /** Bien the FILL=1 cho icon active (vd: navbar tab dang chon). */
+@OptIn(ExperimentalTextApi::class)
 private val MsFilledFontFamily = FontFamily(
     Font(
         R.font.material_symbols_rounded,
