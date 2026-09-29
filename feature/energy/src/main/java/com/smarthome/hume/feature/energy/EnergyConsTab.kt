@@ -470,8 +470,9 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                                 .clip(CircleShape)
                                 .background(sliceColors[i % sliceColors.size]),
                         )
-                        Spacer(Modifier.width(10.dp))
-                        // chu thich dai -> chay chu (marquee), 1 dong
+                        // Viewport marquee keo den sat mep cham mau (bo Spacer):
+                        // padding nam TRONG marquee -> chu chay den mep cham moi an,
+                        // luc nghi van cach 10.dp nhu cu.
                         Text(
                             s.name,
                             style = MaterialTheme.typography.labelLarge.copy(
@@ -480,7 +481,8 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                             maxLines = 1,
                             modifier = Modifier
                                 .weight(1f)
-                                .basicMarquee(),
+                                .basicMarquee()
+                                .padding(start = 10.dp),
                         )
                         // cot % rong co dinh, can phai -> cac hang dóng thẳng
                         Text(
