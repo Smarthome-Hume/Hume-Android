@@ -15,6 +15,8 @@ data class ThemeSettings(
     val darkMode: Boolean? = null, // null = theo he thong
     /** Mau tuy chinh (ARGB Long) — null = dung seed co san. */
     val customColor: Long? = null,
+    /** Ten font Google Fonts (mac dinh Montserrat) — tai qua Play Services. */
+    val fontFamily: String = "Montserrat",
 )
 
 class ThemeStore(private val context: Context) {
@@ -23,6 +25,7 @@ class ThemeStore(private val context: Context) {
         val Seed = stringPreferencesKey("theme_seed")
         val CustomColor = longPreferencesKey("theme_custom_color")
         val DarkMode = booleanPreferencesKey("theme_dark_mode")
+        val FontFamily = stringPreferencesKey("theme_font_family")
     }
 
     val settings: Flow<ThemeSettings> =
@@ -31,6 +34,7 @@ class ThemeStore(private val context: Context) {
                 seedName = prefs[Keys.Seed] ?: "Cam",
                 darkMode = if (prefs.contains(Keys.DarkMode)) prefs[Keys.DarkMode] else null,
                 customColor = prefs[Keys.CustomColor],
+                fontFamily = prefs[Keys.FontFamily] ?: "Montserrat",
             )
         }
 
@@ -48,5 +52,9 @@ class ThemeStore(private val context: Context) {
         context.humeDataStore.edit {
             if (dark == null) it.remove(Keys.DarkMode) else it[Keys.DarkMode] = dark
         }
+    }
+
+    suspend fun setFontFamily(family: String) {
+        context.humeDataStore.edit { it[Keys.FontFamily] = family }
     }
 }

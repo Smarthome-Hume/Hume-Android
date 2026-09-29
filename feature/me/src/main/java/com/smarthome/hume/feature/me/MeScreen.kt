@@ -94,6 +94,7 @@ import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import kotlinx.coroutines.delay
@@ -128,7 +129,6 @@ fun MeScreen(
     vm: MeViewModel = viewModel(),
     onViewCamera: () -> Unit = {},
 ) {
-    val syncing by vm.syncing.collectAsState()
     val seed by vm.seed.collectAsState()
     val darkMode by vm.darkMode.collectAsState()
     val haptic = rememberHaptic()
@@ -144,6 +144,7 @@ fun MeScreen(
         if (userKey.isNotBlank()) avatarStore.load(userKey)
     }
     var showChooser by remember { mutableStateOf(false) }
+    var showFontSheet by remember { mutableStateOf(false) }
 
     fun onPicked(uri: Uri, isVideo: Boolean) {
         val key = userKey
@@ -220,9 +221,6 @@ fun MeScreen(
             )
         }
 
-        Box(Modifier.riseEntrance(500)) { SecTitle("Đồng bộ") }
-        Box(Modifier.riseEntrance(520)) { SyncCard(syncing = syncing, onSync = vm::doSync) }
-
         Box(Modifier.riseEntrance(620)) { SecTitle("Trí tuệ nhân tạo") }
         Box(Modifier.riseEntrance(640)) { AiSettingsCard(vm = vm) }
 
@@ -272,6 +270,13 @@ fun MeScreen(
             Spacer(Modifier.height(12.dp))
             CustomSeedRow(onApplyCustom = { haptic(); vm.setCustomColor(it) })
         }
+        // Card 3: font chu (Google Fonts) — chon de tai ve va ap dung (2026-09-30)
+        Box(Modifier.riseEntrance(0).padding(top = 12.dp)) {
+            FontCard(
+                current = vm.fontFamily.collectAsState().value,
+                onOpen = { showFontSheet = true },
+            )
+        }
     }
 
     // Chon anh / video lam avatar
@@ -319,6 +324,191 @@ fun MeScreen(
             confirmButton = {},
         )
     }
+
+    // Sheet chon font chu
+    if (showFontSheet) {
+        FontPickerSheet(vm = vm, onDismiss = { showFontSheet = false })
+    }
+}
+
+// ---------- font chu (Google Fonts) ----------
+
+/** The font chu: hien font hien tai, bam mo sheet chon font de tai ve. */
+@Composable
+private fun FontCard(current: String, onOpen: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(cs.surfaceContainerHighest)
+            .pressMorph(pressedScale = 0.97f, onClick = onOpen)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(cs.primaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            MsIcon("text_fields", contentDescription = null, tint = cs.onPrimaryContainer)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                "FONT CHỮ",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurfaceVariant,
+                letterSpacing = 0.4.sp,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                current,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurface,
+            )
+        }
+        MsIcon("chevron_right", contentDescription = null, tint = cs.onSurfaceVariant)
+    }
+}
+
+/** Sheet chon font: danh sach Google Fonts, uu tien ho tro tieng Viet. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FontPickerSheet(
+    vm: MeViewModel,
+    onDismiss: () -> Unit,
+) {
+    val fonts by vm.fonts.collectAsState()
+    val loading by vm.fontsLoading.collectAsState()
+    val current by vm.fontFamily.collectAsState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var query by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) { vm.loadFonts() }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+        ) {
+            Text(
+                "Chọn font chữ",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Font từ Google Fonts — chọn để tải về và áp dụng. Font có dấu ✓ hỗ trợ tiếng Việt.",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Tìm font…") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            when {
+                loading -> {
+                    Box(
+                        Modifier.fillMaxWidth().height(200.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { CircularProgressIndicator() }
+                }
+                fonts.isEmpty() -> {
+                    Box(
+                        Modifier.fillMaxWidth().height(200.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "Không tải được danh sách font.\nKiểm tra mạng rồi thử lại.",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                else -> {
+                    val shown = remember(query, fonts) {
+                        if (query.isBlank()) fonts
+                        else fonts.filter { it.family.contains(query, ignoreCase = true) }
+                    }
+                    LazyColumn(
+                        Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        items(shown, key = { it.id }) { font ->
+                            FontRow(
+                                font = font,
+                                selected = font.family == current,
+                                onSelect = {
+                                    vm.setFontFamily(font.family)
+                                    onDismiss()
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) cs.primaryContainer else cs.surfaceContainerLow)
+            .pressMorph(pressedScale = 0.97f, onClick = onSelect)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    font.family,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (selected) cs.onPrimaryContainer else cs.onSurface,
+                )
+                if (font.supportsVietnamese) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "✓",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.primary,
+                    )
+                }
+            }
+            Text(
+                "AaBbCcDd 0123456789",
+                fontSize = 14.sp,
+                color = if (selected) cs.onPrimaryContainer else cs.onSurfaceVariant,
+            )
+        }
+        if (selected) {
+            MsIcon("check", contentDescription = null, tint = cs.onPrimaryContainer)
+        }
+    }
 }
 
 @Composable
@@ -365,156 +555,45 @@ private fun MeAvatarCard(
         Column(Modifier.weight(1f)) {
             Text(
                 "Ảnh đại diện",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-            )
-            Text(
-                when {
-                    avatar?.isVideo == true -> "Video ngắn của bạn"
-                    avatar != null -> "Ảnh tải lên của bạn"
-                    else -> "Mặc định theo tên"
-                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
             )
         }
-        TextButton(onClick = onChange) {
-            Text("Đổi", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        // Nut Doi/Go: nen pill + pressMorph giong cum dieu hoa (2026-09-30).
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .pressMorph(pressedScale = 0.88f, onClick = onChange)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "Đổi",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
         }
         if (onRemove != null) {
-            TextButton(onClick = onRemove) {
+            Spacer(Modifier.width(8.dp))
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .pressMorph(pressedScale = 0.88f, onClick = onRemove)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
                     "Gỡ",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.error,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
-        }
-    }
-}
-
-// ---------- dong bo ----------
-
-@Composable
-private fun SyncCard(syncing: Boolean, onSync: () -> Unit) {
-    // demo .syncrow: margin-top 4px; khong co press scale (chi cursor:pointer)
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onSync,
-            )
-            .clip(RoundedCornerShape(26.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // morphloader: xoay 4.4s + blob morph 4.55s, an khi dong bo xong
-            if (syncing) {
-                MorphLoader()
-                Spacer(Modifier.width(12.dp))
-            }
-            Text(
-                if (syncing) "Đang đồng bộ Home Assistant…"
-                else "Đã đồng bộ · vừa xong · 24 thiết bị",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        WavyProgress(syncing = syncing)
-    }
-}
-
-/** morphloader demo: mspin 4.4s linear infinite + mmorph 4.55s blob morph. */
-@Composable
-private fun MorphLoader() {
-    val primary = MaterialTheme.colorScheme.primary
-    val spinT = rememberInfiniteTransition(label = "mspin")
-    val rot by spinT.animateFloat(0f, 360f, infiniteRepeatable(tween(4400, easing = LinearEasing)), label = "rot")
-    val blobT = rememberInfiniteTransition(label = "mmorph")
-    val phase by blobT.animateFloat(0f, 1f, infiniteRepeatable(tween(4550, easing = LinearEasing)), label = "phase")
-    Canvas(Modifier.size(38.dp)) {
-        rotate(rot) {
-            val s = size.minDimension
-            // blob: 4 goc bo dao dong lech pha quanh 50% (circle), bien do ~28%
-            val p = phase * 2f * PI.toFloat()
-            fun r(off: Float): Float =
-                (s * 0.5f * (1f + 0.28f * sin(p + off))).coerceIn(0f, s * 0.5f)
-            val path = Path().apply {
-                addRoundRect(
-                    RoundRect(
-                        0f, 0f, s, s,
-                        CornerRadius(r(0f), r(0f)),
-                        CornerRadius(r(2.1f), r(2.1f)),
-                        CornerRadius(r(4.2f), r(4.2f)),
-                        CornerRadius(r(1.05f), r(1.05f)),
-                    )
-                )
-            }
-            drawPath(path, primary)
-        }
-    }
-}
-
-/**
- * Wavy loading bar (demo v4: .wtrack/.wfill):
- * fill 0->100% trong 4s linear 1 LAN khi syncing roi dung o 100%;
- * song sin buoc 40px truot -40px/vong (1.2s) lien tuc.
- */
-@Composable
-private fun WavyProgress(syncing: Boolean) {
-    val primary = MaterialTheme.colorScheme.primary
-    val fillFrac = remember { Animatable(0f) }
-    LaunchedEffect(syncing) {
-        if (syncing) {
-            fillFrac.snapTo(0f)
-            fillFrac.animateTo(1f, tween(4000, easing = LinearEasing))
-        }
-    }
-    val waveT = rememberInfiniteTransition(label = "wave")
-    val slide by waveT.animateFloat(
-        0f, -40f,
-        infiniteRepeatable(tween(1200, easing = LinearEasing)),
-        label = "slide",
-    )
-    Canvas(
-        Modifier
-            .fillMaxWidth()
-            .height(10.dp),
-    ) {
-        val waveLen = 40.dp.toPx()
-        val amp = 5.dp.toPx()
-        val y0 = size.height / 2
-        val slidePx = slide.dp.toPx()
-        val path = Path().apply {
-            moveTo(slidePx, y0)
-            var x = slidePx
-            var up = false
-            while (x < size.width + waveLen) {
-                // Q20 0 / T40 — gan dung song sin cua demo
-                quadraticTo(x + waveLen / 4, y0 + if (up) -amp else amp, x + waveLen / 2, y0)
-                x += waveLen / 2
-                up = !up
-            }
-        }
-        clipRect(right = size.width * fillFrac.value) {
-            drawPath(
-                path = path,
-                color = primary,
-                style = Stroke(
-                    width = 4.dp.toPx(),
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                ),
-            )
         }
     }
 }

@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
                     seed = seed,
                     darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme(),
                     customSeedColor = customColor,
+                    fontFamily = themeSettings.fontFamily,
                 ) {
                     LoginScreen()
                 }

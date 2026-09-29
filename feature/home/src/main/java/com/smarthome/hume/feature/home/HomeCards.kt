@@ -1001,8 +1001,8 @@ fun NotificationCard(
                     .background(cs.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                MsIcon(
-                    M3EIcons.Bell,
+                androidx.compose.material3.Icon(
+                    imageVector = M3EIcons.BellVector,
                     contentDescription = null,
                     tint = cs.onPrimaryContainer,
                     modifier = Modifier.size(28.dp),

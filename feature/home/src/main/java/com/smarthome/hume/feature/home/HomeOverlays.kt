@@ -253,11 +253,21 @@ private fun NotifRow(n: HomeNotification, index: Int) {
                     .clip(CircleShape)
                     .background(container),
             ) {
-                MsIcon(
-                    notifIcon(n), null,
-                    tint = onContainer,
-                    modifier = Modifier.size(24.dp),
-                )
+                // Chuong dung vector rong tu ve (2026-09-30); cac icon khac dung glyph.
+                if (notifKind(n) == NotifKind.Other) {
+                    androidx.compose.material3.Icon(
+                        imageVector = M3EIcons.BellVector,
+                        contentDescription = null,
+                        tint = onContainer,
+                        modifier = Modifier.size(24.dp),
+                    )
+                } else {
+                    MsIcon(
+                        notifIcon(n), null,
+                        tint = onContainer,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {

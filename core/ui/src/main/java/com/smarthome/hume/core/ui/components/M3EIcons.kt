@@ -67,6 +67,8 @@ object M3EIcons {
     val Add = Ms.add
     val Search = Ms.search
     val Bell = Ms.notifications
+    /** Vector chuong rong de dung truc tiep voi Icon() (2026-09-30). */
+    val BellVector: ImageVector get() = BellWide
     val Person = Ms.person
 
     fun room(key: String): String = when (key) {
@@ -186,6 +188,45 @@ object M3EIcons {
                 // Co + de chan
                 moveTo(12f, 15f); verticalLineTo(18.5f)
                 moveTo(8.5f, 20.5f); horizontalLineTo(15.5f)
+            }
+        }.build()
+    }
+
+    /**
+     * Chuong thong bao RONG — ve lai vi glyph Material hep (2026-09-30, user yeu cau).
+     * Than chuong trai rong 4..20, stroke 2dp, dau tron, viewport 24.
+     */
+    val BellWide: ImageVector by lazy {
+        ImageVector.Builder("bell_wide", 24.dp, 24.dp, 24f, 24f).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // Num tron tren dinh
+                moveTo(12f, 2.6f)
+                arcTo(1.4f, 1.4f, 0f, true, true, 12f, 5.4f)
+                arcTo(1.4f, 1.4f, 0f, true, true, 12f, 2.6f)
+                close()
+                // Than chuong: vai cong rong tu dinh xuong mieng
+                moveTo(12f, 5.4f)
+                curveTo(8.5f, 5.4f, 6.8f, 8.2f, 6.2f, 11.5f)
+                lineTo(5f, 16.5f)
+                // Mieng chuong loe rong
+                curveTo(4.7f, 17.8f, 5.6f, 18.8f, 7f, 18.8f)
+                horizontalLineTo(17f)
+                curveTo(18.4f, 18.8f, 19.3f, 17.8f, 19f, 16.5f)
+                lineTo(17.8f, 11.5f)
+                curveTo(17.2f, 8.2f, 15.5f, 5.4f, 12f, 5.4f)
+                close()
+                // Qua lac duoi
+                moveTo(12f, 18.8f)
+                lineTo(12f, 20.2f)
+                moveTo(12f, 21.4f)
+                arcTo(1.2f, 1.2f, 0f, true, true, 12f, 23.8f)
+                arcTo(1.2f, 1.2f, 0f, true, true, 12f, 21.4f)
+                close()
             }
         }.build()
     }

@@ -113,4 +113,29 @@ class MeViewModel : ViewModel() {
             _aiTesting.value = false
         }
     }
+
+    // ---------- Font chu (Google Fonts) ----------
+
+    val fontFamily: StateFlow<String> = themeStore.settings
+        .map { it.fontFamily }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "Montserrat")
+
+    private val _fonts = MutableStateFlow<List<GoogleFontInfo>>(emptyList())
+    val fonts: StateFlow<List<GoogleFontInfo>> = _fonts.asStateFlow()
+
+    private val _fontsLoading = MutableStateFlow(false)
+    val fontsLoading: StateFlow<Boolean> = _fontsLoading.asStateFlow()
+
+    fun loadFonts() {
+        if (_fonts.value.isNotEmpty() || _fontsLoading.value) return
+        viewModelScope.launch {
+            _fontsLoading.value = true
+            _fonts.value = GoogleFontsApi.fetchFonts()
+            _fontsLoading.value = false
+        }
+    }
+
+    fun setFontFamily(family: String) {
+        viewModelScope.launch { themeStore.setFontFamily(family) }
+    }
 }

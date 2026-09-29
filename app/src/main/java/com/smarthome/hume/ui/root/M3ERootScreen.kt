@@ -105,7 +105,7 @@ fun M3ERootScreen(
     val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }.getOrDefault(M3ESeed.Cam)
     val darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()
     val customColor = themeSettings.customColor?.let { androidx.compose.ui.graphics.Color(it.toULong()) }
-    HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor) {
+    HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor, fontFamily = themeSettings.fontFamily) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
         // Overlay toan man hinh (viewer avatar / popup camera): ve o tang root,
         // TREN navbar, de lop mo + blur phu ca navbar chu khong chi vung content.

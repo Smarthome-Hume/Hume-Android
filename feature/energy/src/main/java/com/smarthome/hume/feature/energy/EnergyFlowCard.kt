@@ -69,7 +69,8 @@ import kotlin.math.roundToInt
 
 private const val VB_W = 380f
 private const val VB_H = 460f
-private const val NODE_W = 150f
+// Tang chieu ngang node 150 -> 170 de thang hang voi can le chu (2026-09-30, user yeu cau).
+private const val NODE_W = 170f
 private const val NODE_H = 190f
 
 private fun prodPath() = Path().apply {
@@ -124,12 +125,7 @@ fun EnergyFlowCard(
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 20.sp, fontWeight = FontWeight.Bold),
                     )
-                    Text(
-                        "Dòng chảy thời gian thực",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
+                    // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -269,12 +265,13 @@ private fun FlowArea(
                 total = tot,
             )
         }
-        val battFg = Color(0xFF16A34A)
+        // Khi pin xa: chu "Dang xa" + icon pin mau da cam (2026-09-30, user yeu cau).
+        val battFg = if (charging) Color(0xFF16A34A) else Color(0xFFF97316)
         FlowNode(
             icon = {
                 HorizontalBatteryIcon(
                     soc = soc.roundToInt(),
-                    color = Color(0xFF16A34A),
+                    color = battFg,
                     modifier = Modifier.size(width = 30.dp, height = 18.dp),
                 )
             },

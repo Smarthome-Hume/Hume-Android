@@ -11,6 +11,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -115,51 +116,62 @@ object HumeMotion {
     const val PressMorphMs = 180
 }
 
-// ---- Typography: Montserrat ----
-private val MontserratProvider = GoogleFont.Provider(
+// ---- Typography: Google Fonts (tai qua Play Services) ----
+// Mac dinh Montserrat; doi dong qua ThemeStore.fontFamily (2026-09-30).
+private val FontProvider = GoogleFont.Provider(
     providerAuthority = "com.google.android.gms.fonts",
     providerPackage = "com.google.android.gms",
     certificates = R.array.com_google_android_gms_fonts_certs,
 )
-private val Montserrat = GoogleFont("Montserrat")
 
-/** Montserrat full weights — gan cho TOAN BO text styles, khong de style nao roi ve font he thong. */
-private val montserratFamily = androidx.compose.ui.text.font.FontFamily(
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Light),
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Normal),
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Medium),
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.SemiBold),
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.Bold),
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = FontWeight.ExtraBold),
-)
-
-private fun montserrat(weight: FontWeight) = androidx.compose.ui.text.font.FontFamily(
-    Font(googleFont = Montserrat, fontProvider = MontserratProvider, weight = weight)
-)
-
-val HumeTypography = with(Typography()) {
-    copy(
-        displayLarge = displayLarge.copy(
-            fontFamily = montserratFamily, fontWeight = FontWeight.Bold,
-            fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
-        displayMedium = displayMedium.copy(fontFamily = montserratFamily),
-        displaySmall = displaySmall.copy(fontFamily = montserratFamily),
-        headlineLarge = headlineLarge.copy(fontFamily = montserratFamily),
-        headlineMedium = headlineMedium.copy(
-            fontFamily = montserratFamily, fontWeight = FontWeight.Medium,
-            fontSize = 24.sp, lineHeight = 32.sp),
-        headlineSmall = headlineSmall.copy(fontFamily = montserratFamily),
-        titleLarge = titleLarge.copy(fontFamily = montserratFamily),
-        titleMedium = titleMedium.copy(fontFamily = montserratFamily),
-        titleSmall = titleSmall.copy(fontFamily = montserratFamily),
-        bodyLarge = bodyLarge.copy(fontFamily = montserratFamily),
-        bodyMedium = bodyMedium.copy(fontFamily = montserratFamily),
-        bodySmall = bodySmall.copy(fontFamily = montserratFamily),
-        labelLarge = labelLarge.copy(fontFamily = montserratFamily),
-        labelMedium = labelMedium.copy(fontFamily = montserratFamily),
-        labelSmall = labelSmall.copy(fontFamily = montserratFamily),
+/** FontFamily dong theo ten Google Font — Play Services tu tai khi dung lan dau. */
+fun googleFontFamily(name: String): androidx.compose.ui.text.font.FontFamily {
+    val gf = GoogleFont(name)
+    return androidx.compose.ui.text.font.FontFamily(
+        Font(googleFont = gf, fontProvider = FontProvider, weight = FontWeight.Light),
+        Font(googleFont = gf, fontProvider = FontProvider, weight = FontWeight.Normal),
+        Font(googleFont = gf, fontProvider = FontProvider, weight = FontWeight.Medium),
+        Font(googleFont = gf, fontProvider = FontProvider, weight = FontWeight.SemiBold),
+        Font(googleFont = gf, fontProvider = FontProvider, weight = FontWeight.Bold),
+        Font(googleFont = gf, fontProvider = FontProvider, weight = FontWeight.ExtraBold),
     )
 }
+
+private fun themed(weight: FontWeight, name: String) = androidx.compose.ui.text.font.FontFamily(
+    Font(googleFont = GoogleFont(name), fontProvider = FontProvider, weight = weight)
+)
+
+/** Dung Typography voi font tuy chon — gan cho TOAN BO text styles. */
+fun humeTypography(fontName: String): Typography {
+    val family = googleFontFamily(fontName)
+    return with(Typography()) {
+        copy(
+            displayLarge = displayLarge.copy(
+                fontFamily = family, fontWeight = FontWeight.Bold,
+                fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+            displayMedium = displayMedium.copy(fontFamily = family),
+            displaySmall = displaySmall.copy(fontFamily = family),
+            headlineLarge = headlineLarge.copy(fontFamily = family),
+            headlineMedium = headlineMedium.copy(
+                fontFamily = family, fontWeight = FontWeight.Medium,
+                fontSize = 24.sp, lineHeight = 32.sp),
+            headlineSmall = headlineSmall.copy(fontFamily = family),
+            titleLarge = titleLarge.copy(fontFamily = family),
+            titleMedium = titleMedium.copy(fontFamily = family),
+            titleSmall = titleSmall.copy(fontFamily = family),
+            bodyLarge = bodyLarge.copy(fontFamily = family),
+            bodyMedium = bodyMedium.copy(fontFamily = family),
+            bodySmall = bodySmall.copy(fontFamily = family),
+            labelLarge = labelLarge.copy(fontFamily = family),
+            labelMedium = labelMedium.copy(fontFamily = family),
+            labelSmall = labelSmall.copy(fontFamily = family),
+        )
+    }
+}
+
+/** @Deprecated dung humeTypography(fontName) — giu de khong vo API cu. */
+@Deprecated("Dung humeTypography(fontName)")
+val HumeTypography: Typography = humeTypography("Montserrat")
 
 // ---- Theme entry ----
 @Composable
@@ -167,6 +179,7 @@ fun HumeM3ETheme(
     seed: M3ESeed = M3ESeed.Cam,
     darkTheme: Boolean = isSystemInDarkTheme(),
     customSeedColor: Color? = null,
+    fontFamily: String = "Montserrat",
     content: @Composable () -> Unit,
 ) {
     val scheme = if (customSeedColor != null) {
@@ -174,11 +187,12 @@ fun HumeM3ETheme(
     } else {
         colorSchemeFor(seed, darkTheme)
     }
+    val typography = remember(fontFamily) { humeTypography(fontFamily) }
     CompositionLocalProvider(LocalHumeExtraColors provides extraColors(seed, darkTheme)) {
         MaterialTheme(
             colorScheme = scheme,
             shapes = HumeShapes,
-            typography = HumeTypography,
+            typography = typography,
             content = content,
         )
     }

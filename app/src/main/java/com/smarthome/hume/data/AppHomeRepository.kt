@@ -447,10 +447,38 @@ class AppHomeRepository(
         return out.replaceFirstChar { it.uppercase() }
     }
 
+    /**
+     * Tat ca sensor co mat tren giao dien (an ninh + the phong).
+     * Thong bao CHI dung sensor trong danh sach nay (2026-09-30, user yeu cau).
+     */
+    private val uiSensorIds: Set<String> by lazy {
+        val ids = mutableSetOf<String>()
+        // An ninh: cua/chuyen dong/khoi/nuoc.
+        runCatching {
+            ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
+        }
+        // The phong: nhiet do/do am/cua.
+        com.smarthome.hume.core.model.DefaultRooms.climateRooms.forEach { r ->
+            r.tempEntity?.let { ids.add(it) }
+            r.humidityEntity?.let { ids.add(it) }
+            r.contactEntity?.let { ids.add(it) }
+        }
+        com.smarthome.hume.core.model.DefaultRooms.basicRooms.forEach { r ->
+            r.tempEntity?.let { ids.add(it) }
+            r.humidityEntity?.let { ids.add(it) }
+            r.contactEntity?.let { ids.add(it) }
+        }
+        com.smarthome.hume.core.model.RoomBubbleConfig.all.forEach { b ->
+            b.tempEntity?.let { ids.add(it) }
+            b.humidityEntity?.let { ids.add(it) }
+        }
+        ids
+    }
+
     private fun buildNotifications(entities: Map<String, LegacyEntity>): List<HomeNotification> {
         val out = mutableListOf<HomeNotification>()
         entities.values
-            .filter { it.id.startsWith("binary_sensor.") && it.state == "on" }
+            .filter { it.id in uiSensorIds && it.id.startsWith("binary_sensor.") && it.state == "on" }
             .forEach { e ->
                 val dc = e.attributes["device_class"]?.jsonPrimitive?.contentOrNull
                 val name = friendlyName(e)
