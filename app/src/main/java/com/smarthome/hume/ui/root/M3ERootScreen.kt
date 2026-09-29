@@ -114,14 +114,36 @@ fun M3ERootScreen(
                     HumeTab.Energy -> M3EEnergyScreen()
                     HumeTab.Security -> M3ESecurityScreen(
                         onDownloadClip = { clip ->
-                            clip.clipPath?.let { path ->
+                            val path = clip.clipPath
+                            if (path == null) {
+                                android.widget.Toast.makeText(
+                                    context, "Clip chưa sẵn sàng",
+                                    android.widget.Toast.LENGTH_SHORT,
+                                ).show()
+                            } else {
                                 val file = java.io.File(path)
-                                if (file.exists()) {
+                                if (!file.exists()) {
+                                    android.widget.Toast.makeText(
+                                        context, "Không tìm thấy file clip",
+                                        android.widget.Toast.LENGTH_SHORT,
+                                    ).show()
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        context, "Đang lưu...",
+                                        android.widget.Toast.LENGTH_SHORT,
+                                    ).show()
                                     coroutineScope.launch {
+                                        // Ten file an toan: dateLabel "dd/MM" va timeLabel
+                                        // "HH:mm" chua / va : lam hong MediaStore.
+                                        val safeName =
+                                            "Hume_${clip.dateLabel}_${clip.timeLabel}.mp4"
+                                                .replace("/", "-")
+                                                .replace(":", "-")
+                                                .replace(" ", "_")
                                         val uri = com.smarthome.hume.core.frigate.saveVideoToGallery(
                                             context,
                                             file,
-                                            "Hume_${clip.dateLabel}_${clip.timeLabel}.mp4".replace(" ", "_"),
+                                            safeName,
                                         )
                                         android.widget.Toast.makeText(
                                             context,
@@ -133,11 +155,15 @@ fun M3ERootScreen(
                             }
                         },
                         onShareClip = { clip ->
-                            clip.clipPath?.let { path ->
-                                val file = java.io.File(path)
-                                if (file.exists()) {
-                                    com.smarthome.hume.core.frigate.shareVideo(context, file)
-                                }
+                            val path = clip.clipPath
+                            val file = path?.let(::java.io.File)?.takeIf { it.exists() }
+                            if (file == null) {
+                                android.widget.Toast.makeText(
+                                    context, "Không tìm thấy file clip",
+                                    android.widget.Toast.LENGTH_SHORT,
+                                ).show()
+                            } else {
+                                com.smarthome.hume.core.frigate.shareVideo(context, file)
                             }
                         },
                     )

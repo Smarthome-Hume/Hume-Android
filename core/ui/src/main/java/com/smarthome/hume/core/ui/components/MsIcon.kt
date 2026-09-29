@@ -3,8 +3,14 @@ package com.smarthome.hume.core.ui.components
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -16,6 +22,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import com.smarthome.hume.core.ui.R
 
 private val MsFontFamily = FontFamily(Font(R.font.material_symbols_rounded))
@@ -36,6 +43,10 @@ fun MsIcon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
 ) {
+    // Can quang hoc: dua tam muc in (ink) cua glyph ve chinh giua box.
+    // Bao dam icon luon nam giua icon-background du glyph co ve lech
+    // (side bearing bat doi xung, synthetic bold, ...).
+    var inkOffset by remember(glyph) { mutableStateOf(IntOffset.Zero) }
     BoxWithConstraints(
         modifier = modifier.semantics {
             if (contentDescription != null) this.contentDescription = contentDescription
@@ -50,6 +61,16 @@ fun MsIcon(
         }
         BasicText(
             text = glyph,
+            modifier = Modifier.offset { inkOffset },
+            onTextLayout = { result ->
+                val bb = runCatching { result.getBoundingBox(0) }.getOrNull()
+                if (bb != null && !bb.isEmpty) {
+                    val dx = result.size.width / 2f - (bb.left + bb.right) / 2f
+                    val dy = result.size.height / 2f - (bb.top + bb.bottom) / 2f
+                    val next = IntOffset(dx.roundToInt(), dy.roundToInt())
+                    if (next != inkOffset) inkOffset = next
+                }
+            },
             style = TextStyle(
                 fontFamily = MsFontFamily,
                 fontSize = fs,
