@@ -236,7 +236,7 @@ fun HomeHeader(
                 )
             }
             if (state.notifications.isNotEmpty()) {
-                // Badge: rong co gian theo so chu so (1-2 chu so deu can giua).
+                // Badge tron co dinh 20.dp (khong gian theo so chu so nhu pill).
                 // lineHeight = fontSize de glyph can giua doc chuan (khong lech do font metrics).
                 val count = state.notifications.size.coerceAtMost(99)
                 Box(
@@ -244,21 +244,18 @@ fun HomeHeader(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
-                        .widthIn(min = 18.dp)
-                        .height(18.dp)
+                        .size(20.dp)
                         .clip(CircleShape)
-                        .background(cs.error)
-                        .padding(horizontal = 4.dp),
+                        .background(cs.error),
                 ) {
                     Text(
                         "$count",
-                        fontSize = 11.sp,
-                        lineHeight = 11.sp,
+                        fontSize = 10.sp,
+                        lineHeight = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
-                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -508,7 +505,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
  * sub 12px/500; sparkline SVG 90x34 ben phai.
  */
 @Composable
-fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
+fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val cs = MaterialTheme.colorScheme
     // Buffer lich su cong suat PV (tong PV1+PV2 tu sensor.solis_s6_eh1p_total_pv_power_2),
     // lay mau moi khi solarNowKw thay doi, giu 30 diem gan nhat de ve line realtime.
@@ -522,6 +519,7 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier) {
         containerColor = cs.tertiaryContainer,
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
+        onClick = onClick,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

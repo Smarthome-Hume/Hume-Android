@@ -2,7 +2,6 @@ package com.smarthome.hume.core.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,9 +37,8 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Bieu do cot phuong an D (HTML demo hume-m3e-solar-charts.html):
- * - Cot 3 mau: hom nay = primary dac, tren TB = tertiary, duoi TB = surfaceContainerHigh + vien
+ * - Mau cot theo dai gradient dam->nhat dua tren gia tri (cao nhat = primary dam nhat)
  * - Duong TB dut net + nhan "TB x.x"
- * - Legend: Hom nay / Tren TB / Duoi TB
  * - Cham cot hien tooltip gia tri
  */
 @Composable
@@ -54,6 +51,8 @@ fun WeekChartD(
     var selected by remember { mutableStateOf<Int?>(null) }
     if (vals.isEmpty()) return
     val maxValue = (vals.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
+    val minValue = vals.minOrNull() ?: 0f
+    val range = (maxValue - minValue).coerceAtLeast(0.01f)
     val avg = vals.average().toFloat()
     BoxWithConstraints(
         modifier = modifier
@@ -100,14 +99,9 @@ fun WeekChartD(
             val today = i == vals.lastIndex
             val top = y(v)
             val h = (140.dp - top).coerceAtLeast(4.dp)
-            val above = v >= avg
-            // today: primary dac; tren TB: primaryContainer (khac biet ro voi today);
-            // duoi TB: surfaceContainerHigh + vien. (tertiary trung primary o 1 so theme)
-            val barColor = when {
-                today -> cs.primary
-                above -> cs.primaryContainer
-                else -> cs.surfaceContainerHigh
-            }
+            // Dai mau dam->nhat theo gia tri: cao nhat = primary dam, thap nhat = primaryContainer nhat
+            val t = ((v - minValue) / range).coerceIn(0f, 1f)
+            val barColor = androidx.compose.ui.graphics.lerp(cs.primaryContainer, cs.primary, t)
             Box(
                 modifier = Modifier
                     .offset(x = x(i) - bw / 2, y = top)
@@ -115,11 +109,6 @@ fun WeekChartD(
                     .height(h)
                     .clip(RoundedCornerShape(50))
                     .background(barColor)
-                    .then(
-                        if (!today && !above)
-                            Modifier.border(1.5.dp, cs.outlineVariant, RoundedCornerShape(50))
-                        else Modifier
-                    )
                     .pointerInput(i) {
                         detectTapGestures(onTap = {
                             selected = if (selected == i) null else i
@@ -168,38 +157,5 @@ fun WeekChartD(
                 modifier = Modifier.weight(1f),
             )
         }
-    }
-    // Legend
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        LegendItem(color = cs.primary, label = "Hôm nay")
-        LegendItem(color = cs.primaryContainer, label = "Trên TB")
-        LegendItem(color = cs.surfaceContainerHigh, label = "Dưới TB", border = true)
-    }
-}
-
-@Composable
-private fun LegendItem(color: androidx.compose.ui.graphics.Color, label: String, border: Boolean = false) {
-    val cs = MaterialTheme.colorScheme
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier
-                .width(10.dp)
-                .height(10.dp)
-                .clip(CircleShape)
-                .background(color)
-                .then(if (border) Modifier.border(1.dp, cs.outlineVariant, CircleShape) else Modifier),
-        )
-        Text(
-            label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = cs.onSurfaceVariant,
-            modifier = Modifier.padding(start = 5.dp),
-        )
     }
 }

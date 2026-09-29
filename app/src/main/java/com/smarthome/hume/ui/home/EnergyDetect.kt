@@ -67,5 +67,27 @@ internal object EnergyDetect {
         add(HumeConfig.ALARM_FALLBACK)
         HumeConfig.deviceCards.values.forEach { add(it.entityId) }
         HumeConfig.doorCards.values.forEach { add(it.entityId) }
+        // Energy Flow: PV1/PV2 strings, grid tong, CB1/CB2/CB3 tang
+        add("sensor.solis_s6_eh1p_pv_power_1_3")
+        add("sensor.solis_s6_eh1p_pv_power_2_3")
+        add("sensor.aptomat_tong_power")
+        add("sensor.aptomat_t1_power")
+        add("sensor.aptomat_t2_power")
+        add("sensor.aptomat_t3_power")
+        // Security tab: door/motion/smoke/leak sensors
+        add("binary_sensor.cam_bien_cua_kinh_contact")
+        add("binary_sensor.cam_bien_cua_phong_ngu_chinh_contact")
+        add("binary_sensor.cam_bien_cua_phong_ngu_be_contact")
+        add("binary_sensor.cam_bien_cua_phong_tam_contact")
+        add("binary_sensor.cam_bien_cua_ban_cong_tt2_contact")
+        add("binary_sensor.cam_bien_ban_cong_t3_contact")
+        add("binary_sensor.cam_bien_pir_t1_occupancy")
+        add("binary_sensor.cam_bien_pir_t2_occupancy")
+        add("binary_sensor.cam_bien_pir_t3_occupancy")
+        add("binary_sensor.cam_bien_hien_dien_presence")
+        add("binary_sensor.cam_bien_pir_phong_tho_occupancy")
+        add("binary_sensor.cam_bien_tuong_t2_occupancy")
+        add("binary_sensor.cam_bien_khoi_smoke")
+        add("binary_sensor.cam_bien_nuoc_water_leak")
     }
 }

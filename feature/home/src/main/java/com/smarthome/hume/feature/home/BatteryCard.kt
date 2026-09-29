@@ -53,7 +53,7 @@ import com.smarthome.hume.core.ui.components.MsIcon
  * - Legend: "Du tru 20%" | "Su dung 2%"
  */
 @Composable
-fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
+fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val cs = MaterialTheme.colorScheme
     val soc = battery.soc.coerceIn(0, 100)
     val reserve = battery.reservePct
@@ -65,6 +65,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
         modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
     ) {
         // Hang 1: title + tron icon pin (layout anh mau, mau M3E)
         Row(

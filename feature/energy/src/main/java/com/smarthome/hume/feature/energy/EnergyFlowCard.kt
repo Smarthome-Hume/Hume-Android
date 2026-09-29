@@ -66,19 +66,21 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val VB_W = 380f
-private const val VB_H = 400f
+private const val VB_H = 460f
+private const val NODE_W = 150f
+private const val NODE_H = 190f
 
 private fun prodPath() = Path().apply {
-    moveTo(156f, 62f); lineTo(166f, 62f); quadraticTo(182f, 62f, 182f, 78f); lineTo(182f, 168f)
+    moveTo(156f, 62f); lineTo(166f, 62f); quadraticTo(182f, 62f, 182f, 78f); lineTo(182f, 198f)
 }
 private fun gridPath() = Path().apply {
-    moveTo(198f, 168f); lineTo(198f, 78f); quadraticTo(198f, 62f, 214f, 62f); lineTo(224f, 62f)
+    moveTo(198f, 198f); lineTo(198f, 78f); quadraticTo(198f, 62f, 214f, 62f); lineTo(224f, 62f)
 }
 private fun consPath() = Path().apply {
-    moveTo(182f, 232f); lineTo(182f, 314f); quadraticTo(182f, 330f, 166f, 330f); lineTo(156f, 330f)
+    moveTo(182f, 262f); lineTo(182f, 374f); quadraticTo(182f, 390f, 166f, 390f); lineTo(156f, 390f)
 }
 private fun battPath() = Path().apply {
-    moveTo(198f, 232f); lineTo(198f, 314f); quadraticTo(198f, 330f, 214f, 330f); lineTo(224f, 330f)
+    moveTo(198f, 262f); lineTo(198f, 374f); quadraticTo(198f, 390f, 214f, 390f); lineTo(224f, 390f)
 }
 
 /** Toc do sweep: 18/v giay, clamp 4-14s — v la kW (dung abs de gia tri am van co toc do). */
@@ -217,8 +219,8 @@ private fun FlowArea(
 
         FlowTracks(flow = flow, charging = charging)
 
-        // nodes: 150x160px trong viewBox 380x400, cach ria 6px
-        val nw = fx(150f); val nh = fy(160f)
+        // nodes: 150x190px trong viewBox 380x460, cach ria 6px
+        val nw = fx(NODE_W); val nh = fy(NODE_H)
         FlowNode(
             icon = M3EIcons.SolarPower,
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
@@ -244,7 +246,7 @@ private fun FlowArea(
             label = "Lưới điện", valueKw = flow.gridKw,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(VB_W - 6f - 150f), fy(6f)),
+                .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
         )
         FlowNode(
             icon = M3EIcons.Home,
@@ -253,7 +255,7 @@ private fun FlowArea(
             label = "Tiêu thụ", valueKw = flow.consKw,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(6f), fy(VB_H - 6f - 160f)),
+                .offset(fx(6f), fy(VB_H - 6f - NODE_H)),
         ) {
             val tot = (flow.cb1Kw + flow.cb2Kw + flow.cb3Kw).coerceAtLeast(0.01)
             SegBar(
@@ -276,7 +278,7 @@ private fun FlowArea(
             badgeFg = battFg,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(VB_W - 6f - 150f), fy(VB_H - 6f - 160f)),
+                .offset(fx(VB_W - 6f - NODE_W), fy(VB_H - 6f - NODE_H)),
             onClick = { vm.toggleBattFlow() },
         ) {
             Row(
@@ -296,7 +298,7 @@ private fun FlowArea(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             // demo .flsocbar i{transition:width .6s ease}
             val socFrac by animateFloatAsState(
                 targetValue = (soc / 100).toFloat().coerceIn(0f, 1f),
@@ -306,14 +308,14 @@ private fun FlowArea(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
+                    .height(6.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.outlineVariant),
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(socFrac)
-                        .height(4.dp)
+                        .height(6.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF16A34A)),
                 )
@@ -413,7 +415,12 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
     Canvas(Modifier.fillMaxSize()) {
         val sx = size.width / VB_W
         val sy = size.height / VB_H
+        // Do day net chay theo gia tri: lon nhat 4.5.dp (= 5.dp hien tai - 10%), nho nhat 1.5.dp
+        val maxP = tracks.maxOf { kotlin.math.abs(it.powerKw) }.coerceAtLeast(0.01)
         tracks.forEachIndexed { i, t ->
+            val frac = (kotlin.math.abs(t.powerKw) / maxP).toFloat().coerceIn(0.08f, 1f)
+            val sweepW = 1.5.dp + 3.dp * frac
+            val glowW = sweepW * 2.2f
             val path = Path().apply {
                 addPath(t.path)
                 transform(Matrix().apply { scale(sx, sy) })
@@ -427,11 +434,11 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
             // glow underlay (demo: drop-shadow(0 0 7px primary 70%) tren net sweep 5px)
             drawPath(
                 path = path, color = primary.copy(alpha = 0.5f),
-                style = Stroke(width = 11.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash),
+                style = Stroke(width = glowW.toPx(), cap = StrokeCap.Round, pathEffect = dash),
             )
             drawPath(
                 path = path, color = primary,
-                style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash),
+                style = Stroke(width = sweepW.toPx(), cap = StrokeCap.Round, pathEffect = dash),
             )
         }
     }

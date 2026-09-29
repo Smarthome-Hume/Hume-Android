@@ -96,6 +96,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var fabOpen by rememberSaveable { mutableStateOf(false) }
     var ecoDialog by remember { mutableStateOf(false) }
+    var chartDetail by remember { mutableStateOf<ChartDetailType?>(null) }
     val tips = buildSuggestTips(state)
 
     ui.snackbar?.let { s ->
@@ -231,12 +232,22 @@ fun HomeScreen(
                     }
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
-                            RiseIn(220) { SolarLiveCard(state) }
+                            RiseIn(220) {
+                                SolarLiveCard(
+                                    state,
+                                    onClick = { chartDetail = ChartDetailType.Solar },
+                                )
+                            }
                         }
                     }
                     item {
                         Column(Modifier.padding(bottom = 20.dp)) {
-                            RiseIn(240) { BatteryCard(state.battery) }
+                            RiseIn(240) {
+                                BatteryCard(
+                                    state.battery,
+                                    onClick = { chartDetail = ChartDetailType.Battery },
+                                )
+                            }
                         }
                     }
                     item {
@@ -285,6 +296,13 @@ fun HomeScreen(
                     NotificationSheet(
                         notifications = state.notifications,
                         onDismiss = { viewModel.openNotif(false) },
+                    )
+                }
+                // Sheet bieu do chi tiet (cham the Pin / Dien mat troi)
+                chartDetail?.let { type ->
+                    ChartDetailSheet(
+                        type = type,
+                        onDismiss = { chartDetail = null },
                     )
                 }
                 if (ui.lightsOpen) {
