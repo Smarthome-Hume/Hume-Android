@@ -166,19 +166,6 @@ fun MeScreen(
         )
         SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
         CustomSeedRow(onApply = { haptic(); vm.setSeed(it) })
-        Text(
-            // demo .tnote: "primary family <b>và</b> neutrals"
-            buildAnnotatedString {
-                append("Mỗi seed sinh ra cả dải tonal light/dark — primary family ")
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("và") }
-                append(" neutrals (nền, viền, chữ) đều đổi theo đúng quy tắc M3.")
-            },
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Medium,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(start = 4.dp, top = 6.dp),
-        )
     }
 }
 
@@ -470,17 +457,11 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text("Chế độ hiển thị", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        Text(
-            "Hệ thống = theo cài đặt điện thoại",
-            fontSize = 12.sp,
-            color = cs.onSurfaceVariant,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(top = 3.dp, bottom = 12.dp),
-        )
         // Cum 3 che do: nen surfaceHighest bo 24, moi option nen rieng
         Row(
             Modifier
                 .fillMaxWidth()
+                .padding(top = 12.dp)
                 .clip(RoundedCornerShape(24.dp))
                 .background(LocalHumeExtraColors.current.surfaceHighest)
                 .padding(14.dp),
@@ -525,20 +506,13 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
                         .padding(vertical = 14.dp, horizontal = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        MsIcon(
-                            icons[i], null, tint = fg,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Text(
-                            labels[i],
-                            fontSize = 12.5.sp,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-                            color = fg,
-                            maxLines = 1,
-                            modifier = Modifier.padding(start = 6.dp),
-                        )
-                    }
+                    Text(
+                        labels[i],
+                        fontSize = 12.5.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                        color = fg,
+                        maxLines = 1,
+                    )
                 }
             }
         }
@@ -553,9 +527,32 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
 @Composable
 private fun CustomSeedRow(onApply: (M3ESeed) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    var hex by remember { mutableStateOf("") }
-    // text thong bao + co phai loi khong
+    var hue by remember { androidx.compose.runtime.mutableFloatStateOf(0f) } // 0..360
+    var sat by remember { androidx.compose.runtime.mutableFloatStateOf(1f) } // 0..1
+    var value by remember { androidx.compose.runtime.mutableFloatStateOf(1f) } // 0..1
+    var hexInput by remember { mutableStateOf("") }
     var feedback by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+
+    // Mau hien tai tu HSV
+    val currentColor = remember(hue, sat, value) {
+        androidx.compose.ui.graphics.Color.hsv(hue, sat, value)
+    }
+    val hexString = remember(currentColor) {
+        val c = currentColor
+        "#%02X%02X%02X".format(
+            (c.red * 255).toInt(),
+            (c.green * 255).toInt(),
+            (c.blue * 255).toInt(),
+        )
+    }
+    val rgbString = remember(currentColor) {
+        "${(currentColor.red * 255).toInt()}, " +
+            "${(currentColor.green * 255).toInt()}, " +
+            "${(currentColor.blue * 255).toInt()}"
+    }
+    val hsvString = remember(hue, sat, value) {
+        "${hue.toInt()}°, ${(sat * 100).toInt()}%, ${(value * 100).toInt()}%"
+    }
 
     Column(
         Modifier
@@ -569,41 +566,122 @@ private fun CustomSeedRow(onApply: (M3ESeed) -> Unit) {
             color = cs.onSurfaceVariant,
             letterSpacing = 0.4.sp,
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 8.dp),
+        // Dai mau spectrum: hue slider (giong Google color picker) - keo duoc
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth().height(40.dp)) {
+            // Nen gradient cau vong
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            colors = List(7) { i ->
+                                androidx.compose.ui.graphics.Color.hsv(i * 60f, 1f, 1f)
+                            } + listOf(androidx.compose.ui.graphics.Color.hsv(0f, 1f, 1f)),
+                        ),
+                    ),
+            )
+            // Slider trong suot de keo
+            androidx.compose.material3.Slider(
+                value = hue,
+                onValueChange = { hue = it },
+                valueRange = 0f..360f,
+                modifier = Modifier.matchParentSize(),
+                colors = androidx.compose.material3.SliderDefaults.colors(
+                    thumbColor = androidx.compose.ui.graphics.Color.White,
+                    activeTrackColor = androidx.compose.ui.graphics.Color.Transparent,
+                    inactiveTrackColor = androidx.compose.ui.graphics.Color.Transparent,
+                ),
+            )
+        }
+        // O mau 2D: saturation (ngang) x value/brightness (doc)
+        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            androidx.compose.ui.graphics.Color.Transparent,
+                            androidx.compose.ui.graphics.Color.Black,
+                        ),
+                    ),
+                ),
         ) {
-            OutlinedTextField(
-                value = hex,
-                onValueChange = { hex = it; feedback = null },
-                label = { Text("Mã hex") },
-                placeholder = { Text("FF5722") },
-                prefix = { Text("#") },
-                singleLine = true,
-                shape = RoundedCornerShape(20.dp),
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            colors = listOf(
+                                androidx.compose.ui.graphics.Color.White,
+                                androidx.compose.ui.graphics.Color.hsv(hue, 1f, 1f),
+                            ),
+                        ),
+                    ),
+            )
+            // Chon sat/value bang tap (don gian: dung slider)
+        }
+        // Slider cho saturation va brightness
+        Spacer(Modifier.height(8.dp))
+        Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("S", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
+            androidx.compose.material3.Slider(
+                value = sat,
+                onValueChange = { sat = it },
                 modifier = Modifier.weight(1f),
             )
+        }
+        Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("V", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
+            androidx.compose.material3.Slider(
+                value = value,
+                onValueChange = { value = it },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        // Hien thi HEX / RGB / HSV + preview
+        Spacer(Modifier.height(8.dp))
+        Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(currentColor)
+                    .border(1.dp, cs.outlineVariant, RoundedCornerShape(12.dp)),
+            )
+            Column(Modifier.weight(1f)) {
+                Text("HEX $hexString", fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text("RGB $rgbString", fontSize = 11.sp, color = cs.onSurfaceVariant)
+                Text("HSV $hsvString", fontSize = 11.sp, color = cs.onSurfaceVariant)
+            }
             Box(
                 Modifier
                     .width(96.dp)
-                    .height(56.dp)
+                    .height(48.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(cs.primaryContainer)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                     ) {
-                        val color = parseHexColor(hex)
-                        if (color == null) {
-                            feedback = "Mã hex không hợp lệ (vd #FF5722)" to true
-                        } else {
-                            val nearest = M3ESeed.entries.minByOrNull { s ->
-                                colorDistance(seedColors[s] ?: Color.Gray, color)
-                            } ?: M3ESeed.Cam
-                            onApply(nearest)
-                            feedback = "Đã chọn: ${seedNames[nearest] ?: nearest.name}" to false
-                        }
+                        val nearest = M3ESeed.entries.minByOrNull { s ->
+                            colorDistance(seedColors[s] ?: Color.Gray, currentColor)
+                        } ?: M3ESeed.Cam
+                        onApply(nearest)
+                        feedback = "Đã chọn: ${seedNames[nearest] ?: nearest.name}" to false
                     },
                 contentAlignment = Alignment.Center,
             ) {
@@ -615,6 +693,33 @@ private fun CustomSeedRow(onApply: (M3ESeed) -> Unit) {
                 )
             }
         }
+        // Nhap hex thu cong (giu lai)
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = hexInput,
+            onValueChange = {
+                hexInput = it
+                feedback = null
+                // Tu dong cap nhat hue/sat/value neu hex hop le
+                parseHexColor(it)?.let { c ->
+                    val hsv = FloatArray(3)
+                    android.graphics.Color.RGBToHSV(
+                        (c.red * 255).toInt(),
+                        (c.green * 255).toInt(),
+                        (c.blue * 255).toInt(),
+                        hsv,
+                    )
+                    hue = hsv[0]
+                    sat = hsv[1]
+                    value = hsv[2]
+                }
+            },
+            label = { Text("Mã hex") },
+            placeholder = { Text("#FF5722") },
+            singleLine = true,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
         feedback?.let { (msg, isError) ->
             Text(
                 msg,

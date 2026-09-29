@@ -77,24 +77,6 @@ fun WeekChartD(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())),
             )
         }
-        // Nhan "TB x.x" o dau TRAI duong TB (tranh de len cot cao ben phai)
-        Box(
-            Modifier
-                .align(Alignment.TopStart)
-                .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
-                .padding(start = 4.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(cs.surfaceContainerHighest.copy(alpha = 0.85f))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        ) {
-            Text(
-                "TB ${"%.1f".format(avg)}",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = cs.onSurfaceVariant,
-                maxLines = 1,
-            )
-        }
         vals.forEachIndexed { i, v ->
             val today = i == vals.lastIndex
             val top = y(v)
@@ -137,6 +119,25 @@ fun WeekChartD(
                     )
                 }
             }
+        }
+        // Nhan "TB x.x" ve SAU cot de luon nam tren (khong bi che)
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
+                .padding(end = 4.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(cs.surfaceContainerHighest)
+                .border(1.dp, cs.outlineVariant, RoundedCornerShape(6.dp))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+        ) {
+            Text(
+                "TB ${"%.1f".format(avg)}",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurfaceVariant,
+                maxLines = 1,
+            )
         }
     }
     Spacer(Modifier.height(2.dp))

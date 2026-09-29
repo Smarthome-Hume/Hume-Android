@@ -33,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MarqueeText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -735,61 +736,5 @@ private fun ClipOverlay(clip: RecordingUi, onClose: () -> Unit) {
                 )
             }
         }
-    }
-}
-
-/**
- * Text chay marquee khi tran (khong dung basicMarquee mac dinh vi bi loi chong chu).
- * Dung scroll state + animation tu che.
- */
-@Composable
-private fun MarqueeText(
-    text: String,
-    fontSize: androidx.compose.ui.unit.TextUnit,
-    fontWeight: FontWeight,
-    color: androidx.compose.ui.graphics.Color,
-    modifier: Modifier = Modifier,
-) {
-    val scrollState = androidx.compose.foundation.rememberScrollState()
-    androidx.compose.runtime.LaunchedEffect(text) {
-        // Doi 1.5s roi cuon
-        kotlinx.coroutines.delay(1500)
-        while (true) {
-            // Cuon tu trai sang phai
-            val max = scrollState.maxValue
-            if (max > 0) {
-                scrollState.animateScrollTo(
-                    max,
-                    animationSpec = androidx.compose.animation.core.tween(
-                        durationMillis = (max * 15).coerceAtLeast(1000),
-                        easing = androidx.compose.animation.core.LinearEasing,
-                    ),
-                )
-                kotlinx.coroutines.delay(1000)
-                scrollState.animateScrollTo(
-                    0,
-                    animationSpec = androidx.compose.animation.core.tween(
-                        durationMillis = 800,
-                        easing = androidx.compose.animation.core.LinearEasing,
-                    ),
-                )
-                kotlinx.coroutines.delay(1500)
-            } else {
-                kotlinx.coroutines.delay(2000)
-            }
-        }
-    }
-    androidx.compose.foundation.layout.Box(
-        modifier = modifier
-            .horizontalScroll(scrollState, enabled = false),
-    ) {
-        androidx.compose.material3.Text(
-            text,
-            fontSize = fontSize,
-            fontWeight = fontWeight,
-            color = color,
-            maxLines = 1,
-            softWrap = false,
-        )
     }
 }

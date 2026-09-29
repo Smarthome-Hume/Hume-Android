@@ -163,15 +163,12 @@ private fun RoomCard(
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                Text(
-                    room.name,
+                com.smarthome.hume.core.ui.components.MarqueeText(
+                    text = room.name,
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (room.lightOn) cs.onPrimaryContainer
                     else cs.onSurface,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
                 // Subtitle chi con thiet bi (bo nhiet do ra) -> nhieu khong gian hon
                 val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật"

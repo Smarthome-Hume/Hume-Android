@@ -250,12 +250,6 @@ fun AiSettingsCard(vm: MeViewModel) {
                         )
                     }
                 }
-                Text(
-                    "Key được mã hóa bằng Android Keystore, không bao giờ gửi đi nơi khác ngoài API của nhà cung cấp.",
-                    fontSize = 11.sp,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, top = 6.dp),
-                )
 
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

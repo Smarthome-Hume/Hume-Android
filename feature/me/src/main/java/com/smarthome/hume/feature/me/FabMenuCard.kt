@@ -82,12 +82,6 @@ fun FabMenuCard(
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Tùy chỉnh entity cho từng chức năng",
-                    fontSize = 13.sp,
-                    color = cs.onSurfaceVariant,
-                )
             }
             MsIcon(M3EIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
