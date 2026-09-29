@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Adaptive icon dung avatar nhan vat bong mem cua Muse (user chon):
-    foreground PNG 1024 (drawable-nodpi), nen trang; nhan vat da tach khoi
-    anh chup man hinh (xoa nut but chi), chiem ~58% canvas de nam gon trong
-    vung an toan 66dp — One UI bo tron kieu nao cung khong cat mat.
-    <monochrome> la silhouette nhan vat cho Themed icons (Android 13+).
-    Luu y: launcher icon Android khong ho tro anh dong — dung 1 frame tinh.
+    Adaptive icon dung anh GOC cua Jolly (avatar mac dinh cua Muse):
+    foreground PNG 1024 (drawable-nodpi) crop tu hatch.jpg 1600px, nen
+    #F3F3F3 khop nen anh goc; chan dung fade mem o day; nhan vat ~58%
+    canvas, nam gon trong vung an toan 66dp. <monochrome> la silhouette
+    cho Themed icons (Android 13+). Ban video goc (dang chuyen dong):
+    assets/avatar/reference/hatch.mp4 — launcher Android khong ho tro
+    icon dong nen dung frame tinh.
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />

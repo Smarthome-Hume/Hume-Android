@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Nen adaptive icon: trang, cho khop nen icon Muse. -->
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Nen adaptive icon: xam nhat #F3F3F3, khop nen anh goc Jolly. -->
+    <color name="ic_launcher_background">#F3F3F3</color>
 </resources>
