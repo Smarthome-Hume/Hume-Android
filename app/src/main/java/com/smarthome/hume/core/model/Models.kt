@@ -36,7 +36,7 @@ data class HomeEntity(
 
 fun HAEntity.toHomeEntity() = HomeEntity(entityId, state, attributes, lastChanged, lastUpdated)
 
-enum class HumeTab(val label: String) { Home("Nh\u00e0"), Energy("\u0110i\u1ec7n"), Security("An ninh"), Profile("T\u00f4i") }
+enum class HumeTab(val label: String) { Home("Nh\u00e0"), Energy("N\u0103ng l\u01b0\u1ee3ng"), Security("An ninh"), Profile("H\u1ed3 s\u01a1") }
 
 data class RoomConfig(
     val name: String,
@@ -111,7 +111,7 @@ data class RoomBubbleConfig(
                     DeviceConfig.toggle("light.cong_tac_phong_ngu_l1", "\u0110\u00e8n tr\u1ea7n", "\u0110\u00e8n tr\u1eafng tr\u00ean tr\u1ea7n", "bulb"),
                     DeviceConfig.toggle("light.smartlight", "\u0110\u00e8n th\u00f4ng minh", "\u0110\u00e8n \u1ed1p tr\u1ea7n th\u00f4ng minh \u0111\u1ed5i m\u00e0u", "bulb"),
                     DeviceConfig.toggle("light.table_led", "\u0110\u00e8n b\u00e0n h\u1ecdc", "\u0110\u00e8n b\u00e0n th\u00f4ng minh \u0111\u1ed5i m\u00e0u", "desk"),
-                    DeviceConfig.toggle("switch.cong_tac_phong_ngu_l3", "Smartlight", "C\u00f4ng t\u1eafc smartlight ph\u00f2ng ng\u1ee7", "switch"),
+                    DeviceConfig.toggle("switch.cong_tac_phong_ngu_l3", "\u0110\u00e8n th\u00f4ng minh", "C\u00f4ng t\u1eafc \u0111\u00e8n th\u00f4ng minh ph\u00f2ng ng\u1ee7", "switch"),
                 ),
             ),
             RoomBubbleConfig(

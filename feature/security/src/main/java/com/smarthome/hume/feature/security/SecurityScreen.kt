@@ -75,6 +75,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.MsIcon
 import java.io.File
 import kotlinx.coroutines.delay
@@ -461,14 +462,12 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        s.name,
+                    // Ten sensor dai: chay marquee (theo yeu cau user 29/09)
+                    MarqueeText(
+                        text = s.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = nameColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        softWrap = false,
                         modifier = Modifier.padding(start = 12.dp),
                     )
                     Spacer(Modifier.height(2.dp))

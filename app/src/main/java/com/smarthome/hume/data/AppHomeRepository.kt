@@ -266,9 +266,33 @@ class AppHomeRepository(
         }
     }
 
-    private fun friendlyName(e: LegacyEntity): String =
-        e.attributes["friendly_name"]?.jsonPrimitive?.contentOrNull
+    private fun friendlyName(e: LegacyEntity): String {
+        val raw = e.attributes["friendly_name"]?.jsonPrimitive?.contentOrNull
             ?.takeIf { it.isNotBlank() } ?: e.id.substringAfter('.').replace('_', ' ')
+        // Viet hoa ngan gon nhung ten con tieng Anh (friendly_name mac dinh
+        // cua integration / fallback tu entity_id).
+        return vietnameseShort(raw)
+    }
+
+    /**
+     * Viet hoa ngan gon, ro nghia ten thiet bi con tieng Anh.
+     * Ten da co dau tieng Viet duoc giu nguyen. Dich theo cum (dai truoc)
+     * voi word-boundary; cum khong co trong tu dien giu nguyen.
+     */
+    private fun vietnameseShort(raw: String): String {
+        val s = raw.trim()
+        if (s.isEmpty()) return s
+        // Da la tieng Viet (co ky tu co dau) -> giu nguyen
+        if (s.any { it in '\u00c0'..'\u1ef9' }) return s
+        var out = " ${s.lowercase()} "
+        for ((en, vi) in VI_NAME_DICT) {
+            out = out.replace(Regex("\\b${Regex.escape(en)}\\b"), vi)
+        }
+        // "l1".."l9" (kenh/line) -> chi giu so
+        out = out.replace(Regex("\\bl([1-9])\\b"), "$1")
+        out = out.replace(Regex("\\s+"), " ").trim()
+        return out.replaceFirstChar { it.uppercase() }
+    }
 
     private fun buildNotifications(entities: Map<String, LegacyEntity>): List<HomeNotification> {
         val out = mutableListOf<HomeNotification>()
@@ -382,6 +406,135 @@ class AppHomeRepository(
         _homeState.value = _homeState.value.copy(solarWeek = days)
     }
 }
+
+/**
+ * Tu dien Anh -> Viet ngan gon cho ten thiet bi (muc 5, 29/09).
+ * Thu tu: cum dai truoc, tu don sau. Chi dung cho ten chua co dau
+ * tieng Viet (ten thuong hieu nhu Solis/Aqara khong co trong nay
+ * nen duoc giu nguyen).
+ */
+private val VI_NAME_DICT = listOf(
+    // Cum chuyen biet
+    "total pv power" to "tổng công suất điện mặt trời",
+    "pv power" to "công suất điện mặt trời",
+    "solar power" to "công suất điện mặt trời",
+    "battery power" to "công suất pin",
+    "battery soc" to "mức pin",
+    "backup soc" to "pin dự phòng",
+    "grid power" to "công suất lưới điện",
+    "smart light" to "đèn thông minh",
+    "smartlight" to "đèn thông minh",
+    "ceiling light" to "đèn trần",
+    "table lamp" to "đèn bàn",
+    "desk lamp" to "đèn bàn học",
+    "led strip" to "dải đèn led",
+    "light strip" to "dải đèn",
+    "night light" to "đèn ngủ",
+    "motion sensor" to "cảm biến chuyển động",
+    "door sensor" to "cảm biến cửa",
+    "window sensor" to "cảm biến cửa sổ",
+    "temperature sensor" to "cảm biến nhiệt độ",
+    "humidity sensor" to "cảm biến độ ẩm",
+    "smoke detector" to "báo khói",
+    "smoke sensor" to "cảm biến khói",
+    "water leak sensor" to "cảm biến rò rỉ nước",
+    "leak sensor" to "cảm biến rò rỉ",
+    "presence sensor" to "cảm biến hiện diện",
+    "air conditioner" to "điều hòa",
+    "air conditioning" to "điều hòa",
+    "living room" to "phòng khách",
+    "master bedroom" to "phòng ngủ chính",
+    "kid bedroom" to "phòng trẻ em",
+    "kids bedroom" to "phòng trẻ em",
+    "bedroom" to "phòng ngủ",
+    "dining room" to "phòng ăn",
+    "prayer room" to "phòng thờ",
+    "worship room" to "phòng thờ",
+    "study room" to "phòng học",
+    "kitchen" to "phòng bếp",
+    "bathroom" to "phòng tắm",
+    "office" to "phòng làm việc",
+    "garage" to "nhà xe",
+    "balcony" to "ban công",
+    "terrace" to "sân thượng",
+    "garden" to "sân vườn",
+    "hallway" to "hành lang",
+    "corridor" to "hành lang",
+    "staircase" to "cầu thang",
+    "stairs" to "cầu thang",
+    "front door" to "cửa chính",
+    "back door" to "cửa sau",
+    "main door" to "cửa chính",
+    "entrance" to "cửa chính",
+    // Tu don
+    "sensor" to "cảm biến",
+    "detector" to "cảm biến",
+    "lights" to "đèn",
+    "light" to "đèn",
+    "lamp" to "đèn",
+    "bulb" to "bóng đèn",
+    "switch" to "công tắc",
+    "button" to "nút bấm",
+    "remote" to "điều khiển",
+    "dimmer" to "chiết áp",
+    "plug" to "ổ cắm",
+    "outlet" to "ổ cắm",
+    "socket" to "ổ cắm",
+    "fan" to "quạt",
+    "heater" to "máy sưởi",
+    "thermostat" to "điều nhiệt",
+    "curtain" to "rèm",
+    "blinds" to "rèm",
+    "blind" to "rèm",
+    "speaker" to "loa",
+    "television" to "tivi",
+    "tv" to "tivi",
+    "camera" to "camera",
+    "lock" to "khóa",
+    "alarm" to "báo động",
+    "siren" to "còi báo động",
+    "smoke" to "khói",
+    "leak" to "rò rỉ",
+    "water" to "nước",
+    "gas" to "gas",
+    "motion" to "chuyển động",
+    "presence" to "hiện diện",
+    "door" to "cửa",
+    "window" to "cửa sổ",
+    "gate" to "cổng",
+    "temperature" to "nhiệt độ",
+    "humidity" to "độ ẩm",
+    "temp" to "nhiệt độ",
+    "power" to "công suất",
+    "energy" to "điện năng",
+    "voltage" to "điện áp",
+    "current" to "dòng điện",
+    "battery" to "pin",
+    "solar" to "mặt trời",
+    "pv" to "điện mặt trời",
+    "grid" to "lưới điện",
+    "backup" to "dự phòng",
+    "total" to "tổng",
+    "today" to "hôm nay",
+    "daily" to "hằng ngày",
+    "yesterday" to "hôm qua",
+    "smart" to "thông minh",
+    "ceiling" to "trần",
+    "table" to "bàn",
+    "desk" to "bàn",
+    "wall" to "tường",
+    "floor" to "sàn",
+    "outdoor" to "ngoài trời",
+    "indoor" to "trong nhà",
+    "outside" to "ngoài trời",
+    "inside" to "trong nhà",
+    "front" to "trước",
+    "back" to "sau",
+    "left" to "trái",
+    "right" to "phải",
+    "main" to "chính",
+    "room" to "phòng",
+)
 
 /**
  * Parse duration tu sensor HA (vi du "2:30", "1:15:30", "90") thanh gio ket thuc "hh:mm".

@@ -56,7 +56,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -107,8 +106,6 @@ fun HomeScreen(
     val cs = MaterialTheme.colorScheme
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var fabOpen by rememberSaveable { mutableStateOf(false) }
-    var ecoDialog by remember { mutableStateOf(false) }
     var chartDetail by remember { mutableStateOf<ChartDetailType?>(null) }
     val tips = buildSuggestTips(state)
     val aiState by viewModel.aiState.collectAsState()
@@ -190,9 +187,9 @@ fun HomeScreen(
                     // Fling dam (0.6x van toc) -> cuon cham, do hon
                     flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
-                        // Bottom 176dp: FAB nam o bottom=110dp, cao 56dp (110+56=166),
-                        // +10dp gap de FAB khong de len the cuoi
-                        start = 18.dp, end = 18.dp, top = 8.dp, bottom = 176.dp,
+                        // Bottom 140dp: dong nhat voi cac tab khac (FAB da tam
+                        // xoa) — the cuoi cach navbar noi ~20px.
+                        start = 18.dp, end = 18.dp, top = 8.dp, bottom = 140.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
@@ -318,19 +315,7 @@ fun HomeScreen(
                     }
                 }
 
-                // FAB tuyet doi: right 20px bottom 88px (ha thap hon 108px cu)
-                // Khong dung scrim che nen khi mo (theo yeu cau moi)
-                HomeFabMenu(
-                    open = fabOpen,
-                    onOpenChange = { fabOpen = it },
-                    onTurnOnLights = { viewModel.turnOnAllLights() },
-                    onAc26 = { viewModel.ac26() },
-                    onArmAway = { viewModel.armAwayQuick() },
-                    onEco = { ecoDialog = true },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 110.dp),
-                )
+                // (FAB speed-dial tam xoa theo yeu cau 29/09)
 
                 // Sheet phong (ModalBottomSheet cua M3: giu day du chuc nang
                 // keo dong, scrim, predictive back...)
@@ -383,16 +368,7 @@ fun HomeScreen(
                         onBack = { viewModel.openSearch(false) },
                     )
                 }
-                // Dialog xac nhan tiet kiem dien
-                if (ecoDialog) {
-                    EcoDialog(
-                        onDismiss = { ecoDialog = false },
-                        onConfirm = {
-                            ecoDialog = false
-                            viewModel.ecoMode()
-                        },
-                    )
-                }
+                // (Dialog tiet kiem dien di kem FAB — tam xoa theo)
                 // (Viewer avatar + popup camera duoc ve o tang M3ERootScreen,
                 //  tren ca navbar — khong ve o day nua.)
             }
