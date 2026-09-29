@@ -353,22 +353,32 @@ internal fun roomNameForSensor(entityId: String): String? {
         "bep" in id || "kitchen" in id -> "Phòng Bếp"
         "giat" in id || "washing" in id || "laundry" in id -> "Phòng Giặt"
         "hanh_lang" in id || "hall" in id -> "Hành Lang"
+        // Ngoai troi/san: phai co truoc khi fallback null de cameraForSensor
+        // map dung cam ngoai troi thay vi roi ve cameras.first().
+        "ngoai_troi" in id || "ngoai" in id || "outdoor" in id ||
+            "san_truoc" in id || "san_sau" in id || "sanh" in id -> "Ngoài trời"
         else -> null
     }
 }
 
 /**
- * Camera phu hop nhat cho sensor chuyen dong: theo phong cua sensor;
+ * Camera phu hop nhat cho sensor chuyen dong: uu tien match truc tiep key
+ * camera trong entity_id (vd "outdoor"), sau do theo phong cua sensor;
  * khong map duoc thi lay camera dau tien. Ten hien thi lay tu danh sach
  * camera cua tab An ninh (AppSecurityRepository.CAMERAS).
  */
 internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): SecurityCamera? {
     if (cameras.isEmpty()) return null
+    val id = sensorId.lowercase()
+    // 1. Key camera xuat hien truc tiep trong entity_id.
+    cameras.firstOrNull { it.key.lowercase() in id }?.let { return it }
+    // 2. Theo phong cua sensor.
     val key = when (roomNameForSensor(sensorId)) {
         "Phòng Khách" -> "living"
         "Phòng Bếp" -> "kitchen"
         "Phòng Ngủ" -> "bedroom"
         "Phòng Thờ" -> "server"
+        "Ngoài trời" -> "outdoor"
         else -> null
     }
     return key?.let { k -> cameras.firstOrNull { it.key == k } } ?: cameras.first()
