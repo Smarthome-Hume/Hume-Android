@@ -156,7 +156,7 @@ fun M3ERootScreen(
                         },
                         onShareClip = { clip ->
                             val path = clip.clipPath
-                            val file = path?.let(::java.io.File)?.takeIf { it.exists() }
+                            val file = path?.let { java.io.File(it) }?.takeIf { it.exists() }
                             if (file == null) {
                                 android.widget.Toast.makeText(
                                     context, "Không tìm thấy file clip",

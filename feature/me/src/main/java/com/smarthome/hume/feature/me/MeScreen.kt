@@ -14,6 +14,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -621,7 +622,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                     }
                 }
                 .pointerInput(Unit) {
-                    androidx.compose.foundation.gestures.detectDragGestures { change, _ ->
+                    detectDragGestures { change, _ ->
                         sat = (change.position.x / size.width).coerceIn(0f, 1f)
                         value = (1f - change.position.y / size.height).coerceIn(0f, 1f)
                         change.consume()
@@ -644,8 +645,8 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             Box(
                 Modifier
                     .offset(
-                        x = sat * maxWidth - 11.dp,
-                        y = (1f - value) * maxHeight - 11.dp,
+                        x = maxWidth * sat - 11.dp,
+                        y = maxHeight * (1f - value) - 11.dp,
                     )
                     .size(22.dp)
                     .border(

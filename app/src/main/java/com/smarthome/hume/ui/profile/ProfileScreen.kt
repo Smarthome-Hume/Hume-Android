@@ -278,16 +278,6 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         )
     }
 
-    // Nhan avatar -> mo phong to
-    if (viewerOpen) {
-        AvatarViewerOverlay(
-            name = personName,
-            avatar = userAvatar,
-            haAvatarUrl = avatarUrl,
-            onDismiss = { viewerOpen = false },
-        )
-    }
-
     // EditFieldView
     val field = editing
     if (field != null) {

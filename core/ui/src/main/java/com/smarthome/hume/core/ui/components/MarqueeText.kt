@@ -3,8 +3,6 @@ package com.smarthome.hume.core.ui.components
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.gestures.animateScrollTo
-import androidx.compose.foundation.gestures.scrollTo
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
