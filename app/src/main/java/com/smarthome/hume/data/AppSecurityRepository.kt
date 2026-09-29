@@ -44,6 +44,11 @@ class AppSecurityRepository(
             ha.entities.collect { entities -> rebuild(entities) }
         }
         scope.launch {
+            frigate.downloading.collect { downloading ->
+                _state.value = _state.value.copy(downloadingCams = downloading)
+            }
+        }
+        scope.launch {
             frigate.byCamera.collect { byCamera ->
                 val recs = byCamera.mapValues { (_, list) ->
                     list.take(10).map { r ->

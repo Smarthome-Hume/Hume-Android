@@ -54,7 +54,12 @@ class SecurityViewModel : ViewModel() {
     fun selectCamera(index: Int) {
         _selectedCam.value = index
         _unlocked.value = false
-        state.value.cameras.getOrNull(index)?.let { repo.refreshRecordings(it.key) }
+        refreshRecordings()
+    }
+
+    /** Tai lai 10 clip moi nhat cua camera dang chon tu Frigate. */
+    fun refreshRecordings() {
+        state.value.cameras.getOrNull(_selectedCam.value)?.let { repo.refreshRecordings(it.key) }
     }
 
     fun unlock() {

@@ -37,4 +37,6 @@ data class SecurityUiState(
     val envSensors: List<SensorUi> = emptyList(),
     /** key = camera.key */
     val recordings: Map<String, List<RecordingUi>> = emptyMap(),
+    /** Camera dang tai clip (key = camera.key) — hien spinner o nut 'Tai 10 clip'. */
+    val downloadingCams: Set<String> = emptySet(),
 )

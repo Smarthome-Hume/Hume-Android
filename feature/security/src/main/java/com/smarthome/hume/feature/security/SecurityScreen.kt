@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MarqueeText
@@ -192,7 +193,16 @@ fun SecurityScreen(
                 Spacer(Modifier.height(8.dp))
 
                 // Recent recordings (rise .46s / .48s)
-                SecHeader(title = "Video ghi hình gần đây", action = "Tải 10 clip", delayMs = 460)
+                SecHeader(
+                    title = "Video ghi hình gần đây",
+                    action = "Tải 10 clip",
+                    delayMs = 460,
+                    onAction = {
+                        haptic()
+                        vm.refreshRecordings()
+                    },
+                    actionLoading = state.downloadingCams.contains(cam.key),
+                )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     // demo .reclist: padding 2px 2px 6px
@@ -237,7 +247,13 @@ private fun recs(state: SecurityUiState, selectedCam: Int): List<RecordingUi> =
     state.cameras.getOrNull(selectedCam)?.let { state.recordings[it.key] }.orEmpty()
 
 @Composable
-private fun SecHeader(title: String, action: String? = null, delayMs: Int = 0) {
+private fun SecHeader(
+    title: String,
+    action: String? = null,
+    delayMs: Int = 0,
+    onAction: (() -> Unit)? = null,
+    actionLoading: Boolean = false,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -254,13 +270,23 @@ private fun SecHeader(title: String, action: String? = null, delayMs: Int = 0) {
             style = MaterialTheme.typography.titleMedium.copy(letterSpacing = (-0.1).sp),
             fontWeight = FontWeight.Bold,
         )
-        if (action != null) {
+        if (actionLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        } else if (action != null) {
             Text(
                 action,
                 // demo .secmore: 12px/700/ls 0
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable(
+                    enabled = onAction != null,
+                    onClick = { onAction?.invoke() },
+                ),
             )
         }
     }
