@@ -1,6 +1,11 @@
 package com.smarthome.hume.ui.profile
 
 import android.content.Context
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,10 +29,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -43,7 +49,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.storage.HumeSettings
@@ -90,6 +95,52 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
     val userId = person?.attr("user_id") ?: "\u2014"
     val avatarUrl = person?.attr("entity_picture")?.let { settings.haUrl.trimEnd('/') + it }
 
+    // Avatar theo user: upload anh / video ngan (< 1 phut), luu local theo userId.
+    val avatarStore = remember { AvatarStore(context) }
+    val userKey = userId.takeIf { it != "\u2014" } ?: personName
+    val avatarMap by avatarStore.avatars.collectAsState()
+    val userAvatar = avatarMap[userKey]
+    LaunchedEffect(userKey) { avatarStore.load(userKey) }
+
+    var showChooser by remember { mutableStateOf(false) }
+    var viewerOpen by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    fun onPicked(uri: android.net.Uri, isVideo: Boolean) {
+        scope.launch {
+            val res = avatarStore.saveAvatar(userKey, uri, isVideo)
+            res.onFailure { e ->
+                Toast.makeText(
+                    context,
+                    e.message ?: "Không lưu được avatar",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { onPicked(it, false) }
+    }
+    val pickVideo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { onPicked(it, true) }
+    }
+    val getImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { onPicked(it, false) }
+    }
+    val getVideo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { onPicked(it, true) }
+    }
+    val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
+    fun launchImagePicker() {
+        if (pickerAvailable) pickImage.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+        else getImage.launch("image/*")
+    }
+    fun launchVideoPicker() {
+        if (pickerAvailable) pickVideo.launch(PickVisualMediaRequest(PickVisualMedia.VideoOnly))
+        else getVideo.launch("video/*")
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -101,7 +152,14 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         Text("Th\u00f4ng tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
 
         // The chu nha nam truc tiep tren trang, KHONG con lop nen bao ngoai.
-        OwnerCard(personName, avatarUrl) { openDeviceManager = true }
+        OwnerCard(
+            name = personName,
+            avatar = userAvatar,
+            haAvatarUrl = avatarUrl,
+            onAvatarTap = { viewerOpen = true },
+            onAvatarEdit = { showChooser = true },
+            onManageDevices = { openDeviceManager = true },
+        )
 
         // Cac dong thong tin: moi dong tu mang nen rieng, khong co the cha.
         Column(
@@ -187,6 +245,38 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         DeviceManagerSheet(ha = ha, settings = settings, onDismiss = { openDeviceManager = false })
     }
 
+    // Chon anh / video lam avatar
+    if (showChooser) {
+        AlertDialog(
+            onDismissRequest = { showChooser = false },
+            title = { Text("Đổi avatar") },
+            text = { Text("Chọn ảnh, hoặc video ngắn dưới 1 phút để làm avatar.") },
+            confirmButton = {
+                TextButton(onClick = { showChooser = false; launchImagePicker() }) { Text("Ảnh") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showChooser = false; launchVideoPicker() }) { Text("Video") }
+            },
+        )
+    }
+
+    // Nhan avatar -> mo phong to
+    if (viewerOpen) {
+        AvatarViewerDialog(
+            name = personName,
+            avatar = userAvatar,
+            haAvatarUrl = avatarUrl,
+            onChange = { viewerOpen = false; showChooser = true },
+            onRemove = if (userAvatar != null) {
+                {
+                    viewerOpen = false
+                    scope.launch { avatarStore.clearAvatar(userKey) }
+                }
+            } else null,
+            onDismiss = { viewerOpen = false },
+        )
+    }
+
     // EditFieldView
     val field = editing
     if (field != null) {
@@ -216,7 +306,14 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
 /** orangeCard in ProfileView.swift: gradient #f9784c to #e8653a to #fac0b6, radius 35, padding 20. */
 @Composable
-private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> Unit) {
+private fun OwnerCard(
+    name: String,
+    avatar: UserAvatar?,
+    haAvatarUrl: String?,
+    onAvatarTap: () -> Unit,
+    onAvatarEdit: () -> Unit,
+    onManageDevices: () -> Unit,
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -230,21 +327,13 @@ private fun OwnerCard(name: String, avatarUrl: String?, onManageDevices: () -> U
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(60.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(60.dp).clip(CircleShape),
-                    )
-                } else {
-                    Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                }
-            }
+            ProfileAvatar(
+                name = name,
+                avatar = avatar,
+                haAvatarUrl = haAvatarUrl,
+                onTap = onAvatarTap,
+                onEdit = onAvatarEdit,
+            )
             Spacer(Modifier.width(14.dp))
             Column {
                 Text(name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
