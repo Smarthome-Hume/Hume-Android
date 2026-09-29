@@ -322,7 +322,8 @@ private fun FlowArea(
             }
         }
 
-        // hub bolt 64px o giua + ping ring flping 2.2s (demo .flhub::before)
+        // hub inverter 64px o giua + ping ring flping 2.2s (demo .flhub::before)
+        // Dong nang luong chay tu 4 node ve inverter.
         val hub = fx(64f)
         val primary = MaterialTheme.colorScheme.primary
         val pingT = rememberInfiniteTransition(label = "flping")
@@ -375,10 +376,10 @@ private fun FlowArea(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
-                MsIcon(
-                    M3EIcons.Power, null,
+                // Inverter: hop bien tan + song sine AC (thay cho bolt)
+                InverterGlyph(
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(hub * 0.47f),
+                    modifier = Modifier.size(hub * 0.52f),
                 )
             }
         }
@@ -595,5 +596,50 @@ private fun SegBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * Glyph inverter ve tay: hop bien tan (rounded rect) + song sine AC ben trong.
+ * Dung o hub giua thay cho bolt — dong nang luong chay tu cac node ve inverter.
+ */
+@Composable
+private fun InverterGlyph(
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokeW = (w * 0.09f).coerceAtLeast(2.dp.toPx())
+        // Hop bien tan
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(w * 0.08f, h * 0.12f),
+            size = androidx.compose.ui.geometry.Size(w * 0.84f, h * 0.76f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.12f),
+            style = Stroke(width = strokeW),
+        )
+        // Song sine AC ben trong hop
+        val wavePath = Path().apply {
+            val x0 = w * 0.20f
+            val x1 = w * 0.80f
+            val cy = h * 0.50f
+            val amp = h * 0.16f
+            moveTo(x0, cy)
+            // 1.5 chu ky sine
+            val steps = 48
+            for (i in 1..steps) {
+                val t = i.toFloat() / steps
+                val x = x0 + (x1 - x0) * t
+                val y = cy - amp * kotlin.math.sin(t * 3f * kotlin.math.PI.toFloat()).toFloat()
+                lineTo(x, y)
+            }
+        }
+        drawPath(
+            wavePath,
+            color = tint,
+            style = Stroke(width = strokeW * 0.85f, cap = StrokeCap.Round),
+        )
     }
 }
