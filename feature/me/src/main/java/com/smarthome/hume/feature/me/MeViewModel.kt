@@ -26,6 +26,9 @@ class MeViewModel : ViewModel() {
 
     val isConnected = syncRepo.isConnected
 
+    /** Key avatar hien tai, dung chung voi header trang Nha. */
+    val userKey: StateFlow<String> = HumeGraph.get().userKey
+
     /** Chu ky sync theo demo: bam/tu dong -> syncing 4.1s -> xong an loader. */
     private val _syncing = MutableStateFlow(false)
     val syncing: StateFlow<Boolean> = _syncing.asStateFlow()

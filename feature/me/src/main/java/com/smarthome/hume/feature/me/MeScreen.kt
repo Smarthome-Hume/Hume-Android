@@ -1,5 +1,11 @@
 package com.smarthome.hume.feature.me
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMedia
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.animateColorAsState
@@ -39,13 +45,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,12 +75,16 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.core.ui.avatar.AvatarStore
+import com.smarthome.hume.core.ui.avatar.ProfileAvatar
+import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
@@ -118,6 +131,50 @@ fun MeScreen(
     val darkMode by vm.darkMode.collectAsState()
     val haptic = rememberHaptic()
 
+    // Avatar: dung chung key voi header trang Nha (AppHomeRepository publish vao HumeGraph).
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val userKey by vm.userKey.collectAsState()
+    val avatarStore = remember { AvatarStore(context) }
+    val avatarMap by avatarStore.avatars.collectAsState()
+    val userAvatar = avatarMap[userKey]
+    LaunchedEffect(userKey) {
+        if (userKey.isNotBlank()) avatarStore.load(userKey)
+    }
+    var showChooser by remember { mutableStateOf(false) }
+
+    fun onPicked(uri: Uri, isVideo: Boolean) {
+        val key = userKey
+        if (key.isBlank()) return
+        scope.launch {
+            val res = avatarStore.saveAvatar(key, uri, isVideo)
+            res.onFailure { e ->
+                Toast.makeText(context, e.message ?: "Không lưu được avatar", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { onPicked(it, false) }
+    }
+    val pickVideo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { onPicked(it, true) }
+    }
+    val getImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { onPicked(it, false) }
+    }
+    val getVideo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { onPicked(it, true) }
+    }
+    val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
+    fun launchImagePicker() {
+        if (pickerAvailable) pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        else getImage.launch("image/*")
+    }
+    fun launchVideoPicker() {
+        if (pickerAvailable) pickVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+        else getVideo.launch("video/*")
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -147,6 +204,18 @@ fun MeScreen(
             }
         }
 
+        Box(Modifier.riseEntrance(400)) { SecTitle("Ảnh đại diện") }
+        Box(Modifier.riseEntrance(420)) {
+            MeAvatarCard(
+                userKey = userKey,
+                avatar = userAvatar,
+                onChange = { showChooser = true },
+                onRemove = if (userAvatar != null && userKey.isNotBlank()) {
+                    { scope.launch { avatarStore.clearAvatar(userKey) } }
+                } else null,
+            )
+        }
+
         Box(Modifier.riseEntrance(500)) { SecTitle("Đồng bộ") }
         Box(Modifier.riseEntrance(520)) { SyncCard(syncing = syncing, onSync = vm::doSync) }
 
@@ -173,6 +242,21 @@ fun MeScreen(
         SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
         CustomSeedRow(onApplyCustom = { haptic(); vm.setCustomColor(it) })
     }
+
+    // Chon anh / video lam avatar
+    if (showChooser) {
+        AlertDialog(
+            onDismissRequest = { showChooser = false },
+            title = { Text("Đổi avatar") },
+            text = { Text("Chọn ảnh, hoặc video ngắn dưới 1 phút để làm avatar.") },
+            confirmButton = {
+                TextButton(onClick = { showChooser = false; launchImagePicker() }) { Text("Ảnh") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showChooser = false; launchVideoPicker() }) { Text("Video") }
+            },
+        )
+    }
 }
 
 @Composable
@@ -185,6 +269,70 @@ private fun SecTitle(title: String) {
         letterSpacing = (-0.1).sp,
         modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 12.dp),
     )
+}
+
+// ---------- avatar ----------
+
+/**
+ * The doi avatar o tab Toi: preview tron + mo ta nguon anh hien tai
+ * + nut Doi / Go (Go chi hien khi da co avatar upload).
+ */
+@Composable
+private fun MeAvatarCard(
+    userKey: String,
+    avatar: UserAvatar?,
+    onChange: () -> Unit,
+    onRemove: (() -> Unit)?,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(26.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ProfileAvatar(
+            name = userKey,
+            avatar = avatar,
+            haAvatarUrl = null,
+            onTap = {},
+            size = 52.dp,
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                "Ảnh đại diện",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            Text(
+                when {
+                    avatar?.isVideo == true -> "Video ngắn của bạn"
+                    avatar != null -> "Ảnh tải lên của bạn"
+                    else -> "Mặc định theo tên"
+                },
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+        }
+        TextButton(onClick = onChange) {
+            Text("Đổi", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
+        if (onRemove != null) {
+            TextButton(onClick = onRemove) {
+                Text(
+                    "Gỡ",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+    }
 }
 
 // ---------- dong bo ----------

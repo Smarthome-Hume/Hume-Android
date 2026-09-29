@@ -124,11 +124,12 @@ fun HomeHeader(
     ) {
         // .hava 55px surfaceHighest + .pdot 16px + vien ngoai 3px = 22px
         // Nhan vao avatar -> phong to kieu kinh lup (giong trang Thong tin).
+        // KHONG clip tron o Box ngoai: cham trang thai o TopEnd tran ra ngoai
+        // vien tron, bi clip cat mat mot phan. Box anh ben trong tu clip tron.
         Box(
             Modifier
                 .size(55.dp)
                 .onGloballyPositioned { onAvatarPositioned(it.boundsInWindow()) }
-                .clip(CircleShape)
                 .clickable(onClick = onAvatarTap),
         ) {
             Box(

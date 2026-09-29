@@ -1,6 +1,7 @@
 package com.smarthome.hume.core.data
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.smarthome.hume.core.datastore.AiSettingsStore
 import com.smarthome.hume.core.datastore.SessionStore
 import com.smarthome.hume.core.datastore.FabMenuStore
@@ -20,6 +21,10 @@ class HumeGraph private constructor(context: Context) {
     val fabMenuStore: FabMenuStore by lazy { FabMenuStore(appContext) }
     val aiSettingsStore: AiSettingsStore by lazy { AiSettingsStore(appContext) }
     val aiRepository: AiRepository by lazy { AiRepositoryImpl(aiSettingsStore) }
+
+    /** Key avatar hien tai (user_id hoac ten), do AppHomeRepository publish khi co
+     * person entity; tab Toi dung chung key voi header trang Nha. */
+    val userKey: MutableStateFlow<String> = MutableStateFlow("")
 
     /** Do :app dang ky sau init (implementation nam o app module). */
     lateinit var homeRepository: HomeRepository

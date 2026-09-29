@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +52,8 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import java.io.File
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -89,20 +92,23 @@ fun AvatarViewerOverlay(
     val rectAnim = remember { Animatable(Rect(0f, 0f, 1f, 1f), Rect.VectorConverter) }
     val scrimAlpha by animateFloatAsState(if (closing) 0f else 0.55f, label = "scrim")
 
-    // Mo ra: tu avatar -> phong to giua man hinh
-    LaunchedEffect(overlayRect, targetRect) {
+    // Mo ra: tu avatar -> phong to giua man hinh.
+    // Chay dung 1 lan (khoa Unit): khong lay targetRect/overlayRect lam key vi khi
+    // mo viewer, content bi blur -> header do lai vi tri -> onGloballyPositioned ban
+    // lai -> key doi -> effect relaunch giua chung -> animateTo bi huy trong khi
+    // opened da true nen khong bao gio chay lai (ket: tron ket cung o avatar).
+    LaunchedEffect(Unit) {
+        snapshotFlow { overlayRect }.filterNotNull().first()
         val big = bigRect() ?: return@LaunchedEffect
-        if (!opened) {
-            opened = true
-            rectAnim.snapTo(targetRect ?: big)
-            rectAnim.animateTo(
-                big,
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow,
-                ),
-            )
-        }
+        rectAnim.snapTo(targetRect ?: big)
+        opened = true
+        rectAnim.animateTo(
+            big,
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow,
+            ),
+        )
     }
 
     fun requestClose() {

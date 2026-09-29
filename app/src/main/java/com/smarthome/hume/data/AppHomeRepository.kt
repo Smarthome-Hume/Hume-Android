@@ -132,6 +132,8 @@ class AppHomeRepository(
         val userKey = person?.attributes?.get("user_id")?.jsonPrimitive?.contentOrNull
             ?.takeIf { it.isNotBlank() }
             ?: personName
+        // Publish cho tab Toi (MeScreen) dung chung key avatar voi header trang Nha.
+        runCatching { com.smarthome.hume.core.data.HumeGraph.get().userKey.value = userKey }
 
         val pvToday = entities[HumeConfig.PV_TODAY]?.numericState
         val solarNowKw = (entities[HumeConfig.PV_POWER]?.numericState ?: 0.0) / 1000.0
