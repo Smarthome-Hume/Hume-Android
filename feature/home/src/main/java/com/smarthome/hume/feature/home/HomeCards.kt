@@ -503,8 +503,6 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 }
 
 /**
-
-/**
  * The nho cong suat dang phat (.solar): tertiaryContainer, bo 32px,
  * padding 16px 18px; icon nen trang 35% (.sicon 48px, icon 26px);
  * sub 12px/500; sparkline SVG 90x34 ben phai.
