@@ -490,13 +490,12 @@ private fun SensorGrid(sensors: List<SensorUi>) {
 private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val on = s.isOn
-    // Spec HTML .scard: active = ca the doi mau (errorContainer / tertiaryContainer),
-    // icon bg = trang 55% mo, icon + chu = onErrorContainer, pill = error dac + chu trang.
+    // Active: dung primaryContainer/tertiaryContainer de doi mau theo theme
+    // (khong dung errorContainer vi Material quy dinh error luon do).
     // Inactive: the surfaceHighest, icon/pill = surfaceContainer.
-    // Doi mau theo theme (khong fix cung, khong animation de tranh loi).
     val cardBg = when {
         on && s.warn -> cs.tertiaryContainer
-        on -> cs.errorContainer
+        on -> cs.primaryContainer
         else -> LocalHumeExtraColors.current.surfaceHighest
     }
     val iconBg = when {
@@ -505,29 +504,29 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     }
     val iconTint = when {
         on && s.warn -> cs.onTertiaryContainer
-        on -> cs.onErrorContainer
+        on -> cs.onPrimaryContainer
         else -> cs.onSurfaceVariant
     }
     val nameColor = when {
         on && s.warn -> cs.onTertiaryContainer
-        on -> cs.onErrorContainer
+        on -> cs.onPrimaryContainer
         else -> cs.onSurface
     }
     val timeColor = when {
         on && s.warn -> cs.onTertiaryContainer.copy(alpha = 0.75f)
-        on -> cs.onErrorContainer.copy(alpha = 0.75f)
+        on -> cs.onPrimaryContainer.copy(alpha = 0.75f)
         else -> cs.onSurfaceVariant
     }
-    // Pill trang thai: active = nen dac (error/tertiary) + chu trang/onContainer;
-    // inactive = surfaceContainer + onSurfaceVariant (giong HTML .sst).
+    // Pill trang thai: active = nen dac (primary/tertiary) + chu trang/onContainer;
+    // inactive = surfaceContainer + onSurfaceVariant.
     val pillBg = when {
         on && s.warn -> cs.tertiary
-        on -> cs.error
+        on -> cs.primary
         else -> cs.surfaceContainer
     }
     val pillText = when {
         on && s.warn -> cs.onTertiary
-        on -> cs.onError
+        on -> cs.onPrimary
         else -> cs.onSurfaceVariant
     }
     val chipLabel = when (s.kind) {
@@ -572,14 +571,11 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        s.name,
+                    MarqueeText(
+                        text = s.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = nameColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        softWrap = false,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -739,5 +735,61 @@ private fun ClipOverlay(clip: RecordingUi, onClose: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+/**
+ * Text chay marquee khi tran (khong dung basicMarquee mac dinh vi bi loi chong chu).
+ * Dung scroll state + animation tu che.
+ */
+@Composable
+private fun MarqueeText(
+    text: String,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    fontWeight: FontWeight,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+) {
+    val scrollState = androidx.compose.foundation.rememberScrollState()
+    androidx.compose.runtime.LaunchedEffect(text) {
+        // Doi 1.5s roi cuon
+        kotlinx.coroutines.delay(1500)
+        while (true) {
+            // Cuon tu trai sang phai
+            val max = scrollState.maxValue
+            if (max > 0) {
+                scrollState.animateScrollTo(
+                    max,
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = (max * 15).coerceAtLeast(1000),
+                        easing = androidx.compose.animation.core.LinearEasing,
+                    ),
+                )
+                kotlinx.coroutines.delay(1000)
+                scrollState.animateScrollTo(
+                    0,
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 800,
+                        easing = androidx.compose.animation.core.LinearEasing,
+                    ),
+                )
+                kotlinx.coroutines.delay(1500)
+            } else {
+                kotlinx.coroutines.delay(2000)
+            }
+        }
+    }
+    androidx.compose.foundation.layout.Box(
+        modifier = modifier
+            .horizontalScroll(scrollState, enabled = false),
+    ) {
+        androidx.compose.material3.Text(
+            text,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
