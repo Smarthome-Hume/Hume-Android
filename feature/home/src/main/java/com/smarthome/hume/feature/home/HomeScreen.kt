@@ -187,6 +187,8 @@ fun HomeScreen(
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
+                    // Fling dam (0.6x van toc) -> cuon cham, do hon
+                    flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
                         // Bottom 176dp: FAB nam o bottom=110dp, cao 56dp (110+56=166),
                         // +10dp gap de FAB khong de len the cuoi
@@ -330,7 +332,8 @@ fun HomeScreen(
                         .padding(end = 20.dp, bottom = 110.dp),
                 )
 
-                // Sheet phong
+                // Sheet phong (ModalBottomSheet cua M3: giu day du chuc nang
+                // keo dong, scrim, predictive back...)
                 ui.selectedRoom?.let { room ->
                     val live = state.rooms.firstOrNull { it.key == room.key } ?: room
                     RoomSheet(

@@ -201,6 +201,7 @@ internal fun GrabHandle() {
 /**
  * Sheet chi tiet phong theo demo rev12 (.sheet): nen surfaceContainer,
  * grab, tieu de 24px/500 + dong sub "N thiet bi · M dang bat" 12px/500.
+ * Dung ModalBottomSheet cua M3 de giu day du chuc nang (keo dong, scrim...).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

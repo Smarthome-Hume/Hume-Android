@@ -4,6 +4,9 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -118,4 +121,25 @@ fun contactOpenForDevice(
                 label.contains(n.body, ignoreCase = true))
     }
     return open
+}
+
+/**
+ * Fling dam hon cho trang Nha: giam van toc quan tinh con [factor]
+ * (mac dinh 0.6) -> cuon cham, dam, do hon; giong cam giac cac ban truoc
+ * (tren 120Hz fling mac dinh thay nhanh).
+ */
+private class DampedFlingBehavior(
+    private val base: FlingBehavior,
+    private val factor: Float,
+) : FlingBehavior {
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+        val outer = this
+        return with(base) { outer.performFling(initialVelocity * factor) }
+    }
+}
+
+@Composable
+fun rememberDampedFlingBehavior(factor: Float = 0.6f): FlingBehavior {
+    val base = ScrollableDefaults.flingBehavior()
+    return remember(base, factor) { DampedFlingBehavior(base, factor) }
 }

@@ -48,9 +48,9 @@ fun MarqueeText(
                 scrollState.animateScrollTo(
                     max,
                     animationSpec = tween(
-                        // 30ms/px: chu chay cham, nhe nhang (truoc day 15ms/px
-                        // thay nhanh). Chi doi toc do, khong doi cach cat chu.
-                        durationMillis = (max * 30).coerceAtLeast(900),
+                        // Hoan tac: giu 15ms/px nhu cu (muc 3 cua user la toc do
+                        // cuon trang + mo the phong, khong phai marquee).
+                        durationMillis = (max * 15).coerceAtLeast(900),
                         easing = LinearEasing,
                     ),
                 )
