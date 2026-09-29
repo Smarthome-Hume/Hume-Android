@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Adaptive icon dung artwork icon app Muse (chu M xanh / nen trang):
-    foreground PNG 1024 (drawable-nodpi), nen trang. Chu M da thu ve ~58%
-    canvas de nam gon trong vung an toan 66dp — One UI bo tron kieu nao
-    cung khong cat mat net chu. <monochrome> la silhouette chu M de icon
-    theo mau chu de (Themed icons) tren Android 13+.
+    Adaptive icon dung avatar nhan vat bong mem cua Muse (user chon):
+    foreground PNG 1024 (drawable-nodpi), nen trang; nhan vat da tach khoi
+    anh chup man hinh (xoa nut but chi), chiem ~58% canvas de nam gon trong
+    vung an toan 66dp — One UI bo tron kieu nao cung khong cat mat.
+    <monochrome> la silhouette nhan vat cho Themed icons (Android 13+).
+    Luu y: launcher icon Android khong ho tro anh dong — dung 1 frame tinh.
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />
