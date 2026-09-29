@@ -115,7 +115,11 @@ private fun Modifier.riseIn(delayMs: Int = 0): Modifier = composed {
 }
 
 @Composable
-fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
+fun SecurityScreen(
+    vm: SecurityViewModel = viewModel(),
+    onDownloadClip: ((RecordingUi) -> Unit)? = null,
+    onShareClip: ((RecordingUi) -> Unit)? = null,
+) {
     val state by vm.state.collectAsState()
     val selectedCam by vm.selectedCam.collectAsState()
     val clip by vm.clip.collectAsState()
@@ -196,7 +200,11 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                         .riseIn(480),
                 ) {
                     items(recs(state, selectedCam), key = { it.id }) { rec ->
-                        RecCard(rec = rec, onClick = { vm.openClip(rec) })
+                        RecCard(
+                            rec = rec,
+                            onClick = { vm.openClip(rec) },
+                            onDownload = onDownloadClip?.let { { it(rec) } },
+                        )
                     }
                 }
                 Spacer(Modifier.height(4.dp))
@@ -213,7 +221,12 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
 
         // Clip viewer — Dialog full-screen: phu ca navbar (demo .clipov position:fixed z-index:200)
         clip?.let { c ->
-            ClipOverlay(clip = c, onClose = vm::closeClip)
+            ClipOverlay(
+                clip = c,
+                onClose = vm::closeClip,
+                onDownload = onDownloadClip?.let { { it(c) } },
+                onShare = onShareClip?.let { { it(c) } },
+            )
         }
     }
 }
@@ -431,7 +444,11 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
 // ---------- recordings ----------
 
 @Composable
-private fun RecCard(rec: RecordingUi, onClick: () -> Unit) {
+private fun RecCard(
+    rec: RecordingUi,
+    onClick: () -> Unit,
+    onDownload: (() -> Unit)? = null,
+) {
     Column(
         Modifier
             .width(132.dp)
@@ -458,6 +475,26 @@ private fun RecCard(rec: RecordingUi, onClick: () -> Unit) {
                 tint = Color.White.copy(alpha = 0.75f),
                 modifier = Modifier.size(34.dp),
             )
+            // Nut download goc phai tren thumbnail
+            if (onDownload != null && rec.clipPath != null) {
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .clickable(onClick = onDownload),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MsIcon(
+                        M3EIcons.Download,
+                        contentDescription = "Tải xuống",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
         }
         Text(
             "${rec.timeLabel} · ${rec.dateLabel}",
@@ -641,7 +678,12 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
  * bang ExoPlayer + PlayerView (media3-ui) qua AndroidView.
  */
 @Composable
-private fun ClipOverlay(clip: RecordingUi, onClose: () -> Unit) {
+private fun ClipOverlay(
+    clip: RecordingUi,
+    onClose: () -> Unit,
+    onDownload: (() -> Unit)? = null,
+    onShare: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
 
     // ExoPlayer that: tao 1 lan theo file, release ngay khi dialog dong.
@@ -723,17 +765,49 @@ private fun ClipOverlay(clip: RecordingUi, onClose: () -> Unit) {
                     fontSize = 14.sp,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
-                Text(
-                    "Đóng",
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.14f))
-                        .clickable(onClick = onClose)
-                        .padding(horizontal = 28.dp, vertical = 12.dp),
-                )
+                // Hang nut chuc nang: Tai xuong | Chia se | Dong
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (onDownload != null && clip.clipPath != null) {
+                        Text(
+                            "Tải xuống",
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.14f))
+                                .clickable(onClick = onDownload)
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                        )
+                    }
+                    if (onShare != null && clip.clipPath != null) {
+                        Text(
+                            "Chia sẻ",
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.14f))
+                                .clickable(onClick = onShare)
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                        )
+                    }
+                    Text(
+                        "Đóng",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.14f))
+                            .clickable(onClick = onClose)
+                            .padding(horizontal = 28.dp, vertical = 12.dp),
+                    )
+                }
             }
         }
     }

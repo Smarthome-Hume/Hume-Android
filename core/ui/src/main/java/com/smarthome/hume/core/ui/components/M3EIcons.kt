@@ -33,6 +33,8 @@ object M3EIcons {
     val PhotoCamera = Ms.photo_camera
     val Fullscreen = Ms.fullscreen
     val PlayCircle = Ms.play_circle
+    val Download = Ms.download
+    val Share = Ms.share
     val Lock = Ms.lock
     val Shield = Ms.shield
     val Close = Ms.close

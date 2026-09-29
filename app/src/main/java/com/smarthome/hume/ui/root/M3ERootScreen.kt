@@ -76,6 +76,7 @@ fun M3ERootScreen(
     ha: HomeAssistantRepository,
     settings: HumeSettings,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val themeSettings by HumeGraph.get().themeStore.settings.collectAsState(
         initial = com.smarthome.hume.core.datastore.ThemeSettings(),
     )
@@ -105,7 +106,35 @@ fun M3ERootScreen(
                         },
                     )
                     HumeTab.Energy -> M3EEnergyScreen()
-                    HumeTab.Security -> M3ESecurityScreen()
+                    HumeTab.Security -> M3ESecurityScreen(
+                        onDownloadClip = { clip ->
+                            clip.clipPath?.let { path ->
+                                val file = java.io.File(path)
+                                if (file.exists()) {
+                                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                        val uri = com.smarthome.hume.core.frigate.saveVideoToGallery(
+                                            context,
+                                            file,
+                                            "Hume_${clip.dateLabel}_${clip.timeLabel}.mp4".replace(" ", "_"),
+                                        )
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            if (uri != null) "Đã lưu vào Thư viện" else "Lưu thất bại",
+                                            android.widget.Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
+                            }
+                        },
+                        onShareClip = { clip ->
+                            clip.clipPath?.let { path ->
+                                val file = java.io.File(path)
+                                if (file.exists()) {
+                                    com.smarthome.hume.core.frigate.shareVideo(context, file)
+                                }
+                            }
+                        },
+                    )
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
                 }
             }
