@@ -123,25 +123,24 @@ fun MeScreen(
             .padding(horizontal = 18.dp)
             .padding(bottom = 100.dp),
     ) {
-        // Title boc boi nen card (theo yeu cau)
-        Box(
-            Modifier
-                .riseEntrance(0)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
-        ) {
-            Column {
+        // Title: chi title duoc boc nen (subtitle de ngoai, khong nen)
+        Column(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .riseEntrance(0)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
+            ) {
                 // demo .phdr h2: 26px/700 ls -.3px ; p: 13px
                 Text("Thông tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
-                Text(
-                    "Đồng bộ, thông báo & hệ thống",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
             }
+            Text(
+                "Đồng bộ, thông báo & hệ thống",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 6.dp),
+            )
         }
 
         Box(Modifier.riseEntrance(500)) { SecTitle("Đồng bộ") }

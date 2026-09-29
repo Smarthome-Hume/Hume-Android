@@ -18,6 +18,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.AlarmUi
@@ -356,7 +358,8 @@ private fun SecModeCard(
         val labelColor = if (selected) cs.onPrimaryContainer else cs.onSurface
         Column(
             horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            // Can giua doc de chu khong bi don xuong day
+            verticalArrangement = Arrangement.Center,
             modifier = modifier
                 .width(92.dp)
                 .height(80.dp)
@@ -372,8 +375,8 @@ private fun SecModeCard(
                         }
                     },
                 )
-                // Tang bottom padding de chu khong bi cat mep duoi
-                .padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 18.dp),
+                // Padding can doi 2 dau + gap nho: 10+24+6+16+10=66 < 80, chu khong bi cat
+                .padding(horizontal = 10.dp, vertical = 10.dp),
         ) {
             MsIcon(
                 when (mode) {
@@ -386,6 +389,7 @@ private fun SecModeCard(
                 tint = fg,
                 modifier = Modifier.size(24.dp),
             )
+            Spacer(Modifier.height(6.dp))
             Text(
                 when (mode) {
                     SecurityMode.Home -> "Ở nhà"
@@ -396,6 +400,9 @@ private fun SecModeCard(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = labelColor,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

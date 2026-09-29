@@ -10,7 +10,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -41,12 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -100,10 +94,11 @@ fun EnergyConsTab(
     }
 }
 
-// ---------- 1. Nang luong su dung ----------
+// ---------- 1. Nang luong su dung (layout giong SolarWeekCard) ----------
 
 @Composable
 private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
+    val cs = MaterialTheme.colorScheme
     val todayVal = state.week.find { it.isToday }?.kwh ?: state.todayKwh
 
     M3ECard(
@@ -112,98 +107,132 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-week", 420, risePlayed),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             Text(
                 "Năng lượng sử dụng",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     kwh1(todayVal),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.3).sp,
-                    ).tnum(),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.3).sp,
+                    color = cs.onSurface,
+                    modifier = Modifier.alignByBaseline(),
                 )
                 Text(
-                    " kWh",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "kWh",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .alignByBaseline(),
                 )
             }
         }
         Spacer(Modifier.height(14.dp))
-        // maxValue that cua tuan (giong SolarWeekCard)
-        val maxV = (state.week.maxOfOrNull { it.kwh } ?: 0.0).coerceAtLeast(0.01)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            state.week.forEach { p ->
-                WeekBar(
-                    p = p,
-                    kwh = if (p.isToday) todayVal else p.kwh,
-                    maxV = maxV,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+        val vals = state.week.map { if (it.isToday) todayVal.toFloat() else it.kwh.toFloat() }
+        val labels = state.week.map { if (it.isToday) "HN" else it.label }
+        if (vals.isNotEmpty()) {
+            ConsBars(vals = vals, labels = labels)
+        } else {
+            Text(
+                "Đang tải dữ liệu…",
+                fontSize = 12.sp,
+                color = cs.onSurfaceVariant,
+            )
         }
     }
 }
 
+/**
+ * Bieu do cot giong SolarWeekCard: chieu cao ty le value/max,
+ * mau lerp theo gia tri tuong doi, an vao cot hien tooltip.
+ */
 @Composable
-private fun WeekBar(p: EnergyWeekPoint, kwh: Double, maxV: Double, modifier: Modifier = Modifier) {
-    // Chieu cao theo value/max (giong SolarWeekCard), mau lerp theo gia tri tuong doi
-    val frac = (kwh / maxV).coerceIn(0.0, 1.0)
-    val h by animateFloatAsState(
-        targetValue = frac.toFloat(),
-        animationSpec = tween(800, easing = M3EMotion.emphasized),
-        label = "wbarH",
-    )
-    val label = if (p.isToday) "HN" else p.label
+private fun ConsBars(
+    vals: List<Float>,
+    labels: List<String>,
+) {
     val cs = MaterialTheme.colorScheme
-    val barColor = if (p.isToday) cs.primary
-    else lerp(cs.primaryContainer, cs.primary, frac.toFloat() * 0.85f)
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .semantics { contentDescription = "$label: ${kwh1(kwh)} kWh" },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom,
+    var selected by remember { mutableStateOf<Int?>(null) }
+    val maxValue = (vals.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 34.dp)
-                .height((120 * h).dp)
-                .shadow(
-                    if (p.isToday) 4.dp else 0.dp,
-                    CircleShape,
-                    spotColor = cs.primary.copy(alpha = 0.4f),
-                )
-                .clip(CircleShape)
-                .background(barColor),
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
-                fontWeight = if (p.isToday) FontWeight.ExtraBold else FontWeight.SemiBold,
-            ),
-            color = if (p.isToday) cs.primary
-            else cs.onSurfaceVariant,
-        )
+        val w = maxWidth
+        val sx = w / 320.dp
+        fun x(i: Int): androidx.compose.ui.unit.Dp = (20f + i * (280f / 6f)).dp * sx
+        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxValue).coerceIn(0f, 1f))
+        val bw = 30.dp * sx
+        vals.forEachIndexed { i, v ->
+            val today = i == vals.lastIndex
+            val top = y(v)
+            val h = (140.dp - top).coerceAtLeast(4.dp)
+            val barColor = if (today) cs.primary
+            else lerp(cs.primaryContainer, cs.primary, (v / maxValue).coerceIn(0f, 1f) * 0.85f)
+            Box(
+                modifier = Modifier
+                    .offset(x = x(i) - bw / 2, y = top)
+                    .width(bw)
+                    .height(h)
+                    .clip(RoundedCornerShape(50))
+                    .background(barColor)
+                    .pointerInput(i) {
+                        detectTapGestures(onTap = {
+                            selected = if (selected == i) null else i
+                        })
+                    },
+            )
+            if (selected == i) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = x(i) - 60.dp, y = (top - 40.dp).coerceAtLeast(0.dp))
+                        .width(120.dp)
+                        .heightIn(min = 24.dp)
+                        .shadow(6.dp, RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(cs.surfaceContainerHigh)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} kWh",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(2.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        labels.forEachIndexed { i, l ->
+            val today = i == labels.lastIndex
+            Text(
+                l,
+                fontSize = 10.5.sp,
+                fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
+                color = if (today) cs.primary else cs.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -332,12 +361,9 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 fontSize = 14.sp, fontWeight = FontWeight.Bold),
         )
         Spacer(Modifier.height(12.dp))
-        // Scale theo max gia tri that (khong chuan hoa 7000W)
-        val maxW = (state.powerRows.maxOfOrNull { abs(it.watts) } ?: 0.0)
-            .coerceAtLeast(1.0)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             state.powerRows.forEachIndexed { i, row ->
-                PowerRow(row = row, index = i, maxW = maxW)
+                PowerRow(row = row, index = i)
             }
         }
     }
@@ -347,25 +373,30 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 private fun PowerRow(
     row: com.smarthome.hume.core.model.EnergyPowerRow,
     index: Int,
-    maxW: Double,
 ) {
-    val extra = LocalHumeExtraColors.current
     val label = when (row.kind) {
         EnergyPowerKind.Battery -> "Pin"
         EnergyPowerKind.Solar -> "Điện mặt trời"
         EnergyPowerKind.Grid -> "Lưới"
         EnergyPowerKind.Home -> "Tiêu thụ"
     }
+    // Scale co dinh theo tung hang (user yeu cau)
+    val maxScale = when (row.kind) {
+        EnergyPowerKind.Battery -> 4000.0
+        EnergyPowerKind.Solar -> 5500.0
+        EnergyPowerKind.Grid -> 9000.0
+        EnergyPowerKind.Home -> 9000.0
+    }
     val color = when (row.kind) {
-        EnergyPowerKind.Battery -> Color(0xFFD97706)
-        EnergyPowerKind.Solar -> MaterialTheme.colorScheme.primary
-        EnergyPowerKind.Grid -> extra.info
-        EnergyPowerKind.Home -> MaterialTheme.colorScheme.tertiary
+        EnergyPowerKind.Battery -> Color(0xFFD97706) // cam
+        EnergyPowerKind.Solar -> MaterialTheme.colorScheme.primary // xanh duong
+        EnergyPowerKind.Grid -> Color(0xFF9AA5B1) // xam
+        EnergyPowerKind.Home -> MaterialTheme.colorScheme.primary
     }
     // Gia tri that tu HA (khong jitter demo)
     val watts = row.watts
     val frac by animateFloatAsState(
-        targetValue = (abs(watts) / maxW).coerceIn(0.0, 1.0).toFloat(),
+        targetValue = (abs(watts) / maxScale).coerceIn(0.0, 1.0).toFloat(),
         animationSpec = tween(800, easing = M3EMotion.emphasized),
         label = "pwFill",
     )
@@ -387,75 +418,35 @@ private fun PowerRow(
             )
         }
         Spacer(Modifier.height(6.dp))
-        // Bar wavy (song buoc 15px) thay cho flat
-        WavyPowerBar(frac = frac, color = color)
+        // Flat bar co animation chay theo cong suat
+        FlatPowerBar(frac = frac, color = color)
     }
 }
 
 /**
- * Thanh cong suat dang song (wavy), buoc song 15px.
- * Ve bang Canvas: duong sin qua cac diem quadratic.
+ * Thanh cong suat dang flat (phang), fill co animation theo gia tri.
  */
 @Composable
-private fun WavyPowerBar(
+private fun FlatPowerBar(
     frac: Float,
     color: Color,
     modifier: Modifier = Modifier,
 ) {
     val trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(14.dp),
+            .height(8.dp)
+            .clip(CircleShape)
+            .background(trackColor),
     ) {
-        val w = maxWidth
-        val fillW = w * frac
-        // Track
         Box(
-            Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .align(Alignment.Center)
+            modifier = Modifier
+                .fillMaxWidth(frac)
+                .height(8.dp)
                 .clip(CircleShape)
-                .background(trackColor),
+                .background(color),
         )
-        // Wavy fill
-        if (fillW > 0.dp && frac > 0.01f) {
-            Canvas(
-                Modifier
-                    .width(fillW)
-                    .height(14.dp)
-                    .align(Alignment.CenterStart)
-                    .clip(CircleShape),
-            ) {
-                val wavelength = 15.dp.toPx()
-                val amplitude = 3.dp.toPx()
-                val cy = size.height / 2f
-                val path = Path().apply {
-                    moveTo(0f, cy)
-                    var x = 0f
-                    var up = true
-                    while (x < size.width) {
-                        val cx = x + wavelength / 4f
-                        val ex = x + wavelength / 2f
-                        quadraticBezierTo(
-                            cx,
-                            if (up) cy - 2f * amplitude else cy + 2f * amplitude,
-                            ex,
-                            cy,
-                        )
-                        x = ex
-                        up = !up
-                    }
-                    lineTo(size.width, cy)
-                }
-                drawPath(
-                    path = path,
-                    color = color,
-                    style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
-                )
-            }
-        }
     }
 }
 

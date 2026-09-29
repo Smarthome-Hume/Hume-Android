@@ -228,17 +228,13 @@ private fun FlowArea(
                 .size(nw, nh)
                 .offset(fx(6f), fy(6f)),
         ) {
-            SegLegend(
-                listOf("PV1" to MaterialTheme.colorScheme.primary,
-                    "PV2" to MaterialTheme.colorScheme.tertiary),
-            )
-            SegBar(
-                listOf(
-                    (flow.pv1Kw / (flow.prodKw.coerceAtLeast(0.01))).toFloat() to
-                        MaterialTheme.colorScheme.primary,
-                    (flow.pv2Kw / (flow.prodKw.coerceAtLeast(0.01))).toFloat() to
-                        MaterialTheme.colorScheme.tertiary,
+            val prodTot = flow.prodKw.coerceAtLeast(0.01)
+            MiniBars(
+                items = listOf(
+                    Triple("PV1", flow.pv1Kw, MaterialTheme.colorScheme.primary),
+                    Triple("PV2", flow.pv2Kw, MaterialTheme.colorScheme.tertiary),
                 ),
+                total = prodTot,
             )
         }
         FlowNode(
@@ -259,18 +255,14 @@ private fun FlowArea(
                 .size(nw, nh)
                 .offset(fx(6f), fy(VB_H - 6f - 160f)),
         ) {
-            SegLegend(
-                listOf("CB1" to MaterialTheme.colorScheme.primary,
-                    "CB2" to MaterialTheme.colorScheme.tertiary,
-                    "CB3" to MaterialTheme.colorScheme.secondary),
-            )
             val tot = (flow.cb1Kw + flow.cb2Kw + flow.cb3Kw).coerceAtLeast(0.01)
-            SegBar(
-                listOf(
-                    (flow.cb1Kw / tot).toFloat() to MaterialTheme.colorScheme.primary,
-                    (flow.cb2Kw / tot).toFloat() to MaterialTheme.colorScheme.tertiary,
-                    (flow.cb3Kw / tot).toFloat() to MaterialTheme.colorScheme.secondary,
+            MiniBars(
+                items = listOf(
+                    Triple("CB1", flow.cb1Kw, MaterialTheme.colorScheme.primary),
+                    Triple("CB2", flow.cb2Kw, MaterialTheme.colorScheme.tertiary),
+                    Triple("CB3", flow.cb3Kw, MaterialTheme.colorScheme.secondary),
                 ),
+                total = tot,
             )
         }
         val battFg = Color(0xFF16A34A)
@@ -533,51 +525,60 @@ private fun FlowNode(
     }
 }
 
+/**
+ * Cac thanh progress mong rieng le cho PV1/PV2, CB1/CB2/CB3.
+ * Moi thanh: label + value nho, bar mong 4dp.
+ */
 @Composable
-private fun SegLegend(items: List<Pair<String, Color>>) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.forEach { (name, c) ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(6.dp).clip(CircleShape).background(c))
-                Spacer(Modifier.width(3.dp))
+private fun MiniBars(
+    items: List<Triple<String, Double, Color>>,
+    total: Double,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        items.forEach { (name, kw, c) ->
+            val frac by animateFloatAsState(
+                targetValue = (kw / total.coerceAtLeast(0.01)).toFloat().coerceIn(0f, 1f),
+                animationSpec = tween(800, easing = M3EMotion.emphasized),
+                label = "miniBar",
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     name,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                 )
+                Text(
+                    String.format(Locale.US, "%.1f kW", kw),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
-        }
-    }
-    Spacer(Modifier.height(5.dp))
-}
-
-@Composable
-private fun SegBar(segs: List<Pair<Float, Color>>) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(4.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        segs.forEach { (frac, c) ->
-            // demo .flsegbar i{transition:width .8s emphasized}
-            val w by animateFloatAsState(
-                targetValue = frac.coerceAtLeast(0.05f),
-                animationSpec = tween(800, easing = M3EMotion.emphasized),
-                label = "segW",
-            )
             Box(
                 modifier = Modifier
-                    .weight(w)
+                    .fillMaxWidth()
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(c),
-            )
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(frac)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(c),
+                )
+            }
         }
     }
 }

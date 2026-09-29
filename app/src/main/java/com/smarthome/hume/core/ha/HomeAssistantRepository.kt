@@ -178,6 +178,12 @@ class HomeAssistantRepository {
     private val isConfigured: Boolean
         get() = baseUrl.isNotBlank() && token.isNotBlank()
 
+    /** Base URL cua HA (de resolve entity_picture tuong doi). */
+    fun getBaseUrl(): String = baseUrl
+
+    /** True khi da cau hinh nhung chua ket noi (dang ket noi). */
+    fun isConnecting(): Boolean = isConfigured && !_connected.value
+
     fun connect() {
         if (!isConfigured) {
             Log.w(TAG, "connect() skipped: baseUrl or token is empty")

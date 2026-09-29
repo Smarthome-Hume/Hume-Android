@@ -70,16 +70,19 @@ fun EnergyScreen(
     ) {
         item {
             // Title boc boi nen card
-            Box(
+            // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp, bottom = 6.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .riseOnce("hdr", 0, risePlayed),
+                    .padding(top = 12.dp, bottom = 6.dp),
             ) {
-                Column {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .riseOnce("hdr", 0, risePlayed),
+                ) {
                     Text(
                         "Điện",
                         style = MaterialTheme.typography.headlineMedium.copy(
@@ -88,13 +91,13 @@ fun EnergyScreen(
                             letterSpacing = (-0.3).sp,
                         ),
                     )
-                    Text(
-                        "Dòng chảy & tiêu thụ thời gian thực",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
                 }
+                Text(
+                    "Dòng chảy & tiêu thụ thời gian thực",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = 6.dp),
+                )
             }
         }
         item {

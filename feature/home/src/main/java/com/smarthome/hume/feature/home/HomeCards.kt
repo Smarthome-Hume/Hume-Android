@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -56,7 +57,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.HomeUiState
+import com.smarthome.hume.core.model.ConnectionState
 import com.smarthome.hume.core.model.SolarDay
+import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.pressMorph
@@ -142,6 +145,13 @@ fun HomeHeader(
                     )
                 }
             }
+            // Den neon nhap nhay theo trang thai ket noi HA:
+            // xanh la = da ket noi (nhap nhay nhe), do = mat ket noi, da cam = dang ket noi
+            val (neonColor, blinkMs) = when (state.connectionState) {
+                ConnectionState.Connected -> Color(0xFF22C55E) to 1600
+                ConnectionState.Connecting -> Color(0xFFF59E0B) to 800
+                ConnectionState.Disconnected -> Color(0xFFEF4444) to 0
+            }
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -150,11 +160,21 @@ fun HomeHeader(
                     .clip(CircleShape)
                     .background(cs.surface),
             ) {
+                // Glow ngoai (blur) + dot dac — hieu ung den neon
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(18.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF22C55E)),
+                        .background(neonColor.copy(alpha = 0.45f))
+                        .blur(4.dp)
+                        .then(if (blinkMs > 0) Modifier.blink(blinkMs) else Modifier),
+                )
+                Box(
+                    modifier = Modifier
+                        .size(11.dp)
+                        .clip(CircleShape)
+                        .background(neonColor)
+                        .then(if (blinkMs > 0) Modifier.blink(blinkMs) else Modifier),
                 )
             }
         }
@@ -214,17 +234,21 @@ fun HomeHeader(
                 )
             }
             if (state.notifications.isNotEmpty()) {
+                // Badge: rong co gian theo so chu so (1-2 chu so deu can giua)
+                val count = state.notifications.size.coerceAtMost(99)
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
-                        .size(18.dp)
+                        .widthIn(min = 18.dp)
+                        .height(18.dp)
                         .clip(CircleShape)
-                        .background(cs.error),
+                        .background(cs.error)
+                        .padding(horizontal = 4.dp),
                 ) {
                     Text(
-                        "${state.notifications.size}",
+                        "$count",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -425,36 +449,40 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 "Điện mặt trời",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "%.1f".format(todayShown),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.3).sp,
-                    color = cs.onSurface,
-                    modifier = Modifier.alignByBaseline(),
-                )
-                Text(
-                    "kWh",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(start = 4.dp)
-                        .alignByBaseline(),
-                )
-            }
+            Text(
+                "%.1f".format(todayShown),
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.3).sp,
+                color = cs.onSurface,
+                modifier = Modifier.alignByBaseline(),
+            )
+            Text(
+                "kWh",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .alignByBaseline(),
+            )
         }
         Spacer(Modifier.height(14.dp)) // .stop mb 6 + .solsvg mt 8
-        if (vals.isNotEmpty()) {
+        // Chi ve chart khi co data that (>0); khong thi placeholder gon, tranh 150dp trang
+        if (vals.isNotEmpty() && vals.any { it > 0f }) {
             SolarBars(
                 vals = vals,
                 labels = week.map { it.label },

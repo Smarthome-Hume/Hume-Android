@@ -6,6 +6,7 @@ import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.AlarmUi
 import com.smarthome.hume.core.model.BatteryUi
 import com.smarthome.hume.core.model.ClimateUi
+import com.smarthome.hume.core.model.ConnectionState
 import com.smarthome.hume.core.model.DefaultRooms
 import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.model.DeviceUi
@@ -55,7 +56,12 @@ class AppHomeRepository(
         scope.launch {
             combine(ha.entities, ha.connected) { e, c -> e to c }
                 .collect { (entities, connected) ->
-                    _homeState.value = buildState(entities, connected)
+                    val connState = when {
+                        connected -> ConnectionState.Connected
+                        ha.isConnecting() -> ConnectionState.Connecting
+                        else -> ConnectionState.Disconnected
+                    }
+                    _homeState.value = buildState(entities, connected, connState)
                 }
         }
         scope.launch {
@@ -105,14 +111,23 @@ class AppHomeRepository(
     private fun buildState(
         entities: Map<String, LegacyEntity>,
         connected: Boolean,
+        connectionState: ConnectionState,
     ): HomeUiState {
         val cur = _homeState.value
-        // Ten nguoi dung: lay person dau tien co friendly_name hop le (khong hardcode id).
-        val personName = entities.values
-            .firstOrNull { it.id.startsWith("person.") }
+        // Ten + avatar nguoi dung: lay person dau tien (khong hardcode id).
+        val person = entities.values.firstOrNull { it.id.startsWith("person.") }
+        val personName = person
             ?.attributes?.get("friendly_name")?.jsonPrimitive?.contentOrNull
             ?.takeIf { it.isNotBlank() && !it.startsWith("person.") }
             ?: ""
+        // Avatar: entity_picture cua person (HA tra ve duong dan tuong doi hoac URL day du).
+        val rawPicture = person?.attributes?.get("entity_picture")?.jsonPrimitive?.contentOrNull
+        val avatarUrl = rawPicture?.takeIf { it.isNotBlank() }?.let { pic ->
+            if (pic.startsWith("http")) pic else ha.getBaseUrl().trimEnd('/') + pic
+        }
+        if (avatarUrl == null) {
+            android.util.Log.d("AppHomeRepository", "Khong co avatar user (person entity_picture trong)")
+        }
 
         val pvToday = entities[HumeConfig.PV_TODAY]?.numericState
         val solarNowKw = (entities[HumeConfig.PV_POWER]?.numericState ?: 0.0) / 1000.0
@@ -155,7 +170,9 @@ class AppHomeRepository(
 
         return HomeUiState(
             userName = personName,
+            avatarUrl = avatarUrl,
             connected = connected,
+            connectionState = connectionState,
             solarWeek = cur.solarWeek,
             solarTodayKwh = pvToday,
             solarNowKw = solarNowKw,

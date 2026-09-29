@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -62,7 +63,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -133,32 +133,30 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                 .statusBarsPadding()
                 .padding(top = 8.dp)
                 .padding(horizontal = 18.dp)
-                .padding(bottom = 100.dp),
+                .padding(bottom = 110.dp),
         ) {
-            // Header boc boi nen card (demo .phdr: h2 26px/700/-0.3px; p 13px)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp, bottom = 6.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(cs.surfaceContainerHighest)
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .riseIn(0),
-            ) {
-                Column {
+            // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
+            Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp)) {
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(cs.surfaceContainerHighest)
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .riseIn(0),
+                ) {
                     Text(
                         "An ninh",
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.3).sp,
                     )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        "Camera & trạng thái bảo vệ",
-                        fontSize = 13.sp,
-                        color = cs.onSurfaceVariant,
-                    )
                 }
+                Text(
+                    "Camera & trạng thái bảo vệ",
+                    fontSize = 13.sp,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = 6.dp),
+                )
             }
 
             // Camera picker (demo .esub: margin-bottom 14px; rise .42s)
@@ -498,41 +496,45 @@ private fun SensorGrid(sensors: List<SensorUi>) {
 private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val on = s.isOn
-    // demo .scard: surfaceHighest; .on: errorContainer; .warn.on: tertiaryContainer;
-    // transition background .3s
-    val bg by animateColorAsState(
+    // User yeu cau: active KHONG fill ca the nua — the luon surfaceHighest,
+    // chi status pill doi mau (nen rieng). Mau dung theme tokens de dong bo moi theme.
+    val bg = LocalHumeExtraColors.current.surfaceHighest
+    val iconBg by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.tertiaryContainer
             on -> cs.errorContainer
-            else -> LocalHumeExtraColors.current.surfaceHighest
+            else -> cs.surfaceContainer
         },
-        animationSpec = tween(300),
-        label = "scBg",
-    )
-    // demo .scard.on .sic: trang 55%; .warn.on chi doi mau icon; transition .3s
-    val iconBg by animateColorAsState(
-        targetValue = if (on) Color.White.copy(alpha = 0.55f) else cs.surfaceContainer,
         animationSpec = tween(300),
         label = "scIconBg",
     )
     val iconTint by animateColorAsState(
         targetValue = when {
-            // Khi active: dung White de dam bao nhin thay tren nen error/tertiary
-            on -> Color.White
+            on && s.warn -> cs.onTertiaryContainer
+            on -> cs.onErrorContainer
             else -> cs.onSurfaceVariant
         },
         animationSpec = tween(300),
         label = "scIconTint",
     )
-    val nameColor by animateColorAsState(
+    // Pill trang thai: nen rieng, doi mau theo active — giong trang thai deactive
+    val pillBg by animateColorAsState(
         targetValue = when {
-            // Khi active: dung White de dam bao tuong phan voi nen error/tertiary
-            // (onErrorContainer/onTertiaryContainer cua theme co the khong du tuong phan)
-            on -> Color.White
-            else -> cs.onSurface
+            on && s.warn -> cs.tertiaryContainer
+            on -> cs.errorContainer
+            else -> cs.surfaceContainer
         },
         animationSpec = tween(300),
-        label = "scNameColor",
+        label = "scPillBg",
+    )
+    val pillText by animateColorAsState(
+        targetValue = when {
+            on && s.warn -> cs.onTertiaryContainer
+            on -> cs.onErrorContainer
+            else -> cs.onSurfaceVariant
+        },
+        animationSpec = tween(300),
+        label = "scPillText",
     )
     val chipLabel = when (s.kind) {
         SensorKind.Door -> if (on) "MỞ" else "ĐÓNG"
@@ -552,9 +554,9 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(26.dp))
             .background(bg),
     ) {
-        // Layout 2 hang theo yeu cau:
-        // - Hang 1: [icon 44.dp | Column(name 13.sp Bold + time 11.sp, weight 1f)]
-        // - Hang 2: status chip doc lap mot dong o duoi cung (full width, can giua)
+        // Layout 2 hang:
+        // - Hang 1: [icon 44.dp | Column(name + time, weight 1f)] — ten dai dung marquee
+        // - Hang 2: status pill doc lap mot dong (nen rieng, doi mau khi active)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -580,34 +582,34 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                         s.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = nameColor,
+                        color = cs.onSurface,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.basicMarquee(),
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         s.lastChange,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (on) nameColor.copy(alpha = 0.75f) else cs.onSurfaceVariant,
+                        color = cs.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.basicMarquee(),
                     )
                 }
             }
-            // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px;
-            // .on (ke ca warn): nen error chu trang
+            // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px
             Text(
                 chipLabel,
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.8.sp,
                 textAlign = TextAlign.Center,
-                color = if (on) Color.White else cs.onSurfaceVariant,
+                color = pillText,
+                maxLines = 1,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(CircleShape)
-                    .background(if (on) cs.error else cs.surfaceContainer)
+                    .background(pillBg)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }

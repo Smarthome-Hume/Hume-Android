@@ -62,7 +62,6 @@ fun EnergySolarTab(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        SunsynkCard(state, risePlayed)
         Expander(
             icon = M3EIcons.Battery,
             title = "Sạc pin",
@@ -100,6 +99,8 @@ fun EnergySolarTab(
             }
         }
         EnergyFlowCard(flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed)
+        // Tai tieu thu xuong cuoi cung
+        SunsynkCard(state, risePlayed)
     }
 }
 

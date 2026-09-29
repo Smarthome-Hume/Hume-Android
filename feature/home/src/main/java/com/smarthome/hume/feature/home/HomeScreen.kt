@@ -172,6 +172,7 @@ fun HomeScreen(
                             RiseIn(20) {
                                 HomeHeader(
                                     state = state,
+                                    avatarUrl = state.avatarUrl,
                                     onSearch = { viewModel.openSearch(true) },
                                     onNotif = { viewModel.openNotif(true) },
                                 )

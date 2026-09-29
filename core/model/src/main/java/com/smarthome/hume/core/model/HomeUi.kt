@@ -69,10 +69,15 @@ data class RoomUi(
     val devices: List<DeviceUi> = emptyList(),
 )
 
+/** Trang thai ket noi HA cho den neon avatar. */
+enum class ConnectionState { Connected, Connecting, Disconnected }
+
 /** Toan bo state trang Nha. */
 data class HomeUiState(
     val userName: String = "",
+    val avatarUrl: String? = null,
     val connected: Boolean = false,
+    val connectionState: ConnectionState = ConnectionState.Disconnected,
     val solarWeek: List<SolarDay> = emptyList(),
     val solarTodayKwh: Double? = null,
     val solarNowKw: Double = 0.0,

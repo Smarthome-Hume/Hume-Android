@@ -103,71 +103,28 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
             }
         }
         Spacer(Modifier.height(12.dp))
-        // .bmid: soc + thoi gian + gio ket thuc (theo Hume goc)
+        // Dong 2: % nho o dau thanh + thanh wavy song chay
         Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // SOC lon ben trai
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    "$soc",
-                    fontSize = 34.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp,
-                    color = cs.onSurface,
-                )
-                Text(
-                    "%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 5.dp, start = 2.dp),
-                )
-            }
-            // Giua: thoi gian sac day / xa het (neu co tu HA)
-            battery.timeText?.let { tt ->
-                Text(
-                    tt,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.onSurface,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp, end = 8.dp, bottom = 4.dp),
-                )
-            } ?: Spacer(Modifier.weight(1f))
-            // Phai: gio ket thuc hh:mm (thay cho "kW Cong suat")
-            battery.endTime?.let { et ->
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "KẾT THÚC LÚC",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.5.sp,
-                        color = cs.onSurfaceVariant,
-                    )
-                    Text(
-                        et,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = cs.onSurface,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
-            }
+            Text(
+                "$soc%",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.3).sp,
+                color = cs.onSurface,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(10.dp))
+            AnimatedWavyBar(soc = soc, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
-        // Thanh wavy song chay
-        AnimatedWavyBar(soc = soc, modifier = Modifier.fillMaxWidth())
-        // .batleg: space-between, 11.5px/600, margin-top 8px
+        // Dong 3: legend Du tru / Su dung + KET THUC LUC (neu co tu HA)
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -190,8 +147,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
                 )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.width(14.dp))
                 // Icon song demo: viewBox 28x14, scale ve 24dp
                 Canvas(Modifier.size(24.dp, 12.dp)) {
                     val s = size.width / 28f
@@ -225,8 +181,28 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
+            // Phai: gio ket thuc hh:mm (giu lai theo ban truoc, user da duyet)
+            battery.endTime?.let { et ->
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "KẾT THÚC LÚC",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp,
+                        color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                    Text(
+                        et,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = cs.onSurface,
+                        modifier = Modifier.padding(top = 2.dp),
+                        maxLines = 1,
+                    )
+                }
+            }
         }
-        // (footer timeText da chuyen len hang chinh, khong can hien lai o day)
     }
 }
 
