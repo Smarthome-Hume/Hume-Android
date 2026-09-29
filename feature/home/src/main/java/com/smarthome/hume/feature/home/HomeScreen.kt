@@ -116,9 +116,11 @@ fun HomeScreen(
         // statusBarsPadding() + contentPadding top 8dp = status bar + 8dp.
         contentWindowInsets = WindowInsets.navigationBars,
         snackbarHost = {
-            // .snack{left:16;right:16;bottom:104}: slot nam ngay tren navbar
-            // (~100dp) nen padding bottom 4dp de cach navbar 4px nhu demo;
-            // vao: fade .25s + translateY(16->0) .35s; ra: nguoc lai.
+            // .snack{left:16;right:16;bottom:104} theo demo: snackbar nam TREN
+            // navbar (~100dp). Navbar la overlay noi o M3ERootScreen (khong
+            // phai Scaffold bottomBar) nen slot snackbar mac dinh nam o day
+            // man hinh, bi navbar de len — phai nang bottom = 104.dp.
+            // Vao: fade .25s + translateY(16->0) .35s; ra: nguoc lai.
             var lastData by remember { mutableStateOf<SnackbarData?>(null) }
             val current = snack.currentSnackbarData
             if (current != null) lastData = current
@@ -131,7 +133,7 @@ fun HomeScreen(
                 exit = fadeOut(tween(250)) + slideOutVertically(
                     tween(350, easing = M3EMotion.emphasizedAcc),
                 ) { with(density) { 16.dp.roundToPx() } },
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 104.dp),
             ) {
                 lastData?.let { M3ESnackbar(it) }
             }
