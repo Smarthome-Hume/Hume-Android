@@ -36,7 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.data.HumeGraph
+import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.ha.HomeAssistantRepository
+import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.HumeTab
 import com.smarthome.hume.core.storage.HumeSettings
 import com.smarthome.hume.core.storage.SettingsStore
@@ -49,6 +51,7 @@ import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.home.HomeScreen
+import com.smarthome.hume.feature.home.ChartHistorySeries
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
 import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
@@ -89,7 +92,18 @@ fun M3ERootScreen(
         ) {
             Box(Modifier.fillMaxSize()) {
                 when (navItems[selected].tab) {
-                    HumeTab.Home -> HomeScreen(onOpenSecurity = { selected = 2 })
+                    HumeTab.Home -> HomeScreen(
+                        onOpenSecurity = { selected = 2 },
+                        loadChartHistory = { series, startMs, endMs ->
+                            val entityId = when (series) {
+                                ChartHistorySeries.BatterySoc -> HumeConfig.BATTERY_SOC
+                                ChartHistorySeries.BatteryPower -> HumeConfig.BATTERY_POWER
+                                ChartHistorySeries.SolarPower -> HumeConfig.PV_POWER
+                            }
+                            HistoryFetcher.fetchRange(entityId, startMs, endMs)
+                                .map { it.timeMs to it.value }
+                        },
+                    )
                     HumeTab.Energy -> M3EEnergyScreen()
                     HumeTab.Security -> M3ESecurityScreen()
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })

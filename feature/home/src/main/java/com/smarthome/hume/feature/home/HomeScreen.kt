@@ -88,6 +88,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory()),
     onOpenSecurity: () -> Unit = {},
+    loadChartHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
@@ -303,6 +304,7 @@ fun HomeScreen(
                     ChartDetailSheet(
                         type = type,
                         onDismiss = { chartDetail = null },
+                        loadHistory = loadChartHistory,
                     )
                 }
                 if (ui.lightsOpen) {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,10 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.smarthome.hume.core.ha.HistoryFetcher
-import com.smarthome.hume.core.ha.HistoryPoint
-import com.smarthome.hume.core.model.HumeConfig
-import com.smarthome.hume.core.ui.components.GrabHandle
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.MsIcon
 import java.text.SimpleDateFormat
@@ -55,6 +52,15 @@ import kotlin.math.abs
 
 /** Loai sheet bieu do chi tiet. */
 enum class ChartDetailType { Battery, Solar }
+
+/** Nguon du lieu cua tung bieu do trong sheet lich su. */
+enum class ChartHistorySeries { BatterySoc, BatteryPower, SolarPower }
+
+typealias ChartHistoryLoader = suspend (
+    series: ChartHistorySeries,
+    startMs: Long,
+    endMs: Long,
+) -> List<Pair<Long, Double>>
 
 /**
  * Sheet bieu do chi tiet khi cham vao the Hieu nang pin / Dien mat troi.
@@ -66,6 +72,7 @@ enum class ChartDetailType { Battery, Solar }
 fun ChartDetailSheet(
     type: ChartDetailType,
     onDismiss: () -> Unit,
+    loadHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
 ) {
     val cs = MaterialTheme.colorScheme
     ModalBottomSheet(
@@ -108,14 +115,14 @@ fun ChartDetailSheet(
             }
             if (type == ChartDetailType.Battery) {
                 item {
-                    BatterySocChart()
+                    BatterySocChart(loadHistory)
                 }
                 item {
-                    BatteryPowerChart()
+                    BatteryPowerChart(loadHistory)
                 }
             } else {
                 item {
-                    SolarPowerChart()
+                    SolarPowerChart(loadHistory)
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
@@ -124,13 +131,13 @@ fun ChartDetailSheet(
 }
 
 @Composable
-private fun BatterySocChart() {
+private fun BatterySocChart(loadHistory: ChartHistoryLoader) {
     val cs = MaterialTheme.colorScheme
-    var points by remember { mutableStateOf<List<HistoryPoint>?>(null) }
+    var points by remember { mutableStateOf<List<Pair<Long, Double>>?>(null) }
     LaunchedEffect(Unit) {
         val now = System.currentTimeMillis()
         val data = runCatching {
-            HistoryFetcher.fetchRange(HumeConfig.BATTERY_SOC, now - 24 * 3600 * 1000L, now)
+            loadHistory(ChartHistorySeries.BatterySoc, now - 24 * 3600 * 1000L, now)
         }.getOrNull()
         points = data?.takeIf { it.isNotEmpty() }
     }
@@ -139,8 +146,8 @@ private fun BatterySocChart() {
         if (p == null) {
             LoadingChart()
         } else {
-            val vals = p.map { it.value.toFloat() }
-            val times = p.map { it.timeMs }
+            val vals = p.map { it.second.toFloat() }
+            val times = p.map { it.first }
             AreaChart(
                 vals = vals,
                 times = times,
@@ -152,13 +159,13 @@ private fun BatterySocChart() {
 }
 
 @Composable
-private fun BatteryPowerChart() {
+private fun BatteryPowerChart(loadHistory: ChartHistoryLoader) {
     val cs = MaterialTheme.colorScheme
-    var points by remember { mutableStateOf<List<HistoryPoint>?>(null) }
+    var points by remember { mutableStateOf<List<Pair<Long, Double>>?>(null) }
     LaunchedEffect(Unit) {
         val now = System.currentTimeMillis()
         val data = runCatching {
-            HistoryFetcher.fetchRange(HumeConfig.BATTERY_POWER, now - 24 * 3600 * 1000L, now)
+            loadHistory(ChartHistorySeries.BatteryPower, now - 24 * 3600 * 1000L, now)
         }.getOrNull()
         // Giam mat do diem de cot khong qua day (lay 48 diem)
         points = data?.takeIf { it.isNotEmpty() }?.let { downsample(it, 48) }
@@ -168,8 +175,8 @@ private fun BatteryPowerChart() {
         if (p == null) {
             LoadingChart()
         } else {
-            val vals = p.map { it.value.toFloat() }
-            val times = p.map { it.timeMs }
+            val vals = p.map { it.second.toFloat() }
+            val times = p.map { it.first }
             PowerBarChart(
                 vals = vals,
                 times = times,
@@ -181,13 +188,13 @@ private fun BatteryPowerChart() {
 }
 
 @Composable
-private fun SolarPowerChart() {
+private fun SolarPowerChart(loadHistory: ChartHistoryLoader) {
     val cs = MaterialTheme.colorScheme
-    var points by remember { mutableStateOf<List<HistoryPoint>?>(null) }
+    var points by remember { mutableStateOf<List<Pair<Long, Double>>?>(null) }
     LaunchedEffect(Unit) {
         val now = System.currentTimeMillis()
         val data = runCatching {
-            HistoryFetcher.fetchRange(HumeConfig.PV_POWER, now - 24 * 3600 * 1000L, now)
+            loadHistory(ChartHistorySeries.SolarPower, now - 24 * 3600 * 1000L, now)
         }.getOrNull()
         points = data?.takeIf { it.isNotEmpty() }?.let { downsample(it, 96) }
     }
@@ -196,8 +203,8 @@ private fun SolarPowerChart() {
         if (p == null) {
             LoadingChart()
         } else {
-            val vals = p.map { (it.value / 1000.0).toFloat() } // W -> kW cho de doc
-            val times = p.map { it.timeMs }
+            val vals = p.map { (it.second / 1000.0).toFloat() } // W -> kW cho de doc
+            val times = p.map { it.first }
             AreaChart(
                 vals = vals,
                 times = times,
@@ -209,7 +216,7 @@ private fun SolarPowerChart() {
     }
 }
 
-private fun downsample(points: List<HistoryPoint>, max: Int): List<HistoryPoint> {
+private fun downsample(points: List<Pair<Long, Double>>, max: Int): List<Pair<Long, Double>> {
     if (points.size <= max) return points
     val step = points.size.toFloat() / max
     return List(max) { i -> points[(i * step).toInt().coerceIn(0, points.size - 1)] }
