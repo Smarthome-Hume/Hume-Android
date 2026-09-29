@@ -43,8 +43,6 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.MsIcon
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * The pin — LAYOUT theo anh mau user gui, MAU SAC + CHU + WAVY giu theo M3E:
@@ -57,11 +55,10 @@ import kotlin.math.min
 @Composable
 fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
-    val charging = battery.isCharging
     val soc = battery.soc.coerceIn(0, 100)
-    val reserve = min(soc, 20)
-    val usage = max(0, soc - 20)
-    // timeText dang "Sac day sau 6:50" / "Con 1:29" -> "6h 50m"
+    val reserve = battery.reservePct
+    val usage = battery.usagePct
+    // timeText = friendly_time tu entity (null khi NGHỈ)
     val bigTime = parseDurationBig(battery.timeText)
 
     M3ECard(
@@ -97,14 +94,16 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
             }
         }
         Spacer(Modifier.height(10.dp))
-        // Trang thai (text theo anh mau, mau M3E)
+        // Trang thai 3 che do theo entity: DANG SAC / DANG XA / NGHI
         Text(
-            if (charging) "ĐANG SẠC" else "ĐANG XẢ",
+            battery.statusText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             letterSpacing = 1.5.sp,
             color = cs.onSurfaceVariant,
         )
+        // Hume goc: chi hien thoi gian lon + ket thuc luc khi KHONG nghi
+        if (!battery.isResting) {
         Spacer(Modifier.height(2.dp))
         // Thoi gian lon + ket thuc luc (layout anh mau)
         Row(
@@ -140,6 +139,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     )
                 }
             }
+        }
         }
         Spacer(Modifier.height(10.dp))
         // Thanh wavy M3E (giu nguyen kieu flat/wavy hien tai)
@@ -211,15 +211,18 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
 }
 
 /**
- * "Sac day sau 6:50" -> "6h 50m"; "Con 1:29" -> "1h 29m".
- * Khong parse duoc -> "--".
+ * friendly_time dang "6:50" -> "6h 50m"; neu da dang doc duoc thi giu nguyen.
+ * Null (khi NGHI) -> "".
  */
 private fun parseDurationBig(timeText: String?): String {
-    if (timeText.isNullOrBlank()) return "--"
-    val m = Regex("""(\d+):(\d{1,2})""").find(timeText) ?: return "--"
-    val h = m.groupValues[1].toIntOrNull() ?: 0
-    val min = m.groupValues[2].toIntOrNull() ?: 0
-    return if (h > 0) "${h}h ${min}m" else "${min}m"
+    if (timeText.isNullOrBlank()) return ""
+    val m = Regex("""(\d+):(\d{1,2})""").find(timeText)
+    if (m != null) {
+        val h = m.groupValues[1].toIntOrNull() ?: 0
+        val min = m.groupValues[2].toIntOrNull() ?: 0
+        return if (h > 0) "${h}h ${min}m" else "${min}m"
+    }
+    return timeText.take(12)
 }
 
 /**

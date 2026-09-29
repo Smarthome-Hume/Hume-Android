@@ -6,16 +6,27 @@ data class SolarDay(
     val kwh: Float,
 )
 
-/** Trang thai pin (Solis). */
+/** Trang thai pin (Solis) — cong thuc giong Hume goc (EnergyDetect): */
 data class BatteryUi(
     val soc: Int = 0,
-    val powerKw: Double = 0.0, // >0 = dang sac, <0 = dang xa (theo sensor battery_power_flow, giong Hume goc)
-    val timeText: String? = null, // "Còn 3g12p" / "Sạc đầy sau 1g05p"
+    val powerKw: Double = 0.0,
+    val powerW: Double = 0.0, // cong suat W de xac dinh 3 trang thai
+    val backupSoc: Int = 20, // number.solis_s6_eh1p_backup_soc_2, mac dinh 20
+    val timeText: String? = null, // friendly_time cua sensor runtime
     val endTime: String? = null, // "14:30" - gio ket thuc sac/xa
 ) {
-    val isCharging: Boolean get() = powerKw > 0.05
-    val reservePct: Int get() = minOf(soc, 20)
-    val usagePct: Int get() = maxOf(0, soc - 20)
+    // Hume goc: resting = power 0..5W, discharging = power < 0, charging = power > 5W
+    val isResting: Boolean get() = powerW in 0.0..5.0
+    val isDischarging: Boolean get() = powerW < 0.0
+    val isCharging: Boolean get() = !isResting && !isDischarging
+    val statusText: String
+        get() = when {
+            isResting -> "NGHỈ"
+            isDischarging -> "ĐANG XẢ"
+            else -> "ĐANG SẠC"
+        }
+    val reservePct: Int get() = minOf(soc, backupSoc)
+    val usagePct: Int get() = maxOf(0, soc - backupSoc)
 }
 
 /** Trang thai bao dong. */

@@ -133,17 +133,24 @@ class AppHomeRepository(
         val solarNowKw = (entities[HumeConfig.PV_POWER]?.numericState ?: 0.0) / 1000.0
 
         val soc = (entities[HumeConfig.BATTERY_SOC]?.numericState ?: 0.0).toInt()
-        val battPowerKw = (entities[HumeConfig.BATTERY_POWER]?.numericState ?: 0.0) / 1000.0
-        val timeText = if (battPowerKw > 0.05)
-            entities[HumeConfig.BATTERY_TIME_TO_FULL]?.state?.let { "Sạc đầy sau $it" }
+        val battPowerW = entities[HumeConfig.BATTERY_POWER]?.numericState ?: 0.0
+        val battPowerKw = battPowerW / 1000.0
+        // Cong thuc Hume goc: backupSoc tu number.solis_s6_eh1p_backup_soc_2, mac dinh 20
+        val backupSoc = (entities[HumeConfig.BACKUP_SOC]?.numericState ?: 20.0).toInt()
+        // Hume goc: resting = power 0..5W -> khong hien thoi gian
+        val resting = battPowerW in 0.0..5.0
+        val discharging = battPowerW < 0.0
+        // Sensor runtime theo huong: xa -> TIME_LEFT, sac/nghi -> TIME_TO_FULL
+        val runtimeEntity = if (discharging)
+            entities[HumeConfig.BATTERY_TIME_LEFT]
         else
-            entities[HumeConfig.BATTERY_TIME_LEFT]?.state?.let { "Còn $it" }
-        // Tinh gio ket thuc (hh:mm) tu duration cua sensor
-        val durationStr = if (battPowerKw > 0.05)
-            entities[HumeConfig.BATTERY_TIME_TO_FULL]?.state
-        else
-            entities[HumeConfig.BATTERY_TIME_LEFT]?.state
-        val endTime = durationStr?.let { parseDurationToEndTime(it) }
+            entities[HumeConfig.BATTERY_TIME_TO_FULL]
+        // Hume goc: uu tien friendly_time attribute, fallback raw state
+        val runtimeText = if (resting) null else
+            runtimeEntity?.attributes?.get("friendly_time")?.toString()
+                ?.trim('"')?.takeIf { it.isNotBlank() }
+                ?: runtimeEntity?.state?.takeIf { it.isNotBlank() && it != "unknown" }
+        val endTime = if (resting) null else runtimeEntity?.state?.let { parseDurationToEndTime(it) }
 
         val alarmId = alarmEntityId()
         val alarmEntity = alarmId?.let { entities[it] }
@@ -176,7 +183,14 @@ class AppHomeRepository(
             solarWeek = cur.solarWeek,
             solarTodayKwh = pvToday,
             solarNowKw = solarNowKw,
-            battery = BatteryUi(soc = soc, powerKw = battPowerKw, timeText = timeText, endTime = endTime),
+            battery = BatteryUi(
+                soc = soc,
+                powerKw = battPowerKw,
+                powerW = battPowerW,
+                backupSoc = backupSoc,
+                timeText = runtimeText,
+                endTime = endTime,
+            ),
             alarm = alarm,
             lightsOn = lightsOn,
             rooms = DefaultRooms.all.map { buildRoom(it, entities) },
