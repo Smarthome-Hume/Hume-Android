@@ -255,15 +255,15 @@ private fun M3ENavBar(
                                 onTap = { onSelect(i) },
                             )
                         }
-                        .padding(top = 9.dp, bottom = 7.dp),
+                        .padding(vertical = 4.dp),
                 ) {
-                    // Icon box 64x32: pill nen scale/alpha rieng, icon LUON hien.
-                    // Active -> icon fill dac; deactive -> outlined.
+                    // Nen active bao ca icon lan chu (dang ban dau: highlight full-item).
+                    // Icon luon hien; active -> fill dac.
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(width = 64.dp, height = 32.dp),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        // Pill active chi om icon: hien/spring theo chon, an khi khong chon
+                        // Pill nen: scale/fade spring theo chon
                         Box(
                             modifier = Modifier
                                 .graphicsLayer {
@@ -271,8 +271,8 @@ private fun M3ENavBar(
                                     scaleY = pillScale
                                     alpha = pillAlpha
                                 }
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(16.dp))
+                                .matchParentSize()
+                                .clip(RoundedCornerShape(20.dp))
                                 .background(
                                     when {
                                         isSel -> cs.primaryContainer
@@ -281,24 +281,29 @@ private fun M3ENavBar(
                                     },
                                 ),
                         )
-                        MsIcon(
-                            item.icon, contentDescription = item.tab.label,
-                            tint = if (isSel) cs.onPrimaryContainer
-                            else cs.onSurfaceVariant,
-                            filled = isSel,
-                            modifier = Modifier.size(iconSize),
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
+                        ) {
+                            MsIcon(
+                                item.icon, contentDescription = item.tab.label,
+                                tint = if (isSel) cs.onPrimaryContainer
+                                else cs.onSurfaceVariant,
+                                filled = isSel,
+                                modifier = Modifier.size(iconSize),
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                item.tab.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 11.sp,
+                                lineHeight = 13.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (isSel) cs.onSurface
+                                else cs.onSurfaceVariant,
+                            )
+                        }
                     }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        item.tab.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontSize = 11.sp,
-                        lineHeight = 13.sp,
-                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isSel) cs.onSurface
-                        else cs.onSurfaceVariant,
-                    )
                 }
             }
         }
