@@ -100,6 +100,7 @@ fun M3ERootScreen(
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen(
                         onOpenSecurity = { selected = 2 },
+                        onOpenEnergy = { selected = 1 },
                         loadChartHistory = { series, startMs, endMs ->
                             val entityId = when (series) {
                                 ChartHistorySeries.BatterySoc -> HumeConfig.BATTERY_SOC

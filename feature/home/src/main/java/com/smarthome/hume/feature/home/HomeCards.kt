@@ -287,13 +287,15 @@ fun HomeHeader(
  *  - camera: onOpenSecurity() (chuyen sang trang An ninh)
  *  - door: chi danh dau done (giu nguyen nhu cu)
  *  - key khac: onTipAction(key)
- * Trang thai .done: opacity .6, text "Đã bật" (theo HTML that).
+ * Trang thai .done: opacity .6, text theo tip.doneLabel (mac dinh "Đã bật", theo HTML that).
  */
 internal data class SuggestTip(
     val key: String,
     val title: String,
     val sub: String,
     val action: String,
+    /** Nhan nut sau khi da xu ly xong (vd "Da tat" cho dieu hoa). */
+    val doneLabel: String = "Đã bật",
 )
 
 /**
@@ -339,6 +341,62 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> = buildList 
                 action = "Xem camera",
             ))
         }
+    // Dieu hoa chay trong khi cua mo cung phong -> ton dien
+    doors.forEach { d ->
+        val roomName = roomNameForSensor(d.id) ?: return@forEach
+        val room = state.rooms.firstOrNull { it.name == roomName } ?: return@forEach
+        val cl = room.climate
+        if (cl != null && cl.isOn) add(SuggestTip(
+            key = "toggle_ac:${cl.entityId}",
+            title = "Đang tốn điện ở $roomName",
+            sub = "Điều hòa chạy trong khi ${d.body} đang mở.",
+            action = "Tắt điều hòa",
+            doneLabel = "Đã tắt",
+        ))
+    }
+    // Pin day + nang to -> goi y dung dien du
+    if (state.battery.soc >= 95 && state.solarNowKw >= 2.0) add(SuggestTip(
+        "sun",
+        "Đang dư điện mặt trời",
+        "Pin đã ${state.battery.soc}%, đang phát ${"%.1f".format(state.solarNowKw)} kW — chạy máy nặng lúc này.",
+        "Xem điện",
+    ))
+    // Am cao / phong nong theo tung phong
+    state.rooms.forEach { r ->
+        r.humidityPct?.takeIf { it >= 75 }?.let { h ->
+            add(SuggestTip(
+                key = "humid:${r.key}",
+                title = "Độ ẩm cao ở ${r.name}",
+                sub = "Đang ${h.toInt()}% — nên thông gió hoặc hút ẩm.",
+                action = "Đã hiểu",
+                doneLabel = "Đã hiểu",
+            ))
+        }
+        val t = r.tempC
+        val cl = r.climate
+        if (t != null && t >= 31 && cl != null && !cl.isOn) add(SuggestTip(
+            key = "toggle_ac:${cl.entityId}",
+            title = "${r.name} đang ${"%.0f".format(t)}°C",
+            sub = "Bật điều hòa làm mát phòng?",
+            action = "Bật điều hòa",
+        ))
+    }
+    // Canh bao khan: khoi / ro nuoc
+    state.notifications.firstOrNull { it.title.contains("khói", ignoreCase = true) }?.let { n ->
+        add(SuggestTip("alert:${n.id}", n.title, n.body, "Đã hiểu", "Đã hiểu"))
+    }
+    state.notifications.firstOrNull { it.title.contains("rò nước", ignoreCase = true) }?.let { n ->
+        add(SuggestTip("alert:${n.id}", n.title, n.body, "Đã hiểu", "Đã hiểu"))
+    }
+    // Dem chua bat an ninh
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    val alarm = state.alarm
+    if (alarm != null && !alarm.isArmed && (hour >= 22 || hour < 6)) add(SuggestTip(
+        "night",
+        "Chưa bật an ninh đêm",
+        "Đã ${hour}h — bật chế độ đêm cho an tâm.",
+        "Xem an ninh",
+    ))
 }
 
 @Composable
@@ -349,6 +407,7 @@ fun SuggestCard(
     onTipAction: (key: String) -> Unit = {},
     onBatteryDetail: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
+    onOpenEnergy: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // Goi y phan ung truc tiep theo state (chuyen dong -> camera, cua mo, pin yeu)
@@ -470,6 +529,15 @@ fun SuggestCard(
                             tip.key == "battery" -> onBatteryDetail()
                             tip.key.startsWith("motion:") -> onOpenSecurity()
                             tip.key == "door" -> doneMap[tip.key] = true
+                            tip.key == "sun" -> onOpenEnergy()
+                            tip.key == "night" -> onOpenSecurity()
+                            tip.key.startsWith("toggle_ac:") -> {
+                                onTipAction(tip.key)
+                                doneMap[tip.key] = true
+                            }
+                            tip.key.startsWith("humid:") ||
+                                tip.key.startsWith("alert:") ->
+                                dismissed[tip.key] = tip.title + "|" + tip.sub
                             tip.key.startsWith("ai_") ->
                                 dismissed[tip.key] = tip.title + "|" + tip.sub
                             else -> onTipAction(tip.key)
@@ -555,7 +623,7 @@ private fun SuggestTipRow(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             Text(
-                if (done) "Đã bật" else tip.action,
+                if (done) tip.doneLabel else tip.action,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = cs.tertiaryContainer,

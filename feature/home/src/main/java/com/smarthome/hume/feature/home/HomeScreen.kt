@@ -88,6 +88,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory()),
     onOpenSecurity: () -> Unit = {},
+    onOpenEnergy: () -> Unit = {},
     loadChartHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
 ) {
     val state by viewModel.state.collectAsState()
@@ -212,7 +213,11 @@ fun HomeScreen(
                                         state,
                                         aiTips = aiTips,
                                         onTipAction = { key ->
-                                            if (key == "ac") viewModel.ac26()
+                                            when {
+                                                key == "ac" -> viewModel.ac26()
+                                                key.startsWith("toggle_ac:") ->
+                                                    viewModel.toggleClimate(key.removePrefix("toggle_ac:"))
+                                            }
                                         },
                                         onBatteryDetail = {
                                             scope.launch {
@@ -223,6 +228,7 @@ fun HomeScreen(
                                             }
                                         },
                                         onOpenSecurity = onOpenSecurity,
+                                        onOpenEnergy = onOpenEnergy,
                                     )
                                 }
                             }
