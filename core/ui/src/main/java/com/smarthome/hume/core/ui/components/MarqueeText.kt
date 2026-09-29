@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 /**
@@ -25,11 +26,15 @@ fun MarqueeText(
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
-    LaunchedEffect(text) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    LaunchedEffect(text, density) {
         delay(1500)
+        // Nguong tran dang ke: tran nho hon thi giu yen, tranh micro-scroll
+        // nuot ky tu dau (vd "Ban cong T2" bi mat chu B giua chung cuon).
+        val thresholdPx = with(density) { 20.dp.toPx() }
         while (true) {
             val max = scrollState.maxValue
-            if (max > 0) {
+            if (max > thresholdPx) {
                 scrollState.animateScrollTo(
                     max,
                     animationSpec = androidx.compose.animation.core.tween(
@@ -47,6 +52,7 @@ fun MarqueeText(
                 )
                 delay(1500)
             } else {
+                if (scrollState.value != 0) scrollState.scrollTo(0)
                 delay(2000)
             }
         }

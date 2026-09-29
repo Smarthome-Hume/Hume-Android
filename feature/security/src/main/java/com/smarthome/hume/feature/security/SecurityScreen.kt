@@ -35,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import com.smarthome.hume.core.ui.components.Ms
-import com.smarthome.hume.core.ui.components.MarqueeText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -637,11 +636,15 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     MsIcon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    MarqueeText(
-                        text = s.name,
+                    // demo .scard .snm: 13px/700, nowrap, ellipsis (khong marquee)
+                    Text(
+                        s.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = nameColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = false,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
