@@ -1,31 +1,41 @@
 package com.smarthome.hume.ui.profile
 
 import android.net.Uri
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,14 +46,15 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import java.io.File
 
 /**
- * Nhan vao avatar -> mo phong to toan man hinh.
- * Anh: hien vua khung. Video: phat co dieu khien.
- * Thanh duoi co nut Doi avatar / Go avatar.
+ * Nhan vao avatar -> phong to kieu kinh lup: giu khung TRON, phong to giua
+ * man hinh tren nen mo. Anh crop tron; video phat lap lai tat tieng trong
+ * hinh tron (nhan vao de tam dung / phat tiep).
  */
 @Composable
 fun AvatarViewerDialog(
@@ -61,30 +72,47 @@ fun AvatarViewerDialog(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(Color.Black.copy(alpha = 0.88f))
                 .clickable(onClick = onDismiss),
         ) {
-            if (avatar?.isVideo == true) {
-                FullscreenVideoPlayer(file = avatar.file)
-            } else {
-                val model = avatar?.file ?: haAvatarUrl
-                if (model != null) {
-                    AsyncImage(
-                        model = model,
+            // Hieu ung phong dai pop-in
+            val scale = remember { Animatable(0.7f) }
+            LaunchedEffect(Unit) {
+                scale.animateTo(
+                    1f,
+                    spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                )
+            }
+            val circleSize = (LocalConfiguration.current.screenWidthDp * 0.78f).dp
+            Box(
+                Modifier
+                    .align(Alignment.Center)
+                    .size(circleSize)
+                    .graphicsLayer {
+                        scaleX = scale.value
+                        scaleY = scale.value
+                    }
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    avatar?.isVideo == true -> MagnifiedVideoAvatar(file = avatar.file)
+                    avatar != null || haAvatarUrl != null -> AsyncImage(
+                        model = avatar?.file ?: haAvatarUrl,
                         contentDescription = name,
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
-                } else {
-                    // Chua co avatar: hien chu cai dau phong to.
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            name.trim().firstOrNull()?.uppercase() ?: "?",
-                            fontSize = 120.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White.copy(alpha = 0.9f),
-                        )
-                    }
+                    else -> Text(
+                        name.trim().firstOrNull()?.uppercase() ?: "?",
+                        fontSize = 120.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.9f),
+                    )
                 }
             }
 
@@ -127,26 +155,55 @@ fun AvatarViewerDialog(
     }
 }
 
-/** Video phong to: phat lap lai co thanh dieu khien. */
+/**
+ * Video phong to trong khung tron: lap lai, tat tieng.
+ * Nhan vao hinh tron de tam dung / phat tiep.
+ */
 @Composable
-private fun FullscreenVideoPlayer(file: File) {
+private fun MagnifiedVideoAvatar(file: File) {
     val context = LocalContext.current
+    var playing by remember { mutableStateOf(true) }
     val player = remember(file) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
             repeatMode = Player.REPEAT_MODE_ONE
+            volume = 0f
             playWhenReady = true
             prepare()
         }
     }
     DisposableEffect(file) { onDispose { player.release() } }
-    AndroidView(
-        factory = { ctx ->
-            PlayerView(ctx).apply {
-                this.player = player
-                useController = true
+    LaunchedEffect(playing) { player.playWhenReady = playing }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .clickable { playing = !playing },
+    ) {
+        AndroidView(
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    this.player = player
+                    useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (!playing) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = "Phát",
+                    tint = Color.White,
+                    modifier = Modifier.size(64.dp),
+                )
             }
-        },
-        modifier = Modifier.fillMaxSize(),
-    )
+        }
+    }
 }
