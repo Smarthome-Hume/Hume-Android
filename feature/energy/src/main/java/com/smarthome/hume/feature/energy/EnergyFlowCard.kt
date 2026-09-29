@@ -507,7 +507,7 @@ private fun FlowNode(
             }
         }
         Row(
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 1.dp),
         ) {
             Text(

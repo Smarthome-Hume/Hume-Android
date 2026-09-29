@@ -209,10 +209,13 @@ fun AiSettingsCard(vm: MeViewModel) {
                         value = apiKey,
                         onValueChange = { apiKey = it; dirty = true },
                         label = { Text(if (settings.hasApiKey) "API key mới (trống = giữ key cũ)" else "API key") },
-                        leadingIcon = { MsIcon(Ms.key, null) },
+                        leadingIcon = { MsIcon(Ms.key, null, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {
                             IconButton(onClick = { keyVisible = !keyVisible }) {
-                                MsIcon(if (keyVisible) Ms.visibility_off else Ms.visibility, null)
+                                MsIcon(
+                                    if (keyVisible) Ms.visibility_off else Ms.visibility, null,
+                                    modifier = Modifier.size(20.dp),
+                                )
                             }
                         },
                         visualTransformation = if (keyVisible) VisualTransformation.None

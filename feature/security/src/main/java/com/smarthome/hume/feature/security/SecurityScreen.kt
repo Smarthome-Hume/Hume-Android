@@ -493,10 +493,14 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     // Spec HTML .scard: active = ca the doi mau (errorContainer / tertiaryContainer),
     // icon bg = trang 55% mo, icon + chu = onErrorContainer, pill = error dac + chu trang.
     // Inactive: the surfaceHighest, icon/pill = surfaceContainer.
+    // MAU DO CUNG (khong theo theme): doi theme van giu do.
+    val hardRed = Color(0xFFBA1A1A)
+    val hardRedContainer = Color(0xFFFFDAD6)
+    val hardOnRedContainer = Color(0xFF410002)
     val cardBg by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.tertiaryContainer
-            on -> cs.errorContainer
+            on -> hardRedContainer
             else -> LocalHumeExtraColors.current.surfaceHighest
         },
         animationSpec = tween(300),
@@ -513,7 +517,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val iconTint by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
+            on -> hardOnRedContainer
             else -> cs.onSurfaceVariant
         },
         animationSpec = tween(300),
@@ -522,7 +526,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val nameColor by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
+            on -> hardOnRedContainer
             else -> cs.onSurface
         },
         animationSpec = tween(300),
@@ -531,7 +535,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val timeColor by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.onTertiaryContainer.copy(alpha = 0.75f)
-            on -> cs.onErrorContainer.copy(alpha = 0.75f)
+            on -> hardOnRedContainer.copy(alpha = 0.75f)
             else -> cs.onSurfaceVariant
         },
         animationSpec = tween(300),
@@ -542,7 +546,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val pillBg by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.tertiary
-            on -> cs.error
+            on -> hardRed
             else -> cs.surfaceContainer
         },
         animationSpec = tween(300),
@@ -551,7 +555,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val pillText by animateColorAsState(
         targetValue = when {
             on && s.warn -> cs.onTertiary
-            on -> cs.onError
+            on -> Color.White
             else -> cs.onSurfaceVariant
         },
         animationSpec = tween(300),

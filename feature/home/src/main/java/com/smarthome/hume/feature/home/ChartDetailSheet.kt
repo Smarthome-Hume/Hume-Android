@@ -308,10 +308,13 @@ private fun AreaChart(
                 fun x(i: Int): Float = padL + cw * i / (vals.size - 1).coerceAtLeast(1)
                 fun y(v: Float): Float = padT + ch * (1f - (v - minV) / range)
 
-                // Fill area
+                // Fill area (duong cong muot bang cubic bezier)
                 val fillPath = Path().apply {
                     moveTo(x(0), y(vals[0]))
-                    for (i in 1 until vals.size) lineTo(x(i), y(vals[i]))
+                    for (i in 1 until vals.size) {
+                        val midX = (x(i - 1) + x(i)) / 2f
+                        cubicTo(midX, y(vals[i - 1]), midX, y(vals[i]), x(i), y(vals[i]))
+                    }
                     lineTo(x(vals.size - 1), padT + ch)
                     lineTo(x(0), padT + ch)
                     close()
@@ -325,10 +328,13 @@ private fun AreaChart(
                         ),
                     ),
                 )
-                // Line
+                // Line (duong cong muot)
                 val linePath = Path().apply {
                     moveTo(x(0), y(vals[0]))
-                    for (i in 1 until vals.size) lineTo(x(i), y(vals[i]))
+                    for (i in 1 until vals.size) {
+                        val midX = (x(i - 1) + x(i)) / 2f
+                        cubicTo(midX, y(vals[i - 1]), midX, y(vals[i]), x(i), y(vals[i]))
+                    }
                 }
                 drawPath(
                     linePath,
