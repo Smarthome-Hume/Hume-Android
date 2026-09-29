@@ -69,6 +69,7 @@ import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.ConnectionState
 import com.smarthome.hume.core.model.SolarDay
 import com.smarthome.hume.core.ui.components.blink
+import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.WeekChartD
@@ -593,14 +594,15 @@ private fun SuggestTipRow(
         )
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                tip.title,
+            // The co dinh 1 dong tieu de + 1 dong mo ta; chu dai tu chay marquee
+            MarqueeText(
+                text = tip.title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = cs.onTertiaryContainer,
             )
-            Text(
-                tip.sub,
+            MarqueeText(
+                text = tip.sub,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
