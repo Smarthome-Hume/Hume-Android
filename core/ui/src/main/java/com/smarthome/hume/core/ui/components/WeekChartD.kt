@@ -2,7 +2,6 @@ package com.smarthome.hume.core.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.pointer.pointerInput
@@ -50,15 +48,22 @@ fun WeekChartD(
 ) {
     val cs = MaterialTheme.colorScheme
     var selected by remember { mutableStateOf<Int?>(null) }
+    // TB an mac dinh — an vao bieu do moi hien
+    var showAvg by remember { mutableStateOf(false) }
     if (vals.isEmpty()) return
     val maxValue = (vals.maxOrNull() ?: 0f).coerceAtLeast(0.01f)
     val minValue = vals.minOrNull() ?: 0f
     val range = (maxValue - minValue).coerceAtLeast(0.01f)
     val avg = vals.average().toFloat()
+    // Mau kinh mo: surface trong suot 70% — khong vien, khong shadow cung
+    val glassBg = cs.surface.copy(alpha = 0.72f)
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(150.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { showAvg = !showAvg })
+            },
     ) {
         val w = maxWidth
         val sx = w / 320.dp
@@ -104,9 +109,8 @@ fun WeekChartD(
                         .offset(x = x(i) - 60.dp, y = (top - 40.dp).coerceAtLeast(0.dp))
                         .width(120.dp)
                         .heightIn(min = 24.dp)
-                        .shadow(6.dp, RoundedCornerShape(12.dp))
                         .clip(RoundedCornerShape(12.dp))
-                        .background(cs.surfaceContainerHigh)
+                        .background(glassBg)
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -121,24 +125,25 @@ fun WeekChartD(
                 }
             }
         }
-        // Nhan "TB x.x" ve SAU cot de luon nam tren (khong bi che)
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
-                .padding(end = 4.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(cs.surfaceContainerHighest)
-                .border(1.dp, cs.outlineVariant, RoundedCornerShape(6.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        ) {
-            Text(
-                "TB ${"%.1f".format(avg)}",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = cs.onSurfaceVariant,
-                maxLines = 1,
-            )
+        // Nhan "TB x.x" — an mac dinh, an vao bieu do moi hien; nen kinh mo khong vien
+        if (showAvg) {
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
+                    .padding(end = 4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(glassBg)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            ) {
+                Text(
+                    "TB ${"%.1f".format(avg)}",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onSurface,
+                    maxLines = 1,
+                )
+            }
         }
     }
     Spacer(Modifier.height(2.dp))
