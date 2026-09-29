@@ -75,6 +75,7 @@ import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.data.AiTip
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
@@ -295,7 +296,31 @@ internal data class SuggestTip(
     val action: String,
 )
 
-/** Dung list goi y urgent tu state; dung chung cho SuggestCard + HomeScreen. */
+/**
+ * Map entity cam bien chuyen dong -> ten phong de goi y theo phong.
+ * (entity_id HA khong dau, vd binary_sensor.cam_bien_pir_phong_tho_occupancy)
+ */
+internal fun roomNameForSensor(entityId: String): String? {
+    val id = entityId.lowercase()
+    return when {
+        "phong_ngu_be" in id || "tre_em" in id -> "Phòng Trẻ Em"
+        "phong_ngu" in id || "bedroom" in id -> "Phòng Ngủ"
+        "phong_tho" in id || "worship" in id -> "Phòng Thờ"
+        "phong_tam" in id || "nha_tam" in id || "ve_sinh" in id || "bath" in id -> "Phòng Tắm"
+        "phong_khach" in id || "living" in id -> "Phòng Khách"
+        "bep" in id || "kitchen" in id -> "Phòng Bếp"
+        "giat" in id || "washing" in id || "laundry" in id -> "Phòng Giặt"
+        "hanh_lang" in id || "hall" in id -> "Hành Lang"
+        else -> null
+    }
+}
+
+/**
+ * Dong goi y phan ung theo state truc tiep (khong can AI):
+ * - Co chuyen dong o phong nao -> goi y xem camera phong do (key rieng theo sensor).
+ * - Het chuyen dong (sensor off) -> thong bao mat khoi state -> goi y tu dong bien mat.
+ * Dung chung cho SuggestCard + HomeScreen.
+ */
 internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> = buildList {
     if (state.battery.soc in 1..29) add(SuggestTip(
         "battery", "Pin còn ${state.battery.soc}%",
@@ -303,22 +328,40 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> = buildList 
     val doors = state.notifications.filter { it.title.contains("Cửa") }
     if (doors.isNotEmpty()) add(SuggestTip(
         "door", doors.first().title, doors.first().body, "Đóng"))
-    val motions = state.notifications.filter { it.title == "Phát hiện chuyển động" }
-    if (motions.isNotEmpty()) add(SuggestTip(
-        "camera", "Phát hiện chuyển động", motions.first().body, "Xem camera"))
+    state.notifications
+        .filter { it.title == "Phát hiện chuyển động" }
+        .forEach { n ->
+            val room = roomNameForSensor(n.id)
+            add(SuggestTip(
+                key = "motion:${n.id}",
+                title = if (room != null) "Có chuyển động ở $room" else "Phát hiện chuyển động",
+                sub = listOf(n.body, n.timeText).filter { it.isNotBlank() }.joinToString(" · "),
+                action = "Xem camera",
+            ))
+        }
 }
 
 @Composable
 fun SuggestCard(
     state: HomeUiState,
+    /** Goi y tu AI (LLM, phan tich dinh ky); hien sau cac goi y phan ung truc tiep. */
+    aiTips: List<AiTip> = emptyList(),
     onTipAction: (key: String) -> Unit = {},
     onBatteryDetail: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val allTips = buildSuggestTips(state)
+    // Goi y phan ung truc tiep theo state (chuyen dong -> camera, cua mo, pin yeu)
+    // + goi y AI phan tich sau.
+    val allTips = buildSuggestTips(state) +
+        aiTips.map { SuggestTip(it.key, it.title, it.sub, it.action) }
     // Goi y da bi user xoa: luu key -> noi dung luc xoa; hien lai neu co su kien moi (noi dung doi)
     val dismissed = remember { mutableStateMapOf<String, String>() }
+    // Dieu kien da het (vd het chuyen dong) -> quen trang thai xoa de su kien moi hien lai goi y
+    LaunchedEffect(allTips.map { it.key }) {
+        val liveKeys = allTips.map { it.key }.toSet()
+        dismissed.keys.filter { it !in liveKeys }.forEach { dismissed.remove(it) }
+    }
     val tips = allTips.filter { tip ->
         val d = dismissed[tip.key]
         d == null || d != tip.title + "|" + tip.sub
@@ -423,10 +466,12 @@ fun SuggestCard(
                     done = doneMap[tip.key] == true,
                     onAction = {
                         haptic()
-                        when (tip.key) {
-                            "battery" -> onBatteryDetail()
-                            "camera" -> onOpenSecurity()
-                            "door" -> doneMap[tip.key] = true
+                        when {
+                            tip.key == "battery" -> onBatteryDetail()
+                            tip.key.startsWith("motion:") -> onOpenSecurity()
+                            tip.key == "door" -> doneMap[tip.key] = true
+                            tip.key.startsWith("ai_") ->
+                                dismissed[tip.key] = tip.title + "|" + tip.sub
                             else -> onTipAction(tip.key)
                         }
                     },

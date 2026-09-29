@@ -131,6 +131,8 @@ class AiRepositoryImpl(
         }
         val doors = s.notifications.filter { it.title.contains("Cửa") }
         doors.forEach { sb.appendLine("- ${it.title}: ${it.body}") }
+        s.notifications.filter { it.title == "Phát hiện chuyển động" }
+            .forEach { sb.appendLine("- Đang có chuyển động: ${it.body} (${it.timeText})") }
         return sb.toString()
     }
 
@@ -293,6 +295,7 @@ class AiRepositoryImpl(
     companion object {
         private val SYSTEM_PROMPT = """
 Bạn là trợ lý nhà thông minh Hume. Dựa trên trạng thái nhà, đưa ra 1-3 gợi ý NGẮN GỌN, thiết thực bằng tiếng Việt để tiết kiệm điện, tăng an toàn, tiện nghi.
+Nếu đang có chuyển động ở phòng nào, ưu tiên gợi ý xem camera phòng đó (action "Xem camera").
 Chỉ trả về JSON thuần (không markdown, không giải thích thêm), đúng định dạng:
 [{"title":"Tiêu đề ngắn","sub":"Mô tả 1 câu, có số liệu cụ thể nếu được","action":"Nhãn nút ≤4 từ"}]
 Ví dụ: [{"title":"Pin còn 18%","sub":"Hạn chế tải nặng, chờ nắng lên sau 10h.","action":"Xem pin"}]

@@ -99,6 +99,8 @@ fun HomeScreen(
     var ecoDialog by remember { mutableStateOf(false) }
     var chartDetail by remember { mutableStateOf<ChartDetailType?>(null) }
     val tips = buildSuggestTips(state)
+    val aiState by viewModel.aiState.collectAsState()
+    val aiTips = (aiState as? AiUiState.Loaded)?.tips.orEmpty()
 
     ui.snackbar?.let { s ->
         LaunchedEffect(s) {
@@ -197,7 +199,7 @@ fun HomeScreen(
                             }
                         }
                     }
-                    if (tips.isNotEmpty()) {
+                    if (tips.isNotEmpty() || aiTips.isNotEmpty()) {
                         item {
                             Column(Modifier.padding(bottom = 12.dp)) {
                                 RiseIn(155) { SectionTitle("Gợi ý cho bạn") }
@@ -208,6 +210,7 @@ fun HomeScreen(
                                 RiseIn(165) {
                                     SuggestCard(
                                         state,
+                                        aiTips = aiTips,
                                         onTipAction = { key ->
                                             if (key == "ac") viewModel.ac26()
                                         },
