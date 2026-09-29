@@ -38,7 +38,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -536,7 +535,6 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
     var hue by remember { androidx.compose.runtime.mutableFloatStateOf(0f) } // 0..360
     var sat by remember { androidx.compose.runtime.mutableFloatStateOf(1f) } // 0..1
     var value by remember { androidx.compose.runtime.mutableFloatStateOf(1f) } // 0..1
-    var hexInput by remember { mutableStateOf("") }
     var feedback by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
 
     // Mau hien tai tu HSV
@@ -601,9 +599,9 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                 ),
             )
         }
-        // O mau 2D: saturation (ngang) x value/brightness (doc)
+        // O mau 2D: saturation (ngang) x value/brightness (doc) — cham/keo de chon
         Spacer(Modifier.height(8.dp))
-        Box(
+        androidx.compose.foundation.layout.BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
                 .height(160.dp)
@@ -615,7 +613,20 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                             androidx.compose.ui.graphics.Color.Black,
                         ),
                     ),
-                ),
+                )
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        sat = (offset.x / size.width).coerceIn(0f, 1f)
+                        value = (1f - offset.y / size.height).coerceIn(0f, 1f)
+                    }
+                }
+                .pointerInput(Unit) {
+                    androidx.compose.foundation.gestures.detectDragGestures { change, _ ->
+                        sat = (change.position.x / size.width).coerceIn(0f, 1f)
+                        value = (1f - change.position.y / size.height).coerceIn(0f, 1f)
+                        change.consume()
+                    }
+                },
         ) {
             Box(
                 Modifier
@@ -629,7 +640,20 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                         ),
                     ),
             )
-            // Chon sat/value bang tap (don gian: dung slider)
+            // Thumb tron hien thi vi tri sat/value hien tai
+            Box(
+                Modifier
+                    .offset(
+                        x = sat * maxWidth - 11.dp,
+                        y = (1f - value) * maxHeight - 11.dp,
+                    )
+                    .size(22.dp)
+                    .border(
+                        2.dp,
+                        androidx.compose.ui.graphics.Color.White,
+                        androidx.compose.foundation.shape.CircleShape,
+                    ),
+            )
         }
         // Slider cho saturation va brightness
         Spacer(Modifier.height(8.dp))
@@ -701,33 +725,6 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                 )
             }
         }
-        // Nhap hex thu cong (giu lai)
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = hexInput,
-            onValueChange = {
-                hexInput = it
-                feedback = null
-                // Tu dong cap nhat hue/sat/value neu hex hop le
-                parseHexColor(it)?.let { c ->
-                    val hsv = FloatArray(3)
-                    android.graphics.Color.RGBToHSV(
-                        (c.red * 255).toInt(),
-                        (c.green * 255).toInt(),
-                        (c.blue * 255).toInt(),
-                        hsv,
-                    )
-                    hue = hsv[0]
-                    sat = hsv[1]
-                    value = hsv[2]
-                }
-            },
-            label = { Text("Mã hex") },
-            placeholder = { Text("#FF5722") },
-            singleLine = true,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        )
         feedback?.let { (msg, isError) ->
             Text(
                 msg,
@@ -738,14 +735,6 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             )
         }
     }
-}
-
-/** Parse "#RRGGBB" / "#AARRGGBB" (dau # tuy chon); null neu khong hop le. */
-private fun parseHexColor(input: String): Color? {
-    val h = input.trim().removePrefix("#")
-    if (h.length != 6 && h.length != 8) return null
-    val v = h.toLongOrNull(16) ?: return null
-    return if (h.length == 6) Color(0xFF000000L or v) else Color(v)
 }
 
 /** Khoang cach RGB binh phuong — de tim seed gan nhat. */
