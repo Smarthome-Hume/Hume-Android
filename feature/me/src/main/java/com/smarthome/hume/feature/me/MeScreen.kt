@@ -540,8 +540,8 @@ private fun SecTitle(title: String) {
 // ---------- avatar ----------
 
 /**
- * The doi avatar o tab Toi: preview tron + mo ta nguon anh hien tai
- * + nut Doi / Go (Go chi hien khi da co avatar upload).
+ * The doi avatar o tab Toi: preview tron + nut Doi / Go
+ * (Go chi hien khi da co avatar upload). Khong co chu mo ta (2026-09-30).
  */
 @Composable
 private fun MeAvatarCard(
@@ -566,15 +566,8 @@ private fun MeAvatarCard(
             size = 52.dp,
         )
         Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                "Ảnh đại diện",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-            )
-        }
+        // (2026-09-30, user: bo chu "Anh dai dien" — chi giu avatar + nut Doi/Go)
+        Spacer(Modifier.weight(1f))
         // Nut Doi/Go: nen pill + pressMorph giong cum dieu hoa (2026-09-30).
         Box(
             Modifier
