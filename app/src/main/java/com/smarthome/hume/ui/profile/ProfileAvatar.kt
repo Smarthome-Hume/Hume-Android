@@ -17,8 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -46,8 +48,14 @@ fun ProfileAvatar(
     onTap: () -> Unit,
     onEdit: () -> Unit,
     size: Dp = 60.dp,
+    /** Bao vi tri avatar theo toa do window (de viewer bay ve khi dong). */
+    onPositioned: ((Rect) -> Unit)? = null,
 ) {
-    Box(Modifier.size(size)) {
+    Box(
+        Modifier
+            .size(size)
+            .onGloballyPositioned { onPositioned?.invoke(it.boundsInWindow()) },
+    ) {
         Box(
             Modifier
                 .size(size)

@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -105,6 +106,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
     var showChooser by remember { mutableStateOf(false) }
     var viewerOpen by remember { mutableStateOf(false) }
+    var avatarRect by remember { mutableStateOf<Rect?>(null) }
     val scope = rememberCoroutineScope()
 
     fun onPicked(uri: android.net.Uri, isVideo: Boolean) {
@@ -161,6 +163,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             haAvatarUrl = avatarUrl,
             onAvatarTap = { viewerOpen = true },
             onAvatarEdit = { showChooser = true },
+            onAvatarPositioned = { avatarRect = it },
             onManageDevices = { openDeviceManager = true },
         )
 
@@ -250,6 +253,7 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
                 name = personName,
                 avatar = userAvatar,
                 haAvatarUrl = avatarUrl,
+                targetRect = avatarRect,
                 onDismiss = { viewerOpen = false },
             )
         }
@@ -319,6 +323,7 @@ private fun OwnerCard(
     haAvatarUrl: String?,
     onAvatarTap: () -> Unit,
     onAvatarEdit: () -> Unit,
+    onAvatarPositioned: (Rect) -> Unit,
     onManageDevices: () -> Unit,
 ) {
     Column(
@@ -340,6 +345,7 @@ private fun OwnerCard(
                 haAvatarUrl = haAvatarUrl,
                 onTap = onAvatarTap,
                 onEdit = onAvatarEdit,
+                onPositioned = onAvatarPositioned,
             )
             Spacer(Modifier.width(14.dp))
             Column {
