@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Adaptive icon dung anh GOC cua Jolly (avatar mac dinh cua Muse):
-    foreground PNG 1024 (drawable-nodpi) crop tu hatch.jpg 1600px, nen
-    #F3F3F3 khop nen anh goc; chan dung fade mem o day; nhan vat ~58%
-    canvas, nam gon trong vung an toan 66dp. <monochrome> la silhouette
-    cho Themed icons (Android 13+). Ban video goc (dang chuyen dong):
-    assets/avatar/reference/hatch.mp4 — launcher Android khong ho tro
-    icon dong nen dung frame tinh.
+    foreground PNG 1024 trong suot (drawable-nodpi) tach tu hatch.jpg
+    1600px (multi-seed flood fill); nen lay tu ic_launcher_background —
+    #F3F3F3 khi may o che do sang, #211D18 khi che do toi (values-night).
+    Chan dung fade mem o day; nhan vat ~58% canvas, nam gon trong vung
+    an toan 66dp. <monochrome> la silhouette cho Themed icons (Android
+    13+). Ban video goc (dang chuyen dong): assets/avatar/reference/
+    hatch.mp4 — launcher Android khong ho tro icon dong nen dung frame
+    tinh.
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nen adaptive icon BAN DEM: nau tram am #211D18, ton-sur-ton voi long Jolly.
+         Tu dong dung khi thiet bi bat che do toi (night mode). -->
+    <color name="ic_launcher_background">#211D18</color>
+</resources>
