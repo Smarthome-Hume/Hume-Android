@@ -85,6 +85,7 @@ import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.data.AiTip
+import com.smarthome.hume.core.data.isPhoneMotionTip
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.avatar.LoopingVideoAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
@@ -376,7 +377,8 @@ internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): S
  * - Het chuyen dong (sensor off) -> thong bao mat khoi state -> goi y tu dong bien mat.
  * Dung chung cho SuggestCard + HomeScreen.
  */
-internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> = buildList {
+internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
+    return buildList<SuggestTip> {
     if (state.battery.soc in 1..29) add(SuggestTip(
         "battery", "Pin còn ${state.battery.soc}%",
         "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
@@ -450,6 +452,9 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> = buildList 
         "Đã ${hour}h — bật chế độ đêm cho an tâm.",
         "Xem an ninh",
     ))
+    // Goi y ve chuyen dong/hieu nang cua dien thoai: bo qua,
+    // khong dua vao danh sach goi y.
+    }.filterNot { isPhoneMotionTip(it.title, it.sub) }
 }
 
 @Composable

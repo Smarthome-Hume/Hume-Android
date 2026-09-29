@@ -31,6 +31,24 @@ data class AiTip(
     val action: String,
 )
 
+/**
+ * Goi y ve hieu nang/chuyen dong cua DIEN THOAI (vd "S26 Ultra bi khung khi
+ * chuyen canh"): day la van de cua app, khong phai goi y thiet thuc cho user
+ * -> loai khoi danh sach goi y. Khong nham voi goi y cam bien chuyen dong
+ * ("Phat hien chuyen dong" -> xem camera): loai do khong nhac toi dien thoai
+ * nen khong bi loc.
+ */
+fun isPhoneMotionTip(title: String, sub: String): Boolean {
+    val text = "$title $sub".lowercase()
+    val mentionsPhone = "s26" in text || "samsung" in text ||
+        "điện thoại" in text || "dien thoai" in text
+    if (!mentionsPhone) return false
+    return "chuyển động" in text || "chuyen dong" in text ||
+        "khựng" in text || "giật" in text || "lag" in text ||
+        "mượt" in text || "hiệu ứng" in text || "animation" in text ||
+        "khung hình" in text || "fps" in text
+}
+
 /** Ket qua goi AI: Thanh cong | Loi (chuoi tieng Viet hien UI). */
 sealed interface AiResult<out T> {
     data class Ok<T>(val value: T) : AiResult<T>
@@ -286,7 +304,9 @@ class AiRepositoryImpl(
                     action = el["action"]?.jsonPrimitive?.content?.trim()
                         .orEmpty().ifBlank { "Đã hiểu" }.take(12),
                 )
-            }
+                // Goi y ve chuyen dong/hieu nang cua dien thoai: bo qua,
+                // khong dua vao danh sach goi y.
+            }.filterNot { isPhoneMotionTip(it.title, it.sub) }
         } catch (e: Exception) {
             emptyList()
         }
@@ -300,6 +320,7 @@ Chỉ trả về JSON thuần (không markdown, không giải thích thêm), đ�
 [{"title":"Tiêu đề ngắn","sub":"Mô tả 1 câu, có số liệu cụ thể nếu được","action":"Nhãn nút ≤4 từ"}]
 Ví dụ: [{"title":"Pin còn 18%","sub":"Hạn chế tải nặng, chờ nắng lên sau 10h.","action":"Xem pin"}]
 Nếu mọi thứ ổn, gợi ý 1 việc tối ưu nhỏ (ví dụ hẹn giờ, vệ sinh tấm pin).
+Không gợi ý về điện thoại/máy tính bảng (hiệu năng, chuyển động, pin...): chỉ gợi ý về thiết bị trong nhà.
 """.trimIndent()
     }
 }

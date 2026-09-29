@@ -1,6 +1,7 @@
 package com.smarthome.hume.ui.root
 
 import android.graphics.Bitmap
+import android.view.View
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -115,7 +117,11 @@ fun M3ERootScreen(
         // tranh blur live toan man hinh moi frame (nguyen nhan chinh gay khựng
         // khi mo/dong popup, vi content ben duoi co nhieu thu tick live nhu
         // snapshot camera 3s, thiet bi 2.8s...). Anh thu nho 1/4 cho blur re.
-        fun captureSnapshot(): ImageBitmap? = try {
+        // avatarRect (toa do window, px): vung avatar nho o header. Blur chi lam
+        // nhoe chu khong xoa duoc phan tu nho tuong phan cao -> con "bong ma"
+        // nhin xuyen qua lop dim; to de vung nay bang mau nen xung quanh
+        // NGAY TREN ANH CHUP (truoc khi blur) thi bong ma bien mat han.
+        fun captureSnapshot(avatarRect: Rect?): ImageBitmap? = try {
             val v = rootView
             if (!v.isLaidOut || v.width <= 0 || v.height <= 0) {
                 null
@@ -128,6 +134,7 @@ fun M3ERootScreen(
                     true,
                 )
                 if (small !== full) full.recycle()
+                if (avatarRect != null) eraseAvatarGhost(small, v, avatarRect)
                 small.asImageBitmap()
             }
         } catch (_: Exception) {
@@ -146,11 +153,11 @@ fun M3ERootScreen(
                         onOpenSecurity = { selected = 2 },
                         onOpenEnergy = { selected = 1 },
                         onOpenAvatarViewer = { req ->
-                            bgSnapshot = captureSnapshot()
+                            bgSnapshot = captureSnapshot(req.targetRect)
                             avatarViewer = req
                         },
                         onOpenCameraPopup = { req ->
-                            bgSnapshot = captureSnapshot()
+                            bgSnapshot = captureSnapshot(null)
                             camPopup = req
                         },
                         loadChartHistory = { series, startMs, endMs ->
@@ -264,6 +271,53 @@ fun M3ERootScreen(
                     camName = req.camName,
                     onDismiss = { camPopup = null; bgSnapshot = null },
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Xoa "bong ma" avatar header khoi anh nen: to de hinh tron tai vi tri avatar
+ * bang mau trung binh cua vung xung quanh. Anh dang o ti le 1/4 nen chi vai
+ * nghin pixel — re, khong anh huong toc do mo popup. Sau do blur + dim thi
+ * vung nay hoa lan hoan toan vao nen, khong con nhin thay avatar cu.
+ */
+private fun eraseAvatarGhost(small: Bitmap, view: View, rect: Rect) {
+    val loc = IntArray(2)
+    view.getLocationInWindow(loc)
+    val scale = small.width.toFloat() / view.width.toFloat()
+    val cx = ((rect.center.x - loc[0]) * scale).toInt()
+    val cy = ((rect.center.y - loc[1]) * scale).toInt()
+    if (cx !in 0 until small.width || cy !in 0 until small.height) return
+    val rad = (rect.width * scale / 2f + 8).toInt().coerceAtLeast(4)
+    // Mau trung binh tu 24 diem tren vong tron quanh avatar
+    val samples = 24
+    val ringR = rad + 10
+    var rSum = 0L
+    var gSum = 0L
+    var bSum = 0L
+    for (i in 0 until samples) {
+        val a = i * 2.0 * Math.PI / samples
+        val x = (cx + ringR * kotlin.math.cos(a)).toInt().coerceIn(0, small.width - 1)
+        val y = (cy + ringR * kotlin.math.sin(a)).toInt().coerceIn(0, small.height - 1)
+        val p = small.getPixel(x, y)
+        rSum += android.graphics.Color.red(p)
+        gSum += android.graphics.Color.green(p)
+        bSum += android.graphics.Color.blue(p)
+    }
+    val fill = android.graphics.Color.rgb(
+        (rSum / samples).toInt(),
+        (gSum / samples).toInt(),
+        (bSum / samples).toInt(),
+    )
+    val r2 = rad * rad
+    for (dy in -rad..rad) {
+        for (dx in -rad..rad) {
+            if (dx * dx + dy * dy > r2) continue
+            val x = cx + dx
+            val y = cy + dy
+            if (x in 0 until small.width && y in 0 until small.height) {
+                small.setPixel(x, y, fill)
             }
         }
     }
