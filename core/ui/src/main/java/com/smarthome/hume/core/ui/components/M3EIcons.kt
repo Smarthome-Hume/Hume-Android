@@ -20,6 +20,17 @@ object M3EIcons {
     val ChevronRight = Ms.chevron_right
     val Fab = Ms.power_settings_new
     val BatteryFull = Ms.battery_full
+    /** Icon pin theo muc % — dung thay cho Battery/BatteryFull tinh. */
+    fun batteryLevel(soc: Int): String = when {
+        soc <= 10 -> Ms.battery_alert
+        soc <= 20 -> Ms.battery_1_bar
+        soc <= 35 -> Ms.battery_2_bar
+        soc <= 50 -> Ms.battery_3_bar
+        soc <= 65 -> Ms.battery_4_bar
+        soc <= 80 -> Ms.battery_5_bar
+        soc <= 95 -> Ms.battery_6_bar
+        else -> Ms.battery_full
+    }
     val SolarPower = Ms.solar_power
     val ElectricMeter = Ms.electric_meter
     val Door = Ms.door_front

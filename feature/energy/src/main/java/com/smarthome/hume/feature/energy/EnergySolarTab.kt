@@ -63,7 +63,7 @@ fun EnergySolarTab(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Expander(
-            icon = M3EIcons.Battery,
+            icon = M3EIcons.batteryLevel(state.battery.soc.roundToInt()),
             title = "Sạc pin",
             subtitle = "${state.chargeControls.size} điều khiển",
             open = ui.chargeOpen,
@@ -81,7 +81,7 @@ fun EnergySolarTab(
             }
         }
         Expander(
-            icon = M3EIcons.BatteryFull,
+            icon = M3EIcons.batteryLevel(state.battery.soc.roundToInt()),
             title = "Xả pin",
             subtitle = "${state.dischargeControls.size} điều khiển",
             open = ui.dischargeOpen,

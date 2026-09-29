@@ -270,7 +270,7 @@ private fun FlowArea(
         }
         val battFg = Color(0xFF16A34A)
         FlowNode(
-            icon = if (charging) M3EIcons.Battery else M3EIcons.BatteryFull,
+            icon = M3EIcons.batteryLevel(soc.roundToInt()),
             tintBg = battFg.copy(alpha = 0.16f),
             tintFg = battFg,
             label = "Pin", valueKw = flow.battKw,

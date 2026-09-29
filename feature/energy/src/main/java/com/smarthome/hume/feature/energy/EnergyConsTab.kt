@@ -722,7 +722,7 @@ private fun lowBattIcon(name: String): String {
         "khoá" in n || "khóa" in n || "khoa" in n -> Ms.lock
         "cảm biến" in n || "cam bien" in n || "pir" in n -> Ms.sensors
         "cửa" in n || "cua" in n -> Ms.door_front
-        else -> M3EIcons.Battery
+        else -> Ms.battery_alert
     }
 }
 

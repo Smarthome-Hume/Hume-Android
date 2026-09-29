@@ -87,7 +87,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     .background(cs.primaryContainer),
             ) {
                 MsIcon(
-                    M3EIcons.Battery,
+                    M3EIcons.batteryLevel(soc),
                     contentDescription = null,
                     tint = cs.onPrimaryContainer,
                     modifier = Modifier.size(28.dp),
