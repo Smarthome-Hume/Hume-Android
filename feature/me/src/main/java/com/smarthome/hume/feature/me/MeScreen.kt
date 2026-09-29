@@ -254,51 +254,37 @@ fun MeScreen(
                 Column {
                     Text("Chọn ảnh, video ngắn dưới 1 phút, hoặc dùng video Jolly có sẵn.")
                     Spacer(Modifier.height(4.dp))
-                    val optMod = Modifier.fillMaxWidth()
-                    TextButton(
-                        onClick = { showChooser = false; launchImagePicker() },
-                        modifier = optMod,
-                    ) {
-                        Text(
-                            "Ảnh từ thư viện",
+                    @Composable
+                    fun Opt(label: String, onPick: () -> Unit) {
+                        TextButton(
+                            onClick = { showChooser = false; onPick() },
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start,
-                        )
+                        ) {
+                            Text(
+                                label,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start,
+                            )
+                        }
                     }
-                    TextButton(
-                        onClick = { showChooser = false; launchVideoPicker() },
-                        modifier = optMod,
-                    ) {
-                        Text(
-                            "Video từ thư viện",
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start,
-                        )
-                    }
-                    TextButton(
-                        onClick = {
-                            showChooser = false
-                            val key = userKey
-                            if (key.isBlank()) return@TextButton
-                            scope.launch {
-                                val res = avatarStore.saveRawVideo(key, UiR.raw.jolly_avatar)
-                                res.onFailure { e ->
-                                    Toast.makeText(
-                                        context,
-                                        e.message ?: "Không lưu được avatar",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
+                    fun useJolly(@androidx.annotation.RawRes resId: Int) {
+                        val key = userKey
+                        if (key.isBlank()) return
+                        scope.launch {
+                            val res = avatarStore.saveRawVideo(key, resId)
+                            res.onFailure { e ->
+                                Toast.makeText(
+                                    context,
+                                    e.message ?: "Không lưu được avatar",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                             }
-                        },
-                        modifier = optMod,
-                    ) {
-                        Text(
-                            "Video Jolly có sẵn",
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start,
-                        )
+                        }
                     }
+                    Opt("Ảnh từ thư viện") { launchImagePicker() }
+                    Opt("Video từ thư viện") { launchVideoPicker() }
+                    Opt("Video Jolly có sẵn") { useJolly(UiR.raw.jolly_avatar) }
+                    Opt("Video Jolly làm việc") { useJolly(UiR.raw.jolly_working) }
                 }
             },
             confirmButton = {},
