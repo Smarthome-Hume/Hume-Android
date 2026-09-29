@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Log
+import androidx.annotation.RawRes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,5 +104,32 @@ class AvatarStore(private val context: Context) {
         _avatars.value[userId]?.file?.takeIf { it.exists() }?.delete()
         prefs.edit().remove(keyPath(userId)).remove(keyVideo(userId)).apply()
         _avatars.value = _avatars.value - userId
+    }
+
+    /**
+     * Luu video co san trong app (R.raw) lam avatar: khong can chon file,
+     * khong kiem tra do dai (asset cua app da duoc chon loc).
+     */
+    suspend fun saveRawVideo(
+        userId: String,
+        @RawRes resId: Int,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val safeId = userId.replace(Regex("[^A-Za-z0-9_-]"), "_").take(32).ifEmpty { "user" }
+            val dest = File(dir, "avatar_${safeId}_${System.currentTimeMillis()}.mp4")
+            context.resources.openRawResource(resId).use { input ->
+                dest.outputStream().use { input.copyTo(it) }
+            }
+            _avatars.value[userId]?.file?.takeIf { it.exists() && it != dest }?.delete()
+            prefs.edit()
+                .putString(keyPath(userId), dest.absolutePath)
+                .putBoolean(keyVideo(userId), true)
+                .apply()
+            _avatars.value = _avatars.value + (userId to UserAvatar(dest, true))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.w("AvatarStore", "saveRawVideo failed", e)
+            Result.failure(e)
+        }
     }
 }

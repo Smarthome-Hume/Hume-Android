@@ -78,10 +78,12 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.core.ui.R as UiR
 import com.smarthome.hume.core.ui.avatar.AvatarStore
 import com.smarthome.hume.core.ui.avatar.ProfileAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
@@ -248,13 +250,58 @@ fun MeScreen(
         AlertDialog(
             onDismissRequest = { showChooser = false },
             title = { Text("Đổi avatar") },
-            text = { Text("Chọn ảnh, hoặc video ngắn dưới 1 phút để làm avatar.") },
-            confirmButton = {
-                TextButton(onClick = { showChooser = false; launchImagePicker() }) { Text("Ảnh") }
+            text = {
+                Column {
+                    Text("Chọn ảnh, video ngắn dưới 1 phút, hoặc dùng video Jolly có sẵn.")
+                    Spacer(Modifier.height(4.dp))
+                    val optMod = Modifier.fillMaxWidth()
+                    TextButton(
+                        onClick = { showChooser = false; launchImagePicker() },
+                        modifier = optMod,
+                    ) {
+                        Text(
+                            "Ảnh từ thư viện",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                    TextButton(
+                        onClick = { showChooser = false; launchVideoPicker() },
+                        modifier = optMod,
+                    ) {
+                        Text(
+                            "Video từ thư viện",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            showChooser = false
+                            val key = userKey
+                            if (key.isBlank()) return@TextButton
+                            scope.launch {
+                                val res = avatarStore.saveRawVideo(key, UiR.raw.jolly_avatar)
+                                res.onFailure { e ->
+                                    Toast.makeText(
+                                        context,
+                                        e.message ?: "Không lưu được avatar",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                        },
+                        modifier = optMod,
+                    ) {
+                        Text(
+                            "Video Jolly có sẵn",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                }
             },
-            dismissButton = {
-                TextButton(onClick = { showChooser = false; launchVideoPicker() }) { Text("Video") }
-            },
+            confirmButton = {},
         )
     }
 }
