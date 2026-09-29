@@ -83,6 +83,25 @@ class AppHomeRepository(
 
     // ---------- actions ----------
 
+    /**
+     * 24 den trong config (RoomBubbleConfig) — dem bong den CHI dung danh sach
+     * nay, khong dung light.* (2026-09-30, user yeu cau). Loai group entity
+     * (vd: light.all_light, group phong ngu) de khong dem trung.
+     */
+    private val configuredLightIds: Set<String> by lazy {
+        com.smarthome.hume.core.model.RoomBubbleConfig.all
+            .flatMap { it.devices }
+            .map { it.entity }
+            .filter { it.startsWith("light.") }
+            .toSet()
+    }
+
+    /** True neu entity la group (co attribute entity_id chua list member). */
+    private fun isGroup(e: LegacyEntity): Boolean {
+        val ids = e.attributes["entity_id"] as? kotlinx.serialization.json.JsonArray
+        return ids != null && ids.isNotEmpty()
+    }
+
     /** Dang ky realtime cho cac entity dashboard dang hien (2026-09-30). */
     private var lastWatched: Set<String> = emptySet()
     private fun updateWatched(s: HomeUiState) {
@@ -196,7 +215,7 @@ class AppHomeRepository(
         }
 
         val lightsOn = entities.values
-            .filter { it.id.startsWith("light.") && it.isOn }
+            .filter { it.id in configuredLightIds && it.isOn && !isGroup(it) }
             .map { e ->
                 DeviceUi(
                     entityId = e.id,
