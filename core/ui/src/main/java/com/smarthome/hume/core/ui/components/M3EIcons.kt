@@ -1,11 +1,13 @@
 package com.smarthome.hume.core.ui.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.Share
+
 /**
- * Icon glyph dung chung — Material Symbols Rounded, da pin wght=200 / FILL=0
- * (net manh kieu Gemini, giong he t .ms trong demo HTML).
- * Moi entry la mot glyph PUA trong font res/font/material_symbols_rounded.ttf,
- * dung voi [MsIcon]. KHONG dung Icons.Outlined truc tiep nua
- * (material-icons-extended ve net day hon, khac style HTML).
+ * Icon registry dung chung. Phan lon entry la glyph PUA trong font
+ * Material Symbols Rounded da pin; Download va Share dung Material vector
+ * vi hai glyph nay khong co trong font subset hien tai.
  */
 object M3EIcons {
     val Light = Ms.lightbulb
@@ -44,8 +46,8 @@ object M3EIcons {
     val PhotoCamera = Ms.photo_camera
     val Fullscreen = Ms.fullscreen
     val PlayCircle = Ms.play_circle
-    val Download = Ms.download
-    val Share = Ms.share
+    val Download = Icons.Outlined.FileDownload
+    val Share = Icons.Outlined.Share
     val Lock = Ms.lock
     val Shield = Ms.shield
     val Close = Ms.close

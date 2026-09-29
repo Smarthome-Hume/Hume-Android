@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +56,7 @@ import com.smarthome.hume.feature.home.ChartHistorySeries
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
 import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
+import kotlinx.coroutines.launch
 
 private data class NavItem(val tab: HumeTab, val icon: String)
 
@@ -77,6 +79,7 @@ fun M3ERootScreen(
     settings: HumeSettings,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val themeSettings by HumeGraph.get().themeStore.settings.collectAsState(
         initial = com.smarthome.hume.core.datastore.ThemeSettings(),
     )
@@ -111,7 +114,7 @@ fun M3ERootScreen(
                             clip.clipPath?.let { path ->
                                 val file = java.io.File(path)
                                 if (file.exists()) {
-                                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                    coroutineScope.launch {
                                         val uri = com.smarthome.hume.core.frigate.saveVideoToGallery(
                                             context,
                                             file,
