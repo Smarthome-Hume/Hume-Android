@@ -56,6 +56,7 @@ import com.smarthome.hume.core.model.EnergyPowerKind
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.model.EnergyWeekPoint
 import com.smarthome.hume.core.ui.components.M3ECard
+import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.WeekChartD
@@ -717,17 +718,6 @@ private fun DeviceRow(
 
 // ---------- 6. Pin thiet bi yeu ----------
 
-private fun lowBattIcon(name: String): String {
-    val n = name.lowercase()
-    return when {
-        "remote" in n -> Ms.remote_gen
-        "khoá" in n || "khóa" in n || "khoa" in n -> Ms.lock
-        "cảm biến" in n || "cam bien" in n || "pir" in n -> Ms.sensors
-        "cửa" in n || "cua" in n -> Ms.door_front
-        else -> Ms.battery_alert
-    }
-}
-
 @Composable
 private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
@@ -763,10 +753,12 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     modifier = Modifier.padding(vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MsIcon(
-                        lowBattIcon(b.name), null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp),
+                    // Icon pin nam ngang ve tay (dong nhat cac vi tri khac, 2026-09-30).
+                    HorizontalBatteryIcon(
+                        soc = b.pct.roundToInt(),
+                        color = if (b.pct <= 20) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(width = 28.dp, height = 17.dp),
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
