@@ -60,7 +60,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -74,7 +73,7 @@ import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.avatar.AvatarStore
-import com.smarthome.hume.core.ui.avatar.AvatarViewerOverlay
+import com.smarthome.hume.core.ui.avatar.AvatarViewerRequest
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
@@ -96,6 +95,12 @@ fun HomeScreen(
     onOpenSecurity: () -> Unit = {},
     onOpenEnergy: () -> Unit = {},
     loadChartHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
+    /**
+     * Mo viewer avatar / popup camera o tang root (M3ERootScreen) de lop mo +
+     * blur phu TOAN man hinh ke ca navbar. HomeScreen chi gui request.
+     */
+    onOpenAvatarViewer: (AvatarViewerRequest) -> Unit = {},
+    onOpenCameraPopup: (CameraPopupRequest) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
@@ -117,10 +122,7 @@ fun HomeScreen(
     LaunchedEffect(state.userKey) {
         if (state.userKey.isNotBlank()) avatarStore.load(state.userKey)
     }
-    var avatarViewerOpen by remember { mutableStateOf(false) }
     var avatarRect by remember { mutableStateOf<Rect?>(null) }
-    // Popup camera tu the goi y "Xem camera" (mo ngay tren trang Nha)
-    var camPopup by remember { mutableStateOf<Pair<String, String>?>(null) }
     val secState by remember { HumeGraph.get().securityRepository.securityState }.collectAsState()
 
     ui.snackbar?.let { s ->
@@ -192,9 +194,9 @@ fun HomeScreen(
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(if (avatarViewerOpen) Modifier.blur(24.dp) else Modifier),
+                    // (Khong blur live o day: M3ERootScreen chup anh tinh 1 lan
+                    //  roi blur san khi mo overlay -> het khựng.)
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
@@ -203,7 +205,17 @@ fun HomeScreen(
                                     state = state,
                                     avatarUrl = state.avatarUrl,
                                     userAvatar = userAvatar,
-                                    onAvatarTap = { avatarViewerOpen = true },
+                                    onAvatarTap = {
+                                        // Mo viewer o tang root: mo + blur phu ca navbar
+                                        onOpenAvatarViewer(
+                                            AvatarViewerRequest(
+                                                name = state.userName.ifBlank { "Gia đình" },
+                                                avatar = userAvatar,
+                                                haAvatarUrl = state.avatarUrl,
+                                                targetRect = avatarRect,
+                                            ),
+                                        )
+                                    },
                                     onAvatarPositioned = { avatarRect = it },
                                     onSearch = { viewModel.openSearch(true) },
                                     onNotif = { viewModel.openNotif(true) },
@@ -257,7 +269,7 @@ fun HomeScreen(
                                         onOpenSecurity = onOpenSecurity,
                                         onOpenEnergy = onOpenEnergy,
                                         cameras = secState.cameras,
-                                        onOpenCamera = { key, name -> camPopup = key to name },
+                                        onOpenCamera = { key, name -> onOpenCameraPopup(CameraPopupRequest(key, name)) },
                                     )
                                 }
                             }
@@ -378,24 +390,8 @@ fun HomeScreen(
                         },
                     )
                 }
-                // Viewer phong to avatar kieu kinh lup
-                if (avatarViewerOpen) {
-                    AvatarViewerOverlay(
-                        name = state.userName.ifBlank { "Gia đình" },
-                        avatar = userAvatar,
-                        haAvatarUrl = state.avatarUrl,
-                        targetRect = avatarRect,
-                        onDismiss = { avatarViewerOpen = false },
-                    )
-                }
-                // Popup camera tu the goi y (khong chuyen sang tab An ninh)
-                camPopup?.let { (key, name) ->
-                    CameraPopupOverlay(
-                        camKey = key,
-                        camName = name,
-                        onDismiss = { camPopup = null },
-                    )
-                }
+                // (Viewer avatar + popup camera duoc ve o tang M3ERootScreen,
+                //  tren ca navbar — khong ve o day nua.)
             }
         }
     }
@@ -438,6 +434,11 @@ private fun BoxScope.MorphLoaderIndicator(
     state: PullToRefreshState,
     modifier: Modifier = Modifier,
 ) {
+    // Tinh alpha/scale TRUOC khi tao infinite transition: khi an (alpha=0) thi
+    // return som, khong chay animation vo han nen -> do recompose moi frame.
+    val pull = state.distanceFraction
+    val alpha = if (isRefreshing) 1f else (pull * 3f).coerceIn(0f, 1f)
+    if (alpha <= 0f && !isRefreshing) return
     val t = rememberInfiniteTransition(label = "morph")
     val f by t.animateFloat(
         initialValue = 0f,
@@ -448,9 +449,6 @@ private fun BoxScope.MorphLoaderIndicator(
         ),
         label = "morphF",
     )
-    val pull = state.distanceFraction
-    val alpha = if (isRefreshing) 1f else (pull * 3f).coerceIn(0f, 1f)
-    if (alpha <= 0f && !isRefreshing) return
     val scale = if (isRefreshing) 1f else pull.coerceIn(0.2f, 1f)
     Box(
         modifier = modifier

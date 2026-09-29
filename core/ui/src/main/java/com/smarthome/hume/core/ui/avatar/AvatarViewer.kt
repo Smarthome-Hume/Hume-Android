@@ -57,6 +57,18 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
+ * Goi mo viewer avatar o tang root (phu TOAN man hinh, ke ca navbar).
+ * HomeScreen chi tao request nay roi callback ra ngoai, khong tu ve overlay.
+ */
+data class AvatarViewerRequest(
+    val name: String,
+    val avatar: UserAvatar?,
+    val haAvatarUrl: String?,
+    /** Vi tri avatar trong header, theo toa do window (de bay ve khi dong). */
+    val targetRect: Rect?,
+)
+
+/**
  * Nhan vao avatar -> popup hinh TRON phong to giua man hinh, kieu kinh lup.
  * - Khong co icon but, khong co nut X, khong nut Doi/Go: chi de ngam avatar.
  * - Mo ra: hinh tron bay tu vi tri avatar trong header -> phong to giua man hinh.

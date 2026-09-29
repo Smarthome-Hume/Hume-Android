@@ -639,6 +639,12 @@ fun SuggestCard(
 }
 
 /**
+ * Goi mo popup camera o tang root (phu TOAN man hinh, ke ca navbar),
+ * hieu ung mo/dim giong viewer avatar.
+ */
+data class CameraPopupRequest(val camKey: String, val camName: String)
+
+/**
  * Popup camera mo ngay tren trang Nha khi bam "Xem camera" o the goi y.
  * Cham vung mo ben ngoai de dong; cham vao feed de mo khoa (giong tab An ninh).
  */

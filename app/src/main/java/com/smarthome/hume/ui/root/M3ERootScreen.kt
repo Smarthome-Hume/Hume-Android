@@ -1,8 +1,10 @@
 package com.smarthome.hume.ui.root
 
+import android.graphics.Bitmap
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -11,7 +13,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.drawToBitmap
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -23,6 +31,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -50,6 +60,10 @@ import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.avatar.AvatarViewerOverlay
+import com.smarthome.hume.core.ui.avatar.AvatarViewerRequest
+import com.smarthome.hume.feature.home.CameraPopupOverlay
+import com.smarthome.hume.feature.home.CameraPopupRequest
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.home.HomeScreen
@@ -89,6 +103,36 @@ fun M3ERootScreen(
     val customColor = themeSettings.customColor?.let { androidx.compose.ui.graphics.Color(it.toULong()) }
     HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
+        // Overlay toan man hinh (viewer avatar / popup camera): ve o tang root,
+        // TREN navbar, de lop mo + blur phu ca navbar chu khong chi vung content.
+        // Nhan request tu HomeScreen qua callback (HomeScreen khong tu ve overlay).
+        val rootView = LocalView.current
+        var bgSnapshot by remember { mutableStateOf<ImageBitmap?>(null) }
+        var avatarViewer by remember { mutableStateOf<AvatarViewerRequest?>(null) }
+        var camPopup by remember { mutableStateOf<CameraPopupRequest?>(null) }
+        val overlayOpen = avatarViewer != null || camPopup != null
+        // Chup nen 1 lan truoc khi mo overlay roi hien anh tinh da blur san:
+        // tranh blur live toan man hinh moi frame (nguyen nhan chinh gay khựng
+        // khi mo/dong popup, vi content ben duoi co nhieu thu tick live nhu
+        // snapshot camera 3s, thiet bi 2.8s...). Anh thu nho 1/4 cho blur re.
+        fun captureSnapshot(): ImageBitmap? = try {
+            val v = rootView
+            if (!v.isLaidOut || v.width <= 0 || v.height <= 0) {
+                null
+            } else {
+                val full = v.drawToBitmap(Bitmap.Config.ARGB_8888)
+                val small = Bitmap.createScaledBitmap(
+                    full,
+                    (full.width / 4).coerceAtLeast(1),
+                    (full.height / 4).coerceAtLeast(1),
+                    true,
+                )
+                if (small !== full) full.recycle()
+                small.asImageBitmap()
+            }
+        } catch (_: Exception) {
+            null
+        }
         // Navbar NOI tren be mat trang: dung Box overlay thay vi Scaffold bottomBar
         // (Scaffold bottomBar van giu cho layout). Content full-bleed, navbar noi phia tren.
         Box(
@@ -101,6 +145,14 @@ fun M3ERootScreen(
                     HumeTab.Home -> HomeScreen(
                         onOpenSecurity = { selected = 2 },
                         onOpenEnergy = { selected = 1 },
+                        onOpenAvatarViewer = { req ->
+                            bgSnapshot = captureSnapshot()
+                            avatarViewer = req
+                        },
+                        onOpenCameraPopup = { req ->
+                            bgSnapshot = captureSnapshot()
+                            camPopup = req
+                        },
                         loadChartHistory = { series, startMs, endMs ->
                             val entityId = when (series) {
                                 ChartHistorySeries.BatterySoc -> HumeConfig.BATTERY_SOC
@@ -175,6 +227,44 @@ fun M3ERootScreen(
                 onSelect = { selected = it },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
+            // Lop nen mo blur + overlay: ve SAU navbar de phu toan man hinh.
+            // Dung anh chup tinh (khong blur live) nen mo/dong/keo khong khựng.
+            if (overlayOpen) {
+                val bmp = bgSnapshot
+                if (bmp != null) {
+                    Image(
+                        bitmap = bmp,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .blur(24.dp),
+                    )
+                } else {
+                    // Chup that bai: fallback dim don gian, overlay van dung duoc
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
+                    )
+                }
+            }
+            avatarViewer?.let { req ->
+                AvatarViewerOverlay(
+                    name = req.name,
+                    avatar = req.avatar,
+                    haAvatarUrl = req.haAvatarUrl,
+                    targetRect = req.targetRect,
+                    onDismiss = { avatarViewer = null; bgSnapshot = null },
+                )
+            }
+            camPopup?.let { req ->
+                CameraPopupOverlay(
+                    camKey = req.camKey,
+                    camName = req.camName,
+                    onDismiss = { camPopup = null; bgSnapshot = null },
+                )
+            }
         }
     }
 }
