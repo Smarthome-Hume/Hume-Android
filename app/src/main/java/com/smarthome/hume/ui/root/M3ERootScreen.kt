@@ -257,28 +257,35 @@ private fun M3ENavBar(
                         }
                         .padding(top = 9.dp, bottom = 7.dp),
                 ) {
+                    // Icon box 64x32: pill nen scale/alpha rieng, icon LUON hien.
+                    // Active -> icon fill dac; deactive -> outlined.
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .graphicsLayer {
-                                scaleX = pillScale
-                                scaleY = pillScale
-                                alpha = pillAlpha
-                            }
-                            .size(width = 64.dp, height = 32.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                when {
-                                    isSel -> cs.primaryContainer
-                                    pressed -> cs.surfaceContainer
-                                    else -> Color.Transparent
-                                },
-                            ),
+                        modifier = Modifier.size(width = 64.dp, height = 32.dp),
                     ) {
+                        // Pill active chi om icon: hien/spring theo chon, an khi khong chon
+                        Box(
+                            modifier = Modifier
+                                .graphicsLayer {
+                                    scaleX = pillScale
+                                    scaleY = pillScale
+                                    alpha = pillAlpha
+                                }
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    when {
+                                        isSel -> cs.primaryContainer
+                                        pressed -> cs.surfaceContainer
+                                        else -> Color.Transparent
+                                    },
+                                ),
+                        )
                         MsIcon(
                             item.icon, contentDescription = item.tab.label,
                             tint = if (isSel) cs.onPrimaryContainer
                             else cs.onSurfaceVariant,
+                            filled = isSel,
                             modifier = Modifier.size(iconSize),
                         )
                     }

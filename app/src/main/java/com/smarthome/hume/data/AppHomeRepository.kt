@@ -128,6 +128,10 @@ class AppHomeRepository(
         if (avatarUrl == null) {
             android.util.Log.d("AppHomeRepository", "Khong co avatar user (person entity_picture trong)")
         }
+        // Key luu avatar theo user: giong logic ProfileScreen (user_id, fallback ten).
+        val userKey = person?.attributes?.get("user_id")?.jsonPrimitive?.contentOrNull
+            ?.takeIf { it.isNotBlank() }
+            ?: personName
 
         val pvToday = entities[HumeConfig.PV_TODAY]?.numericState
         val solarNowKw = (entities[HumeConfig.PV_POWER]?.numericState ?: 0.0) / 1000.0
@@ -178,6 +182,7 @@ class AppHomeRepository(
         return HomeUiState(
             userName = personName,
             avatarUrl = avatarUrl,
+            userKey = userKey,
             connected = connected,
             connectionState = connectionState,
             solarWeek = cur.solarWeek,

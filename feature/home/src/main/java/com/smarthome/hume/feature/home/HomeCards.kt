@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -53,6 +54,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import androidx.compose.material3.IconButton
@@ -78,6 +82,8 @@ import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.data.AiTip
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.avatar.LoopingVideoAvatar
+import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
@@ -101,6 +107,9 @@ fun HomeHeader(
     state: HomeUiState,
     avatarUrl: String? = null,
     avatarToken: String? = null,
+    userAvatar: UserAvatar? = null,
+    onAvatarTap: () -> Unit = {},
+    onAvatarPositioned: (Rect) -> Unit = {},
     onSearch: () -> Unit,
     onNotif: () -> Unit,
     modifier: Modifier = Modifier,
@@ -114,7 +123,14 @@ fun HomeHeader(
             .padding(top = 8.dp, bottom = 2.dp, start = 2.dp, end = 2.dp),
     ) {
         // .hava 55px surfaceHighest + .pdot 16px + vien ngoai 3px = 22px
-        Box(Modifier.size(55.dp)) {
+        // Nhan vao avatar -> phong to kieu kinh lup (giong trang Thong tin).
+        Box(
+            Modifier
+                .size(55.dp)
+                .onGloballyPositioned { onAvatarPositioned(it.boundsInWindow()) }
+                .clip(CircleShape)
+                .clickable(onClick = onAvatarTap),
+        ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -122,15 +138,28 @@ fun HomeHeader(
                     .clip(CircleShape)
                     .background(extra.surfaceHighest),
             ) {
-                if (avatarUrl.isNullOrBlank()) {
-                    MsIcon(
-                        M3EIcons.Person, null,
-                        tint = cs.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp),
+                // Uu tien: anh/video user upload > anh HA > icon mac dinh
+                when {
+                    userAvatar != null && !userAvatar.isVideo -> AsyncImage(
+                        model = userAvatar.file,
+                        contentDescription = state.userName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
                     )
-                } else {
-                    val context = LocalContext.current
-                    SubcomposeAsyncImage(
+                    userAvatar != null -> LoopingVideoAvatar(
+                        file = userAvatar.file,
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    )
+                    avatarUrl.isNullOrBlank() -> {
+                        MsIcon(
+                            M3EIcons.Person, null,
+                            tint = cs.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                    else -> {
+                        val context = LocalContext.current
+                        SubcomposeAsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(avatarUrl)
                             .apply {
@@ -157,8 +186,9 @@ fun HomeHeader(
                             )
                         },
                     )
-                }
-            }
+                    } // else -> (anh HA)
+                } // when
+            } // Box avatar
             // Den neon nhap nhay theo trang thai ket noi HA:
             // xanh la = da ket noi (nhap nhay nhe), do = mat ket noi, da cam = dang ket noi
             val (neonColor, blinkMs) = when (state.connectionState) {

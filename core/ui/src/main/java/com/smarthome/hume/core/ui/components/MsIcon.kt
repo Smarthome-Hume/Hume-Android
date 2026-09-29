@@ -19,18 +19,43 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.smarthome.hume.core.ui.R
 
-private val MsFontFamily = FontFamily(Font(R.font.material_symbols_rounded))
+private val MsFontFamily = FontFamily(
+    Font(
+        R.font.material_symbols_rounded,
+        // Outlined: giong ban cu (pin wght 200, FILL 0, opsz 24)
+        variationSettings = FontVariation.Settings(
+            FontVariation.Setting("wght", 200f),
+            FontVariation.Setting("opsz", 24f),
+            FontVariation.Setting("FILL", 0f),
+            FontVariation.Setting("GRAD", 0f),
+        ),
+    ),
+)
+
+/** Bien the FILL=1 cho icon active (vd: navbar tab dang chon). */
+private val MsFilledFontFamily = FontFamily(
+    Font(
+        R.font.material_symbols_rounded,
+        variationSettings = FontVariation.Settings(
+            FontVariation.Setting("wght", 400f),
+            FontVariation.Setting("opsz", 24f),
+            FontVariation.Setting("FILL", 1f),
+            FontVariation.Setting("GRAD", 0f),
+        ),
+    ),
+)
 
 /**
- * Icon Material Symbols Rounded, da pin wght=200 / FILL=0 / GRAD=0 / opsz=24
- * — giong he t icon .ms trong demo HTML (net manh, tron, outlined-only).
- * Thay cho Icons.Outlined (material-icons-extended ve net day hon).
+ * Icon Material Symbols Rounded variable font.
+ * Mac dinh outlined (FILL=0, wght=200) + synthetic bold nhu ban HTML;
+ * [filled] = true -> FILL=1, wght=400 cho trang thai active.
  *
  * Dung: MsIcon(M3EIcons.Search, null, tint = ..., modifier = Modifier.size(22.dp))
  * Kich thuoc chu = canh nho nhat cua modifier (thuong la Modifier.size);
@@ -42,6 +67,7 @@ fun MsIcon(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
+    filled: Boolean = false,
 ) {
     // Can quang hoc: dua tam muc in (ink) cua glyph ve chinh giua box.
     // Bao dam icon luon nam giua icon-background du glyph co ve lech
@@ -72,15 +98,17 @@ fun MsIcon(
                 }
             },
             style = TextStyle(
-                fontFamily = MsFontFamily,
+                fontFamily = if (filled) MsFilledFontFamily else MsFontFamily,
                 fontSize = fs,
                 lineHeight = fs,
-                // Net day hon: synthetic bold (font static wght 200)
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                // Outlined: net day hon bang synthetic bold (font static wght 200).
+                // Filled: glyph dac san nen khong can.
+                fontWeight = if (filled) androidx.compose.ui.text.font.FontWeight.Normal
+                else androidx.compose.ui.text.font.FontWeight.Bold,
                 color = tint,
                 textAlign = TextAlign.Center,
-                // Them shadow cung mau de gia day net
-                shadow = androidx.compose.ui.graphics.Shadow(
+                // Them shadow cung mau de gia day net (chi ban outlined)
+                shadow = if (filled) null else androidx.compose.ui.graphics.Shadow(
                     color = tint,
                     offset = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),
                     blurRadius = 0.8f,

@@ -616,8 +616,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
         // Layout 2 hang:
         // - Hang 1: [icon tron 44.dp | ten chay marquee] — viewport cua
         //   MarqueeText keo dai den sat mep phai hinh tron (bo spacedBy,
-        //   dung startPadding 12.dp): chu chay den cham vien tron moi mo
-        //   dan, khong co buc tuong thang dung loi giua khong trung.
+        //   dung startPadding 12.dp). Khong fade mep: chu cat thang o bien.
         // - Hang 2: status pill doc lap mot dong (nen rieng, doi mau khi active)
         Column(
             modifier = Modifier
@@ -674,31 +673,6 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     .background(pillBg)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
-        }
-        // demo .neon: absolute top/right 12px, 9px, error + glow, blink 1.2s khi on
-        if (on) {
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 12.dp, end = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    Modifier
-                        .size(17.dp)
-                        .clip(CircleShape)
-                        .background(cs.error.copy(alpha = 0.55f))
-                        .blur(3.dp)
-                        .blink(1200),
-                )
-                Box(
-                    Modifier
-                        .size(9.dp)
-                        .clip(CircleShape)
-                        .background(cs.error)
-                        .blink(1200),
-                )
-            }
         }
     }
 }

@@ -60,8 +60,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -69,6 +72,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.avatar.AvatarStore
+import com.smarthome.hume.core.ui.avatar.AvatarViewerOverlay
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
@@ -102,6 +107,17 @@ fun HomeScreen(
     val tips = buildSuggestTips(state)
     val aiState by viewModel.aiState.collectAsState()
     val aiTips = (aiState as? AiUiState.Loaded)?.tips.orEmpty()
+
+    // Avatar user upload + viewer phong to kieu kinh lup (giong trang Thong tin)
+    val context = LocalContext.current
+    val avatarStore = remember { AvatarStore(context) }
+    val avatarMap by avatarStore.avatars.collectAsState()
+    val userAvatar = avatarMap[state.userKey]
+    LaunchedEffect(state.userKey) {
+        if (state.userKey.isNotBlank()) avatarStore.load(state.userKey)
+    }
+    var avatarViewerOpen by remember { mutableStateOf(false) }
+    var avatarRect by remember { mutableStateOf<Rect?>(null) }
 
     ui.snackbar?.let { s ->
         LaunchedEffect(s) {
@@ -172,7 +188,9 @@ fun HomeScreen(
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(if (avatarViewerOpen) Modifier.blur(24.dp) else Modifier),
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
@@ -180,6 +198,9 @@ fun HomeScreen(
                                 HomeHeader(
                                     state = state,
                                     avatarUrl = state.avatarUrl,
+                                    userAvatar = userAvatar,
+                                    onAvatarTap = { avatarViewerOpen = true },
+                                    onAvatarPositioned = { avatarRect = it },
                                     onSearch = { viewModel.openSearch(true) },
                                     onNotif = { viewModel.openNotif(true) },
                                 )
@@ -349,6 +370,16 @@ fun HomeScreen(
                             ecoDialog = false
                             viewModel.ecoMode()
                         },
+                    )
+                }
+                // Viewer phong to avatar kieu kinh lup
+                if (avatarViewerOpen) {
+                    AvatarViewerOverlay(
+                        name = state.userName.ifBlank { "Gia đình" },
+                        avatar = userAvatar,
+                        haAvatarUrl = state.avatarUrl,
+                        targetRect = avatarRect,
+                        onDismiss = { avatarViewerOpen = false },
                     )
                 }
             }

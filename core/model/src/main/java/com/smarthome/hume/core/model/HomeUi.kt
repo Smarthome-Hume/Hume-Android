@@ -87,6 +87,8 @@ enum class ConnectionState { Connected, Connecting, Disconnected }
 data class HomeUiState(
     val userName: String = "",
     val avatarUrl: String? = null,
+    /** Key luu avatar theo user (user_id HA, fallback ten). */
+    val userKey: String = "",
     val connected: Boolean = false,
     val connectionState: ConnectionState = ConnectionState.Disconnected,
     val solarWeek: List<SolarDay> = emptyList(),

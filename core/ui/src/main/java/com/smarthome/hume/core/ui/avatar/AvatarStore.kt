@@ -1,4 +1,4 @@
-package com.smarthome.hume.ui.profile
+package com.smarthome.hume.core.ui.avatar
 
 import android.content.Context
 import android.media.MediaMetadataRetriever

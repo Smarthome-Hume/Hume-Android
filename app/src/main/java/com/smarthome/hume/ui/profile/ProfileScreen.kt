@@ -10,6 +10,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import com.smarthome.hume.core.ui.avatar.AvatarStore
+import com.smarthome.hume.core.ui.avatar.AvatarViewerOverlay
+import com.smarthome.hume.core.ui.avatar.ProfileAvatar
+import com.smarthome.hume.core.ui.avatar.UserAvatar
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -167,6 +171,17 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             onManageDevices = { openDeviceManager = true },
         )
 
+        // The doi avatar: preview + nut Doi / Go
+        AvatarCard(
+            name = personName,
+            avatar = userAvatar,
+            haAvatarUrl = avatarUrl,
+            onChange = { showChooser = true },
+            onRemove = if (userAvatar != null) {
+                { scope.launch { avatarStore.clearAvatar(userKey) } }
+            } else null,
+        )
+
         // Cac dong thong tin: moi dong tu mang nen rieng, khong co the cha.
         Column(
             Modifier.fillMaxWidth(),
@@ -307,6 +322,71 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
 /** orangeCard in ProfileView.swift: gradient #f9784c to #e8653a to #fac0b6, radius 35, padding 20. */
 @Composable
+/**
+ * The doi avatar o trang Thong tin: preview tron + mo ta nguon anh
+ * hien tai + nut Doi / Go.
+ */
+private fun AvatarCard(
+    name: String,
+    avatar: UserAvatar?,
+    haAvatarUrl: String?,
+    onChange: () -> Unit,
+    onRemove: (() -> Unit)?,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glassSurface(radius = HumeShapes.Popup)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ProfileAvatar(
+            name = name,
+            avatar = avatar,
+            haAvatarUrl = haAvatarUrl,
+            onTap = {},
+            onEdit = null,
+            size = 46.dp,
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                "Ảnh đại diện",
+                fontSize = 13.sp,
+                color = HumeColors.TextSecondary,
+                maxLines = 1,
+                softWrap = false,
+            )
+            Text(
+                when {
+                    avatar?.isVideo == true -> "Video ngắn của bạn"
+                    avatar != null -> "Ảnh tải lên của bạn"
+                    haAvatarUrl != null -> "Ảnh Home Assistant"
+                    else -> "Mặc định theo tên"
+                },
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HumeColors.TextPrimary,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+        TextButton(onClick = onChange) {
+            Text("Đổi", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
+        if (onRemove != null) {
+            TextButton(onClick = onRemove) {
+                Text(
+                    "Gỡ",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFEF5350),
+                )
+            }
+        }
+    }
+}
+
 private fun OwnerCard(
     name: String,
     avatar: UserAvatar?,

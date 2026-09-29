@@ -1,4 +1,4 @@
-package com.smarthome.hume.ui.profile
+package com.smarthome.hume.core.ui.avatar
 
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -47,7 +47,7 @@ fun ProfileAvatar(
     avatar: UserAvatar?,
     haAvatarUrl: String?,
     onTap: () -> Unit,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)? = null,
     size: Dp = 60.dp,
     /** Bao vi tri avatar theo toa do window (de viewer bay ve khi dong). */
     onPositioned: ((Rect) -> Unit)? = null,
@@ -98,30 +98,34 @@ fun ProfileAvatar(
                 }
             }
         }
-        // Badge doi avatar
-        Box(
-            Modifier
-                .size(22.dp)
-                .offset(x = 2.dp, y = 2.dp)
-                .align(Alignment.BottomEnd)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.55f))
-                .clickable(onClick = onEdit),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Outlined.PhotoCamera,
-                contentDescription = "Đổi avatar",
-                tint = Color.White,
-                modifier = Modifier.size(12.dp),
-            )
+        // Badge doi avatar (chi hien khi co onEdit)
+        val edit = onEdit
+        if (edit != null) {
+            Box(
+                Modifier
+                    .size(22.dp)
+                    .offset(x = 2.dp, y = 2.dp)
+                    .align(Alignment.BottomEnd)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .clickable(onClick = edit),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Outlined.PhotoCamera,
+                    contentDescription = "Đổi avatar",
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp),
+                )
+            }
         }
     }
 }
 
 /** Video avatar nho: phat lap lai, tat tieng, crop tron. */
 @Composable
-private fun LoopingVideoAvatar(file: File, modifier: Modifier = Modifier) {
+/** Video avatar tron: tu phat, lap vo han, tat tieng. Dung chung cho header cac trang. */
+fun LoopingVideoAvatar(file: File, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val player = remember(file) {
         ExoPlayer.Builder(context).build().apply {
