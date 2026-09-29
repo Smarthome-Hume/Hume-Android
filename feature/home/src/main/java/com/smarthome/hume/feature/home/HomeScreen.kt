@@ -100,6 +100,11 @@ fun HomeScreen(
      */
     onOpenAvatarViewer: (AvatarViewerRequest) -> Unit = {},
     onOpenCameraPopup: (CameraPopupRequest) -> Unit = {},
+    /**
+     * Header avatar duoc dinh vi (boundsInWindow): root dung de xoa "bong ma"
+     * avatar khoi anh nen khi mo popup camera (giong avatar viewer).
+     */
+    onAvatarPositioned: (Rect) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
@@ -215,7 +220,10 @@ fun HomeScreen(
                                             ),
                                         )
                                     },
-                                    onAvatarPositioned = { avatarRect = it },
+                                    onAvatarPositioned = {
+                                        avatarRect = it
+                                        onAvatarPositioned(it)
+                                    },
                                     onSearch = { viewModel.openSearch(true) },
                                     onNotif = { viewModel.openNotif(true) },
                                 )

@@ -833,18 +833,16 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 /**
  * The nho cong suat dang phat (.solar): tertiaryContainer, bo 32px,
  * padding 16px 18px; icon nen trang 35% (.sicon 48px, icon 26px);
- * sub 12px/500; sparkline SVG 90x34 ben phai.
+ * sub 12px/500 hien gia tri PV ke ca khi bang 0. User 2026-09-29: bo sparkline.
  */
 @Composable
 fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val cs = MaterialTheme.colorScheme
-    // Buffer lich su cong suat PV (tong PV1+PV2 tu sensor.solis_s6_eh1p_total_pv_power_2),
-    // lay mau moi khi solarNowKw thay doi, giu 30 diem gan nhat de ve line realtime.
-    var history by remember { mutableStateOf(listOf<Double>()) }
-    LaunchedEffect(state.solarNowKw) {
-        val v = state.solarNowKw.coerceAtLeast(0.0)
-        history = (history + v).takeLast(30)
-    }
+    val kw = state.solarNowKw.coerceAtLeast(0.0)
+    // User 2026-09-29: bo sparkline ben phai; sub hien gia tri PV ke ca khi
+    // bang 0 (khong de "Dang phat" khi khong phat).
+    val sub = if (kw > 0.005) "Đang phát · ${"%.1f".format(kw)} kW"
+    else "Tạm nghỉ · ${"%.1f".format(kw)} kW"
     M3ECard(
         modifier = modifier.fillMaxWidth(),
         containerColor = cs.tertiaryContainer,
@@ -878,44 +876,14 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: ((
                     color = cs.onTertiaryContainer,
                 )
                 Text(
-                    "Đang phát · ${"%.1f".format(state.solarNowKw)} kW",
+                    sub,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = cs.onTertiaryContainer.copy(alpha = 0.75f),
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Sparkline(
-                values = history,
-                color = cs.onTertiaryContainer,
-                modifier = Modifier.size(90.dp, 34.dp),
-            )
         }
-    }
-}
-
-/** Sparkline ve line that tu lich su cong suat PV (realtime, 30 diem gan nhat). */
-@Composable
-private fun Sparkline(values: List<Double>, color: Color, modifier: Modifier = Modifier) {
-    androidx.compose.foundation.Canvas(modifier = modifier) {
-        if (values.size < 2) return@Canvas
-        val maxV = (values.maxOrNull() ?: 1.0).coerceAtLeast(0.01)
-        val n = values.size
-        val stepX = size.width / (n - 1).coerceAtLeast(1)
-        val path = Path().apply {
-            values.forEachIndexed { i, v ->
-                val x = i * stepX
-                // y dao nguoc: gia tri cao -> len tren; padding 2px tren/duoi
-                val y = size.height - 2.dp.toPx() -
-                    (v / maxV).toFloat() * (size.height - 4.dp.toPx())
-                if (i == 0) moveTo(x, y) else lineTo(x, y)
-            }
-        }
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
     }
 }
 

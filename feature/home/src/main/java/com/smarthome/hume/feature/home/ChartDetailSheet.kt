@@ -67,7 +67,7 @@ typealias ChartHistoryLoader = suspend (
 /**
  * Sheet bieu do chi tiet khi cham vao the Hieu nang pin / Dien mat troi.
  * - Pin: bieu do vung SOC 24h + bieu do cot cong suat sac/xa
- * - Solar: bieu do vung cong suat 24h
+ * - Solar: bieu do vung cong suat 2 gio gan nhat (user 2026-09-29)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +116,8 @@ fun ChartDetailSheet(
                             color = cs.onSurface,
                         )
                         Text(
-                            "Lịch sử 24 giờ qua",
+                            if (type == ChartDetailType.Battery) "Lịch sử 24 giờ qua"
+                            else "Lịch sử 2 giờ qua",
                             fontSize = 13.sp,
                             color = cs.onSurfaceVariant,
                         )
@@ -204,7 +205,8 @@ private fun SolarPowerChart(loadHistory: ChartHistoryLoader) {
     LaunchedEffect(Unit) {
         val now = System.currentTimeMillis()
         val data = runCatching {
-            loadHistory(ChartHistorySeries.SolarPower, now - 24 * 3600 * 1000L, now)
+            // User 2026-09-29: chi hien 2 tieng lien tiep gan nhat
+            loadHistory(ChartHistorySeries.SolarPower, now - 2 * 3600 * 1000L, now)
         }.getOrNull()
         points = data?.takeIf { it.isNotEmpty() }?.let { downsample(it, 96) }
     }

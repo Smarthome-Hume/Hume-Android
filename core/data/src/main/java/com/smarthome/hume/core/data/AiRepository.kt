@@ -32,21 +32,16 @@ data class AiTip(
 )
 
 /**
- * Goi y ve hieu nang/chuyen dong cua DIEN THOAI (vd "S26 Ultra bi khung khi
- * chuyen canh"): day la van de cua app, khong phai goi y thiet thuc cho user
- * -> loai khoi danh sach goi y. Khong nham voi goi y cam bien chuyen dong
+ * Goi y nhac toi DIEN THOAI (vd "S26 Ultra bi khung khi chuyen canh"):
+ * day la van de cua app, khong phai goi y thiet thuc cho user -> loai khoi
+ * danh sach goi y. Khong nham voi goi y cam bien chuyen dong
  * ("Phat hien chuyen dong" -> xem camera): loai do khong nhac toi dien thoai
  * nen khong bi loc.
  */
 fun isPhoneMotionTip(title: String, sub: String): Boolean {
     val text = "$title $sub".lowercase()
-    val mentionsPhone = "s26" in text || "samsung" in text ||
+    return "s26" in text || "samsung" in text ||
         "điện thoại" in text || "dien thoai" in text
-    if (!mentionsPhone) return false
-    return "chuyển động" in text || "chuyen dong" in text ||
-        "khựng" in text || "giật" in text || "lag" in text ||
-        "mượt" in text || "hiệu ứng" in text || "animation" in text ||
-        "khung hình" in text || "fps" in text
 }
 
 /** Ket qua goi AI: Thanh cong | Loi (chuoi tieng Viet hien UI). */
