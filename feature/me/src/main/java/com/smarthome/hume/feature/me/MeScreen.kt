@@ -133,11 +133,17 @@ fun MeScreen(
                 Modifier
                     .riseEntrance(0)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
             ) {
                 // demo .phdr h2: 26px/700 ls -.3px
-                Text("Thông tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
+                Text(
+                    "Thông tin",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.3).sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
             }
         }
 

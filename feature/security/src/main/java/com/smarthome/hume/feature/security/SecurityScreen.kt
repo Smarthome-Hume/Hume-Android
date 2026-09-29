@@ -146,12 +146,13 @@ fun SecurityScreen(
                 Box(
                     Modifier
                         .clip(RoundedCornerShape(28.dp))
-                        .background(cs.surfaceContainerHighest)
+                        .background(cs.primaryContainer)
                         .padding(horizontal = 20.dp, vertical = 12.dp)
                         .riseIn(0),
                 ) {
                     Text(
                         "An ninh",
+                        color = cs.onPrimaryContainer,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.3).sp,

@@ -79,7 +79,7 @@ fun EnergyScreen(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(28.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                         .padding(horizontal = 20.dp, vertical = 12.dp)
                         .riseOnce("hdr", 0, risePlayed),
                 ) {
@@ -90,6 +90,7 @@ fun EnergyScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.3).sp,
                         ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }

@@ -382,6 +382,7 @@ private fun Expander(
                     title,
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     subtitle,
