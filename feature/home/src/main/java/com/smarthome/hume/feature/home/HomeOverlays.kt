@@ -136,19 +136,21 @@ fun NotificationSheet(
                     }
                 }
             } else {
-                item {
-                    Column(
+                // User 2026-09-29: moi thong bao la 1 the rieng, khong gom
+                // chung vao 1 the.
+                itemsIndexed(notifications) { i, n ->
+                    Box(
                         modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp)
                             .clip(RoundedCornerShape(30.dp))
                             .background(LocalHumeExtraColors.current.surfaceHighest)
                             .padding(8.dp),
                     ) {
-                        notifications.forEachIndexed { i, n ->
-                            NotifRow(n, i)
-                        }
+                        NotifRow(n, i)
                     }
-                    Spacer(Modifier.height(24.dp))
                 }
+                item { Spacer(Modifier.height(24.dp)) }
             }
         }
     }
@@ -481,10 +483,12 @@ fun DeviceSearchView(
                             .padding(vertical = 32.dp),
                     )
                 } else {
-                    // Phan loai: Dieu hoa / Den / O cam
+                    // Phan loai: Dieu hoa / Den / O cam.
+                    // User 2026-09-29: cong tac phai vao dung loai, khong
+                    // nhét chung vao O cam.
                     val acList = results.filter { it.kind == DeviceKind.Climate || it.iconKey == "snowflake" }
                     val lightList = results.filter { it.iconKey in listOf("bulb", "lightbulb", "light") }
-                    val outletList = results.filter { it.iconKey in listOf("plug", "switch", "outlet") }
+                    val outletList = results.filter { it.iconKey in listOf("plug", "outlet") }
                     val otherList = results.filter { d ->
                         d !in acList && d !in lightList && d !in outletList
                     }

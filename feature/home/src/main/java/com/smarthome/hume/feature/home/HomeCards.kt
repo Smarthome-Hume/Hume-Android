@@ -92,6 +92,7 @@ import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
@@ -294,14 +295,16 @@ fun HomeHeader(
                         .offset(x = 2.dp, y = (-2).dp)
                         .size(20.dp)
                         .clip(CircleShape)
-                        .background(cs.error),
+                        // User 2026-09-29: badge dung mau theme (primary),
+                        // khong dung do (error).
+                        .background(cs.primary),
                 ) {
                     Text(
                         "$count",
                         fontSize = 10.sp,
                         lineHeight = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = cs.onPrimary,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                     )
@@ -831,18 +834,45 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 }
 
 /**
- * The nho cong suat dang phat (.solar): tertiaryContainer, bo 32px,
+ * The nho cong suat PV dang phat (.solar): tertiaryContainer, bo 32px,
  * padding 16px 18px; icon nen trang 35% (.sicon 48px, icon 26px);
- * sub 12px/500 hien gia tri PV ke ca khi bang 0. User 2026-09-29: bo sparkline.
+ * sub 12px/500 hien gia tri PV ke ca khi bang 0; sparkline SVG 90x34 ben phai
+ * ve 2 gio lien tiep gan nhat.
  */
 @Composable
 fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val cs = MaterialTheme.colorScheme
     val kw = state.solarNowKw.coerceAtLeast(0.0)
-    // User 2026-09-29: bo sparkline ben phai; sub hien gia tri PV ke ca khi
-    // bang 0 (khong de "Dang phat" khi khong phat).
     val sub = if (kw > 0.005) "Đang phát · ${"%.1f".format(kw)} kW"
     else "Tạm nghỉ · ${"%.1f".format(kw)} kW"
+    // Lich su PV 2 gio lien tiep cho sparkline: sample moi 2 phut (KE CA KHI
+    // = 0) + them diem khi gia tri doi dang ke, de duong line luon lien tuc.
+    val kwNow by rememberUpdatedState(kw)
+    var history by remember { mutableStateOf(listOf<Pair<Long, Double>>()) }
+    val historyNow by rememberUpdatedState(history)
+    LaunchedEffect(Unit) {
+        val windowMs = 2 * 3600 * 1000L
+        fun push(v: Double) {
+            val now = System.currentTimeMillis()
+            history = (historyNow + (now to v))
+                .filter { now - it.first <= windowMs }
+                .takeLast(90)
+        }
+        push(kwNow) // diem dau tien ngay khi hien the
+        var lastPush = System.currentTimeMillis()
+        var lastVal = kwNow
+        while (true) {
+            delay(30_000L)
+            val now = System.currentTimeMillis()
+            val v = kwNow
+            // Push khi du 2 phut ke tu diem cuoi, hoac gia tri doi > 50W
+            if (now - lastPush >= 120_000L || kotlin.math.abs(v - lastVal) > 0.05) {
+                push(v)
+                lastPush = now
+                lastVal = v
+            }
+        }
+    }
     M3ECard(
         modifier = modifier.fillMaxWidth(),
         containerColor = cs.tertiaryContainer,
@@ -870,7 +900,7 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: ((
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Điện mặt trời",
+                    "Công suất PV",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = cs.onTertiaryContainer,
@@ -883,7 +913,45 @@ fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: ((
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
+            PvSparkline(
+                values = history,
+                color = cs.onTertiaryContainer,
+                modifier = Modifier.size(90.dp, 34.dp),
+            )
         }
+    }
+}
+
+/**
+ * Sparkline ve line cong suat PV 2 gio lien tiep. Truc x anh xa theo
+ * timestamp that (khong chia deu theo index) de thay dung dien bien theo gio.
+ */
+@Composable
+private fun PvSparkline(
+    values: List<Pair<Long, Double>>,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        if (values.size < 2) return@Canvas
+        val windowMs = 2 * 3600 * 1000L
+        val now = System.currentTimeMillis()
+        val start = now - windowMs
+        val maxV = (values.maxOfOrNull { it.second } ?: 1.0).coerceAtLeast(0.01)
+        val path = Path().apply {
+            values.forEachIndexed { i, (t, v) ->
+                val x = ((t - start).toFloat() / windowMs) * size.width
+                // y dao nguoc: gia tri cao -> len tren; padding 2px tren/duoi
+                val y = size.height - 2.dp.toPx() -
+                    (v / maxV).toFloat() * (size.height - 4.dp.toPx())
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+        }
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
     }
 }
 

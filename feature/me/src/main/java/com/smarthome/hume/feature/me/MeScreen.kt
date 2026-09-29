@@ -104,7 +104,7 @@ import kotlin.math.sin
 
 /**
  * Tab Toi — port truc tiep demo v4 rev12 (#page-me):
- * the Dong bo (wavy loading), the Thong bao, Giao dien (dark mode + 8 seeds).
+ * the Dong bo (wavy loading), the Thong bao, Giao dien (dark mode + 10 seeds).
  */
 
 /** Rise entrance theo demo: opacity 0->1 + translateY 22px, .7s emphasized, stagger theo delay. */
@@ -234,7 +234,7 @@ fun MeScreen(
             mode = darkMode,
             onSelect = { haptic(); vm.setDarkMode(it) },
         )
-        // Card 1: mau chu dao (8 seed) co background rieng
+        // Card 1: mau chu dao (10 seed) co background rieng
         val cs = MaterialTheme.colorScheme
         Column(
             Modifier
@@ -736,7 +736,7 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
 }
 
 /**
- * Nhap ma hex + nut Ap dung: chon seed GAN NHAT trong 8 seed co san
+ * Nhap ma hex + nut Ap dung: chon seed GAN NHAT trong 10 seed co san
  * (theme engine chi co 8 scheme hand-built, khong sinh scheme tu mau tuy y).
  * Dai mau chon nhanh = SeedRow 8 circle ben tren.
  */
@@ -955,6 +955,8 @@ private val seedColors = mapOf(
     M3ESeed.Pink to Color(0xFF9E3D6E),
     M3ESeed.Teal to Color(0xFF2A7F76),
     M3ESeed.Amber to Color(0xFF776000),
+    M3ESeed.Lime to Color(0xFF6B9E2F),
+    M3ESeed.Indigo to Color(0xFF4A5AA8),
 )
 
 private val seedNames = mapOf(
@@ -966,6 +968,8 @@ private val seedNames = mapOf(
     M3ESeed.Pink to "Hồng",
     M3ESeed.Teal to "Ngọc",
     M3ESeed.Amber to "Vàng",
+    M3ESeed.Lime to "Xanh nõn",
+    M3ESeed.Indigo to "Chàm",
 )
 
 /**

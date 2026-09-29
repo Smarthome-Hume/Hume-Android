@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
  * Gen tu: goals/hume-android-app-code-updates/hidden_files/m3e-port/m3e_theme_tokens.json
  * (tertiary* chi co o seed cam -> cac seed khac fallback ve primary family)
  */
-enum class M3ESeed { Cam, Green, Blue, Violet, Red, Pink, Teal, Amber }
+enum class M3ESeed { Cam, Green, Blue, Violet, Red, Pink, Teal, Amber, Lime, Indigo }
 
 private val lightSchemeCam: ColorScheme
     get() = lightColorScheme(
@@ -593,6 +593,10 @@ internal fun colorSchemeFor(seed: M3ESeed, dark: Boolean): ColorScheme {
         s == "teal" -> lightSchemeTeal
         dark && s == "amber" -> darkSchemeAmber
         s == "amber" -> lightSchemeAmber
+        // User 2026-09-29: them 2 mau. Dung generator cua custom seed de co
+        // scheme nhat quan (primary + container tron voi trang/den).
+        s == "lime" -> colorSchemeForCustom(Color(0xFF6B9E2F), dark)
+        s == "indigo" -> colorSchemeForCustom(Color(0xFF4A5AA8), dark)
         else -> lightSchemeCam
     }
 }

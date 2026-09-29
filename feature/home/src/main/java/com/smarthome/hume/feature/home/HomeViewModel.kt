@@ -233,10 +233,9 @@ class HomeViewModel(
 
     /** Tat ca thiet bi toggle duoc (den/cong tac) de tim kiem. */
     fun searchableDevices(): List<DeviceUi> {
-        val rooms = state.value.rooms
-        return rooms.flatMap { r ->
-            r.devices.map { d -> d.copy(sub = r.name) }
-        }.distinctBy { it.entityId }
+        // Danh sach day du do AppHomeRepository build: gom climate + entity
+        // ngoai config tinh, da phan loai dung.
+        return state.value.searchDevices
     }
 
     companion object {

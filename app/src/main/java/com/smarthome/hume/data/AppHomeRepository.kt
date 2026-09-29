@@ -202,7 +202,93 @@ class AppHomeRepository(
             lightsOn = lightsOn,
             rooms = DefaultRooms.all.map { buildRoom(it, entities) },
             notifications = buildNotifications(entities),
-        )
+        ).let { st ->
+            st.copy(searchDevices = buildSearchDevices(entities, st.rooms))
+        }
+    }
+
+    /**
+     * Danh sach tim kiem day du cho DeviceSearchView.
+     * 1. Thiet bi tu config tinh (label dep) + climate moi phong.
+     * 2. Tat ca entity light/switch/fan/cover/lock/climate con lai -> tu dong
+     *    phan loai dung (dieu hoa / den / o cam / cong tac / quat / rem / khoa).
+     * sub mang tu khoa loai de chip "Dieu hoa"/"O cam" luon match.
+     */
+    private fun buildSearchDevices(
+        entities: Map<String, LegacyEntity>,
+        rooms: List<RoomUi>,
+    ): List<DeviceUi> {
+        val out = mutableListOf<DeviceUi>()
+        val covered = mutableSetOf<String>()
+        rooms.forEach { r ->
+            r.devices.forEach { d ->
+                covered.add(d.entityId)
+                out.add(d.copy(sub = r.name))
+            }
+            r.climate?.let { c ->
+                covered.add(c.entityId)
+                out.add(
+                    DeviceUi(
+                        entityId = c.entityId,
+                        label = climateSearchLabel(entities[c.entityId]),
+                        sub = r.name,
+                        iconKey = "snowflake",
+                        kind = DeviceKind.Climate,
+                        isOn = c.isOn,
+                    )
+                )
+            }
+        }
+        entities.values
+            .filter { e ->
+                e.id.substringBefore('.') in
+                    setOf("light", "switch", "fan", "cover", "lock", "climate") &&
+                    e.id !in covered
+            }
+            .forEach { e ->
+                covered.add(e.id)
+                out.add(autoSearchDevice(e))
+            }
+        return out.distinctBy { it.entityId }
+    }
+
+    /** Label dieu hoa: dam bao luon chua "dieu hoa" de chip tim kiem match. */
+    private fun climateSearchLabel(e: LegacyEntity?): String {
+        if (e == null) return "Điều hoà"
+        val n = friendlyName(e)
+        return if (n.contains("điều hoà", ignoreCase = true) ||
+            n.contains("điều hòa", ignoreCase = true)
+        ) n else "Điều hoà"
+    }
+
+    /** Phan loai entity le thanh DeviceUi dung loai cho tim kiem. */
+    private fun autoSearchDevice(e: LegacyEntity): DeviceUi {
+        val domain = e.id.substringBefore('.')
+        val idLower = e.id.lowercase()
+        val name = friendlyName(e)
+        return when (domain) {
+            "climate" -> DeviceUi(
+                e.id, climateSearchLabel(e), "điều hoà",
+                "snowflake", DeviceKind.Climate, e.state != "off",
+            )
+            "light" -> DeviceUi(
+                e.id, name, "đèn",
+                "bulb", DeviceKind.Toggle, e.isOn,
+            )
+            "switch" -> {
+                val isOutlet = listOf("plug", "outlet", "socket", "o_cam", "ocam")
+                    .any { it in idLower }
+                if (isOutlet) DeviceUi(e.id, name, "ổ cắm", "plug", DeviceKind.Toggle, e.isOn)
+                else DeviceUi(e.id, name, "công tắc", "switch", DeviceKind.Toggle, e.isOn)
+            }
+            "fan" -> DeviceUi(e.id, name, "quạt", "fan", DeviceKind.Toggle, e.isOn)
+            "cover" -> DeviceUi(e.id, name, "rèm", "blinds", DeviceKind.Toggle, e.isOn)
+            "lock" -> DeviceUi(
+                e.id, name, "khóa", "lock",
+                DeviceKind.Toggle, e.state == "locked",
+            )
+            else -> DeviceUi(e.id, name, "", "switch", DeviceKind.Toggle, e.isOn)
+        }
     }
 
     private fun buildRoom(room: RoomConfig, entities: Map<String, LegacyEntity>): RoomUi {

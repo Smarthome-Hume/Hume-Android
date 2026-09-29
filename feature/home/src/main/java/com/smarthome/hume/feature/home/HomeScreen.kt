@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.data.HumeGraph
+import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.avatar.AvatarStore
@@ -366,13 +367,19 @@ fun HomeScreen(
                     val results = viewModel.searchableDevices().filter {
                         q.isEmpty() ||
                             it.label.lowercase().contains(q) ||
+                            it.sub.lowercase().contains(q) ||
                             it.entityId.lowercase().contains(q)
                     }.take(50)
                     DeviceSearchView(
                         query = ui.searchQuery,
                         onQuery = { viewModel.onSearchQuery(it) },
                         results = results,
-                        onToggle = { viewModel.toggle(it) },
+                        onToggle = { id ->
+                            // Dieu hoa dung toggleClimate, thiet bi thuong dung toggle
+                            if (results.any { d -> d.entityId == id && d.kind == DeviceKind.Climate })
+                                viewModel.toggleClimate(id)
+                            else viewModel.toggle(id)
+                        },
                         onBack = { viewModel.openSearch(false) },
                     )
                 }

@@ -100,5 +100,8 @@ data class HomeUiState(
     val alarm: AlarmUi? = null,
     val lightsOn: List<DeviceUi> = emptyList(),
     val rooms: List<RoomUi> = emptyList(),
+    /** Danh sach tim kiem day du: gom ca climate + entity ngoai config tinh,
+     * da phan loai dung (dieu hoa / den / o cam / ...). */
+    val searchDevices: List<DeviceUi> = emptyList(),
     val notifications: List<HomeNotification> = emptyList(),
 )
