@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -141,14 +142,16 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
         else getVideo.launch("video/*")
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(HumeColors.Background)
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .then(if (viewerOpen) Modifier.blur(24.dp) else Modifier)
+                .background(HumeColors.Background)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
         Text("Th\u00f4ng tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = HumeColors.TextPrimary)
 
         // The chu nha nam truc tiep tren trang, KHONG con lop nen bao ngoai.
@@ -239,6 +242,17 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
             )
         }
         Spacer(Modifier.height(NavBarRoom))
+        }
+
+        // Nhan avatar -> popup tron phong to de ngam (nen trang mo di)
+        if (viewerOpen) {
+            AvatarViewerOverlay(
+                name = personName,
+                avatar = userAvatar,
+                haAvatarUrl = avatarUrl,
+                onDismiss = { viewerOpen = false },
+            )
+        }
     }
 
     if (openDeviceManager) {
@@ -262,17 +276,10 @@ fun ProfileScreen(settingsStore: SettingsStore, settings: HumeSettings, ha: Home
 
     // Nhan avatar -> mo phong to
     if (viewerOpen) {
-        AvatarViewerDialog(
+        AvatarViewerOverlay(
             name = personName,
             avatar = userAvatar,
             haAvatarUrl = avatarUrl,
-            onChange = { viewerOpen = false; showChooser = true },
-            onRemove = if (userAvatar != null) {
-                {
-                    viewerOpen = false
-                    scope.launch { avatarStore.clearAvatar(userKey) }
-                }
-            } else null,
             onDismiss = { viewerOpen = false },
         )
     }
