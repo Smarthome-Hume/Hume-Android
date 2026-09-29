@@ -19,9 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import androidx.compose.ui.unit.dp
@@ -29,7 +27,7 @@ import androidx.compose.ui.unit.dp
 /**
  * Switch M3E custom theo demo (.tgl):
  * 52x32, vien 2px outline, track surfaceHighest khi tat / primary khi bat;
- * knob 16dp -> 20dp + icon check (opacity/scale spring) khi bat;
+ * knob 16dp -> 20dp khi bat (khong icon check trong knob);
  * active: knob scaleX 1.15.
  * (outlined-only icon, khong fill.)
  */
@@ -60,16 +58,6 @@ fun M3ESwitch(
         if (checked) 6.dp else 8.dp,
         tween(300, easing = M3EMotion.spring),
         label = "swKnobY",
-    )
-    val checkAlpha by animateFloatAsState(
-        if (checked) 1f else 0f,
-        tween(200),
-        label = "swCheckAlpha",
-    )
-    val checkScale by animateFloatAsState(
-        if (checked) 1f else 0.5f,
-        tween(300, easing = M3EMotion.spring),
-        label = "swCheckScale",
     )
     val pressSX by animateFloatAsState(
         if (pressed) 1.15f else 1f,
@@ -111,15 +99,7 @@ fun M3ESwitch(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            MsIcon(
-                M3EIcons.Check,
-                null,
-                modifier = Modifier
-                    .size(13.dp)
-                    .scale(checkScale)
-                    .alpha(checkAlpha),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
+            // (da bo icon check trong knob theo yeu cau user)
         }
     }
 }
