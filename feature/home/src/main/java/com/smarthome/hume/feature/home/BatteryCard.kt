@@ -86,11 +86,10 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     .clip(CircleShape)
                     .background(cs.primaryContainer),
             ) {
-                MsIcon(
-                    M3EIcons.batteryLevel(soc),
-                    contentDescription = null,
-                    tint = cs.onPrimaryContainer,
-                    modifier = Modifier.size(28.dp),
+                HorizontalBatteryIcon(
+                    soc = soc,
+                    color = cs.onPrimaryContainer,
+                    modifier = Modifier.size(width = 30.dp, height = 18.dp),
                 )
             }
         }
