@@ -2,6 +2,11 @@ package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -47,6 +54,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,10 +75,12 @@ import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
 import kotlinx.coroutines.launch
+import kotlin.math.min
 
 fun greeting(): String = when (LocalTime.now().hour) {
     in 5..10 -> "Chào buổi sáng"
@@ -319,12 +329,84 @@ fun SuggestCard(
     val haptic = rememberHaptic()
     val scope = rememberCoroutineScope()
     val cs = MaterialTheme.colorScheme
+    val density = LocalDensity.current
     // List rut ngan lai (vd cua da dong): giu currentPage trong bien.
     LaunchedEffect(tips.size) {
         if (pagerState.currentPage >= tips.size) pagerState.scrollToPage(tips.size - 1)
     }
+    // Cu chi nhan-giu + vuot len de xoa (thay nut X):
+    // nhan-giu -> the chim xuong (sink + scale .97); vuot len -> the di theo tay,
+    // tha qua nguong -> bay len + mo dan roi xoa; tha som -> nay spring ve cu.
+    var pressing by remember { mutableStateOf(false) }
+    var dragDy by remember { mutableFloatStateOf(0f) }
+    val offsetYPx = remember { Animatable(0f) }
+    val cardAlpha = remember { Animatable(1f) }
+    val cardScale = remember { Animatable(1f) }
+    val sinkPx = with(density) { 7.dp.toPx() }
+    val dismissThresholdPx = with(density) { 80.dp.toPx() }
+    val flyOutPx = with(density) { 180.dp.toPx() }
+    val fadeRangePx = with(density) { 240.dp.toPx() }
+    val pressSpring = spring<Float>(stiffness = Spring.StiffnessMediumLow)
+    suspend fun dismissCurrentTip() {
+        val tip = tips.getOrNull(pagerState.currentPage) ?: return
+        haptic()
+        offsetYPx.animateTo(-flyOutPx, tween(320, easing = M3EMotion.emphasizedAcc))
+        cardAlpha.animateTo(0f, tween(300))
+        dismissed[tip.key] = tip.title + "|" + tip.sub
+        // Reset cho tip ke tiep hien ra
+        offsetYPx.snapTo(0f)
+        cardAlpha.snapTo(1f)
+        cardScale.snapTo(1f)
+        dragDy = 0f
+    }
+    suspend fun springBack() {
+        dragDy = 0f
+        offsetYPx.animateTo(0f, pressSpring)
+        cardScale.animateTo(1f, pressSpring)
+        cardAlpha.animateTo(1f, tween(200))
+    }
     M3ECard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                translationY = offsetYPx.value
+                scaleX = cardScale.value
+                scaleY = cardScale.value
+                alpha = cardAlpha.value
+            }
+            .pointerInput(tips) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = {
+                        pressing = true
+                        haptic()
+                        scope.launch {
+                            launch { offsetYPx.animateTo(sinkPx, pressSpring) }
+                            launch { cardScale.animateTo(0.97f, pressSpring) }
+                        }
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        dragDy += dragAmount.y
+                        scope.launch {
+                            offsetYPx.snapTo(sinkPx + dragDy)
+                            cardAlpha.snapTo(
+                                (1f - min(-dragDy / fadeRangePx, 0.5f)).coerceIn(0f, 1f),
+                            )
+                        }
+                    },
+                    onDragEnd = {
+                        pressing = false
+                        scope.launch {
+                            if (dragDy <= -dismissThresholdPx) dismissCurrentTip()
+                            else springBack()
+                        }
+                    },
+                    onDragCancel = {
+                        pressing = false
+                        scope.launch { springBack() }
+                    },
+                )
+            },
         containerColor = cs.tertiaryContainer,
         shape = RoundedCornerShape(28.dp),
         contentPadding = 16.dp,
@@ -333,15 +415,12 @@ fun SuggestCard(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth(),
+                userScrollEnabled = !pressing,
             ) { page ->
                 val tip = tips[page]
                 SuggestTipRow(
                     tip = tip,
                     done = doneMap[tip.key] == true,
-                    onDismiss = {
-                        haptic()
-                        dismissed[tip.key] = tip.title + "|" + tip.sub
-                    },
                     onAction = {
                         haptic()
                         when (tip.key) {
@@ -387,11 +466,9 @@ fun SuggestCard(
 private fun SuggestTipRow(
     tip: SuggestTip,
     done: Boolean,
-    onDismiss: () -> Unit,
     onAction: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
-    Box(modifier = Modifier.fillMaxWidth()) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 2.dp),
@@ -439,23 +516,6 @@ private fun SuggestTipRow(
                 color = cs.tertiaryContainer,
             )
         }
-    }
-    // Nut X xoa goi y (goc tren phai)
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .align(Alignment.TopEnd)
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(cs.onTertiaryContainer.copy(alpha = 0.12f))
-            .clickable(onClick = onDismiss),
-    ) {
-        MsIcon(
-            Ms.close, null,
-            tint = cs.onTertiaryContainer,
-            modifier = Modifier.size(16.dp),
-        )
-    }
     }
 }
 

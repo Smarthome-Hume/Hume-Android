@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -155,8 +156,8 @@ fun M3ERootScreen(
  * Navbar M3E theo demo v4 (.nav/.navit): FLOATING — cach 2 canh 16dp,
  * cach day 20dp, bo 34dp, nen surfaceLowest 98% + shadow (gan nhu dac,
  * M3E khong co thiet ke trong suot);
- * item chon highlight TOAN O primaryContainer (khong pill tach roi),
- * icon outlined (scale 1.12 khi chon), label dam khi chon;
+ * item chon: pill 64x32 primaryContainer CHI OM ICON (no spring),
+ * icon outlined (27dp khi chon), label onSurface dam khi chon;
  * neighbor-press: item dang nhan no rong (spring), 2 item ke co lai;
  * :active nen surfaceContainer. Backdrop blur bo qua (ghi nhan gioi han).
  */
@@ -200,18 +201,22 @@ private fun M3ENavBar(
                     animationSpec = tween(300, easing = M3EMotion.spring),
                     label = "navI$i",
                 )
+                // Pill active chi om icon: hien/spring theo chon, an khi khong chon
+                val pillOn = isSel || pressed
+                val pillScale by animateFloatAsState(
+                    targetValue = if (pillOn) 1f else 0.45f,
+                    animationSpec = tween(450, easing = M3EMotion.spring),
+                    label = "navP$i",
+                )
+                val pillAlpha by animateFloatAsState(
+                    targetValue = if (pillOn) 1f else 0f,
+                    animationSpec = tween(250),
+                    label = "navPA$i",
+                )
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .weight(weight)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(
-                            when {
-                                pressed -> cs.surfaceContainer
-                                isSel -> cs.primaryContainer
-                                else -> Color.Transparent
-                            },
-                        )
                         .pointerInput(i) {
                             detectTapGestures(
                                 onPress = {
@@ -225,28 +230,39 @@ private fun M3ENavBar(
                         }
                         .padding(top = 9.dp, bottom = 7.dp),
                 ) {
-                    // Active: icon fill dac (Canvas Path); inactive: outlined
-                    if (isSel) {
-                        FilledNavIcon(
-                            tab = item.tab,
-                            tint = cs.onPrimaryContainer,
-                            modifier = Modifier.size(iconSize),
-                        )
-                    } else {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .graphicsLayer {
+                                scaleX = pillScale
+                                scaleY = pillScale
+                                alpha = pillAlpha
+                            }
+                            .size(width = 64.dp, height = 32.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                when {
+                                    isSel -> cs.primaryContainer
+                                    pressed -> cs.surfaceContainer
+                                    else -> Color.Transparent
+                                },
+                            ),
+                    ) {
                         MsIcon(
                             item.icon, contentDescription = item.tab.label,
-                            tint = cs.onSurfaceVariant,
+                            tint = if (isSel) cs.onPrimaryContainer
+                            else cs.onSurfaceVariant,
                             modifier = Modifier.size(iconSize),
                         )
                     }
-                    Spacer(Modifier.height(3.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         item.tab.label,
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 11.sp,
                         lineHeight = 13.sp,
                         fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isSel) cs.onPrimaryContainer
+                        color = if (isSel) cs.onSurface
                         else cs.onSurfaceVariant,
                     )
                 }
