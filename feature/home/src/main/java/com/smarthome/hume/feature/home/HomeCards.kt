@@ -622,7 +622,8 @@ private fun SuggestTipRow(
             tint = cs.onTertiaryContainer,
             modifier = Modifier.size(30.dp),
         )
-        Spacer(Modifier.width(14.dp))
+        // Viewport marquee keo dai den sat mep icon (bo Spacer): chu chay
+        // den mep icon moi an; luc nghi chu van dung yen nho startPadding.
         Column(Modifier.weight(1f)) {
             // The co dinh 1 dong tieu de + 1 dong mo ta; chu dai tu chay marquee
             MarqueeText(
@@ -630,6 +631,7 @@ private fun SuggestTipRow(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = cs.onTertiaryContainer,
+                startPadding = 14.dp,
             )
             MarqueeText(
                 text = tip.sub,
@@ -637,6 +639,7 @@ private fun SuggestTipRow(
                 fontWeight = FontWeight.Medium,
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
                 modifier = Modifier.padding(top = 2.dp),
+                startPadding = 14.dp,
             )
         }
         Spacer(Modifier.width(12.dp))
