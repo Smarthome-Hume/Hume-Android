@@ -22,10 +22,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.drawToBitmap
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -244,6 +247,21 @@ fun M3ERootScreen(
                 }
             }
             } // CompositionLocalProvider(LocalContentColor)
+            // Nen dac co dinh sau status bar (2026-09-30, user bao noi dung
+            // bi cat ngang khi scroll toi thanh status bar): status bar trong
+            // suot + edge-to-edge nen the scroll len se loi chu/hinh len vung
+            // icon he thong. Lop nay dung yen, noi dung chui xuong duoi sach.
+            // Dat tren content 4 tab, duoi navbar/overlay.
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(
+                        WindowInsets.statusBars.asPaddingValues()
+                            .calculateTopPadding(),
+                    )
+                    .background(MaterialTheme.colorScheme.surface),
+            )
             M3ENavBar(
                 selected = selected,
                 onSelect = { selected = it },
