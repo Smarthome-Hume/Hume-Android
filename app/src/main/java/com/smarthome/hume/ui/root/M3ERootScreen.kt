@@ -28,9 +28,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -147,6 +149,12 @@ fun M3ERootScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface),
         ) {
+            // Text() khong truyen color mac dinh lay LocalContentColor (den) vi
+            // content khong nam trong Surface; cung cap onSurface (dark-aware)
+            // cho ca 4 tab de chu khong bi chim trong che do toi.
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface,
+            ) {
             Box(Modifier.fillMaxSize()) {
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen(
@@ -229,6 +237,7 @@ fun M3ERootScreen(
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
                 }
             }
+            } // CompositionLocalProvider(LocalContentColor)
             M3ENavBar(
                 selected = selected,
                 onSelect = { selected = it },

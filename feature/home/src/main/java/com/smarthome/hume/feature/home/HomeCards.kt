@@ -388,8 +388,9 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
             val room = roomNameForSensor(n.id)
             SuggestTip(
                 key = "motion:${n.id}",
-                title = if (room != null) "Có chuyển động ở $room" else "Phát hiện chuyển động",
-                sub = listOf(n.body, n.timeText).filter { it.isNotBlank() }.joinToString(" · "),
+                // Title: ten phong / vi tri xuat hien; Subtitle: lastchange.
+                title = room ?: n.body.ifBlank { "Phát hiện chuyển động" },
+                sub = n.timeText,
                 action = "Xem camera",
             )
         }
