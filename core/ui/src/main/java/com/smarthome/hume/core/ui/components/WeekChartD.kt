@@ -78,12 +78,15 @@ fun WeekChartD(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())),
             )
         }
-        // Nhan "TB x.x" o dau phai duong TB
+        // Nhan "TB x.x" o dau TRAI duong TB (tranh de len cot cao ben phai)
         Box(
             Modifier
-                .align(Alignment.TopEnd)
+                .align(Alignment.TopStart)
                 .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
-                .padding(end = 4.dp),
+                .padding(start = 4.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(cs.surfaceContainerHighest.copy(alpha = 0.85f))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
         ) {
             Text(
                 "TB ${"%.1f".format(avg)}",
@@ -98,10 +101,11 @@ fun WeekChartD(
             val top = y(v)
             val h = (140.dp - top).coerceAtLeast(4.dp)
             val above = v >= avg
-            // today: primary; tren TB: tertiary; duoi TB: surfaceContainerHigh + vien
+            // today: primary dac; tren TB: primaryContainer (khac biet ro voi today);
+            // duoi TB: surfaceContainerHigh + vien. (tertiary trung primary o 1 so theme)
             val barColor = when {
                 today -> cs.primary
-                above -> cs.tertiary
+                above -> cs.primaryContainer
                 else -> cs.surfaceContainerHigh
             }
             Box(
@@ -173,7 +177,7 @@ fun WeekChartD(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         LegendItem(color = cs.primary, label = "Hôm nay")
-        LegendItem(color = cs.tertiary, label = "Trên TB")
+        LegendItem(color = cs.primaryContainer, label = "Trên TB")
         LegendItem(color = cs.surfaceContainerHigh, label = "Dưới TB", border = true)
     }
 }
