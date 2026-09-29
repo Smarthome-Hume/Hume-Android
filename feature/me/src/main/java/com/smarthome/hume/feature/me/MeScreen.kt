@@ -184,7 +184,9 @@ fun MeScreen(
             .statusBarsPadding()
             .padding(top = 8.dp)
             .padding(horizontal = 18.dp)
-            .padding(bottom = 100.dp),
+            // Muc cuoi (mau tuy chinh) cach navbar 20dp: navbar floating cao
+            // ~86dp + margin 20dp + system inset -> day content 120dp.
+            .padding(bottom = 120.dp),
     ) {
         // Title: chi title duoc boc nen
         Column(Modifier.fillMaxWidth()) {
@@ -233,16 +235,44 @@ fun MeScreen(
             mode = darkMode,
             onSelect = { haptic(); vm.setDarkMode(it) },
         )
-        Text(
-            "MÀU CHỦ ĐẠO",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            letterSpacing = 0.4.sp,
-            modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 12.dp),
-        )
-        SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
-        CustomSeedRow(onApplyCustom = { haptic(); vm.setCustomColor(it) })
+        // Card 1: mau chu dao (8 seed) co background rieng
+        val cs = MaterialTheme.colorScheme
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(cs.surfaceContainerHighest)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Text(
+                "MÀU CHỦ ĐẠO",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurfaceVariant,
+                letterSpacing = 0.4.sp,
+            )
+            SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
+        }
+        // Card 2: mau tuy chinh co background rieng (muc cuoi trang)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(cs.surfaceContainerHighest)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Text(
+                "MÀU TÙY CHỈNH",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurfaceVariant,
+                letterSpacing = 0.4.sp,
+            )
+            Spacer(Modifier.height(12.dp))
+            CustomSeedRow(onApplyCustom = { haptic(); vm.setCustomColor(it) })
+        }
     }
 
     // Chon anh / video lam avatar
@@ -741,19 +771,9 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
     }
 
     Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(start = 4.dp, end = 4.dp, top = 16.dp),
+        Modifier.fillMaxWidth(),
     ) {
-        Text(
-            "MÀU TÙY CHỈNH",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = cs.onSurfaceVariant,
-            letterSpacing = 0.4.sp,
-        )
         // Dai mau spectrum: hue slider (giong Google color picker) - keo duoc
-        Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().height(40.dp)) {
             // Nen gradient cau vong
             Box(
@@ -957,10 +977,10 @@ private val seedNames = mapOf(
 @Composable
 private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
     FlowRow(
-        // demo .seeds: padding 2px 4px 8px
+        // Nam trong card nen chi can khoang cach voi label phia tren
         Modifier
             .fillMaxWidth()
-            .padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 8.dp),
+            .padding(top = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
