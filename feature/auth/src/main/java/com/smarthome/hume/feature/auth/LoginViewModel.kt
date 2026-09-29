@@ -22,8 +22,11 @@ enum class ServerMode { Local, Domain }
 /** 3 cach nhap token. */
 enum class TokenEntryMode { Manual, Qr, Scan }
 
+/** IP mac dinh cho che do Noi bo (user khong sua thi dung luon). */
+const val DEFAULT_LOCAL_URL = "http://192.168.102.22:8123"
+
 data class LoginUiState(
-    val serverUrl: String = "",
+    val serverUrl: String = DEFAULT_LOCAL_URL,
     val token: String = "",
     val tokenVisible: Boolean = false,
     val serverMode: ServerMode = ServerMode.Local,
@@ -67,7 +70,18 @@ class LoginViewModel(
     fun onUrlChange(v: String) = _uiState.update { it.copy(serverUrl = v, error = null) }
     fun onTokenChange(v: String) = _uiState.update { it.copy(token = v, error = null) }
     fun onToggleTokenVisibility() = _uiState.update { it.copy(tokenVisible = !it.tokenVisible) }
-    fun onServerModeChange(m: ServerMode) = _uiState.update { it.copy(serverMode = m, error = null) }
+
+    /**
+     * Doi che do Noi bo/Domain: neu URL dang trong hoac dang la default cua che do cu
+     * thi tu dong dien default cua che do moi (Local -> IP mac dinh, Domain -> trong).
+     */
+    fun onServerModeChange(m: ServerMode) = _uiState.update { s ->
+        val oldDefault = if (s.serverMode == ServerMode.Local) DEFAULT_LOCAL_URL else ""
+        val newUrl = if (s.serverUrl.isBlank() || s.serverUrl.trim() == oldDefault) {
+            if (m == ServerMode.Local) DEFAULT_LOCAL_URL else ""
+        } else s.serverUrl
+        s.copy(serverMode = m, serverUrl = newUrl, error = null)
+    }
     fun onEntryModeChange(m: TokenEntryMode) =
         _uiState.update { it.copy(entryMode = m, error = null, notice = null) }
     fun onRememberMeChange(v: Boolean) = _uiState.update { it.copy(rememberMe = v) }

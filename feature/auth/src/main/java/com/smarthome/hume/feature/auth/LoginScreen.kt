@@ -180,9 +180,11 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = state.serverUrl,
                         onValueChange = viewModel::onUrlChange,
+                        label = { Text("Địa chỉ IP / Domain", style = MaterialTheme.typography.bodySmall) },
                         placeholder = { Text(state.serverMode.urlHint) },
                         leadingIcon = { MsIcon(Ms.link, null) },
                         singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Next,
@@ -191,7 +193,9 @@ fun LoginScreen(
                             onNext = { focus.moveFocus(FocusDirection.Down) },
                         ),
                         shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
@@ -380,7 +384,8 @@ private fun ManualTokenField(
     OutlinedTextField(
         value = state.token,
         onValueChange = viewModel::onTokenChange,
-        label = { Text("Dán token vào đây") },
+        label = { Text("Token", style = MaterialTheme.typography.bodySmall) },
+        placeholder = { Text("Dán token vào đây") },
         leadingIcon = { MsIcon(Ms.key, null) },
         trailingIcon = {
             IconButton(onClick = viewModel::onToggleTokenVisibility) {
@@ -391,6 +396,7 @@ private fun ManualTokenField(
             }
         },
         singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium,
         visualTransformation = if (state.tokenVisible) VisualTransformation.None
         else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -399,7 +405,9 @@ private fun ManualTokenField(
             viewModel.onLogin()
         }),
         shape = MaterialTheme.shapes.small,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
     )
     Spacer(Modifier.height(8.dp))
     Text(
