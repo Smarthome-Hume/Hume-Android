@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Adaptive icon: One UI 8.5 tu bo tron / bo vuong theo cai dat cua may.
-    <monochrome> de icon theo mau chu de (Themed icons) tren Android 13+.
-    minSdk cua du an la 26 nen khong can ban PNG du phong cho may cu.
+    Adaptive icon dung artwork icon app Muse (chu M xanh / nen trang):
+    foreground PNG 1024 (drawable-nodpi), nen trang. Chu M da thu ve ~58%
+    canvas de nam gon trong vung an toan 66dp — One UI bo tron kieu nao
+    cung khong cat mat net chu. <monochrome> la silhouette chu M de icon
+    theo mau chu de (Themed icons) tren Android 13+.
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>
