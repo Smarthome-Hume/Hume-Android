@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
@@ -454,7 +455,7 @@ fun DeviceSearchView(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(start = 4.dp),
                 ) {
-                    listOf("Điều hoà", "Đèn ngủ", "Rèm cửa").forEach { chip ->
+                    listOf("Điều hoà", "Đèn", "Ổ cắm").forEach { chip ->
                         SearchChip(chip) {
                             haptic()
                             onQuery(chip)
@@ -480,14 +481,68 @@ fun DeviceSearchView(
                             .padding(vertical = 32.dp),
                     )
                 } else {
+                    // Phan loai: Dieu hoa / Den / O cam
+                    val acList = results.filter { it.kind == DeviceKind.Climate || it.iconKey == "snowflake" }
+                    val lightList = results.filter { it.iconKey in listOf("bulb", "lightbulb", "light") }
+                    val outletList = results.filter { it.iconKey in listOf("plug", "switch", "outlet") }
+                    val otherList = results.filter { d ->
+                        d !in acList && d !in lightList && d !in outletList
+                    }
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier
                             .weight(1f, fill = false)
                             .fillMaxWidth(),
                     ) {
-                        itemsIndexed(results, key = { _, d -> d.entityId }) { _, d ->
-                            DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                        if (acList.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "ĐIỀU HÒA",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.6.sp,
+                                    color = cs.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                                )
+                            }
+                            itemsIndexed(acList, key = { _, d -> d.entityId }) { _, d ->
+                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                            }
+                        }
+                        if (lightList.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "ĐÈN",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.6.sp,
+                                    color = cs.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                                )
+                            }
+                            itemsIndexed(lightList, key = { _, d -> d.entityId }) { _, d ->
+                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                            }
+                        }
+                        if (outletList.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Ổ CẮM",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.6.sp,
+                                    color = cs.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                                )
+                            }
+                            itemsIndexed(outletList, key = { _, d -> d.entityId }) { _, d ->
+                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                            }
+                        }
+                        if (otherList.isNotEmpty()) {
+                            itemsIndexed(otherList, key = { _, d -> d.entityId }) { _, d ->
+                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                            }
                         }
                     }
                 }

@@ -85,7 +85,8 @@ fun M3ERootScreen(
     )
     val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }.getOrDefault(M3ESeed.Cam)
     val darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()
-    HumeM3ETheme(seed = seed, darkTheme = darkTheme) {
+    val customColor = themeSettings.customColor?.let { androidx.compose.ui.graphics.Color(it.toULong()) }
+    HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
         // Navbar NOI tren be mat trang: dung Box overlay thay vi Scaffold bottomBar
         // (Scaffold bottomBar van giu cho layout). Content full-bleed, navbar noi phia tren.

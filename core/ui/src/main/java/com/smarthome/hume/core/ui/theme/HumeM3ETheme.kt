@@ -166,9 +166,14 @@ val HumeTypography = with(Typography()) {
 fun HumeM3ETheme(
     seed: M3ESeed = M3ESeed.Cam,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    customSeedColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
-    val scheme = colorSchemeFor(seed, darkTheme)
+    val scheme = if (customSeedColor != null) {
+        colorSchemeForCustom(customSeedColor, darkTheme)
+    } else {
+        colorSchemeFor(seed, darkTheme)
+    }
     CompositionLocalProvider(LocalHumeExtraColors provides extraColors(seed, darkTheme)) {
         MaterialTheme(
             colorScheme = scheme,

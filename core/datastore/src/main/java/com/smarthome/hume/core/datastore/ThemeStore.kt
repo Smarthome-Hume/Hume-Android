@@ -12,12 +12,15 @@ data class ThemeSettings(
     /** Ten M3ESeed (Cam, Green, Blue, Violet, Red, Pink, Teal, Amber). */
     val seedName: String = "Cam",
     val darkMode: Boolean? = null, // null = theo he thong
+    /** Mau tuy chinh (ARGB Long) — null = dung seed co san. */
+    val customColor: Long? = null,
 )
 
 class ThemeStore(private val context: Context) {
 
     private object Keys {
         val Seed = stringPreferencesKey("theme_seed")
+        val CustomColor = longPreferencesKey("theme_custom_color")
         val DarkMode = booleanPreferencesKey("theme_dark_mode")
     }
 
@@ -26,11 +29,18 @@ class ThemeStore(private val context: Context) {
             ThemeSettings(
                 seedName = prefs[Keys.Seed] ?: "Cam",
                 darkMode = if (prefs.contains(Keys.DarkMode)) prefs[Keys.DarkMode] else null,
+                customColor = prefs[Keys.CustomColor],
             )
         }
 
     suspend fun setSeed(seedName: String) {
         context.humeDataStore.edit { it[Keys.Seed] = seedName }
+    }
+
+    suspend fun setCustomColor(argb: Long?) {
+        context.humeDataStore.edit {
+            if (argb == null) it.remove(Keys.CustomColor) else it[Keys.CustomColor] = argb
+        }
     }
 
     suspend fun setDarkMode(dark: Boolean?) {

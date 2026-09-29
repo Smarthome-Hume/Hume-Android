@@ -596,3 +596,68 @@ internal fun colorSchemeFor(seed: M3ESeed, dark: Boolean): ColorScheme {
         else -> lightSchemeCam
     }
 }
+
+/**
+ * Tao ColorScheme tu mau tuy chinh (khong snap ve 8 seed).
+ * Dung primary = mau user chon; cac container dan xuat bang cach tron voi trang/den.
+ */
+internal fun colorSchemeForCustom(seedColor: Color, dark: Boolean): ColorScheme {
+    // Tron mau voi trang/den de tao container
+    fun mix(a: Color, b: Color, t: Float): Color {
+        return Color(
+            red = a.red * (1 - t) + b.red * t,
+            green = a.green * (1 - t) + b.green * t,
+            blue = a.blue * (1 - t) + b.blue * t,
+            alpha = 1f,
+        )
+    }
+    val white = Color.White
+    val black = Color.Black
+    return if (!dark) {
+        lightColorScheme(
+            primary = seedColor,
+            onPrimary = white,
+            primaryContainer = mix(seedColor, white, 0.75f),
+            onPrimaryContainer = mix(seedColor, black, 0.55f),
+            secondary = mix(seedColor, black, 0.25f),
+            secondaryContainer = mix(seedColor, white, 0.85f),
+            onSecondaryContainer = mix(seedColor, black, 0.6f),
+            tertiary = mix(seedColor, white, 0.3f),
+            tertiaryContainer = mix(seedColor, white, 0.8f),
+            onTertiaryContainer = mix(seedColor, black, 0.5f),
+            surface = mix(seedColor, white, 0.95f),
+            onSurface = Color(0xFF191412),
+            surfaceContainerLowest = Color(0xFFF4F2EF),
+            surfaceContainerLow = mix(seedColor, white, 0.96f),
+            surfaceContainer = mix(seedColor, white, 0.93f),
+            surfaceContainerHigh = mix(seedColor, white, 0.90f),
+            surfaceContainerHighest = white,
+            onSurfaceVariant = mix(seedColor, black, 0.45f),
+            outline = mix(seedColor, black, 0.2f),
+            outlineVariant = mix(seedColor, white, 0.7f),
+        )
+    } else {
+        darkColorScheme(
+            primary = mix(seedColor, white, 0.35f),
+            onPrimary = mix(seedColor, black, 0.7f),
+            primaryContainer = mix(seedColor, black, 0.45f),
+            onPrimaryContainer = mix(seedColor, white, 0.8f),
+            secondary = mix(seedColor, white, 0.4f),
+            secondaryContainer = mix(seedColor, black, 0.5f),
+            onSecondaryContainer = mix(seedColor, white, 0.85f),
+            tertiary = mix(seedColor, white, 0.3f),
+            tertiaryContainer = mix(seedColor, black, 0.4f),
+            onTertiaryContainer = mix(seedColor, white, 0.8f),
+            surface = mix(seedColor, black, 0.88f),
+            onSurface = Color(0xFFEDE8E2),
+            surfaceContainerLowest = mix(seedColor, black, 0.92f),
+            surfaceContainerLow = mix(seedColor, black, 0.85f),
+            surfaceContainer = mix(seedColor, black, 0.8f),
+            surfaceContainerHigh = mix(seedColor, black, 0.75f),
+            surfaceContainerHighest = mix(seedColor, black, 0.65f),
+            onSurfaceVariant = mix(seedColor, white, 0.6f),
+            outline = mix(seedColor, white, 0.25f),
+            outlineVariant = mix(seedColor, black, 0.5f),
+        )
+    }
+}

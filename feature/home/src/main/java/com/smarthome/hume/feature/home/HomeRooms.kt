@@ -82,7 +82,7 @@ fun RoomGrid(
                 row.forEachIndexed { ci, room ->
                     RoomCard(
                         room = room,
-                        doorOpen = doorOpenForRoom(room, notifications),
+                        
                         onOpen = { onRoom(room) },
                         onToggleLight = { room.lightEntityId?.let(onToggleLight) },
                         riseDelayMs = 360 + (ri * 2 + ci) * 30,
@@ -98,7 +98,6 @@ fun RoomGrid(
 @Composable
 private fun RoomCard(
     room: RoomUi,
-    doorOpen: Boolean,
     onOpen: () -> Unit,
     onToggleLight: () -> Unit,
     riseDelayMs: Int,
@@ -182,17 +181,6 @@ private fun RoomCard(
                     softWrap = false,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 3.dp),
-                )
-            }
-            // Cham bao cua mo .rdot2 9px
-            if (doorOpen) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .shadow(6.dp, CircleShape, ambientColor = cs.error, spotColor = cs.error)
-                        .size(9.dp)
-                        .clip(CircleShape)
-                        .background(cs.error),
                 )
             }
         }

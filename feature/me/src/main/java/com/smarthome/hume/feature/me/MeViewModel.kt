@@ -56,7 +56,15 @@ class MeViewModel : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun setSeed(seed: M3ESeed) {
-        viewModelScope.launch { themeStore.setSeed(seed.name) }
+        viewModelScope.launch {
+            themeStore.setCustomColor(null) // chon seed co san -> xoa mau custom
+            themeStore.setSeed(seed.name)
+        }
+    }
+
+    /** Ap dung mau tuy chinh truc tiep (khong snap ve seed gan nhat). */
+    fun setCustomColor(argb: Long) {
+        viewModelScope.launch { themeStore.setCustomColor(argb) }
     }
 
     fun setDarkMode(dark: Boolean?) {

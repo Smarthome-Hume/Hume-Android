@@ -306,7 +306,13 @@ fun SuggestCard(
     onOpenSecurity: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val tips = buildSuggestTips(state)
+    val allTips = buildSuggestTips(state)
+    // Goi y da bi user xoa: luu key -> noi dung luc xoa; hien lai neu co su kien moi (noi dung doi)
+    val dismissed = remember { mutableStateMapOf<String, String>() }
+    val tips = allTips.filter { tip ->
+        val d = dismissed[tip.key]
+        d == null || d != tip.title + "|" + tip.sub
+    }
     if (tips.isEmpty()) return
     val pagerState = rememberPagerState(pageCount = { tips.size })
     val doneMap = remember { mutableStateMapOf<String, Boolean>() }
@@ -332,6 +338,10 @@ fun SuggestCard(
                 SuggestTipRow(
                     tip = tip,
                     done = doneMap[tip.key] == true,
+                    onDismiss = {
+                        haptic()
+                        dismissed[tip.key] = tip.title + "|" + tip.sub
+                    },
                     onAction = {
                         haptic()
                         when (tip.key) {
@@ -377,9 +387,11 @@ fun SuggestCard(
 private fun SuggestTipRow(
     tip: SuggestTip,
     done: Boolean,
+    onDismiss: () -> Unit,
     onAction: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
+    Box(modifier = Modifier.fillMaxWidth()) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 2.dp),
@@ -427,6 +439,23 @@ private fun SuggestTipRow(
                 color = cs.tertiaryContainer,
             )
         }
+    }
+    // Nut X xoa goi y (goc tren phai)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(cs.onTertiaryContainer.copy(alpha = 0.12f))
+            .clickable(onClick = onDismiss),
+    ) {
+        MsIcon(
+            Ms.close, null,
+            tint = cs.onTertiaryContainer,
+            modifier = Modifier.size(16.dp),
+        )
+    }
     }
 }
 

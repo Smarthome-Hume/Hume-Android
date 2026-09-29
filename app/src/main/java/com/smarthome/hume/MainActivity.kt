@@ -76,7 +76,12 @@ class MainActivity : ComponentActivity() {
                 )
                 val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }
                     .getOrDefault(M3ESeed.Cam)
-                HumeM3ETheme(seed = seed, darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()) {
+                val customColor = themeSettings.customColor?.let { androidx.compose.ui.graphics.Color(it.toULong()) }
+                HumeM3ETheme(
+                    seed = seed,
+                    darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme(),
+                    customSeedColor = customColor,
+                ) {
                     LoginScreen()
                 }
             }

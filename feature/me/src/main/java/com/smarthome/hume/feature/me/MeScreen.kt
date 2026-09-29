@@ -165,7 +165,7 @@ fun MeScreen(
             modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 12.dp),
         )
         SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
-        CustomSeedRow(onApply = { haptic(); vm.setSeed(it) })
+        CustomSeedRow(onApplyCustom = { haptic(); vm.setCustomColor(it) })
     }
 }
 
@@ -525,7 +525,7 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
  * Dai mau chon nhanh = SeedRow 8 circle ben tren.
  */
 @Composable
-private fun CustomSeedRow(onApply: (M3ESeed) -> Unit) {
+private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
     val cs = MaterialTheme.colorScheme
     var hue by remember { androidx.compose.runtime.mutableFloatStateOf(0f) } // 0..360
     var sat by remember { androidx.compose.runtime.mutableFloatStateOf(1f) } // 0..1
@@ -677,11 +677,13 @@ private fun CustomSeedRow(onApply: (M3ESeed) -> Unit) {
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                     ) {
-                        val nearest = M3ESeed.entries.minByOrNull { s ->
-                            colorDistance(seedColors[s] ?: Color.Gray, currentColor)
-                        } ?: M3ESeed.Cam
-                        onApply(nearest)
-                        feedback = "Đã chọn: ${seedNames[nearest] ?: nearest.name}" to false
+                        val c = currentColor
+                        val argb = (0xFF000000L or
+                            ((c.red * 255).toInt().toLong() shl 16) or
+                            ((c.green * 255).toInt().toLong() shl 8) or
+                            (c.blue * 255).toInt().toLong())
+                        onApplyCustom(argb)
+                        feedback = "Đã áp dụng màu tùy chỉnh" to false
                     },
                 contentAlignment = Alignment.Center,
             ) {
@@ -782,8 +784,8 @@ private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
         Modifier
             .fillMaxWidth()
             .padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         M3ESeed.entries.forEach { s ->
             val color = seedColors[s] ?: Color.Gray
@@ -808,7 +810,7 @@ private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
             // ring ::after: inset -7px => khung ngoai 72dp, border 2px mau seed
             Box(
                 Modifier
-                    .size(72.dp)
+                    .size(56.dp)
                     .then(
                         if (on) Modifier.border(2.dp, color, CircleShape)
                         else Modifier
@@ -817,7 +819,7 @@ private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
             ) {
                 Box(
                     Modifier
-                        .size(58.dp)
+                        .size(44.dp)
                         .scale(scale)
                         .clip(CircleShape)
                         .background(color)

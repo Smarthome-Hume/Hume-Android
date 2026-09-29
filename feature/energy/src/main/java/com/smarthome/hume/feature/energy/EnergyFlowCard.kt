@@ -223,7 +223,7 @@ private fun FlowArea(
         // nodes: 150x190px trong viewBox 380x460, cach ria 6px
         val nw = fx(NODE_W); val nh = fy(NODE_H)
         FlowNode(
-            icon = M3EIcons.SolarPower,
+            icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(24.dp)) },
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
             tintFg = Color(0xFFD97706),
             label = "Sản xuất", valueKw = flow.prodKw,
@@ -234,14 +234,14 @@ private fun FlowArea(
             val prodTot = flow.prodKw.coerceAtLeast(0.01)
             SegBar(
                 items = listOf(
-                    Triple("PV1", flow.pv1Kw, MaterialTheme.colorScheme.primary),
-                    Triple("PV2", flow.pv2Kw, MaterialTheme.colorScheme.tertiary),
+                    "PV1" to flow.pv1Kw,
+                    "PV2" to flow.pv2Kw,
                 ),
                 total = prodTot,
             )
         }
         FlowNode(
-            icon = M3EIcons.ElectricMeter,
+            icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(24.dp)) },
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
@@ -250,7 +250,7 @@ private fun FlowArea(
                 .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
         )
         FlowNode(
-            icon = M3EIcons.Home,
+            icon = { MsIcon(M3EIcons.Home, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) },
             tintBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
             tintFg = MaterialTheme.colorScheme.primary,
             label = "Tiêu thụ", valueKw = flow.consKw,
@@ -261,16 +261,22 @@ private fun FlowArea(
             val tot = (flow.cb1Kw + flow.cb2Kw + flow.cb3Kw).coerceAtLeast(0.01)
             SegBar(
                 items = listOf(
-                    Triple("CB1", flow.cb1Kw, MaterialTheme.colorScheme.primary),
-                    Triple("CB2", flow.cb2Kw, MaterialTheme.colorScheme.tertiary),
-                    Triple("CB3", flow.cb3Kw, MaterialTheme.colorScheme.secondary),
+                    "CB1" to flow.cb1Kw,
+                    "CB2" to flow.cb2Kw,
+                    "CB3" to flow.cb3Kw,
                 ),
                 total = tot,
             )
         }
         val battFg = Color(0xFF16A34A)
         FlowNode(
-            icon = M3EIcons.batteryLevel(soc.roundToInt()),
+            icon = {
+                HorizontalBatteryIcon(
+                    soc = soc.roundToInt(),
+                    color = Color(0xFF16A34A),
+                    modifier = Modifier.size(width = 30.dp, height = 18.dp),
+                )
+            },
             tintBg = battFg.copy(alpha = 0.16f),
             tintFg = battFg,
             label = "Pin", valueKw = flow.battKw,
@@ -448,7 +454,7 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
 
 @Composable
 private fun FlowNode(
-    icon: String,
+    icon: @Composable () -> Unit,
     tintBg: Color,
     tintFg: Color,
     label: String,
@@ -475,7 +481,12 @@ private fun FlowNode(
                 .clip(CircleShape)
                 .background(tintBg),
         ) {
-            MsIcon(icon, null, tint = tintFg, modifier = Modifier.size(24.dp))
+            Box(
+                modifier = Modifier.size(28.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                icon()
+            }
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -541,13 +552,19 @@ private fun FlowNode(
  */
 @Composable
 private fun SegBar(
-    items: List<Triple<String, Double, Color>>,
+    items: List<Pair<String, Double>>,
     total: Double,
 ) {
     val cs = MaterialTheme.colorScheme
     val safeTotal = total.coerceAtLeast(0.01)
+    // Mau segment theo ty le gia tri: cao = dam (primary), thap = nhat (primaryContainer)
+    val maxKw = items.maxOfOrNull { it.second }?.coerceAtLeast(0.01) ?: 0.01
+    fun segColor(kw: Double): Color {
+        val t = (kw / maxKw).toFloat().coerceIn(0f, 1f)
+        return androidx.compose.ui.graphics.lerp(cs.primaryContainer, cs.primary, 0.25f + 0.75f * t)
+    }
     Column {
-        // Thanh segment: cac doan mau theo ty le, gap 2dp, min-width tuong duong 8px
+        // Thanh segment: cac doan mau dam/nhat theo gia tri, gap 2dp, min-width tuong duong 8px
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -556,7 +573,7 @@ private fun SegBar(
                 .background(cs.surfaceContainerHigh),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            items.forEach { (_, kw, c) ->
+            items.forEach { (_, kw) ->
                 val frac by animateFloatAsState(
                     targetValue = (kw / safeTotal).toFloat().coerceIn(0f, 1f),
                     animationSpec = tween(800, easing = M3EMotion.emphasized),
@@ -567,35 +584,26 @@ private fun SegBar(
                         .weight(frac.coerceAtLeast(0.001f))
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(c),
+                        .background(segColor(kw)),
                 )
             }
         }
-        // Legend: cham mau 6dp + label
+        // Legend: chi ten, khong cham mau
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items.forEach { (name, _, c) ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(c),
-                    )
-                    Text(
-                        name,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                        color = cs.onSurfaceVariant,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier.padding(start = 3.dp),
-                    )
-                }
+            items.forEach { (name, _) ->
+                Text(
+                    name,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                    color = cs.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
         }
     }

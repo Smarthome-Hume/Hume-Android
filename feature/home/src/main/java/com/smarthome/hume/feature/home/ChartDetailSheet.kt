@@ -92,12 +92,20 @@ fun ChartDetailSheet(
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MsIcon(
-                        if (type == ChartDetailType.Battery) Ms.battery_6_bar else M3EIcons.SolarPower,
-                        null,
-                        tint = cs.primary,
-                        modifier = Modifier.size(30.dp),
-                    )
+                    if (type == ChartDetailType.Battery) {
+                        HorizontalBatteryIcon(
+                            soc = 100,
+                            color = cs.primary,
+                            modifier = Modifier.size(width = 34.dp, height = 20.dp),
+                        )
+                    } else {
+                        MsIcon(
+                            M3EIcons.SolarPower,
+                            null,
+                            tint = cs.primary,
+                            modifier = Modifier.size(30.dp),
+                        )
+                    }
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(

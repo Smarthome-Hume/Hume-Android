@@ -63,7 +63,13 @@ fun EnergySolarTab(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Expander(
-            icon = M3EIcons.batteryLevel(state.battery.soc.roundToInt()),
+            icon = {
+                HorizontalBatteryIcon(
+                    soc = state.battery.soc.roundToInt(),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(width = 28.dp, height = 16.dp),
+                )
+            },
             title = "Sạc pin",
             subtitle = "${state.chargeControls.size} điều khiển",
             open = ui.chargeOpen,
@@ -81,7 +87,13 @@ fun EnergySolarTab(
             }
         }
         Expander(
-            icon = M3EIcons.batteryLevel(state.battery.soc.roundToInt()),
+            icon = {
+                HorizontalBatteryIcon(
+                    soc = state.battery.soc.roundToInt(),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(width = 28.dp, height = 16.dp),
+                )
+            },
             title = "Xả pin",
             subtitle = "${state.dischargeControls.size} điều khiển",
             open = ui.dischargeOpen,
@@ -356,11 +368,12 @@ private fun Expander(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
-                MsIcon(
-                    icon, null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(24.dp),
-                )
+                Box(
+                    modifier = Modifier.size(28.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    icon()
+                }
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
