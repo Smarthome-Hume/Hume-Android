@@ -378,24 +378,30 @@ internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): S
  * Dung chung cho SuggestCard + HomeScreen.
  */
 internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
+    // Goi y chuyen dong: gom theo phong, moi phong chi giu 1 goi y co sensor
+    // trigger GAN NHAT (vd 4 sensor phong khach trigger khac gio -> 1 the).
+    val motionTips = state.notifications
+        .filter { it.title == "Phát hiện chuyển động" }
+        .groupBy { roomNameForSensor(it.id) ?: it.id }
+        .mapNotNull { (_, ns) ->
+            val n = ns.minByOrNull { it.minutesAgo ?: Int.MAX_VALUE } ?: return@mapNotNull null
+            val room = roomNameForSensor(n.id)
+            SuggestTip(
+                key = "motion:${n.id}",
+                title = if (room != null) "Có chuyển động ở $room" else "Phát hiện chuyển động",
+                sub = listOf(n.body, n.timeText).filter { it.isNotBlank() }.joinToString(" · "),
+                action = "Xem camera",
+            )
+        }
     return buildList<SuggestTip> {
+        addAll(motionTips)
     if (state.battery.soc in 1..29) add(SuggestTip(
         "battery", "Pin còn ${state.battery.soc}%",
         "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
     val doors = state.notifications.filter { it.title.contains("Cửa") }
     if (doors.isNotEmpty()) add(SuggestTip(
         "door", doors.first().title, doors.first().body, "Đóng"))
-    state.notifications
-        .filter { it.title == "Phát hiện chuyển động" }
-        .forEach { n ->
-            val room = roomNameForSensor(n.id)
-            add(SuggestTip(
-                key = "motion:${n.id}",
-                title = if (room != null) "Có chuyển động ở $room" else "Phát hiện chuyển động",
-                sub = listOf(n.body, n.timeText).filter { it.isNotBlank() }.joinToString(" · "),
-                action = "Xem camera",
-            ))
-        }
+    // (goi y chuyen dong da gom theo phong o tren: addAll(motionTips))
     // Dieu hoa chay trong khi cua mo cung phong -> ton dien
     doors.forEach { d ->
         val roomName = roomNameForSensor(d.id) ?: return@forEach
@@ -454,7 +460,9 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
     ))
     // Goi y ve chuyen dong/hieu nang cua dien thoai: bo qua,
     // khong dua vao danh sach goi y.
-    }.filterNot { isPhoneMotionTip(it.title, it.sub) }
+    // Chong trung tieu de giua cac loai goi y: giu goi y dau tien (moi nhat).
+    }.distinctBy { it.title }
+        .filterNot { isPhoneMotionTip(it.title, it.sub) }
 }
 
 @Composable

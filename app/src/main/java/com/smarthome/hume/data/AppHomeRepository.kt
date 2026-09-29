@@ -286,11 +286,11 @@ class AppHomeRepository(
                 }
                 when (dc) {
                     "door", "window", "garage_door", "opening" ->
-                        out += HomeNotification(e.id, "Cửa đang mở", name, time)
+                        out += HomeNotification(e.id, "Cửa đang mở", name, time, e.minutesAgo())
                     "motion", "occupancy", "presence" ->
-                        out += HomeNotification(e.id, "Phát hiện chuyển động", name, time)
-                    "smoke" -> out += HomeNotification(e.id, "Cảnh báo khói!", name, time)
-                    "moisture" -> out += HomeNotification(e.id, "Phát hiện rò nước!", name, time)
+                        out += HomeNotification(e.id, "Phát hiện chuyển động", name, time, e.minutesAgo())
+                    "smoke" -> out += HomeNotification(e.id, "Cảnh báo khói!", name, time, e.minutesAgo())
+                    "moisture" -> out += HomeNotification(e.id, "Phát hiện rò nước!", name, time, e.minutesAgo())
                 }
             }
         return out.take(12)

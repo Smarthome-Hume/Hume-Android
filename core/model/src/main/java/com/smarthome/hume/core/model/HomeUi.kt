@@ -43,6 +43,8 @@ data class HomeNotification(
     val title: String,
     val body: String,
     val timeText: String,
+    /** So phut tu luc sensor trigger (de gom goi y trung: giu cai gan nhat). */
+    val minutesAgo: Int? = null,
 )
 
 enum class DeviceKind { Toggle, Climate }

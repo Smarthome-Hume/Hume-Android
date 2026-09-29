@@ -185,8 +185,8 @@ fun MeScreen(
             .padding(top = 8.dp)
             .padding(horizontal = 18.dp)
             // Muc cuoi (mau tuy chinh) cach navbar 20dp: navbar floating cao
-            // ~86dp + margin 20dp + system inset -> day content 120dp.
-            .padding(bottom = 120.dp),
+            // ~86dp + margin 20dp + system inset -> day content 140dp.
+            .padding(bottom = 140.dp),
     ) {
         // Title: chi title duoc boc nen
         Column(Modifier.fillMaxWidth()) {

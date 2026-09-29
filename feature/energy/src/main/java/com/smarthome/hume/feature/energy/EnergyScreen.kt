@@ -67,7 +67,7 @@ fun EnergyScreen(
             .statusBarsPadding()
             // The cuoi trang cach navbar 20dp (navbar floating ~86dp +
             // margin 20dp + system inset).
-            .padding(top = 8.dp, start = 18.dp, end = 18.dp, bottom = 120.dp),
+            .padding(top = 8.dp, start = 18.dp, end = 18.dp, bottom = 140.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
