@@ -94,6 +94,7 @@ private val cameras = listOf(
     SecurityCamera("kitchen", "Ph\u00f2ng \u0103n"),
     SecurityCamera("outdoor", "Ngo\u00e0i tr\u1eddi"),
     SecurityCamera("server", "Ph\u00f2ng th\u1edd"),
+    SecurityCamera("bedroom", "Ph\u00f2ng ng\u1ee7"),
 )
 
 /** SensorDef in SecurityView.swift. `kind` drives the status wording. */

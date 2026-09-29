@@ -127,6 +127,7 @@ class AppSecurityRepository(
             SecurityCamera("kitchen", "Phòng ăn"),
             SecurityCamera("outdoor", "Ngoài trời"),
             SecurityCamera("server", "Phòng thờ"),
+            SecurityCamera("bedroom", "Phòng ngủ"),
         )
 
         private val DOOR_SENSORS = listOf(
