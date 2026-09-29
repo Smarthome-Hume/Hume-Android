@@ -13,13 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -120,15 +123,19 @@ fun SecurityScreen(
     val motionSensors = state.motionSensors
 
     Box(Modifier.fillMaxSize()) {
+        // Full-bleed tran duoi status bar trong suot (2026-09-30): khong
+        // statusBarsPadding o modifier; inset status bar la Spacer dau tien
+        // de scroll lien mach (nhu tab Nha).
+        val statusBarTop =
+            WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .padding(top = 8.dp)
                 .padding(horizontal = 18.dp)
                 .padding(bottom = 130.dp),
         ) {
+            Spacer(Modifier.height(statusBarTop + 8.dp))
             // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
             Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp)) {
                 Box(

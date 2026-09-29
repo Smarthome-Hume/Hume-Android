@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +35,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -138,7 +141,8 @@ fun HomeScreen(
 
     Scaffold(
         // Loai status bar khoi insets mac dinh cua Scaffold de tu xu ly:
-        // statusBarsPadding() + contentPadding top 8dp = status bar + 8dp.
+        // full-bleed tran duoi status bar trong suot; inset status bar nam
+        // trong contentPadding cua LazyColumn (lien mach khi scroll).
         contentWindowInsets = WindowInsets.navigationBars,
         snackbarHost = {
             // .snack{left:16;right:16;bottom:104} theo demo: snackbar nam TREN
@@ -178,15 +182,23 @@ fun HomeScreen(
             isRefreshing = ui.isRefreshing,
             onRefresh = { viewModel.refresh() },
             state = pullState,
-            modifier = Modifier.padding(padding).statusBarsPadding(),
+            // Full-bleed tran duoi status bar (trong suot): noi dung scroll
+            // chui xuong duoi status bar roi bien mat lien mach, khong con
+            // duong cat cung tai mep padding (2026-09-30, user yeu cau).
+            // Inset status bar chuyen vao contentPadding cua LazyColumn.
+            modifier = Modifier.padding(padding),
             indicator = {
                 MorphLoaderIndicator(
                     isRefreshing = ui.isRefreshing,
                     state = pullState,
-                    modifier = Modifier.align(Alignment.TopCenter),
+                    modifier = Modifier.align(Alignment.TopCenter)
+                        .statusBarsPadding(),
                 )
             },
         ) {
+            // Chieu cao status bar de cong vao top contentPadding.
+            val statusBarTop =
+                WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
@@ -195,7 +207,11 @@ fun HomeScreen(
                     contentPadding = PaddingValues(
                         // Bottom 140dp: dong nhat voi cac tab khac (FAB da tam
                         // xoa) — the cuoi cach navbar noi ~20px.
-                        start = 18.dp, end = 18.dp, top = 8.dp, bottom = 140.dp,
+                        // Top = status bar + 8dp: item dau nam duoi status bar,
+                        // khi scroll cac item truot XUONG DUOI status bar trong
+                        // suot roi moi bien mat (lien mach, khong cat cung).
+                        start = 18.dp, end = 18.dp,
+                        top = statusBarTop + 8.dp, bottom = 140.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12

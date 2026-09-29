@@ -32,13 +32,16 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -178,17 +181,21 @@ fun MeScreen(
         else getVideo.launch("video/*")
     }
 
+    // Full-bleed tran duoi status bar trong suot (2026-09-30): khong
+    // statusBarsPadding o modifier; inset status bar la Spacer dau tien
+    // de scroll lien mach (nhu tab Nha).
+    val statusBarTop =
+        WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
-            .padding(top = 8.dp)
             .padding(horizontal = 18.dp)
             // Muc cuoi (mau tuy chinh) cach navbar 20dp: navbar floating cao
             // ~86dp + margin 20dp + system inset -> day content 140dp.
             .padding(bottom = 140.dp),
     ) {
+        Spacer(Modifier.height(statusBarTop + 8.dp))
         // Title: chi title duoc boc nen
         Column(Modifier.fillMaxWidth()) {
             Box(

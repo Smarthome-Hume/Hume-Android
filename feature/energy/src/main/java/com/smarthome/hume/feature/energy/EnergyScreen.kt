@@ -4,12 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -60,14 +64,20 @@ fun EnergyScreen(
         }
     }
 
+    // Full-bleed tran duoi status bar trong suot (2026-09-30): inset status
+    // bar nam trong contentPadding de scroll lien mach (nhu tab Nha).
+    val statusBarTop =
+        WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-            .statusBarsPadding()
+            .background(MaterialTheme.colorScheme.surface),
+        contentPadding = PaddingValues(
             // The cuoi trang cach navbar 20dp (navbar floating ~86dp +
             // margin 20dp + system inset).
-            .padding(top = 8.dp, start = 18.dp, end = 18.dp, bottom = 140.dp),
+            top = statusBarTop + 8.dp, start = 18.dp, end = 18.dp,
+            bottom = 140.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {

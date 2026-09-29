@@ -12,18 +12,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.drawToBitmap
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -247,20 +249,27 @@ fun M3ERootScreen(
                 }
             }
             } // CompositionLocalProvider(LocalContentColor)
-            // Nen dac co dinh sau status bar (2026-09-30, user bao noi dung
-            // bi cat ngang khi scroll toi thanh status bar): status bar trong
-            // suot + edge-to-edge nen the scroll len se loi chu/hinh len vung
-            // icon he thong. Lop nay dung yen, noi dung chui xuong duoi sach.
-            // Dat tren content 4 tab, duoi navbar/overlay.
+            // Lop phu gradient mo dan sau status bar (2026-09-30, user yeu
+            // cau theo kieu app Muse): dinh dac nhat (alpha 0.92, van nhin
+            // lo mo thay noi dung ben duoi) -> trong suot dan xuong duoi.
+            // Noi dung scroll chui xuong duoi va mo dan lien mach, khong co
+            // duong cat cung. Khong chan touch (khong co clickable).
+            // Tren content 4 tab, duoi navbar/overlay.
+            val fadeTop = WindowInsets.statusBars.asPaddingValues()
+                .calculateTopPadding() + 80.dp
+            val scrim = MaterialTheme.colorScheme.surface
             Box(
                 Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .height(
-                        WindowInsets.statusBars.asPaddingValues()
-                            .calculateTopPadding(),
-                    )
-                    .background(MaterialTheme.colorScheme.surface),
+                    .height(fadeTop)
+                    .background(
+                        Brush.verticalGradient(
+                            0.0f to scrim.copy(alpha = 0.92f),
+                            0.55f to scrim.copy(alpha = 0.45f),
+                            1.0f to scrim.copy(alpha = 0.0f),
+                        ),
+                    ),
             )
             M3ENavBar(
                 selected = selected,
