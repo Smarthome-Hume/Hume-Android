@@ -36,6 +36,10 @@ class AppSecurityRepository(
     private val _state = MutableStateFlow(SecurityUiState(cameras = CAMERAS))
     override val securityState: StateFlow<SecurityUiState> = _state.asStateFlow()
 
+    /** Tat ca sensor an ninh de dashboard dang ky realtime (2026-09-30). */
+    override val sensorEntityIds: Set<String> =
+        (DOOR_SENSORS + MOTION_SENSORS + ENV_SENSORS).map { it.id }.toSet()
+
     private val frigate = FrigateStore.get(context)
     private val refreshed = mutableSetOf<String>()
 

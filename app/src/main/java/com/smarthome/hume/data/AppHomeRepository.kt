@@ -61,7 +61,12 @@ class AppHomeRepository(
                         ha.isConnecting() -> ConnectionState.Connecting
                         else -> ConnectionState.Disconnected
                     }
-                    _homeState.value = buildState(entities, connected, connState)
+                    val newState = buildState(entities, connected, connState)
+                    _homeState.value = newState
+                    // Realtime (2026-09-30): dang ky watched entities cho dashboard M3E
+                    // (truoc day chi ViewModel cu goi setWatchedEntities, dashboard moi
+                    // khong goi -> sensor roi vao bucket ONE_DAY, khong realtime).
+                    updateWatched(newState)
                 }
         }
         scope.launch {
@@ -77,6 +82,27 @@ class AppHomeRepository(
     }
 
     // ---------- actions ----------
+
+    /** Dang ky realtime cho cac entity dashboard dang hien (2026-09-30). */
+    private var lastWatched: Set<String> = emptySet()
+    private fun updateWatched(s: HomeUiState) {
+        val ids = HashSet<String>()
+        // Tat ca thiet bi (config + climate + tu phat hien) — bao gom sensor dien.
+        s.searchDevices.forEach { ids.add(it.entityId) }
+        s.lightsOn.forEach { ids.add(it.entityId) }
+        s.alarm?.let { ids.add(it.entityId) }
+        // Nang luong: PV + pin.
+        ids.add(HumeConfig.PV_POWER); ids.add(HumeConfig.PV_TODAY)
+        ids.add(HumeConfig.BATTERY_SOC); ids.add(HumeConfig.BATTERY_POWER)
+        // An ninh: sensor cua/chuyen dong/khoi/nuoc.
+        runCatching {
+            ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
+        }
+        if (ids != lastWatched) {
+            lastWatched = ids
+            ha.setWatchedEntities(ids)
+        }
+    }
 
     override fun toggle(entityId: String) = ha.toggle(entityId)
     override fun setLightBrightness(entityId: String, percent: Int) =
@@ -278,16 +304,38 @@ class AppHomeRepository(
             "switch" -> {
                 val isOutlet = listOf("plug", "outlet", "socket", "o_cam", "ocam")
                     .any { it in idLower }
-                if (isOutlet) DeviceUi(e.id, name, "ổ cắm", "plug", DeviceKind.Toggle, e.isOn)
-                else DeviceUi(e.id, name, "công tắc", "switch", DeviceKind.Toggle, e.isOn)
+                val baseIcon = if (isOutlet) "plug" else "switch"
+                val baseSub = if (isOutlet) "ổ cắm" else "công tắc"
+                DeviceUi(e.id, name, baseSub, iconForName(name, baseIcon), DeviceKind.Toggle, e.isOn)
             }
-            "fan" -> DeviceUi(e.id, name, "quạt", "fan", DeviceKind.Toggle, e.isOn)
+            "fan" -> DeviceUi(e.id, name, "quạt", iconForName(name, "fan"), DeviceKind.Toggle, e.isOn)
             "cover" -> DeviceUi(e.id, name, "rèm", "blinds", DeviceKind.Toggle, e.isOn)
             "lock" -> DeviceUi(
                 e.id, name, "khóa", "lock",
                 DeviceKind.Toggle, e.state == "locked",
             )
-            else -> DeviceUi(e.id, name, "", "switch", DeviceKind.Toggle, e.isOn)
+            else -> DeviceUi(e.id, name, "", iconForName(name, "switch"), DeviceKind.Toggle, e.isOn)
+        }
+    }
+
+    /**
+     * Icon theo ten thiet bi (2026-09-30): uu tien ten cu the (tu lanh, may giat...)
+     * truoc khi dung icon mac dinh theo domain. Giong M3EIcons.device().
+     */
+    private fun iconForName(name: String, fallback: String): String {
+        val n = name.lowercase()
+        return when {
+            "tủ lạnh" in n || "tu lanh" in n || "refrigerator" in n || "fridge" in n -> "fridge"
+            "máy giặt" in n || "may giat" in n || "washing" in n -> "washer"
+            "máy sấy" in n || "may say" in n || "sấy" in n || "dryer" in n -> "dryer"
+            "máy rửa bát" in n || "rua bat" in n || "dishwasher" in n -> "dishwasher"
+            "tivi" in n || "tv" in n || "ti vi" in n -> "tv"
+            "quạt" in n || "quat" in n || "fan" in n -> "fan"
+            "điều hoà" in n || "dieu hoa" in n || "máy lạnh" in n || "may lanh" in n -> "snowflake"
+            "bếp" in n || "bep" in n || "nồi chiên" in n || "noi chien" in n || "cooking" in n -> "cooking"
+            "đèn" in n || "den" in n || "light" in n -> "bulb"
+            "ổ cắm" in n || "o cam" in n || "plug" in n || "outlet" in n -> "plug"
+            else -> fallback
         }
     }
 

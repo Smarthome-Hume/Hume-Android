@@ -176,7 +176,7 @@ data class RoomBubbleConfig(
                     DeviceConfig.toggle("light.cong_tac_phong_an_l3", "D\u1ea3i \u0111\u00e8n", "D\u1ea3i \u0111\u00e8n ph\u00f2ng \u0103n", "bulb"),
                     DeviceConfig.toggle("light.cong_tac_wc_t1", "\u0110\u00e8n WC", "\u0110\u00e8n nh\u00e0 v\u1ec7 sinh t\u1ea7ng 1", "bulb"),
                     DeviceConfig.toggle("switch.o_cam_bep_tu", "B\u1ebfp t\u1eeb", "\u1ed4 c\u1eafm b\u1ebfp t\u1eeb", "cooking", "sensor.o_cam_bep_tu_power"),
-                    DeviceConfig.toggle("switch.o_cam_tu_lanh", "T\u1ee7 l\u1ea1nh", "\u1ed4 c\u1eafm t\u1ee7 l\u1ea1nh", "snowflake", "sensor.o_cam_tu_lanh_power"),
+                    DeviceConfig.toggle("switch.o_cam_tu_lanh", "T\u1ee7 l\u1ea1nh", "\u1ed4 c\u1eafm t\u1ee7 l\u1ea1nh", "fridge", "sensor.o_cam_tu_lanh_power"),
                     DeviceConfig.toggle("switch.o_cam_noi_chien", "N\u1ed3i chi\u00ean", "\u1ed4 c\u1eafm n\u1ed3i chi\u00ean", "cooking", "sensor.o_cam_noi_chien_power"),
                     DeviceConfig.toggle("switch.o_cam_may_rua_bat", "M\u00e1y r\u1eeda b\u00e1t", "\u1ed4 c\u1eafm m\u00e1y r\u1eeda b\u00e1t", "dishwasher", "sensor.o_cam_may_rua_bat_power"),
                 ),

@@ -295,6 +295,7 @@ fun HomeScreen(
                                 SolarLiveCard(
                                     state,
                                     onClick = { chartDetail = ChartDetailType.Solar },
+                                    loadHistory = loadChartHistory,
                                 )
                             }
                         }

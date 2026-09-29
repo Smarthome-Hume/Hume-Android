@@ -145,7 +145,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         }
         Spacer(Modifier.height(14.dp))
         val vals = state.week.map { if (it.isToday) todayVal.toFloat() else it.kwh.toFloat() }
-        val labels = state.week.map { if (it.isToday) "HN" else it.label }
+        val labels = state.week.map { it.label }
         if (vals.isNotEmpty()) {
             WeekChartD(vals = vals, labels = labels)
         } else {

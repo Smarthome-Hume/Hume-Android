@@ -54,6 +54,7 @@ import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.RoomUi
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.components.DeviceIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.M3EMotion
@@ -584,8 +585,8 @@ fun DeviceRow(
                     else extra.surfaceHigh,
                 ),
         ) {
-            MsIcon(
-                M3EIcons.device(d.iconKey), null,
+            DeviceIcon(
+                d.iconKey, null,
                 tint = if (d.isOn) cs.onPrimaryContainer
                 else cs.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),

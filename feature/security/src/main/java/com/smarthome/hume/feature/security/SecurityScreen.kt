@@ -112,12 +112,12 @@ fun SecurityScreen(
     val state by vm.state.collectAsState()
     val selectedCam by vm.selectedCam.collectAsState()
     val clip by vm.clip.collectAsState()
-    val flicker by vm.flicker.collectAsState()
     val haptic = rememberHaptic()
     val cs = MaterialTheme.colorScheme
 
-    // "Live flicker" demo: override trang thai motion sensor duoc VM random moi 22s.
-    val motionSensors = state.motionSensors.map { flicker[it.entityId] ?: it }
+    // Sensor hien data that tu HA (repo). Da xoa "live flicker" demo
+    // (random toggle + "Vua xong" moi 22s) ngay 2026-09-30.
+    val motionSensors = state.motionSensors
 
     Box(Modifier.fillMaxSize()) {
         Column(

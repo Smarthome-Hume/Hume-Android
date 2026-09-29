@@ -840,25 +840,39 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
  * ve 2 gio lien tiep gan nhat.
  */
 @Composable
-fun SolarLiveCard(state: HomeUiState, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun SolarLiveCard(
+    state: HomeUiState,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    loadHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
+) {
     val cs = MaterialTheme.colorScheme
     val kw = state.solarNowKw.coerceAtLeast(0.0)
     val sub = if (kw > 0.005) "Đang phát · ${"%.1f".format(kw)} kW"
     else "Tạm nghỉ · ${"%.1f".format(kw)} kW"
-    // Lich su PV 2 gio lien tiep cho sparkline: sample moi 2 phut (KE CA KHI
-    // = 0) + them diem khi gia tri doi dang ke, de duong line luon lien tuc.
+    // Lich su PV 2 gio lien tiep cho sparkline: NAP TU HA HISTORY ngay khi hien
+    // the (2026-09-30) de line co san lap tuc, sau do sample live moi 2 phut
+    // (KE CA KHI = 0) + them diem khi gia tri doi dang ke.
     val kwNow by rememberUpdatedState(kw)
     var history by remember { mutableStateOf(listOf<Pair<Long, Double>>()) }
     val historyNow by rememberUpdatedState(history)
     LaunchedEffect(Unit) {
         val windowMs = 2 * 3600 * 1000L
+        val now0 = System.currentTimeMillis()
         fun push(v: Double) {
             val now = System.currentTimeMillis()
             history = (historyNow + (now to v))
                 .filter { now - it.first <= windowMs }
                 .takeLast(90)
         }
-        push(kwNow) // diem dau tien ngay khi hien the
+        // Nap 2h lich su that tu HA truoc — line hien ngay, khong doi 2 phut.
+        try {
+            val past = loadHistory(
+                ChartHistorySeries.SolarPower, now0 - windowMs, now0,
+            ).filter { now0 - it.first <= windowMs }.takeLast(90)
+            if (past.isNotEmpty()) history = past
+        } catch (_: Exception) { /* offline -> dung live sampling */ }
+        push(kwNow) // diem hien tai
         var lastPush = System.currentTimeMillis()
         var lastVal = kwNow
         while (true) {

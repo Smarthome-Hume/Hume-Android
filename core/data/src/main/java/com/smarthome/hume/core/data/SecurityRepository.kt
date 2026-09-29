@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface SecurityRepository {
     val securityState: StateFlow<SecurityUiState>
 
+    /** Entity ID cac sensor an ninh (cua/chuyen dong/khoi/nuoc) de dang ky realtime. */
+    val sensorEntityIds: Set<String>
+
     /** Tai lai danh sach clip Frigate cho camera. */
     fun refreshRecordings(cameraKey: String)
 
