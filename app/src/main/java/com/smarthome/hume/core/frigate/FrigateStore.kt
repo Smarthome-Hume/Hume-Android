@@ -186,6 +186,33 @@ class FrigateStore private constructor(context: Context) {
         null
     }
 
+    /**
+     * Event moi nhat cua 1 camera: (label, startTime epoch giay).
+     * Nhe (chi goi /api/events, khong tai clip) de tab Nha gan nhan doi
+     * tuong cho the goi y chuyen dong. Tra ve null khi khong lay duoc.
+     */
+    suspend fun latestEvent(camera: String, haUrl: String, token: String): Pair<String, Double>? =
+        withContext(Dispatchers.IO) {
+            val proxy = haUrl.trimEnd('/') + "/frigate"
+            val raw = fetchFirst(
+                listOf(
+                    proxy + "/api/events?cameras=" + camera + "&limit=5" to token,
+                    proxy + "/api/events?camera=" + camera + "&limit=5" to token,
+                    FRIGATE + "/api/events?cameras=" + camera + "&limit=5" to null,
+                    FRIGATE + "/api/events?camera=" + camera + "&limit=5" to null,
+                ),
+            ) ?: return@withContext null
+            val events = runCatching {
+                json.parseToJsonElement(String(raw)) as JsonArray
+            }.getOrNull() ?: return@withContext null
+            events.mapNotNull { element ->
+                val obj = element as? JsonObject ?: return@mapNotNull null
+                val label = obj["label"]?.jsonPrimitive?.content.orEmpty()
+                val start = obj["start_time"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+                if (start <= 0) null else label to start
+            }.maxByOrNull { it.second }
+        }
+
     companion object {
         const val FRIGATE = "http://192.168.102.64:5000"
         private const val TAG = "HumeHA"

@@ -104,4 +104,11 @@ data class HomeUiState(
      * da phan loai dung (dieu hoa / den / o cam / ...). */
     val searchDevices: List<DeviceUi> = emptyList(),
     val notifications: List<HomeNotification> = emptyList(),
+    /**
+     * Doi tuong Frigate phan loai gan nhat theo sensor chuyen dong:
+     * sensor entity_id -> nhan tieng Viet ("người", "ô tô"...).
+     * Dung de mo ta chi tiet trong the goi y ("Có người hoạt động lúc 06:25").
+     * Rong khi Frigate chua co event gan day -> fallback mo ta chung.
+     */
+    val motionObjects: Map<String, String> = emptyMap(),
 )

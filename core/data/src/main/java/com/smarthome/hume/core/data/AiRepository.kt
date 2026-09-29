@@ -4,6 +4,7 @@ import com.smarthome.hume.core.datastore.AiProvider
 import com.smarthome.hume.core.datastore.AiSettings
 import com.smarthome.hume.core.datastore.AiSettingsStore
 import com.smarthome.hume.core.model.HomeUiState
+import com.smarthome.hume.core.model.roomNameForSensor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -145,7 +146,11 @@ class AiRepositoryImpl(
         val doors = s.notifications.filter { it.title.contains("Cửa") }
         doors.forEach { sb.appendLine("- ${it.title}: ${it.body}") }
         s.notifications.filter { it.title == "Phát hiện chuyển động" }
-            .forEach { sb.appendLine("- Đang có chuyển động: ${it.body} (${it.timeText})") }
+            .forEach { n ->
+                val where = roomNameForSensor(n.id) ?: n.body
+                val what = s.motionObjects[n.id]?.let { "có $it" } ?: "chuyển động"
+                sb.appendLine("- $where: $what (${n.timeText})")
+            }
         return sb.toString()
     }
 
@@ -311,6 +316,7 @@ class AiRepositoryImpl(
         private val SYSTEM_PROMPT = """
 Bạn là trợ lý nhà thông minh Hume. Dựa trên trạng thái nhà, đưa ra 1-3 gợi ý NGẮN GỌN, thiết thực bằng tiếng Việt để tiết kiệm điện, tăng an toàn, tiện nghi.
 Nếu đang có chuyển động ở phòng nào, ưu tiên gợi ý xem camera phòng đó (action "Xem camera").
+Mô tả chuyển động đã kèm đối tượng Frigate phân loại được (người/ô tô/chó/mèo...) — nêu rõ đối tượng trong tiêu đề hoặc mô tả gợi ý, ví dụ "Có người hoạt động ở Phòng khách".
 Camera có sẵn: Phòng khách, Phòng bếp/ăn, Ngoài trời, Phòng thờ, Phòng ngủ — khi gợi ý xem camera, nêu đúng tên camera theo đúng vị trí phát hiện chuyển động (chuyển động ngoài trời thì xem camera Ngoài trời, không phải camera phòng khác).
 Chỉ trả về JSON thuần (không markdown, không giải thích thêm), đúng định dạng:
 [{"title":"Tiêu đề ngắn","sub":"Mô tả 1 câu, có số liệu cụ thể nếu được","action":"Nhãn nút ≤4 từ"}]

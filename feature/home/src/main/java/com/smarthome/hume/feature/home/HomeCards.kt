@@ -72,6 +72,8 @@ import androidx.compose.material3.TextButton
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.HomeUiState
+import com.smarthome.hume.core.model.cameraKeyForSensor
+import com.smarthome.hume.core.model.roomNameForSensor
 import com.smarthome.hume.core.model.ConnectionState
 import com.smarthome.hume.core.model.SecurityCamera
 import com.smarthome.hume.core.model.SolarDay
@@ -339,48 +341,13 @@ internal data class SuggestTip(
 )
 
 /**
- * Map entity cam bien chuyen dong -> ten phong de goi y theo phong.
- * (entity_id HA khong dau, vd binary_sensor.cam_bien_pir_phong_tho_occupancy)
- */
-internal fun roomNameForSensor(entityId: String): String? {
-    val id = entityId.lowercase()
-    return when {
-        "phong_ngu_be" in id || "tre_em" in id -> "Phòng Trẻ Em"
-        "phong_ngu" in id || "bedroom" in id -> "Phòng Ngủ"
-        "phong_tho" in id || "worship" in id -> "Phòng Thờ"
-        "phong_tam" in id || "nha_tam" in id || "ve_sinh" in id || "bath" in id -> "Phòng Tắm"
-        "phong_khach" in id || "living" in id -> "Phòng Khách"
-        "bep" in id || "kitchen" in id -> "Phòng Bếp"
-        "giat" in id || "washing" in id || "laundry" in id -> "Phòng Giặt"
-        "hanh_lang" in id || "hall" in id -> "Hành Lang"
-        // Ngoai troi/san: phai co truoc khi fallback null de cameraForSensor
-        // map dung cam ngoai troi thay vi roi ve cameras.first().
-        "ngoai_troi" in id || "ngoai" in id || "outdoor" in id ||
-            "san_truoc" in id || "san_sau" in id || "sanh" in id -> "Ngoài trời"
-        else -> null
-    }
-}
-
-/**
- * Camera phu hop nhat cho sensor chuyen dong: uu tien match truc tiep key
- * camera trong entity_id (vd "outdoor"), sau do theo phong cua sensor;
+ * Camera phu hop nhat cho sensor chuyen dong: theo key tu cameraKeyForSensor;
  * khong map duoc thi lay camera dau tien. Ten hien thi lay tu danh sach
  * camera cua tab An ninh (AppSecurityRepository.CAMERAS).
  */
 internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): SecurityCamera? {
     if (cameras.isEmpty()) return null
-    val id = sensorId.lowercase()
-    // 1. Key camera xuat hien truc tiep trong entity_id.
-    cameras.firstOrNull { it.key.lowercase() in id }?.let { return it }
-    // 2. Theo phong cua sensor.
-    val key = when (roomNameForSensor(sensorId)) {
-        "Phòng Khách" -> "living"
-        "Phòng Bếp" -> "kitchen"
-        "Phòng Ngủ" -> "bedroom"
-        "Phòng Thờ" -> "server"
-        "Ngoài trời" -> "outdoor"
-        else -> null
-    }
+    val key = cameraKeyForSensor(sensorId)
     return key?.let { k -> cameras.firstOrNull { it.key == k } } ?: cameras.first()
 }
 
@@ -393,17 +360,28 @@ internal fun cameraForSensor(sensorId: String, cameras: List<SecurityCamera>): S
 internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
     // Goi y chuyen dong: gom theo phong, moi phong chi giu 1 goi y co sensor
     // trigger GAN NHAT (vd 4 sensor phong khach trigger khac gio -> 1 the).
+    // Mo ta chi tiet theo phan loai Frigate (vd "Có người hoạt động lúc 06:25").
     val motionTips = state.notifications
         .filter { it.title == "Phát hiện chuyển động" }
         .groupBy { roomNameForSensor(it.id) ?: it.id }
         .mapNotNull { (_, ns) ->
             val n = ns.minByOrNull { it.minutesAgo ?: Int.MAX_VALUE } ?: return@mapNotNull null
             val room = roomNameForSensor(n.id)
+            val obj = state.motionObjects[n.id]
+            val sub = if (obj != null) {
+                val hm = n.minutesAgo?.let { mins ->
+                    try {
+                        java.time.LocalTime.now().minusMinutes(mins.toLong())
+                            .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+                    } catch (e: Exception) { null }
+                }
+                if (hm != null) "Có $obj hoạt động lúc $hm" else "Có $obj hoạt động (${n.timeText})"
+            } else n.timeText
             SuggestTip(
                 key = "motion:${n.id}",
-                // Title: ten phong / vi tri xuat hien; Subtitle: lastchange.
+                // Title: ten phong / vi tri xuat hien; Subtitle: doi tuong + gio.
                 title = room ?: n.body.ifBlank { "Phát hiện chuyển động" },
-                sub = n.timeText,
+                sub = sub,
                 action = "Xem camera",
             )
         }

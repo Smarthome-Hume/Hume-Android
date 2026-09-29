@@ -18,6 +18,8 @@ import com.smarthome.hume.core.model.RoomBubbleConfig
 import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.model.RoomUi
 import com.smarthome.hume.core.model.SolarDay
+import com.smarthome.hume.core.model.cameraKeyForSensor
+import com.smarthome.hume.core.model.frigateLabelVi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
@@ -51,6 +54,11 @@ class AppHomeRepository(
 
     private val weekCache = mutableMapOf<Long, Double>()
     private val snapshots = com.smarthome.hume.core.storage.DailySnapshotStore.get(appContext)
+    private val settingsStore = com.smarthome.hume.core.storage.SettingsStore(appContext)
+    private val frigateStore = com.smarthome.hume.core.frigate.FrigateStore.get(appContext)
+    /** Lan cuoi goi Frigate lay nhan doi tuong (tranh spam moi lan entity doi). */
+    private var motionFetchAt = 0L
+    private var motionFetchIds: Set<String> = emptySet()
 
     init {
         scope.launch {
@@ -62,7 +70,7 @@ class AppHomeRepository(
                         else -> ConnectionState.Disconnected
                     }
                     val newState = buildState(entities, connected, connState)
-                    _homeState.value = newState
+                    _homeState.value = enrichMotionObjects(newState, connected)
                     // Realtime (2026-09-30): dang ky watched entities cho dashboard M3E
                     // (truoc day chi ViewModel cu goi setWatchedEntities, dashboard moi
                     // khong goi -> sensor roi vao bucket ONE_DAY, khong realtime).
@@ -250,6 +258,50 @@ class AppHomeRepository(
         ).let { st ->
             st.copy(searchDevices = buildSearchDevices(entities, st.rooms))
         }
+    }
+
+    /**
+     * Gan nhan doi tuong Frigate (person/car/dog...) cho sensor chuyen dong
+     * dang active, de the goi y mo ta "Có người hoạt động lúc 06:25".
+     * Chi goi Frigate khi tap sensor thay doi hoac qua 60s (moi camera 1
+     * request /api/events nhe, khong tai clip); event qua 15 phut thi bo qua.
+     */
+    private suspend fun enrichMotionObjects(
+        state: HomeUiState, connected: Boolean,
+    ): HomeUiState {
+        val motions = state.notifications.filter { it.title == "Phát hiện chuyển động" }
+        val ids = motions.map { it.id }.toSet()
+        if (ids.isEmpty() || !connected) {
+            motionFetchIds = emptySet()
+            return if (state.motionObjects.isEmpty()) state
+            else state.copy(motionObjects = emptyMap())
+        }
+        val now = System.currentTimeMillis()
+        if (ids == motionFetchIds && now - motionFetchAt < 60_000) {
+            // Giu nhan cu, loc theo sensor dang active.
+            val kept = _homeState.value.motionObjects.filterKeys { it in ids }
+            return if (kept == state.motionObjects) state else state.copy(motionObjects = kept)
+        }
+        motionFetchIds = ids
+        motionFetchAt = now
+        val settings = runCatching { settingsStore.settings.first() }.getOrNull()
+            ?: return state
+        if (!settings.hasToken) return state
+        val objects = mutableMapOf<String, String>()
+        // Moi camera chi fetch 1 lan cho tat ca sensor map ve no.
+        val byCam = motions.mapNotNull { n ->
+            cameraKeyForSensor(n.id)?.let { cam -> cam to n.id }
+        }.groupBy({ it.first }, { it.second })
+        for ((cam, sensorIds) in byCam) {
+            val (label, start) = runCatching {
+                frigateStore.latestEvent(cam, settings.haUrl, settings.haToken)
+            }.getOrNull() ?: continue
+            if (label.isBlank()) continue
+            if (now / 1000 - start > 900) continue // event cu > 15 phut: bo qua
+            val vi = frigateLabelVi(label)
+            sensorIds.forEach { objects[it] = vi }
+        }
+        return state.copy(motionObjects = objects)
     }
 
     /**
