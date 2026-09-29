@@ -57,7 +57,7 @@ class MeViewModel : ViewModel() {
         viewModelScope.launch { themeStore.setSeed(seed.name) }
     }
 
-    fun setDarkMode(dark: Boolean) {
+    fun setDarkMode(dark: Boolean?) {
         viewModelScope.launch { themeStore.setDarkMode(dark) }
     }
 

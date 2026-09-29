@@ -135,7 +135,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     color = cs.onSurface,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 8.dp, bottom = 4.dp),
+                        .padding(start = 8.dp, end = 8.dp, bottom = 4.dp),
                 )
             } ?: Spacer(Modifier.weight(1f))
             // Phai: gio ket thuc hh:mm (thay cho "kW Cong suat")
