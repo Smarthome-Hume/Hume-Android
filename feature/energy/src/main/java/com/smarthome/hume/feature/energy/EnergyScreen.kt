@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,25 +69,32 @@ fun EnergyScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            Column(
+            // Title boc boi nen card
+            Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 6.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
                     .riseOnce("hdr", 0, risePlayed),
             ) {
-                Text(
-                    "Điện",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.3).sp,
-                    ),
-                )
-                Text(
-                    "Dòng chảy & tiêu thụ thời gian thực",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
+                Column {
+                    Text(
+                        "Điện",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.3).sp,
+                        ),
+                    )
+                    Text(
+                        "Dòng chảy & tiêu thụ thời gian thực",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
             }
         }
         item {

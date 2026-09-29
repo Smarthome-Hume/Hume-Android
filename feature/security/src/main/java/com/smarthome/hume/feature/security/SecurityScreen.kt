@@ -1,5 +1,6 @@
 package com.smarthome.hume.feature.security
 
+import android.net.Uri
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -33,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import com.smarthome.hume.core.ui.components.Ms
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,6 +59,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,6 +68,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -82,6 +88,7 @@ import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.delay
+import java.io.File
 
 /**
  * Tab An ninh — port 1:1 demo v4 rev12 (#page-security):
@@ -128,24 +135,30 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
                 .padding(horizontal = 18.dp)
                 .padding(bottom = 100.dp),
         ) {
-            // Header (demo .phdr: padding 12px 2px 6px; h2 26px/700/-0.3px; p 13px)
-            Column(
+            // Header boc boi nen card (demo .phdr: h2 26px/700/-0.3px; p 13px)
+            Box(
                 Modifier
-                    .padding(start = 2.dp, end = 2.dp, top = 12.dp, bottom = 6.dp)
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = 6.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(cs.surfaceContainerHighest)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
                     .riseIn(0),
             ) {
-                Text(
-                    "An ninh",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.3).sp,
-                )
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    "Camera & trạng thái bảo vệ",
-                    fontSize = 13.sp,
-                    color = cs.onSurfaceVariant,
-                )
+                Column {
+                    Text(
+                        "An ninh",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.3).sp,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "Camera & trạng thái bảo vệ",
+                        fontSize = 13.sp,
+                        color = cs.onSurfaceVariant,
+                    )
+                }
             }
 
             // Camera picker (demo .esub: margin-bottom 14px; rise .42s)
@@ -207,10 +220,7 @@ fun SecurityScreen(vm: SecurityViewModel = viewModel()) {
 
         // Clip viewer — Dialog full-screen: phu ca navbar (demo .clipov position:fixed z-index:200)
         clip?.let { c ->
-            ClipOverlay(
-                label = "${c.timeLabel} · ${c.dateLabel}",
-                onClose = vm::closeClip,
-            )
+            ClipOverlay(clip = c, onClose = vm::closeClip)
         }
     }
 }
@@ -507,8 +517,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     )
     val iconTint by animateColorAsState(
         targetValue = when {
-            on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
+            // Khi active: dung White de dam bao nhin thay tren nen error/tertiary
+            on -> Color.White
             else -> cs.onSurfaceVariant
         },
         animationSpec = tween(300),
@@ -516,8 +526,9 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     )
     val nameColor by animateColorAsState(
         targetValue = when {
-            on && s.warn -> cs.onTertiaryContainer
-            on -> cs.onErrorContainer
+            // Khi active: dung White de dam bao tuong phan voi nen error/tertiary
+            // (onErrorContainer/onTertiaryContainer cua theme co the khong du tuong phan)
+            on -> Color.White
             else -> cs.onSurface
         },
         animationSpec = tween(300),
@@ -630,8 +641,30 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
 
 // ---------- clip overlay ----------
 
+/**
+ * Player video ghi hinh that: play mp4 da tai ve local (FrigateStore.clipPath)
+ * bang ExoPlayer + PlayerView (media3-ui) qua AndroidView.
+ */
 @Composable
-private fun ClipOverlay(label: String, onClose: () -> Unit) {
+private fun ClipOverlay(clip: RecordingUi, onClose: () -> Unit) {
+    val context = LocalContext.current
+
+    // ExoPlayer that: tao 1 lan theo file, release ngay khi dialog dong.
+    // File khong ton tai (hoac chua tai xong) -> player = null, hien message thay vi crash.
+    val player = remember(clip.clipPath) {
+        val file = clip.clipPath?.let(::File)?.takeIf { it.exists() }
+        file?.let {
+            ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(Uri.fromFile(it)))
+                prepare()
+                playWhenReady = true
+            }
+        }
+    }
+    DisposableEffect(player) {
+        onDispose { player?.release() }
+    }
+
     // demo .clipov: position:fixed inset:0, nen #000 dac, z-index 200 (phu ca navbar)
     Dialog(
         onDismissRequest = onClose,
@@ -660,16 +693,36 @@ private fun ClipOverlay(label: String, onClose: () -> Unit) {
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    MsIcon(
-                        M3EIcons.Videocam,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.4f),
-                        modifier = Modifier.size(72.dp),
-                    )
+                    when {
+                        player != null -> AndroidView(
+                            factory = { ctx ->
+                                PlayerView(ctx).apply {
+                                    this.player = player
+                                    // Controller mac dinh: co nut play/pause, seek, fullscreen.
+                                    useController = true
+                                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                                }
+                            },
+                            update = { it.player = player },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        clip.clipPath == null -> Text(
+                            "Đang tải...",
+                            color = Color.White.copy(alpha = 0.75f),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        else -> Text(
+                            "Không tìm thấy file video",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
                 // demo .ct: margin-bottom 12px (gap 18 + 12 = 30px toi nut)
                 Text(
-                    label,
+                    "${clip.timeLabel} · ${clip.dateLabel}",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,

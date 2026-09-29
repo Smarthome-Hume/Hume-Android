@@ -89,7 +89,7 @@ fun M3ERootScreen(
         ) {
             Box(Modifier.fillMaxSize()) {
                 when (navItems[selected].tab) {
-                    HumeTab.Home -> HomeScreen()
+                    HumeTab.Home -> HomeScreen(onOpenSecurity = { selected = 2 })
                     HumeTab.Energy -> M3EEnergyScreen()
                     HumeTab.Security -> M3ESecurityScreen()
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })

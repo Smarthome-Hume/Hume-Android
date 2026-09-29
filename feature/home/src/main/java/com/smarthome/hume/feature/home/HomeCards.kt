@@ -1,6 +1,7 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.alignByBaseline
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,14 +19,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +66,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
+import kotlinx.coroutines.launch
 
 fun greeting(): String = when (LocalTime.now().hour) {
     in 5..10 -> "Chào buổi sáng"
@@ -212,17 +220,17 @@ fun HomeHeader(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
-                        .height(18.dp)
-                        .widthIn(min = 18.dp)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(cs.error)
-                        .padding(horizontal = 5.dp),
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(cs.error),
                 ) {
                     Text(
                         "${state.notifications.size}",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
                     )
                 }
             }
@@ -234,93 +242,165 @@ fun HomeHeader(
  * The goi y theo demo rev12 (.suggest/.sgbtn): padding 16px 18px,
  * icon auto_awesome 30px co dinh, tieu de 14px/700, sub 12px/500,
  * nut 13px/700 padding 12px 20px bo 20px, :active scale(.9) + bo 13px spring.
- * Noi dung theo dieu kien thuc te (pin thap / cua mo / nang to);
- * mac dinh (khong co dieu kien) hien noi dung demo "Trời đang nóng dần".
- * Nhan nut: rung nhe + goi onTipAction(key) + chuyen trang thai .done
- * (nen surfaceContainerHigh, chu onSurfaceVariant).
+ * Chi hien cac goi y urgent/he thong: pin < 30%, cua mo, camera phat hien
+ * chuyen dong. Khong co goi y nao -> an the di (return, khong render).
+ * Vuot ngang qua lai giua cac goi y (HorizontalPager) + dot indicator
+ * ben duoi khi > 1 goi y.
+ * Nhan nut: rung nhe + action that theo loai:
+ *  - battery: onBatteryDetail() (mo chi tiet pin)
+ *  - camera: onOpenSecurity() (chuyen sang trang An ninh)
+ *  - door: chi danh dau done (giu nguyen nhu cu)
+ *  - key khac: onTipAction(key)
+ * Trang thai .done: opacity .6, text "Đã bật" (theo HTML that).
  */
+internal data class SuggestTip(
+    val key: String,
+    val title: String,
+    val sub: String,
+    val action: String,
+)
+
+/** Dung list goi y urgent tu state; dung chung cho SuggestCard + HomeScreen. */
+internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> = buildList {
+    if (state.battery.soc in 1..29) add(SuggestTip(
+        "battery", "Pin còn ${state.battery.soc}%",
+        "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
+    val doors = state.notifications.filter { it.title.contains("Cửa") }
+    if (doors.isNotEmpty()) add(SuggestTip(
+        "door", doors.first().title, doors.first().body, "Đóng"))
+    val motions = state.notifications.filter { it.title == "Phát hiện chuyển động" }
+    if (motions.isNotEmpty()) add(SuggestTip(
+        "camera", "Phát hiện chuyển động", motions.first().body, "Xem camera"))
+}
+
 @Composable
 fun SuggestCard(
     state: HomeUiState,
     onTipAction: (key: String) -> Unit = {},
+    onBatteryDetail: () -> Unit = {},
+    onOpenSecurity: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    data class Tip(val key: String, val title: String, val sub: String, val action: String)
-    val tips = buildList {
-        if (state.battery.soc in 1..29) add(Tip(
-            "battery", "Pin còn ${state.battery.soc}%",
-            "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
-        val doors = state.notifications.filter { it.title.contains("Cửa") }
-        if (doors.isNotEmpty()) add(Tip(
-            "door", doors.first().title, doors.first().body, "Đóng"))
-        if (state.solarNowKw > 2.0) add(Tip(
-            "ac", "Trời đang nắng to",
-            "Bật điều hoà phòng khách 26°?", "Bật"))
-    }
-    val tip = tips.firstOrNull() ?: Tip(
-        "ac", "Trời đang nóng dần", "Bật điều hoà phòng khách 26°?", "Bật")
-    var done by remember(tip.key) { mutableStateOf(false) }
+    val tips = buildSuggestTips(state)
+    if (tips.isEmpty()) return
+    val pagerState = rememberPagerState(pageCount = { tips.size })
+    val doneMap = remember { mutableStateMapOf<String, Boolean>() }
     val haptic = rememberHaptic()
+    val scope = rememberCoroutineScope()
     val cs = MaterialTheme.colorScheme
+    // List rut ngan lai (vd cua da dong): giu currentPage trong bien.
+    LaunchedEffect(tips.size) {
+        if (pagerState.currentPage >= tips.size) pagerState.scrollToPage(tips.size - 1)
+    }
     M3ECard(
         modifier = modifier.fillMaxWidth(),
         containerColor = cs.tertiaryContainer,
         shape = RoundedCornerShape(28.dp),
         contentPadding = 16.dp,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 2.dp),
-        ) {
-            MsIcon(
-                Ms.auto_awesome, null,
-                tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(30.dp),
+        Column {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth(),
+            ) { page ->
+                val tip = tips[page]
+                SuggestTipRow(
+                    tip = tip,
+                    done = doneMap[tip.key] == true,
+                    onAction = {
+                        haptic()
+                        when (tip.key) {
+                            "battery" -> onBatteryDetail()
+                            "camera" -> onOpenSecurity()
+                            "door" -> doneMap[tip.key] = true
+                            else -> onTipAction(tip.key)
+                        }
+                    },
+                )
+            }
+            if (tips.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    tips.forEachIndexed { i, _ ->
+                        val selected = i == pagerState.currentPage
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .size(if (selected) 7.dp else 5.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (selected) cs.onTertiaryContainer
+                                    else cs.onTertiaryContainer.copy(alpha = 0.35f),
+                                )
+                                .clickable {
+                                    scope.launch { pagerState.animateScrollToPage(i) }
+                                },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestTipRow(
+    tip: SuggestTip,
+    done: Boolean,
+    onAction: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 2.dp),
+    ) {
+        MsIcon(
+            Ms.auto_awesome, null,
+            tint = cs.onTertiaryContainer,
+            modifier = Modifier.size(30.dp),
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                tip.title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.onTertiaryContainer,
             )
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    tip.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.onTertiaryContainer,
+            Text(
+                tip.sub,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .pressMorphCard(
+                    pressedScale = 0.9f,
+                    corner = 20.dp,
+                    pressedCorner = 13.dp,
+                    onClick = if (done) null else onAction,
                 )
-                Text(
-                    tip.sub,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = cs.onTertiaryContainer.copy(alpha = 0.75f),
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .pressMorphCard(
-                        pressedScale = 0.9f,
-                        corner = 20.dp,
-                        pressedCorner = 13.dp,
-                        onClick = if (done) null else {
-                            {
-                                haptic()
-                                onTipAction(tip.key)
-                                done = true
-                            }
-                        },
-                    )
-                    // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
-                    .alpha(if (done) 0.6f else 1f)
-                    .background(cs.onTertiaryContainer)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-            ) {
-                Text(
-                    if (done) "Đã bật" else tip.action,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.tertiaryContainer,
-                )
-            }
+                // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
+                .alpha(if (done) 0.6f else 1f)
+                .background(cs.onTertiaryContainer)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+        ) {
+            Text(
+                if (done) "Đã bật" else tip.action,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = cs.tertiaryContainer,
+            )
         }
     }
 }
@@ -354,20 +434,23 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "%.1f".format(todayShown),
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.3).sp,
                     color = cs.onSurface,
+                    modifier = Modifier.alignByBaseline(),
                 )
                 Text(
                     "kWh",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 3.dp),
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .alignByBaseline(),
                 )
             }
         }

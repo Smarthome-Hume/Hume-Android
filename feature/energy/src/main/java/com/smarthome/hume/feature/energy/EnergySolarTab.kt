@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.alignByBaseline
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -127,7 +128,6 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 modifier = Modifier.alignByBaseline(),
             )
             Row(
-                verticalAlignment = Alignment.Bottom,
                 modifier = Modifier.alignByBaseline(),
             ) {
                 Text(
@@ -137,12 +137,14 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         fontWeight = FontWeight.ExtraBold,
                         fontFeatureSettings = "tnum",
                     ),
+                    modifier = Modifier.alignByBaseline(),
                 )
                 Text(
                     " kW",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.alignByBaseline(),
                 )
             }
         }

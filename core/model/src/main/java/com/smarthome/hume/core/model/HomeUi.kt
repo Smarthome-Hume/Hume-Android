@@ -9,10 +9,11 @@ data class SolarDay(
 /** Trang thai pin (Solis). */
 data class BatteryUi(
     val soc: Int = 0,
-    val powerKw: Double = 0.0, // >0 = dang xa, <0 = dang sac (theo sensor battery_power_flow)
-    val timeText: String? = null, // "Còn 3g12p" / "Đầy sau 1g05p"
+    val powerKw: Double = 0.0, // >0 = dang sac, <0 = dang xa (theo sensor battery_power_flow, giong Hume goc)
+    val timeText: String? = null, // "Còn 3g12p" / "Sạc đầy sau 1g05p"
+    val endTime: String? = null, // "14:30" - gio ket thuc sac/xa
 ) {
-    val isCharging: Boolean get() = powerKw < -0.05
+    val isCharging: Boolean get() = powerKw > 0.05
     val reservePct: Int get() = minOf(soc, 20)
     val usagePct: Int get() = maxOf(0, soc - 20)
 }

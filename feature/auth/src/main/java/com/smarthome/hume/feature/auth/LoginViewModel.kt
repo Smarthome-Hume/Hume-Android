@@ -14,15 +14,38 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+/** Segment chon loai dia chi may chu. */
+enum class ServerMode { Local, Domain }
+
+/** 3 cach nhap token. */
+enum class TokenEntryMode { Manual, Qr, Scan }
 
 data class LoginUiState(
     val serverUrl: String = "",
     val token: String = "",
     val tokenVisible: Boolean = false,
+    val serverMode: ServerMode = ServerMode.Local,
+    val entryMode: TokenEntryMode = TokenEntryMode.Manual,
+    val rememberMe: Boolean = true,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val notice: String? = null,
 ) {
     val canSubmit: Boolean get() = serverUrl.isNotBlank() && token.isNotBlank() && !isLoading
+
+    /**
+     * Payload JSON cho ma QR: thiet bi khac quet de dang nhap.
+     * null khi chua du URL + token.
+     */
+    val qrPayload: String? get() =
+        if (serverUrl.isNotBlank() && token.isNotBlank()) {
+            JSONObject()
+                .put("url", serverUrl.trim())
+                .put("token", token.trim())
+                .toString()
+        } else null
 }
 
 class LoginViewModel(
@@ -44,16 +67,89 @@ class LoginViewModel(
     fun onUrlChange(v: String) = _uiState.update { it.copy(serverUrl = v, error = null) }
     fun onTokenChange(v: String) = _uiState.update { it.copy(token = v, error = null) }
     fun onToggleTokenVisibility() = _uiState.update { it.copy(tokenVisible = !it.tokenVisible) }
+    fun onServerModeChange(m: ServerMode) = _uiState.update { it.copy(serverMode = m, error = null) }
+    fun onEntryModeChange(m: TokenEntryMode) =
+        _uiState.update { it.copy(entryMode = m, error = null, notice = null) }
+    fun onRememberMeChange(v: Boolean) = _uiState.update { it.copy(rememberMe = v) }
     fun onDismissError() = _uiState.update { it.copy(error = null) }
+    fun onDismissNotice() = _uiState.update { it.copy(notice = null) }
+    fun onCopiedQr() = _uiState.update { it.copy(notice = "Đã sao chép nội dung mã QR.") }
+
+    /** URL hop le phai bat dau bang http:// hoac https://. */
+    private fun urlError(url: String): String? {
+        val t = url.trim()
+        return when {
+            t.isBlank() -> "Nhập địa chỉ máy chủ Home Assistant."
+            !t.startsWith("http://") && !t.startsWith("https://") ->
+                "Địa chỉ phải bắt đầu bằng http:// hoặc https://"
+            else -> null
+        }
+    }
 
     fun onLogin() {
         val s = _uiState.value
-        if (!s.canSubmit) return
+        if (s.isLoading) return
+        urlError(s.serverUrl)?.let { msg ->
+            _uiState.update { it.copy(error = msg) }
+            return
+        }
+        if (s.token.isBlank()) {
+            _uiState.update { it.copy(error = "Nhập Long-Lived Access Token.") }
+            return
+        }
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            when (val r = authRepository.login(s.serverUrl, s.token)) {
+            when (val r = authRepository.login(s.serverUrl, s.token, s.rememberMe)) {
                 is AuthResult.Success -> _uiState.update { it.copy(isLoading = false) }
                 is AuthResult.Error -> _uiState.update { it.copy(isLoading = false, error = r.message) }
+            }
+        }
+    }
+
+    /**
+     * Xu ly chuoi quet duoc tu camera.
+     * Uu tien JSON {"url":..., "token":...}; neu khong parse duoc thi doan:
+     * bat dau bang http -> URL, con lai -> token.
+     */
+    fun onScanResult(raw: String) {
+        val text = raw.trim()
+        if (text.isEmpty()) return
+        var url = ""
+        var token = ""
+        runCatching {
+            val o = JSONObject(text)
+            url = o.optString("url")
+            token = o.optString("token")
+        }
+        if (url.isNotBlank() && token.isNotBlank()) {
+            _uiState.update {
+                it.copy(
+                    serverUrl = url,
+                    token = token,
+                    entryMode = TokenEntryMode.Manual,
+                    error = null,
+                    notice = "Đã quét mã QR thành công.",
+                )
+            }
+            return
+        }
+        if (text.startsWith("http://") || text.startsWith("https://")) {
+            _uiState.update {
+                it.copy(
+                    serverUrl = text,
+                    entryMode = TokenEntryMode.Manual,
+                    error = null,
+                    notice = "Đã điền địa chỉ máy chủ từ mã QR.",
+                )
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    token = text,
+                    entryMode = TokenEntryMode.Manual,
+                    error = null,
+                    notice = "Đã điền token từ mã QR.",
+                )
             }
         }
     }

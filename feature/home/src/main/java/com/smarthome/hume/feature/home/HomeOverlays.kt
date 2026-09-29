@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -86,8 +88,12 @@ fun NotificationSheet(
         containerColor = cs.surfaceContainer,
         dragHandle = { SheetGrabHandle() },
     ) {
+        // Gioi han chieu cao sheet 85% man hinh (cach top 15% > 20px)
+        val maxSheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 22.dp),
+            modifier = Modifier
+                .padding(horizontal = 22.dp)
+                .heightIn(max = maxSheetH),
         ) {
             item {
                 Text(
@@ -294,8 +300,12 @@ fun LightsSheet(
         containerColor = cs.surfaceContainer,
         dragHandle = { SheetGrabHandle() },
     ) {
+        // Gioi han chieu cao sheet 85% man hinh (cach top 15% > 20px)
+        val maxSheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .heightIn(max = maxSheetH),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {

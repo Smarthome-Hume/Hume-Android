@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -95,7 +96,10 @@ fun PillsRow(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (securityExpanded) Modifier.horizontalScroll(rememberScrollState())
+                // Khi mo rong: them padding 2 dau de khong bi cat mep khi scroll
+                if (securityExpanded) Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 2.dp)
                 else Modifier,
             ),
     ) {
@@ -106,11 +110,14 @@ fun PillsRow(
             modifier = (if (securityExpanded) Modifier.widthIn(min = 150.dp)
             else Modifier.weight(1f)).height(80.dp),
         )
-        // .secmodes: chi hien khi expanded
+        // .secmodes: chi hien khi expanded; dong co bounce (scaleOut spring)
         AnimatedVisibility(
             visible = securityExpanded,
             enter = fadeIn(tween(450, easing = M3EMotion.emphasized)),
-            exit = fadeOut(tween(300)),
+            exit = fadeOut(tween(300)) + scaleOut(
+                animationSpec = tween(300, easing = M3EMotion.spring),
+                targetScale = 0.9f,
+            ),
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -365,7 +372,8 @@ private fun SecModeCard(
                         }
                     },
                 )
-                .padding(horizontal = 10.dp, vertical = 14.dp),
+                // Tang bottom padding de chu khong bi cat mep duoi
+                .padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 18.dp),
         ) {
             MsIcon(
                 when (mode) {

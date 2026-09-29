@@ -122,7 +122,10 @@ class AppEnergyRepository(
         )
 
         val soc = v(HumeConfig.BATTERY_SOC)
-        val charging = battW < 0 // am = sac (gia dinh tu code cu, chua xac nhan runtime)
+        // Hume goc: charging khi battery_power_flow > 0. User yeu cau dung sensor.battery_current_flow:
+        // > 0 = dang sac, < 0 = dang xa (cung dau voi power vi P = V * I, V luon duong)
+        val battCurrent = v("sensor.battery_current_flow")
+        val charging = battCurrent > 0
         val cb1 = v("sensor.aptomat_t1_power") / 1000.0
         val cb2 = v("sensor.aptomat_t2_power") / 1000.0
         val cb3 = v("sensor.aptomat_t3_power") / 1000.0

@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -86,13 +87,16 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory()),
+    onOpenSecurity: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
     val cs = MaterialTheme.colorScheme
     val snack = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var fabOpen by rememberSaveable { mutableStateOf(false) }
     var ecoDialog by remember { mutableStateOf(false) }
+    val tips = buildSuggestTips(state)
 
     ui.snackbar?.let { s ->
         LaunchedEffect(s) {
@@ -131,6 +135,13 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
     ) { padding ->
         val pullState = rememberPullToRefreshState()
+        // Scroll state de tu dong dong cum an ninh khi user scroll trang
+        val listState = rememberLazyListState()
+        LaunchedEffect(listState.isScrollInProgress) {
+            if (listState.isScrollInProgress && ui.securityExpanded) {
+                viewModel.collapseSecurity()
+            }
+        }
         PullToRefreshBox(
             isRefreshing = ui.isRefreshing,
             onRefresh = { viewModel.refresh() },
@@ -146,8 +157,11 @@ fun HomeScreen(
         ) {
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(
-                        start = 18.dp, end = 18.dp, top = 8.dp, bottom = 100.dp,
+                        // Bottom 176dp: FAB nam o bottom=110dp, cao 56dp (110+56=166),
+                        // +10dp gap de FAB khong de len the cuoi
+                        start = 18.dp, end = 18.dp, top = 8.dp, bottom = 176.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
@@ -180,39 +194,35 @@ fun HomeScreen(
                             }
                         }
                     }
-                    item {
-                        Column(Modifier.padding(bottom = 12.dp)) {
-                            RiseIn(155) { SectionTitle("Gợi ý cho bạn") }
-                        }
-                    }
-                    item {
-                        Column(Modifier.padding(bottom = 14.dp)) {
-                            RiseIn(165) {
-                                SuggestCard(
-                                    state,
-                                    onTipAction = { key ->
-                                        if (key == "ac") viewModel.ac26()
-                                    },
-                                )
+                    if (tips.isNotEmpty()) {
+                        item {
+                            Column(Modifier.padding(bottom = 12.dp)) {
+                                RiseIn(155) { SectionTitle("Gợi ý cho bạn") }
                             }
                         }
-                    }
-                    // The thong bao (chuyen tu trang Toi) - duoi Goi y de truy cap nhanh
-                    if (state.notifications.isNotEmpty()) {
                         item {
                             Column(Modifier.padding(bottom = 14.dp)) {
-                                RiseIn(175) {
-                                    val notifAiSummary by viewModel.notifAiSummary.collectAsState()
-                                    NotificationCard(
-                                        notifications = state.notifications,
-                                        aiSummary = notifAiSummary,
-                                        onViewAll = { /* TODO: mo sheet thong bao */ },
-                                        onDismiss = { id -> viewModel.dismissNotification(id) },
+                                RiseIn(165) {
+                                    SuggestCard(
+                                        state,
+                                        onTipAction = { key ->
+                                            if (key == "ac") viewModel.ac26()
+                                        },
+                                        onBatteryDetail = {
+                                            scope.launch {
+                                                // BatteryCard: index 6 khi co goi y, 4 khi khong.
+                                                listState.animateScrollToItem(
+                                                    if (tips.isNotEmpty()) 6 else 4,
+                                                )
+                                            }
+                                        },
+                                        onOpenSecurity = onOpenSecurity,
                                     )
                                 }
                             }
                         }
                     }
+                    // (The thong bao da xoa theo yeu cau user - khong co tac dung)
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
                             RiseIn(200) { SolarWeekCard(state) }

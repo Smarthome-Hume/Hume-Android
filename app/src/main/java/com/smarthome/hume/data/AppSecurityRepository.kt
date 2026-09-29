@@ -52,6 +52,9 @@ class AppSecurityRepository(
                             id = r.id,
                             timeLabel = SimpleDateFormat("HH:mm", Locale.getDefault()).format(d),
                             dateLabel = SimpleDateFormat("dd/MM", Locale.getDefault()).format(d),
+                            // Giai quyet duong dan file that tu FrigateStore ngay khi build UI:
+                            // feature module khong thay duoc FrigateStore (nam o :app).
+                            clipPath = frigate.clipFile(r).absolutePath,
                         )
                     }
                 }

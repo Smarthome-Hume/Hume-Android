@@ -43,7 +43,6 @@ import com.smarthome.hume.core.model.BatteryUi
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -104,12 +103,13 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
             }
         }
         Spacer(Modifier.height(12.dp))
-        // .bmid: soc + cong suat (space-between, baseline flex-end)
+        // .bmid: soc + thoi gian + gio ket thuc (theo Hume goc)
         Row(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth(),
         ) {
+            // SOC lon ben trai
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     "$soc",
@@ -126,23 +126,36 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(bottom = 5.dp, start = 2.dp),
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                // Demo: sac hien "+0.6 kW" (success), xa hien "−0.4 kW" (#D97706);
-                // model: powerKw<0 = dang sac, >0 = dang xa
-                val sign = if (charging) "+" else "\u2212"
+            // Giua: thoi gian sac day / xa het (neu co tu HA)
+            battery.timeText?.let { tt ->
                 Text(
-                    "$sign${"%.1f".format(abs(battery.powerKw))} kW",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = if (charging) extra.success else Color(0xFFD97706),
+                    tt,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onSurface,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp, bottom = 4.dp),
                 )
-                Text(
-                    "Công suất",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+            } ?: Spacer(Modifier.weight(1f))
+            // Phai: gio ket thuc hh:mm (thay cho "kW Cong suat")
+            battery.endTime?.let { et ->
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "KẾT THÚC LÚC",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp,
+                        color = cs.onSurfaceVariant,
+                    )
+                    Text(
+                        et,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = cs.onSurface,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -213,22 +226,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier) {
                 )
             }
         }
-        // .batfoot: chi hien neu co timeText that tu HA
-        battery.timeText?.let { tt ->
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-            ) {
-                Text(
-                    tt,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = cs.onSurfaceVariant,
-                )
-            }
-        }
+        // (footer timeText da chuyen len hang chinh, khong can hien lai o day)
     }
 }
 

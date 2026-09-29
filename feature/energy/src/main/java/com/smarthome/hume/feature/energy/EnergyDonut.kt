@@ -3,6 +3,7 @@ package com.smarthome.hume.feature.energy
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,18 +20,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyDonutSlice
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.util.Locale
+import kotlin.math.atan2
 
 /**
  * Donut: track surfaceHigh + slice (primary/tertiary/info),
- * stroke 16dp round cap, text o giua: tong kWh + "kWh hôm nay".
- * Entrance: ve tung slice stagger (demo: draw 1.1s emphasized, delay 0/.18/.36).
+ * stroke 16dp round cap.
+ * Giua donut: mac dinh hien TONG kWh; khi user an vao slice nao thi hien
+ * gia tri + ten cua slice do (an lai de ve tong).
+ * Entrance: ve tung slice stagger (draw 1.1s emphasized, delay 0/.18/.36).
  */
 @Composable
 fun EnergyDonut(
@@ -47,7 +53,45 @@ fun EnergyDonut(
         animationSpec = tween(1460, easing = M3EMotion.emphasized),
         label = "donutDraw",
     )
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    // Slice dang duoc chon (null = hien tong)
+    var selected by remember { mutableStateOf<Int?>(null) }
+    // Goc bat dau (do) cua tung slice, tinh tu -90 (12h) theo chieu kim dong ho
+    val sliceStarts = remember(slices) {
+        val starts = mutableListOf<Float>()
+        var acc = -90f
+        slices.forEach { s ->
+            starts.add(acc)
+            acc += (s.fraction * 360).toFloat()
+        }
+        starts
+    }
+    Box(
+        modifier = modifier.pointerInput(slices) {
+            detectTapGestures { offset ->
+                val w = size.width.toFloat()
+                val h = size.height.toFloat()
+                if (w <= 0 || h <= 0) return@detectTapGestures
+                val dx = offset.x - w / 2f
+                val dy = offset.y - h / 2f
+                // Goc tap theo he drawArc: 0 = 3h, duong = cung chieu kim dong ho
+                var ang = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                // Chuyen ve he bat dau tu -90
+                var rel = ang - (-90f)
+                while (rel < 0) rel += 360f
+                while (rel >= 360) rel -= 360f
+                // Tim slice chua goc nay
+                val idx = slices.indexOfFirst { s ->
+                    val i = slices.indexOf(s)
+                    val start = sliceStarts[i] - (-90f)
+                    val sweep = (s.fraction * 360).toFloat()
+                    val sNorm = if (start < 0) start + 360f else start
+                    rel >= sNorm && rel < sNorm + sweep
+                }
+                selected = if (idx == selected) null else idx.takeIf { it >= 0 }
+            }
+        },
+        contentAlignment = Alignment.Center,
+    ) {
         Canvas(Modifier.fillMaxSize()) {
             val stroke = 16.dp.toPx()
             drawArc(
@@ -69,10 +113,13 @@ fun EnergyDonut(
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Giua donut: slice lon nhat (ten + gia tri), khong lap tong o duoi title
-            val top = slices.maxByOrNull { it.fraction }
+            // Giua donut: slice duoc chon (gia tri + ten), mac dinh la TONG
+            val selSlice = selected?.let { slices.getOrNull(it) }
             Text(
-                top?.let { String.format(Locale.US, "%.1f", total * it.fraction) } ?: "0",
+                if (selSlice != null)
+                    String.format(Locale.US, "%.1f", total * selSlice.fraction)
+                else
+                    String.format(Locale.US, "%.1f", total),
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontSize = 19.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -80,10 +127,11 @@ fun EnergyDonut(
                 ),
             )
             Text(
-                top?.name ?: "",
+                selSlice?.name ?: "kWh",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
                 maxLines = 1,
             )
         }

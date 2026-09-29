@@ -65,25 +65,25 @@ import com.smarthome.hume.core.ui.components.MsIcon
 import java.util.Locale
 import kotlin.math.roundToInt
 
-private const val VB_W = 360f
-private const val VB_H = 348f
+private const val VB_W = 380f
+private const val VB_H = 400f
 
 private fun prodPath() = Path().apply {
-    moveTo(138f, 55f); lineTo(148f, 55f); quadraticTo(164f, 55f, 164f, 71f); lineTo(164f, 140f)
+    moveTo(156f, 62f); lineTo(166f, 62f); quadraticTo(182f, 62f, 182f, 78f); lineTo(182f, 168f)
 }
 private fun gridPath() = Path().apply {
-    moveTo(196f, 140f); lineTo(196f, 71f); quadraticTo(196f, 55f, 212f, 55f); lineTo(222f, 55f)
+    moveTo(198f, 168f); lineTo(198f, 78f); quadraticTo(198f, 62f, 214f, 62f); lineTo(224f, 62f)
 }
 private fun consPath() = Path().apply {
-    moveTo(164f, 208f); lineTo(164f, 273f); quadraticTo(164f, 289f, 148f, 289f); lineTo(138f, 289f)
+    moveTo(182f, 232f); lineTo(182f, 314f); quadraticTo(182f, 330f, 166f, 330f); lineTo(156f, 330f)
 }
 private fun battPath() = Path().apply {
-    moveTo(196f, 208f); lineTo(196f, 273f); quadraticTo(196f, 289f, 212f, 289f); lineTo(222f, 289f)
+    moveTo(198f, 232f); lineTo(198f, 314f); quadraticTo(198f, 330f, 214f, 330f); lineTo(224f, 330f)
 }
 
-/** Toc do sweep (demo): 18/v giay, clamp 4-14s — v la kW. */
+/** Toc do sweep: 18/v giay, clamp 4-14s — v la kW (dung abs de gia tri am van co toc do). */
 private fun sweepMs(powerKw: Double): Int =
-    (minOf(14.0, maxOf(4.0, 18.0 / maxOf(0.15, powerKw))) * 1000).roundToInt()
+    (minOf(14.0, maxOf(4.0, 18.0 / maxOf(0.15, kotlin.math.abs(powerKw)))) * 1000).roundToInt()
 
 /**
  * Flow card M3E: 4 node + hub bolt o giua, sweep tren elbow track.
@@ -217,8 +217,8 @@ private fun FlowArea(
 
         FlowTracks(flow = flow, charging = charging)
 
-        // nodes: 132x140px trong viewBox 360x348, cach ria 6px
-        val nw = fx(132f); val nh = fy(140f)
+        // nodes: 150x160px trong viewBox 380x400, cach ria 6px
+        val nw = fx(150f); val nh = fy(160f)
         FlowNode(
             icon = M3EIcons.SolarPower,
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
@@ -248,7 +248,7 @@ private fun FlowArea(
             label = "Lưới điện", valueKw = flow.gridKw,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(VB_W - 6f - 132f), fy(6f)),
+                .offset(fx(VB_W - 6f - 150f), fy(6f)),
         )
         FlowNode(
             icon = M3EIcons.Home,
@@ -257,7 +257,7 @@ private fun FlowArea(
             label = "Tiêu thụ", valueKw = flow.consKw,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(6f), fy(VB_H - 6f - 140f)),
+                .offset(fx(6f), fy(VB_H - 6f - 160f)),
         ) {
             SegLegend(
                 listOf("CB1" to MaterialTheme.colorScheme.primary,
@@ -284,7 +284,7 @@ private fun FlowArea(
             badgeFg = battFg,
             modifier = Modifier
                 .size(nw, nh)
-                .offset(fx(VB_W - 6f - 132f), fy(VB_H - 6f - 140f)),
+                .offset(fx(VB_W - 6f - 150f), fy(VB_H - 6f - 160f)),
             onClick = { vm.toggleBattFlow() },
         ) {
             Row(
@@ -399,7 +399,8 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
     data class Track(val path: Path, val powerKw: Double, val reverse: Boolean)
     val tracks = listOf(
         Track(prodPath(), flow.prodKw, false),
-        Track(gridPath(), flow.gridKw, false),
+        // gridPath huong hub->node; khi grid > 0 (mua dien) dong chay nguoc lai node->hub
+        Track(gridPath(), flow.gridKw, flow.gridKw > 0.005),
         Track(consPath(), flow.consKw, false),
         Track(battPath(), flow.battKw, !charging),
     )

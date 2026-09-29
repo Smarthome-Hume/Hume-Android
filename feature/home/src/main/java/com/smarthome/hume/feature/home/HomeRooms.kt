@@ -399,33 +399,27 @@ private fun ClimateCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Stepper: - | nhiet do muc tieu | +
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Stepper: - | nhiet do | + (nen rieng, bo "Muc tieu")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(cs.surfaceContainer)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+            ) {
                 StepperButton(Icons.Outlined.Remove, enabled = c.isOn) {
                     haptic()
                     onTemp(c.entityId, (target - 1).coerceIn(16.0, 31.0))
                 }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Text(
+                    "%.0f°".format(target),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = cs.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.padding(horizontal = 8.dp),
-                ) {
-                    Text(
-                        "%.0f°".format(target),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = cs.onSurface,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                    Text(
-                        "Mục tiêu",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = cs.onSurfaceVariant,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                }
+                )
                 StepperButton(Icons.Outlined.Add, enabled = c.isOn) {
                     haptic()
                     onTemp(c.entityId, (target + 1).coerceIn(16.0, 31.0))

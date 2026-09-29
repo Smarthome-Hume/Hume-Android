@@ -10,8 +10,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,17 +32,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -100,18 +103,7 @@ fun EnergyConsTab(
 
 @Composable
 private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
-    // Tick 8s: cot hom nay +0.05, tran 9.9 (demo drawW)
-    var boost by remember { mutableDoubleStateOf(0.0) }
-    val latest by rememberUpdatedState(state)
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(8000)
-            val s = latest
-            val base = s.week.find { it.isToday }?.kwh ?: s.todayKwh
-            boost = (minOf(9.9, base + boost + 0.05) - base).coerceAtLeast(0.0)
-        }
-    }
-    val todayVal = (state.week.find { it.isToday }?.kwh ?: state.todayKwh) + boost
+    val todayVal = state.week.find { it.isToday }?.kwh ?: state.todayKwh
 
     M3ECard(
         shape = RoundedCornerShape(32.dp),
@@ -124,19 +116,12 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Năng lượng sử dụng",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontSize = 14.sp, fontWeight = FontWeight.Bold),
-                )
-                Text(
-                    "7 ngày qua · cập nhật trực tiếp",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(
+                "Năng lượng sử dụng",
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(1f),
+            )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     kwh1(todayVal),
@@ -155,6 +140,8 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             }
         }
         Spacer(Modifier.height(14.dp))
+        // maxValue that cua tuan (giong SolarWeekCard)
+        val maxV = (state.week.maxOfOrNull { it.kwh } ?: 0.0).coerceAtLeast(0.01)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -165,6 +152,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 WeekBar(
                     p = p,
                     kwh = if (p.isToday) todayVal else p.kwh,
+                    maxV = maxV,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -173,16 +161,18 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 }
 
 @Composable
-private fun WeekBar(p: EnergyWeekPoint, kwh: Double, modifier: Modifier = Modifier) {
-    // Thang CO DINH 10 kWh (demo: height = v/10*100%)
-    val frac = (kwh / 10.0).coerceIn(0.0, 1.0)
+private fun WeekBar(p: EnergyWeekPoint, kwh: Double, maxV: Double, modifier: Modifier = Modifier) {
+    // Chieu cao theo value/max (giong SolarWeekCard), mau lerp theo gia tri tuong doi
+    val frac = (kwh / maxV).coerceIn(0.0, 1.0)
     val h by animateFloatAsState(
         targetValue = frac.toFloat(),
         animationSpec = tween(800, easing = M3EMotion.emphasized),
         label = "wbarH",
     )
     val label = if (p.isToday) "HN" else p.label
-    val primary = MaterialTheme.colorScheme.primary
+    val cs = MaterialTheme.colorScheme
+    val barColor = if (p.isToday) cs.primary
+    else lerp(cs.primaryContainer, cs.primary, frac.toFloat() * 0.85f)
     Column(
         modifier = modifier
             .fillMaxHeight()
@@ -198,13 +188,10 @@ private fun WeekBar(p: EnergyWeekPoint, kwh: Double, modifier: Modifier = Modifi
                 .shadow(
                     if (p.isToday) 4.dp else 0.dp,
                     CircleShape,
-                    spotColor = primary.copy(alpha = 0.4f),
+                    spotColor = cs.primary.copy(alpha = 0.4f),
                 )
                 .clip(CircleShape)
-                .background(
-                    if (p.isToday) primary
-                    else MaterialTheme.colorScheme.primaryContainer,
-                ),
+                .background(barColor),
         )
         Spacer(Modifier.height(6.dp))
         Text(
@@ -213,8 +200,8 @@ private fun WeekBar(p: EnergyWeekPoint, kwh: Double, modifier: Modifier = Modifi
                 fontSize = 10.sp,
                 fontWeight = if (p.isToday) FontWeight.ExtraBold else FontWeight.SemiBold,
             ),
-            color = if (p.isToday) primary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (p.isToday) cs.primary
+            else cs.onSurfaceVariant,
         )
     }
 }
@@ -332,14 +319,6 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
-    // Live tick 5s (demo: randomize gia tri, bar transition width .8s emphasized)
-    var tick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(5000)
-            tick++
-        }
-    }
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
@@ -351,17 +330,13 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             style = MaterialTheme.typography.titleSmall.copy(
                 fontSize = 14.sp, fontWeight = FontWeight.Bold),
         )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "Chuẩn hoá theo 7.000 W · trực tiếp",
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 12.sp, fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         Spacer(Modifier.height(12.dp))
+        // Scale theo max gia tri that (khong chuan hoa 7000W)
+        val maxW = (state.powerRows.maxOfOrNull { abs(it.watts) } ?: 0.0)
+            .coerceAtLeast(1.0)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             state.powerRows.forEachIndexed { i, row ->
-                PowerRow(row = row, index = i, tick = tick)
+                PowerRow(row = row, index = i, maxW = maxW)
             }
         }
     }
@@ -371,7 +346,7 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 private fun PowerRow(
     row: com.smarthome.hume.core.model.EnergyPowerRow,
     index: Int,
-    tick: Int,
+    maxW: Double,
 ) {
     val extra = LocalHumeExtraColors.current
     val label = when (row.kind) {
@@ -386,10 +361,10 @@ private fun PowerRow(
         EnergyPowerKind.Grid -> extra.info
         EnergyPowerKind.Home -> MaterialTheme.colorScheme.tertiary
     }
-    // Jitter nhe moi tick cho giong demo (khong doi du lieu goc)
-    val watts = row.watts * (0.94 + Random(tick * 97 + index * 13).nextDouble() * 0.12)
+    // Gia tri that tu HA (khong jitter demo)
+    val watts = row.watts
     val frac by animateFloatAsState(
-        targetValue = (abs(watts) / 7000.0).coerceIn(0.0, 1.0).toFloat(),
+        targetValue = (abs(watts) / maxW).coerceIn(0.0, 1.0).toFloat(),
         animationSpec = tween(800, easing = M3EMotion.emphasized),
         label = "pwFill",
     )
@@ -411,20 +386,74 @@ private fun PowerRow(
             )
         }
         Spacer(Modifier.height(6.dp))
+        // Bar wavy (song buoc 15px) thay cho flat
+        WavyPowerBar(frac = frac, color = color)
+    }
+}
+
+/**
+ * Thanh cong suat dang song (wavy), buoc song 15px.
+ * Ve bang Canvas: duong sin qua cac diem quadratic.
+ */
+@Composable
+private fun WavyPowerBar(
+    frac: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(14.dp),
+    ) {
+        val w = maxWidth
+        val fillW = w * frac
+        // Track
         Box(
-            modifier = Modifier
+            Modifier
                 .fillMaxWidth()
                 .height(10.dp)
+                .align(Alignment.Center)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(frac)
-                    .height(10.dp)
-                    .clip(CircleShape)
-                    .background(color),
-            )
+                .background(trackColor),
+        )
+        // Wavy fill
+        if (fillW > 0.dp && frac > 0.01f) {
+            Canvas(
+                Modifier
+                    .width(fillW)
+                    .height(14.dp)
+                    .align(Alignment.CenterStart)
+                    .clip(CircleShape),
+            ) {
+                val wavelength = 15.dp.toPx()
+                val amplitude = 3.dp.toPx()
+                val cy = size.height / 2f
+                val path = Path().apply {
+                    moveTo(0f, cy)
+                    var x = 0f
+                    var up = true
+                    while (x < size.width) {
+                        val cx = x + wavelength / 4f
+                        val ex = x + wavelength / 2f
+                        quadraticBezierTo(
+                            cx,
+                            if (up) cy - 2f * amplitude else cy + 2f * amplitude,
+                            ex,
+                            cy,
+                        )
+                        x = ex
+                        up = !up
+                    }
+                    lineTo(size.width, cy)
+                }
+                drawPath(
+                    path = path,
+                    color = color,
+                    style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
+                )
+            }
         }
     }
 }
@@ -618,7 +647,7 @@ private fun DevicesCard(
                 )
                 Row(
                     modifier = Modifier
-                        .width(190.dp)
+                        .width(224.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                         .padding(4.dp),

@@ -119,10 +119,16 @@ class AppHomeRepository(
 
         val soc = (entities[HumeConfig.BATTERY_SOC]?.numericState ?: 0.0).toInt()
         val battPowerKw = (entities[HumeConfig.BATTERY_POWER]?.numericState ?: 0.0) / 1000.0
-        val timeText = if (battPowerKw < -0.05)
+        val timeText = if (battPowerKw > 0.05)
             entities[HumeConfig.BATTERY_TIME_TO_FULL]?.state?.let { "Sạc đầy sau $it" }
         else
             entities[HumeConfig.BATTERY_TIME_LEFT]?.state?.let { "Còn $it" }
+        // Tinh gio ket thuc (hh:mm) tu duration cua sensor
+        val durationStr = if (battPowerKw > 0.05)
+            entities[HumeConfig.BATTERY_TIME_TO_FULL]?.state
+        else
+            entities[HumeConfig.BATTERY_TIME_LEFT]?.state
+        val endTime = durationStr?.let { parseDurationToEndTime(it) }
 
         val alarmId = alarmEntityId()
         val alarmEntity = alarmId?.let { entities[it] }
@@ -153,7 +159,7 @@ class AppHomeRepository(
             solarWeek = cur.solarWeek,
             solarTodayKwh = pvToday,
             solarNowKw = solarNowKw,
-            battery = BatteryUi(soc = soc, powerKw = battPowerKw, timeText = timeText),
+            battery = BatteryUi(soc = soc, powerKw = battPowerKw, timeText = timeText, endTime = endTime),
             alarm = alarm,
             lightsOn = lightsOn,
             rooms = DefaultRooms.all.map { buildRoom(it, entities) },
@@ -332,9 +338,30 @@ class AppHomeRepository(
             val date = java.time.Instant.ofEpochMilli(start).atZone(zone).toLocalDate()
             SolarDay(labels[date.dayOfWeek.value - 1], (resolved[start] ?: 0.0).toFloat())
         } + SolarDay(
-            "Hôm nay",
+            labels[today.dayOfWeek.value - 1],
             (ha.entities.value[HumeConfig.PV_TODAY]?.numericState ?: 0.0).toFloat(),
         )
         _homeState.value = _homeState.value.copy(solarWeek = days)
+    }
+}
+
+/**
+ * Parse duration tu sensor HA (vi du "2:30", "1:15:30", "90") thanh gio ket thuc "hh:mm".
+ * Tra ve null neu khong parse duoc.
+ */
+private fun parseDurationToEndTime(duration: String): String? {
+    return try {
+        val parts = duration.trim().split(":")
+        val totalMinutes = when (parts.size) {
+            3 -> parts[0].toInt() * 60 + parts[1].toInt() // h:mm:ss
+            2 -> parts[0].toInt() * 60 + parts[1].toInt() // h:mm hoac m:ss
+            1 -> parts[0].toDouble().toInt() // so phut
+            else -> return null
+        }
+        val now = java.time.LocalTime.now()
+        val end = now.plusMinutes(totalMinutes.toLong())
+        String.format("%02d:%02d", end.hour, end.minute)
+    } catch (e: Exception) {
+        null
     }
 }

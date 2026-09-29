@@ -35,12 +35,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -65,9 +68,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
-import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
@@ -120,20 +123,25 @@ fun MeScreen(
             .padding(horizontal = 18.dp)
             .padding(bottom = 100.dp),
     ) {
-        // demo .phdr: padding 12px 2px 6px, cong page padding-top 4px => top 16dp
-        Column(
+        // Title boc boi nen card (theo yeu cau)
+        Box(
             Modifier
                 .riseEntrance(0)
-                .padding(start = 2.dp, end = 2.dp, top = 16.dp, bottom = 6.dp),
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
         ) {
-            // demo .phdr h2: 26px/700 ls -.3px ; p: 13px
-            Text("Tôi", fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
-            Text(
-                "Đồng bộ, thông báo & hệ thống",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 3.dp),
-            )
+            Column {
+                // demo .phdr h2: 26px/700 ls -.3px ; p: 13px
+                Text("Thông tin", fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
+                Text(
+                    "Đồng bộ, thông báo & hệ thống",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
         }
 
         Box(Modifier.riseEntrance(500)) { SecTitle("Đồng bộ") }
@@ -144,9 +152,9 @@ fun MeScreen(
 
         // demo: .sec.rise cua "Giao dien" khong co animation-delay
         Box(Modifier.riseEntrance(0)) { SecTitle("Giao diện") }
-        DarkModeRow(
-            darkMode = darkMode,
-            onToggle = { haptic(); vm.setDarkMode(it) },
+        ThemeModeCard(
+            mode = darkMode,
+            onSelect = { haptic(); vm.setDarkMode(it) },
         )
         Text(
             "MÀU CHỦ ĐẠO",
@@ -157,6 +165,7 @@ fun MeScreen(
             modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 12.dp),
         )
         SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
+        CustomSeedRow(onApply = { haptic(); vm.setSeed(it) })
         Text(
             // demo .tnote: "primary family <b>và</b> neutrals"
             buildAnnotatedString {
@@ -439,35 +448,134 @@ private fun RowScope.NButton(
 
 // ---------- giao dien ----------
 
+/**
+ * Card chon che do hien thi: He thong / Sang / Toi (segmented M3E).
+ * Luu vao ThemeStore.darkMode (null = theo he thong).
+ */
 @Composable
-private fun DarkModeRow(darkMode: Boolean?, onToggle: (Boolean) -> Unit) {
+private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
     // demo .trow: margin 18px 0 4px, bo 28px, padding 14/16
-    Row(
+    Column(
         Modifier
             .fillMaxWidth()
             .padding(top = 18.dp, bottom = 4.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text("Chế độ tối", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(
-                "Đảo tông có hệ thống",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-        // demo: .tgl luon bat dau OFF (light), khong follow system
-        M3ESwitch(
-            checked = darkMode ?: false,
-            onCheckedChange = onToggle,
+        Text("Chế độ hiển thị", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(
+            "Hệ thống = theo cài đặt điện thoại",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 3.dp, bottom = 12.dp),
+        )
+        M3EConnectedButtonGroup(
+            options = listOf(null, false, true),
+            selected = mode,
+            onSelect = onSelect,
+            label = { m -> if (m == null) "Hệ thống" else if (m) "Tối" else "Sáng" },
         )
     }
+}
+
+/**
+ * Nhap ma hex + nut Ap dung: chon seed GAN NHAT trong 8 seed co san
+ * (theme engine chi co 8 scheme hand-built, khong sinh scheme tu mau tuy y).
+ * Dai mau chon nhanh = SeedRow 8 circle ben tren.
+ */
+@Composable
+private fun CustomSeedRow(onApply: (M3ESeed) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    var hex by remember { mutableStateOf("") }
+    // text thong bao + co phai loi khong
+    var feedback by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, end = 4.dp, top = 16.dp),
+    ) {
+        Text(
+            "MÀU TÙY CHỈNH",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = cs.onSurfaceVariant,
+            letterSpacing = 0.4.sp,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            OutlinedTextField(
+                value = hex,
+                onValueChange = { hex = it; feedback = null },
+                label = { Text("Mã hex") },
+                placeholder = { Text("FF5722") },
+                prefix = { Text("#") },
+                singleLine = true,
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                Modifier
+                    .width(96.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cs.primaryContainer)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) {
+                        val color = parseHexColor(hex)
+                        if (color == null) {
+                            feedback = "Mã hex không hợp lệ (vd #FF5722)" to true
+                        } else {
+                            val nearest = M3ESeed.entries.minByOrNull { s ->
+                                colorDistance(seedColors[s] ?: Color.Gray, color)
+                            } ?: M3ESeed.Cam
+                            onApply(nearest)
+                            feedback = "Đã chọn: ${seedNames[nearest] ?: nearest.name}" to false
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "Áp dụng",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cs.onPrimaryContainer,
+                )
+            }
+        }
+        feedback?.let { (msg, isError) ->
+            Text(
+                msg,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (isError) cs.error else cs.primary,
+                modifier = Modifier.padding(start = 4.dp, top = 6.dp),
+            )
+        }
+    }
+}
+
+/** Parse "#RRGGBB" / "#AARRGGBB" (dau # tuy chon); null neu khong hop le. */
+private fun parseHexColor(input: String): Color? {
+    val h = input.trim().removePrefix("#")
+    if (h.length != 6 && h.length != 8) return null
+    val v = h.toLongOrNull(16) ?: return null
+    return if (h.length == 6) Color(0xFF000000L or v) else Color(v)
+}
+
+/** Khoang cach RGB binh phuong — de tim seed gan nhat. */
+private fun colorDistance(a: Color, b: Color): Float {
+    val dr = a.red - b.red
+    val dg = a.green - b.green
+    val db = a.blue - b.blue
+    return dr * dr + dg * dg + db * db
 }
 
 private val seedColors = mapOf(

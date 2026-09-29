@@ -6,6 +6,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -70,6 +72,16 @@ fun AiSettingsCard(vm: MeViewModel) {
     var keyVisible by remember { mutableStateOf(false) }
     var dirty by remember { mutableStateOf(false) }
 
+    fun doSave() {
+        haptic()
+        vm.saveAi(
+            enabled = enabled, provider = provider,
+            baseUrl = baseUrl, model = model, apiKey = apiKey,
+        )
+        if (apiKey.isNotBlank()) apiKey = ""
+        dirty = false
+    }
+
     LaunchedEffect(settings) {
         if (!dirty) {
             enabled = settings.enabled
@@ -121,35 +133,40 @@ fun AiSettingsCard(vm: MeViewModel) {
             exit = shrinkVertically(),
         ) {
             Column(Modifier.padding(top = 12.dp)) {
-                // Provider dropdown
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                ) {
-                    OutlinedTextField(
+                // Hang 1: provider + model canh nhau, moi cai weight 1f
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AiDropdown(
+                        label = "Nhà cung cấp",
                         value = provider.label,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Nhà cung cấp") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
+                        options = AiProvider.values().map { it.label },
+                        onSelect = { label ->
+                            val p = AiProvider.values().first { it.label == label }
+                            haptic(); provider = p; model = ""; dirty = true
+                        },
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                    ) {
-                        AiProvider.values().forEach { p ->
-                            DropdownMenuItem(
-                                text = { Text(p.label) },
-                                onClick = {
-                                    haptic(); provider = p; dirty = true; expanded = false
-                                },
-                            )
-                        }
+                    if (provider == AiProvider.Custom) {
+                        // Custom: model tu do (endpoint OpenAI-compatible bat ky)
+                        OutlinedTextField(
+                            value = model,
+                            onValueChange = { model = it; dirty = true },
+                            label = { Text("Model") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        AiDropdown(
+                            label = "Model",
+                            value = if (model.isBlank()) "Mặc định (${defaultModelFor(provider)})"
+                            else model,
+                            options = listOf("Mặc định") + modelPresetsFor(provider),
+                            onSelect = { opt ->
+                                haptic()
+                                model = if (opt == "Mặc định") "" else opt
+                                dirty = true
+                            },
+                        )
                     }
                 }
 
@@ -182,38 +199,52 @@ fun AiSettingsCard(vm: MeViewModel) {
                 }
 
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = { model = it; dirty = true },
-                    label = { Text("Model (để trống = mặc định)") },
-                    placeholder = { Text(defaultModelFor(provider)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = apiKey,
-                    onValueChange = { apiKey = it; dirty = true },
-                    label = { Text(if (settings.hasApiKey) "API key mới (để trống = giữ key cũ)" else "API key") },
-                    leadingIcon = { MsIcon(Ms.key, null) },
-                    trailingIcon = {
-                        IconButton(onClick = { keyVisible = !keyVisible }) {
-                            MsIcon(if (keyVisible) Ms.visibility_off else Ms.visibility, null)
-                        }
-                    },
-                    visualTransformation = if (keyVisible) VisualTransformation.None
-                    else PasswordVisualTransformation(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done,
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Hang 2: API key 1 dong + nut Luu nho ben canh (width co dinh)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedTextField(
+                        value = apiKey,
+                        onValueChange = { apiKey = it; dirty = true },
+                        label = { Text(if (settings.hasApiKey) "API key mới (trống = giữ key cũ)" else "API key") },
+                        leadingIcon = { MsIcon(Ms.key, null) },
+                        trailingIcon = {
+                            IconButton(onClick = { keyVisible = !keyVisible }) {
+                                MsIcon(if (keyVisible) Ms.visibility_off else Ms.visibility, null)
+                            }
+                        },
+                        visualTransformation = if (keyVisible) VisualTransformation.None
+                        else PasswordVisualTransformation(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Box(
+                        Modifier
+                            .width(88.dp)
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(cs.surfaceContainerHigh)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = ::doSave,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "Lưu",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = cs.onSurfaceVariant,
+                        )
+                    }
+                }
                 Text(
                     "Key được mã hóa bằng Android Keystore, không bao giờ gửi đi nơi khác ngoài API của nhà cung cấp.",
                     fontSize = 11.sp,
@@ -223,7 +254,7 @@ fun AiSettingsCard(vm: MeViewModel) {
 
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Nut kiem tra ket noi
+                    // Nut kiem tra ket noi (giu nguyen)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
@@ -234,13 +265,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                                 indication = null,
                                 enabled = !testing,
                             ) {
-                                haptic()
-                                vm.saveAi(
-                                    enabled = enabled, provider = provider,
-                                    baseUrl = baseUrl, model = model, apiKey = apiKey,
-                                )
-                                if (apiKey.isNotBlank()) apiKey = ""
-                                dirty = false
+                                doSave()
                                 vm.testAiConnection()
                             }
                             .padding(horizontal = 18.dp, vertical = 12.dp),
@@ -262,33 +287,6 @@ fun AiSettingsCard(vm: MeViewModel) {
                             color = cs.onPrimaryContainer,
                         )
                     }
-                    Spacer(Modifier.width(8.dp))
-                    // Nut luu
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(cs.surfaceContainerHigh)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) {
-                                haptic()
-                                vm.saveAi(
-                                    enabled = enabled, provider = provider,
-                                    baseUrl = baseUrl, model = model, apiKey = apiKey,
-                                )
-                                if (apiKey.isNotBlank()) apiKey = ""
-                                dirty = false
-                            }
-                            .padding(horizontal = 18.dp, vertical = 12.dp),
-                    ) {
-                        Text(
-                            "Lưu",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = cs.onSurfaceVariant,
-                        )
-                    }
                 }
 
                 // Ket qua test
@@ -306,10 +304,61 @@ fun AiSettingsCard(vm: MeViewModel) {
     }
 }
 
+/** Dropdown gon dung chung cho provider/model: weight 1f trong Row. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RowScope.AiDropdown(
+    label: String,
+    value: String,
+    options: List<String>,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = Modifier.weight(1f),
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            singleLine = true,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { opt ->
+                DropdownMenuItem(
+                    text = { Text(opt, maxLines = 1) },
+                    onClick = { expanded = false; onSelect(opt) },
+                )
+            }
+        }
+    }
+}
+
+/** Model goi y theo provider (chon "Mặc định" = de trong, dung model mac dinh). */
+private fun modelPresetsFor(p: AiProvider): List<String> = when (p) {
+    AiProvider.OpenAI -> listOf("gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "o4-mini")
+    AiProvider.Anthropic -> listOf("claude-3-5-haiku-latest", "claude-sonnet-4-5-20250929", "claude-opus-4-1-20250805")
+    AiProvider.Google -> listOf("gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro")
+    AiProvider.DeepSeek -> listOf("deepseek-chat", "deepseek-reasoner")
+    AiProvider.Custom -> emptyList()
+}
+
 private fun providerDefaultUrl(p: AiProvider): String = when (p) {
     AiProvider.OpenAI -> "https://api.openai.com/v1"
     AiProvider.Anthropic -> "https://api.anthropic.com/v1"
     AiProvider.Google -> "https://generativelanguage.googleapis.com/v1beta/openai"
+    AiProvider.DeepSeek -> "https://api.deepseek.com/v1"
     AiProvider.Custom -> "(nhập bên dưới)"
 }
 
@@ -317,5 +366,6 @@ private fun defaultModelFor(p: AiProvider): String = when (p) {
     AiProvider.OpenAI -> "gpt-4o-mini"
     AiProvider.Anthropic -> "claude-3-5-haiku-latest"
     AiProvider.Google -> "gemini-2.0-flash"
+    AiProvider.DeepSeek -> "deepseek-chat"
     AiProvider.Custom -> ""
 }

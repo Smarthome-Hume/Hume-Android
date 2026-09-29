@@ -26,6 +26,8 @@ data class RecordingUi(
     val id: String,
     val timeLabel: String,
     val dateLabel: String,
+    /** Duong dan file mp4 da tai ve local (FrigateStore) — null neu chua tai xong. */
+    val clipPath: String? = null,
 )
 
 data class SecurityUiState(
