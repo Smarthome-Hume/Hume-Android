@@ -865,13 +865,14 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
     Column(
         Modifier.fillMaxWidth(),
     ) {
-        // Dai mau spectrum: hue slider (giong Google color picker) - keo duoc
-        Box(Modifier.fillMaxWidth().height(40.dp)) {
+        // Dai mau spectrum: hue slider (giong Google color picker) - keo duoc.
+        // Gon nhe theo design system (2026-09-30, user: the mau tuy chinh qua to).
+        Box(Modifier.fillMaxWidth().height(28.dp)) {
             // Nen gradient cau vong
             Box(
                 Modifier
                     .matchParentSize()
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .background(
                         androidx.compose.ui.graphics.Brush.horizontalGradient(
                             colors = List(7) { i ->
@@ -893,13 +894,14 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                 ),
             )
         }
-        // O mau 2D: saturation (ngang) x value/brightness (doc) — cham/keo de chon
-        Spacer(Modifier.height(8.dp))
+        // O mau 2D: saturation (ngang) x value/brightness (doc) — cham/keo de chon.
+        // Thu gon 160 -> 112dp cho the khong qua cao (2026-09-30).
+        Spacer(Modifier.height(6.dp))
         androidx.compose.foundation.layout.BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .height(160.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .height(112.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(
                     androidx.compose.ui.graphics.Brush.verticalGradient(
                         colors = listOf(
@@ -938,10 +940,10 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             Box(
                 Modifier
                     .offset(
-                        x = maxWidth * sat - 11.dp,
-                        y = maxHeight * (1f - value) - 11.dp,
+                        x = maxWidth * sat - 9.dp,
+                        y = maxHeight * (1f - value) - 9.dp,
                     )
-                    .size(22.dp)
+                    .size(18.dp)
                     .border(
                         2.dp,
                         androidx.compose.ui.graphics.Color.White,
@@ -950,7 +952,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             )
         }
         // Slider cho saturation va brightness
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         Row(
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -974,17 +976,17 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             )
         }
         // Hien thi HEX / RGB / HSV + preview
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         Row(
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(currentColor)
-                    .border(1.dp, cs.outlineVariant, RoundedCornerShape(12.dp)),
+                    .border(1.dp, cs.outlineVariant, RoundedCornerShape(10.dp)),
             )
             Column(Modifier.weight(1f)) {
                 Text("HEX $hexString", fontSize = 11.sp, fontWeight = FontWeight.Medium)
@@ -993,14 +995,10 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             }
             Box(
                 Modifier
-                    .width(96.dp)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(cs.primaryContainer)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
+                    .pressMorph(pressedScale = 0.92f) {
                         val c = currentColor
                         val argb = (0xFF000000L or
                             ((c.red * 255).toInt().toLong() shl 16) or
@@ -1008,7 +1006,8 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                             (c.blue * 255).toInt().toLong())
                         onApplyCustom(argb)
                         feedback = "Đã áp dụng màu tùy chỉnh" to false
-                    },
+                    }
+                    .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
