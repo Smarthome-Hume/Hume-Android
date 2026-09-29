@@ -69,21 +69,22 @@ import kotlin.math.roundToInt
 
 private const val VB_W = 380f
 private const val VB_H = 460f
-// Tang chieu ngang node 150 -> 170 de thang hang voi can le chu (2026-09-30, user yeu cau).
-private const val NODE_W = 170f
+// Node 150 rong de mep trong cach xa hub 64px: kenh line 68px cho elbow
+// thoang (2026-09-30, user: node ap sat inverter lam line bi bop).
+private const val NODE_W = 150f
 private const val NODE_H = 190f
 
 private fun prodPath() = Path().apply {
-    moveTo(156f, 62f); lineTo(166f, 62f); quadraticTo(182f, 62f, 182f, 78f); lineTo(182f, 198f)
+    moveTo(146f, 62f); lineTo(166f, 62f); quadraticTo(176f, 62f, 176f, 78f); lineTo(176f, 198f)
 }
 private fun gridPath() = Path().apply {
-    moveTo(198f, 198f); lineTo(198f, 78f); quadraticTo(198f, 62f, 214f, 62f); lineTo(224f, 62f)
+    moveTo(204f, 198f); lineTo(204f, 78f); quadraticTo(204f, 62f, 214f, 62f); lineTo(234f, 62f)
 }
 private fun consPath() = Path().apply {
-    moveTo(182f, 262f); lineTo(182f, 374f); quadraticTo(182f, 390f, 166f, 390f); lineTo(156f, 390f)
+    moveTo(176f, 262f); lineTo(176f, 374f); quadraticTo(176f, 390f, 166f, 390f); lineTo(146f, 390f)
 }
 private fun battPath() = Path().apply {
-    moveTo(198f, 262f); lineTo(198f, 374f); quadraticTo(198f, 390f, 214f, 390f); lineTo(224f, 390f)
+    moveTo(204f, 262f); lineTo(204f, 374f); quadraticTo(204f, 390f, 214f, 390f); lineTo(234f, 390f)
 }
 
 /** Toc do sweep: 18/v giay, clamp 4-14s — v la kW (dung abs de gia tri am van co toc do). */
