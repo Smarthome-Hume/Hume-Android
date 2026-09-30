@@ -73,6 +73,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.avatar.AvatarStore
 import com.smarthome.hume.core.ui.avatar.AvatarViewerRequest
@@ -276,7 +277,7 @@ fun HomeScreen(
                     if (tips.isNotEmpty() || aiTips.isNotEmpty()) {
                         item {
                             Column(Modifier.padding(bottom = 12.dp)) {
-                                RiseIn(155) { SectionTitle("Gợi ý cho bạn") }
+                                RiseIn(155) { M3ESectionTitle("Gợi ý cho bạn") }
                             }
                         }
                         item {
@@ -328,7 +329,7 @@ fun HomeScreen(
                     }
                     item {
                         Column(Modifier.padding(bottom = 12.dp)) {
-                            RiseIn(340) { SectionTitle("Phòng") }
+                            RiseIn(340) { M3ESectionTitle("Phòng") }
                         }
                     }
                     item {
@@ -408,19 +409,7 @@ fun HomeScreen(
     }
 }
 
-/** h3 section title theo demo (.sec h3): 16px/700/-0.1px, margin 20px 4px 10px
- * (margin-top 20px duoc hap thu vao bottom cua item truoc; bottom de thanh 12px). */
-@Composable
-private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = (-0.1).sp,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(start = 4.dp, end = 4.dp),
-    )
-}
+
 
 /**
  * Hieu ung vao .rise cua demo: dung Modifier.riseIn (giua layout on dinh,

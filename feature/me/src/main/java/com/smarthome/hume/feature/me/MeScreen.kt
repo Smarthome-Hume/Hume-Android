@@ -98,6 +98,7 @@ import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
@@ -224,7 +225,7 @@ fun MeScreen(
             }
         }
 
-        Box(Modifier.riseEntrance(400)) { SecTitle("Ảnh đại diện") }
+        Box(Modifier.riseEntrance(400)) { M3ESectionTitle("Ảnh đại diện", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
         Box(Modifier.riseEntrance(420)) {
             MeAvatarCard(
                 userKey = userKey,
@@ -237,10 +238,10 @@ fun MeScreen(
             )
         }
 
-        Box(Modifier.riseEntrance(620)) { SecTitle("Trí tuệ nhân tạo") }
+        Box(Modifier.riseEntrance(620)) { M3ESectionTitle("Trí tuệ nhân tạo", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
         Box(Modifier.riseEntrance(640)) { AiSettingsCard(vm = vm) }
 
-        Box(Modifier.riseEntrance(660)) { SecTitle("Camera") }
+        Box(Modifier.riseEntrance(660)) { M3ESectionTitle("Camera", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
         Box(Modifier.riseEntrance(680)) { FrigateRemoteCard(vm = vm) }
 
         // (Muc "FAB menu" tam xoa theo yeu cau 29/09)
@@ -563,18 +564,6 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
             )
         }
     }
-}
-
-@Composable
-private fun SecTitle(title: String) {
-    // demo .sec h3: 16px/700 ls -.1px == titleMedium
-    Text(
-        title,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = (-0.1).sp,
-        modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 12.dp),
-    )
 }
 
 // ---------- avatar ----------

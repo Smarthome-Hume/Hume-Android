@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.M3ESectionLabel
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import java.util.Locale
@@ -213,7 +214,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     .background(cs.primaryContainer)
                     .padding(18.dp),
             ) {
-                SecTitle("NHẬN ĐỊNH", light = true)
+                M3ESectionLabel("NHẬN ĐỊNH", light = true)
                 Spacer(Modifier.height(8.dp))
                 Text(d.aiInsight, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
             }
@@ -221,7 +222,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         // Thoi tiet
         StaggerCard(1, tabKey) {
             BriefCard {
-                SecTitle("THỜI TIẾT HÔM NAY")
+                M3ESectionLabel("THỜI TIẾT HÔM NAY")
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val (icon, tint) = when (d.weather.kind) {
@@ -273,7 +274,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         // Nang luong
         StaggerCard(2, tabKey) {
             BriefCard {
-                SecTitle("NĂNG LƯỢNG HÔM QUA")
+                M3ESectionLabel("NĂNG LƯỢNG HÔM QUA")
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatBox(
@@ -313,7 +314,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         // Top thiet bi
         StaggerCard(3, tabKey) {
             BriefCard {
-                SecTitle("TOP TIÊU THỤ HÔM QUA")
+                M3ESectionLabel("TOP TIÊU THỤ HÔM QUA")
                 Spacer(Modifier.height(10.dp))
                 val max = d.topDevices.maxOfOrNull { it.kwh } ?: 1.0
                 d.topDevices.forEachIndexed { i, dev ->
@@ -425,14 +426,14 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                     .background(cs.primaryContainer)
                     .padding(18.dp),
             ) {
-                SecTitle("AI TỔNG KẾT THÁNG", light = true)
+                M3ESectionLabel("AI TỔNG KẾT THÁNG", light = true)
                 Spacer(Modifier.height(8.dp))
                 Text(m.aiSummary, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
             }
         }
         StaggerCard(1, tabKey) {
             BriefCard {
-                SecTitle("TỔNG QUAN THÁNG ${m.monthLabel}")
+                M3ESectionLabel("TỔNG QUAN THÁNG ${m.monthLabel}")
                 Spacer(Modifier.height(10.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -477,7 +478,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
         }
         StaggerCard(2, tabKey) {
             BriefCard {
-                SecTitle("TẦNG TIÊU THỤ NHIỀU NHẤT")
+                M3ESectionLabel("TẦNG TIÊU THỤ NHIỀU NHẤT")
                 Spacer(Modifier.height(10.dp))
                 val max = m.floors.maxOfOrNull { it.kwh } ?: 1.0
                 m.floors.forEachIndexed { i, f ->
@@ -497,7 +498,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
         }
         StaggerCard(3, tabKey) {
             BriefCard {
-                SecTitle("TOP THIẾT BỊ THÁNG")
+                M3ESectionLabel("TOP THIẾT BỊ THÁNG")
                 Spacer(Modifier.height(10.dp))
                 val max = m.topDevices.maxOfOrNull { it.kwh } ?: 1.0
                 m.topDevices.forEachIndexed { i, dev ->
@@ -523,16 +524,6 @@ private fun BriefCard(content: @Composable () -> Unit) {
             .background(cs.surfaceContainerHigh)
             .padding(18.dp),
     ) { content() }
-}
-
-@Composable
-private fun SecTitle(text: String, light: Boolean = false) {
-    val cs = MaterialTheme.colorScheme
-    Text(
-        text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 1.5.sp,
-        color = if (light) cs.onPrimaryContainer else cs.onSurfaceVariant,
-    )
 }
 
 @Composable
