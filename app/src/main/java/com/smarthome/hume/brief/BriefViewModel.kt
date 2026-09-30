@@ -42,12 +42,21 @@ class BriefViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Mo trang: neu brief ngay khong phai hom qua thi tao moi. */
+    /** Mo trang: neu brief ngay khong phai hom qua thi tao moi. Ngoai ra, neu
+     * thoi tiet trong brief chua co vi tri ma quyen vi tri da duoc cap thi
+     * chi thu lai phan thoi tiet (re, khong goi AI) de tu phuc hoi. */
     fun refreshIfStale() {
         val r = repo ?: return
         val yesterday = LocalDate.now(ZoneId.systemDefault()).minusDays(1)
             .format(DateTimeFormatter.ofPattern("dd/MM"))
-        if (_cache.value?.daily?.dateLabel != yesterday) refresh()
+        val c = _cache.value
+        if (c?.daily?.dateLabel != yesterday) {
+            refresh()
+        } else if (c.daily?.weather?.hasLocation == false && r.hasLocationPermission()) {
+            viewModelScope.launch {
+                if (r.refreshWeatherOnly()) _cache.value = r.loadCache()
+            }
+        }
     }
 
     fun refresh() {

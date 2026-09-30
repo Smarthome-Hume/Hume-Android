@@ -20,7 +20,7 @@ import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlinx.coroutines.Dispatchers
@@ -100,6 +100,20 @@ class BriefRepository(
             prefs.edit().putBoolean("brief_new", true).apply()
             _hasNew.value = true
         }
+    }
+
+    /**
+     * Chi fetch lai thoi tiet roi va vao brief ngay hien co (khong goi AI,
+     * khong cham HA). Tra ve true neu lay duoc vi tri + du lieu moi.
+     * Dung de tu phuc hoi khi mo trang ma brief cu chua co thoi tiet.
+     */
+    suspend fun refreshWeatherOnly(): Boolean {
+        val w = fetchWeather()
+        if (!w.hasLocation) return false
+        val c = loadCache() ?: return false
+        val daily = c.daily ?: return false
+        saveCache(c.copy(daily = daily.copy(weather = w)))
+        return true
     }
 
     // ---------------- daily ----------------
@@ -247,7 +261,7 @@ class BriefRepository(
 
     // ---------------- weather (Met.no) ----------------
 
-    private fun hasLocationPermission(): Boolean =
+    fun hasLocationPermission(): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
 
@@ -255,31 +269,58 @@ class BriefRepository(
     private suspend fun currentLatLon(): Pair<Double, Double>? {
         val savedLat = prefs.getFloat("last_lat", Float.NaN)
         val savedLon = prefs.getFloat("last_lon", Float.NaN)
-        val fallback = if (!savedLat.isNaN() && !savedLon.isNaN()) savedLat.toDouble() to savedLon.toDouble() else null
-        if (!hasLocationPermission()) return fallback
-        val loc = withTimeoutOrNull(8000) {
-            suspendCoroutine { cont ->
+        val saved = if (!savedLat.isNaN() && !savedLon.isNaN()) savedLat.toDouble() to savedLon.toDouble() else null
+        if (!hasLocationPermission()) return saved
+        val fused = LocationServices.getFusedLocationProviderClient(context)
+        fun rememberLoc(loc: Pair<Double, Double>) {
+            prefs.edit()
+                .putFloat("last_lat", loc.first.toFloat())
+                .putFloat("last_lon", loc.second.toFloat())
+                .apply()
+        }
+        // B1: Vi tri tuoi (toi da 8s). getCurrentLocation hay tra null khi may
+        // idle / trong nha / chua co fix — khong duoc dung o day.
+        val fresh: Pair<Double, Double>? = withTimeoutOrNull(8000) {
+            suspendCancellableCoroutine { cont ->
+                val cts = CancellationTokenSource()
+                cont.invokeOnCancellation { cts.cancel() }
                 try {
-                    val fused = LocationServices.getFusedLocationProviderClient(context)
-                    val cts = CancellationTokenSource()
                     fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.token)
                         .addOnSuccessListener { l ->
-                            if (l != null) {
-                                prefs.edit()
-                                    .putFloat("last_lat", l.latitude.toFloat())
-                                    .putFloat("last_lon", l.longitude.toFloat())
-                                    .apply()
-                                cont.resume(l.latitude to l.longitude)
-                            } else cont.resume(fallback)
+                            if (!cont.isCompleted) cont.resume(l?.let { it.latitude to it.longitude })
                         }
-                        .addOnFailureListener { cont.resume(fallback) }
-                        .addOnCanceledListener { cont.resume(fallback) }
+                        .addOnFailureListener { if (!cont.isCompleted) cont.resume(null) }
+                        .addOnCanceledListener { if (!cont.isCompleted) cont.resume(null) }
                 } catch (t: Throwable) {
-                    cont.resume(fallback)
+                    if (!cont.isCompleted) cont.resume(null)
                 }
             }
         }
-        return loc ?: fallback
+        if (fresh != null) {
+            rememberLoc(fresh)
+            return fresh
+        }
+        // B2: Vi tri cache cua Play Services — gan nhu luon co neu may tung
+        // dung vi tri, du cu vai gio van du dung cho thoi tiet khu vuc.
+        val last: Pair<Double, Double>? = runCatching {
+            suspendCancellableCoroutine { cont ->
+                try {
+                    fused.lastLocation
+                        .addOnSuccessListener { l ->
+                            if (!cont.isCompleted) cont.resume(l?.let { it.latitude to it.longitude })
+                        }
+                        .addOnFailureListener { if (!cont.isCompleted) cont.resume(null) }
+                } catch (t: Throwable) {
+                    if (!cont.isCompleted) cont.resume(null)
+                }
+            }
+        }.getOrNull()
+        if (last != null) {
+            rememberLoc(last)
+            return last
+        }
+        // B3: Vi tri lan cuoi lay duoc (da luu).
+        return saved
     }
 
     private suspend fun fetchWeather(): BriefWeather = withContext(Dispatchers.IO) {
