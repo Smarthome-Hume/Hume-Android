@@ -120,7 +120,10 @@ fun M3ERootScreen(
         var camPopup by remember { mutableStateOf<CameraPopupRequest?>(null) }
         // Rect avatar header (boundsInWindow): de xoa "bong ma" avatar khoi
         // anh nen ca khi mo popup camera, khong chi avatar viewer.
-        var headerAvatarRect by remember { mutableStateOf<Rect?>(null) }
+        // (2026-09-30) Dung ref THUONG thay vi state: onGloballyPositioned
+        // chay moi frame khi scroll -> set state o day tung recompose
+        // M3ERootScreen + HomeScreen moi frame = khựng. Rect chi can luc tap.
+        val headerAvatarRectRef = remember { object { var rect: Rect? = null } }
         val overlayOpen = avatarViewer != null || camPopup != null
         // Chup nen 1 lan truoc khi mo overlay roi hien anh tinh da blur san:
         // tranh blur live toan man hinh moi frame (nguyen nhan chinh gay khựng
@@ -174,10 +177,10 @@ fun M3ERootScreen(
                         onOpenCameraPopup = { req ->
                             // Xoa bong ma avatar header khoi nen (giong viewer)
                             // de avatar khong hien mo mo sau lop mo + blur.
-                            bgSnapshot = captureSnapshot(headerAvatarRect)
+                            bgSnapshot = captureSnapshot(headerAvatarRectRef.rect)
                             camPopup = req
                         },
-                        onAvatarPositioned = { headerAvatarRect = it },
+                        onAvatarPositioned = { headerAvatarRectRef.rect = it },
                         loadChartHistory = { series, startMs, endMs ->
                             val entityId = when (series) {
                                 ChartHistorySeries.BatterySoc -> HumeConfig.BATTERY_SOC

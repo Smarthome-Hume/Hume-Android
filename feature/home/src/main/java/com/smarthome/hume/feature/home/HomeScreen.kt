@@ -127,7 +127,10 @@ fun HomeScreen(
     LaunchedEffect(state.userKey) {
         if (state.userKey.isNotBlank()) avatarStore.load(state.userKey)
     }
-    var avatarRect by remember { mutableStateOf<Rect?>(null) }
+    // (2026-09-30) Ref thuong thay vi state: onGloballyPositioned chay moi
+    // frame khi scroll; set state o day recompose ca HomeScreen moi frame.
+    // Rect chi can luc tap avatar de mo viewer.
+    val avatarRectRef = remember { object { var rect: Rect? = null } }
     val secState by remember { HumeGraph.get().securityRepository.securityState }.collectAsState()
 
     ui.snackbar?.let { s ->
@@ -240,12 +243,12 @@ fun HomeScreen(
                                                 name = state.userName.ifBlank { "Gia đình" },
                                                 avatar = userAvatar,
                                                 haAvatarUrl = state.avatarUrl,
-                                                targetRect = avatarRect,
+                                                targetRect = avatarRectRef.rect,
                                             ),
                                         )
                                     },
                                     onAvatarPositioned = {
-                                        avatarRect = it
+                                        avatarRectRef.rect = it
                                         onAvatarPositioned(it)
                                     },
                                     onSearch = { viewModel.openSearch(true) },

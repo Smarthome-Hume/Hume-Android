@@ -257,21 +257,33 @@ private fun FlowArea(
                 total = prodTot,
             )
         }
-        // Trang thai luoi dien cung hang icon (2026-09-30, user): pill tonal M3E
-        // dua vao sensor.grid_status; mat dien = do cung (#BA1A1A).
+        // Trang thai luoi dien: pill tonal M3E DAT DUOI CUNG node (2026-09-30,
+        // user) — de cung hang icon bi tran (node ~146dp, icon+badge can ~159dp).
+        // Mat dien = do cung (#BA1A1A).
         val gridBadgeFg = if (flow.gridOn) Color(0xFF16A34A) else Color(0xFFBA1A1A)
         FlowNode(
             icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(24.dp)) },
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
-            iconBadge = if (flow.gridOn) "Cấp điện" else "Mất điện",
-            iconBadgeBg = gridBadgeFg.copy(alpha = 0.16f),
-            iconBadgeFg = gridBadgeFg,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
-        )
+        ) {
+            Text(
+                if (flow.gridOn) "Cấp điện" else "Mất điện",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                color = gridBadgeFg,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(gridBadgeFg.copy(alpha = 0.16f))
+                    .padding(horizontal = 9.dp, vertical = 4.dp),
+            )
+        }
         FlowNode(
             icon = { MsIcon(M3EIcons.Home, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) },
             tintBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
