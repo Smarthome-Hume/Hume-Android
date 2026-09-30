@@ -17,6 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -92,34 +93,56 @@ fun PillsRow(
         "armed_night" -> SecurityMode.Night
         else -> SecurityMode.Off
     }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .then(
-                // Khi mo rong: them padding 2 dau de khong bi cat mep khi scroll
-                if (securityExpanded) Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 2.dp)
-                else Modifier,
-            ),
-    ) {
-        SecPill(
-            mode = mode,
-            onClick = onToggleSecurity,
-            // Chieu cao co dinh = SecModeCard (80dp) de 3 the bang nhau khi mo rong
-            modifier = (if (securityExpanded) Modifier.widthIn(min = 150.dp)
-            else Modifier.weight(1f)).height(80.dp),
+    // Two-phase collapse (2026-09-30, fix nhay + khung khi tu thu gon).
+    // Video frame-by-frame (t=8.44->8.47, 1 frame): khi securityExpanded=false,
+    // cung 1 frame Row mat horizontalScroll + 2 pill widthIn->weight(1f) trong
+    // khi cum mode exit van chiem ~400dp layout -> 2 pill bi don ve ~6dp
+    // (bien mat), cum mode nhay trai ~150dp = "nhay"; roi treo fade 300ms =
+    // "khung". -> compact chi bat SAU khi exit xong (370ms); width 2 pill
+    // animate muot 150/128 <-> nua man hinh bang animateDpAsState, khong
+    // snap frame nao. Chieu MO cung het snap (truoc day mo la weight->min-width
+    // ngay lap tuc).
+    var compact by remember { mutableStateOf(!securityExpanded) }
+    LaunchedEffect(securityExpanded) {
+        if (securityExpanded) compact = false
+        else { delay(370); compact = true }
+    }
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val halfPill = (maxWidth - 10.dp) / 2
+        val secW by animateDpAsState(
+            targetValue = if (compact) halfPill else 150.dp,
+            animationSpec = tween(300, easing = M3EMotion.emphasized),
+            label = "secPillW",
         )
-        // .secmodes: chi hien khi expanded.
-        // (2026-09-30, fix nhay khi thu gon) exit PHAI shrink layout width:
-        // exit cu chi fade+scale (graphicsLayer, khong doi layout size) nen
-        // trong 300ms exit, Row mat horizontalScroll bi tran (4 card ~400dp
-        // > viewport) -> 2 pill weight(1f) bi do ve width 0 roi moi bat lai
-        // khi exit xong = hien tuong "nhay". shrinkHorizontally cho width
-        // cua secmodes 400->0 trong 350ms, 2 pill weight gian no mem theo
-        // cung nhip, khong snap.
+        val bulbW by animateDpAsState(
+            targetValue = if (compact) halfPill else 128.dp,
+            animationSpec = tween(300, easing = M3EMotion.emphasized),
+            label = "bulbPillW",
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    // Khi mo rong (compact=false, ca trong luc exit dang chay):
+                    // giu horizontalScroll + width min de layout on dinh
+                    if (!compact) Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 2.dp)
+                    else Modifier,
+                ),
+        ) {
+            SecPill(
+                mode = mode,
+                onClick = onToggleSecurity,
+                // Chieu cao co dinh = SecModeCard (80dp) de 3 the bang nhau khi mo rong
+                modifier = Modifier.widthIn(min = secW).height(80.dp),
+            )
+        // .secmodes: chi hien khi expanded. Exit shrink layout width
+        // (fadeOut + shrinkHorizontally) de cum mode thu dan 400->0dp;
+        // nho two-phase o tren, Row van giu layout expanded trong luc exit
+        // nen 2 pill khong bi don width.
         AnimatedVisibility(
             visible = securityExpanded,
             enter = fadeIn(tween(450, easing = M3EMotion.emphasized)),
@@ -158,12 +181,12 @@ fun PillsRow(
                 }
             }
         }
-        BulbPill(
-            count = lightsOnCount,
-            onClick = onLights,
-            modifier = if (securityExpanded) Modifier.widthIn(min = 128.dp)
-            else Modifier.weight(1f),
-        )
+            BulbPill(
+                count = lightsOnCount,
+                onClick = onLights,
+                modifier = Modifier.widthIn(min = bulbW),
+            )
+        }
     }
 }
 
