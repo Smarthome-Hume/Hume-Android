@@ -82,8 +82,25 @@ class BriefRepository(
 
     fun loadCache(): BriefCache? = runCatching {
         if (!cacheFile.exists()) return null
-        json.decodeFromString<BriefCache>(cacheFile.readText())
+        pruneMonthlyForNewMonth(json.decodeFromString<BriefCache>(cacheFile.readText()))
     }.getOrNull()
+
+    /**
+     * Nguyen tac: sang mung 1 xoa ban "da chot" cua thang truoc.
+     * Ban thang chi de xem tu ngay 28 den het thang (cung thang lich voi
+     * ngay 27 chot ky). Ngoai khoang do -> an di (refreshAll se build lai
+     * khi den ky).
+     */
+    private fun pruneMonthlyForNewMonth(c: BriefCache): BriefCache {
+        val m = c.monthly ?: return c
+        val today = LocalDate.now(ZoneId.systemDefault())
+        val (schS, schE) = scheduledPeriod(today)
+        val visible = today.monthValue == schE.monthValue && today.year == schE.year
+        if (visible && m.periodKey == "${schS}_${schE}") return c
+        val pruned = c.copy(monthly = null)
+        runCatching { saveCache(pruned) }
+        return pruned
+    }
 
     fun markSeen() {
         prefs.edit().putBoolean("brief_new", false).apply()
@@ -106,12 +123,19 @@ class BriefRepository(
         var monthlyLive = _cache.value?.monthlyLive
         val (schS, schE) = scheduledPeriod(today)
         val closedKey = "${schS}_${schE}"
-        // Ban theo lich: ky dien da chot (vd thang 9 = 28/8-27/9). So sanh bang
-        // periodKey (khong dung monthLabel) de cache cu thang duong lich
-        // ("9/2026") khong bi nham la da build. Ngay 27 dung so lieu live
-        // (sensor chua reset), tu ngay 28 dung last_period / lich su tai luc chot.
-        if (monthly?.periodKey != closedKey) {
-            monthly = buildClosedMonthly(today)
+        // Ban theo lich: ky dien da chot (vd thang 9 = 28/8-27/9). Chi giu de
+        // xem tu ngay 28 den het thang; sang mung 1 thi xoa (nguyen tac cua
+        // user). So sanh bang periodKey de cache cu thang duong lich
+        // ("9/2026") khong bi nham la da build.
+        val visible = today.monthValue == schE.monthValue && today.year == schE.year
+        monthly = if (!visible) {
+            null
+        } else if (monthly?.periodKey != closedKey) {
+            // Ngay 27 dung so lieu live (sensor chua reset), tu ngay 28 dung
+            // last_period / lich su tai luc chot.
+            buildClosedMonthly(today)
+        } else {
+            monthly
         }
         // Ban on-demand cua ky dang chay: xoa khi da sang ky moi.
         val (curS, curE) = billingPeriod(today)
