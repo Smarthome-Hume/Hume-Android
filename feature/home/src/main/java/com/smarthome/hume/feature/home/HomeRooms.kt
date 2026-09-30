@@ -558,6 +558,8 @@ fun DeviceRow(
     onToggle: () -> Unit,
     contactOpen: Boolean? = null,
     modifier: Modifier = Modifier,
+    // Ten phong hien tren dong trang thai (search, 2026-09-30): null = khong hien.
+    roomLabel: String? = null,
 ) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
@@ -601,6 +603,8 @@ fun DeviceRow(
                 color = cs.onSurface,
             )
             val powerW = d.powerW
+            val roomSuffix =
+                if (!roomLabel.isNullOrBlank()) " · $roomLabel" else ""
             Text(
                 when {
                     contactOpen == true -> "Đang mở"
@@ -609,7 +613,7 @@ fun DeviceRow(
                     else -> "Đang tắt"
                 } + (if (d.isOn && powerW != null && powerW > 0)
                     " · ${if (powerW >= 1000) "%.1f kW".format(powerW / 1000) else "%.0f W".format(powerW)}"
-                else ""),
+                else "") + roomSuffix,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,

@@ -123,7 +123,7 @@ class AppHomeRepository(
     private var lastWatched: Set<String> = emptySet()
     private fun updateWatched(s: HomeUiState) {
         val ids = HashSet<String>()
-        // Tat ca thiet bi (config + climate + tu phat hien) — bao gom sensor dien.
+        // Tat ca thiet bi tren UI (config phong + climate) — bao gom sensor dien.
         s.searchDevices.forEach { ids.add(it.entityId) }
         s.lightsOn.forEach { ids.add(it.entityId) }
         s.alarm?.let { ids.add(it.entityId) }
@@ -355,19 +355,21 @@ class AppHomeRepository(
      *    phan loai dung (dieu hoa / den / o cam / cong tac / quat / rem / khoa).
      * sub mang tu khoa loai de chip "Dieu hoa"/"O cam" luon match.
      */
+    /**
+     * Danh sach tim kiem (2026-09-30): CHI gom thiet bi co tren giao dien
+     * (thiet bi + dieu hoa cua cac phong). Entity le khong thuoc phong nao
+     * (khong hien tren UI) khong dua vao search theo yeu cau user.
+     */
     private fun buildSearchDevices(
         entities: Map<String, LegacyEntity>,
         rooms: List<RoomUi>,
     ): List<DeviceUi> {
         val out = mutableListOf<DeviceUi>()
-        val covered = mutableSetOf<String>()
         rooms.forEach { r ->
             r.devices.forEach { d ->
-                covered.add(d.entityId)
                 out.add(d.copy(sub = r.name))
             }
             r.climate?.let { c ->
-                covered.add(c.entityId)
                 out.add(
                     DeviceUi(
                         entityId = c.entityId,
@@ -380,16 +382,6 @@ class AppHomeRepository(
                 )
             }
         }
-        entities.values
-            .filter { e ->
-                e.id.substringBefore('.') in
-                    setOf("light", "switch", "fan", "cover", "lock", "climate") &&
-                    e.id !in covered
-            }
-            .forEach { e ->
-                covered.add(e.id)
-                out.add(autoSearchDevice(e))
-            }
         return out.distinctBy { it.entityId }
     }
 
@@ -400,59 +392,6 @@ class AppHomeRepository(
         return if (n.contains("điều hoà", ignoreCase = true) ||
             n.contains("điều hòa", ignoreCase = true)
         ) n else "Điều hoà"
-    }
-
-    /** Phan loai entity le thanh DeviceUi dung loai cho tim kiem. */
-    private fun autoSearchDevice(e: LegacyEntity): DeviceUi {
-        val domain = e.id.substringBefore('.')
-        val idLower = e.id.lowercase()
-        val name = friendlyName(e)
-        return when (domain) {
-            "climate" -> DeviceUi(
-                e.id, climateSearchLabel(e), "điều hoà",
-                "snowflake", DeviceKind.Climate, e.state != "off",
-            )
-            "light" -> DeviceUi(
-                e.id, name, "đèn",
-                "bulb", DeviceKind.Toggle, e.isOn,
-            )
-            "switch" -> {
-                val isOutlet = listOf("plug", "outlet", "socket", "o_cam", "ocam")
-                    .any { it in idLower }
-                val baseIcon = if (isOutlet) "plug" else "switch"
-                val baseSub = if (isOutlet) "ổ cắm" else "công tắc"
-                DeviceUi(e.id, name, baseSub, iconForName(name, baseIcon), DeviceKind.Toggle, e.isOn)
-            }
-            "fan" -> DeviceUi(e.id, name, "quạt", iconForName(name, "fan"), DeviceKind.Toggle, e.isOn)
-            "cover" -> DeviceUi(e.id, name, "rèm", "blinds", DeviceKind.Toggle, e.isOn)
-            "lock" -> DeviceUi(
-                e.id, name, "khóa", "lock",
-                DeviceKind.Toggle, e.state == "locked",
-            )
-            else -> DeviceUi(e.id, name, "", iconForName(name, "switch"), DeviceKind.Toggle, e.isOn)
-        }
-    }
-
-    /**
-     * Icon theo ten thiet bi (2026-09-30): uu tien ten cu the (tu lanh, may giat...)
-     * truoc khi dung icon mac dinh theo domain. Giong M3EIcons.device().
-     */
-    private fun iconForName(name: String, fallback: String): String {
-        val n = name.lowercase()
-        return when {
-            "tủ lạnh" in n || "tu lanh" in n || "refrigerator" in n || "fridge" in n -> "fridge"
-            "máy giặt" in n || "may giat" in n || "washing" in n -> "washer"
-            "máy sấy" in n || "may say" in n || "sấy" in n || "dryer" in n -> "dryer"
-            "máy rửa bát" in n || "rua bat" in n || "dishwasher" in n -> "dishwasher"
-            "tivi" in n || "tv" in n || "ti vi" in n -> "tv"
-            "quạt" in n || "quat" in n || "fan" in n -> "fan"
-            "điều hoà" in n || "dieu hoa" in n || "máy lạnh" in n || "may lanh" in n -> "snowflake"
-            "nồi chiên" in n || "noi chien" in n || "airfryer" in n -> "airfryer"
-            "bếp" in n || "bep" in n || "cooking" in n -> "cooking"
-            "đèn" in n || "den" in n || "light" in n -> "bulb"
-            "ổ cắm" in n || "o cam" in n || "plug" in n || "outlet" in n -> "plug"
-            else -> fallback
-        }
     }
 
     private fun buildRoom(room: RoomConfig, entities: Map<String, LegacyEntity>): RoomUi {

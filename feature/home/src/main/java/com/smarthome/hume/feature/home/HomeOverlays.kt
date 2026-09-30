@@ -500,14 +500,37 @@ fun DeviceSearchView(
                             .padding(vertical = 32.dp),
                     )
                 } else {
-                    // Phan loai: Dieu hoa / Den / O cam.
-                    // User 2026-09-29: cong tac phai vao dung loai, khong
-                    // nhét chung vao O cam.
-                    val acList = results.filter { it.kind == DeviceKind.Climate || it.iconKey == "snowflake" }
-                    val lightList = results.filter { it.iconKey in listOf("bulb", "lightbulb", "light") }
-                    val outletList = results.filter { it.iconKey in listOf("plug", "outlet") }
+                    // Phan loai theo DOMAIN entity + iconKey (2026-09-30):
+                    // loc iconKey thuan lam den icon "sun"/"desk" rot vao
+                    // otherList khong header, nhin nhu lan vao O cam.
+                    // Dieu hoa: climate; Den: domain light (ke ca sun/desk);
+                    // O cam: plug/outlet that; Cong tac: switch con lai.
+                    fun domainOf(d: DeviceUi) = d.entityId.substringBefore('.')
+                    fun isOutletId(id: String): Boolean {
+                        val l = id.lowercase()
+                        return listOf("plug", "outlet", "socket", "o_cam", "ocam")
+                            .any { it in l }
+                    }
+                    val lightKeys = listOf("bulb", "lightbulb", "light", "sun", "desk")
+                    val acList = results.filter {
+                        it.kind == DeviceKind.Climate || domainOf(it) == "climate"
+                    }
+                    val lightList = results.filter { d ->
+                        d !in acList &&
+                            (domainOf(d) == "light" || d.iconKey in lightKeys)
+                    }
+                    val outletList = results.filter { d ->
+                        d !in acList && d !in lightList &&
+                            (d.iconKey == "plug" || d.iconKey == "outlet" ||
+                                (domainOf(d) == "switch" && isOutletId(d.entityId)))
+                    }
+                    val switchList = results.filter { d ->
+                        d !in acList && d !in lightList && d !in outletList &&
+                            domainOf(d) == "switch"
+                    }
                     val otherList = results.filter { d ->
-                        d !in acList && d !in lightList && d !in outletList
+                        d !in acList && d !in lightList && d !in outletList &&
+                            d !in switchList
                     }
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -527,7 +550,11 @@ fun DeviceSearchView(
                                 )
                             }
                             itemsIndexed(acList, key = { _, d -> d.entityId }) { _, d ->
-                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                                DeviceRow(
+                                    d,
+                                    onToggle = { onToggle(d.entityId) },
+                                    roomLabel = d.sub,
+                                )
                             }
                         }
                         if (lightList.isNotEmpty()) {
@@ -542,7 +569,11 @@ fun DeviceSearchView(
                                 )
                             }
                             itemsIndexed(lightList, key = { _, d -> d.entityId }) { _, d ->
-                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                                DeviceRow(
+                                    d,
+                                    onToggle = { onToggle(d.entityId) },
+                                    roomLabel = d.sub,
+                                )
                             }
                         }
                         if (outletList.isNotEmpty()) {
@@ -557,12 +588,39 @@ fun DeviceSearchView(
                                 )
                             }
                             itemsIndexed(outletList, key = { _, d -> d.entityId }) { _, d ->
-                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                                DeviceRow(
+                                    d,
+                                    onToggle = { onToggle(d.entityId) },
+                                    roomLabel = d.sub,
+                                )
+                            }
+                        }
+                        if (switchList.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "CÔNG TẮC",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.6.sp,
+                                    color = cs.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                                )
+                            }
+                            itemsIndexed(switchList, key = { _, d -> d.entityId }) { _, d ->
+                                DeviceRow(
+                                    d,
+                                    onToggle = { onToggle(d.entityId) },
+                                    roomLabel = d.sub,
+                                )
                             }
                         }
                         if (otherList.isNotEmpty()) {
                             itemsIndexed(otherList, key = { _, d -> d.entityId }) { _, d ->
-                                DeviceRow(d, onToggle = { onToggle(d.entityId) })
+                                DeviceRow(
+                                    d,
+                                    onToggle = { onToggle(d.entityId) },
+                                    roomLabel = d.sub,
+                                )
                             }
                         }
                     }
