@@ -389,8 +389,19 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
         "battery", "Pin còn ${state.battery.soc}%",
         "Hạn chế tải nặng chờ nắng lên.", "Xem pin"))
     val doors = state.notifications.filter { it.title.contains("Cửa") }
-    if (doors.isNotEmpty()) add(SuggestTip(
-        "door", doors.first().title, doors.first().body, "Đóng"))
+    // Cua ban cong mo -> canh bao trom (uu tien hon goi y cua chung)
+    val balconyDoor = doors.firstOrNull { it.title.contains("ban công", ignoreCase = true) }
+    if (balconyDoor != null) add(SuggestTip(
+        key = "door_balcony",
+        title = "Cửa ban công đang mở",
+        sub = "Đóng lại kẻo trộm đột nhập.",
+        action = "Đã đóng",
+        doneLabel = "Đã đóng",
+    ))
+    // Cua chung (tru ban cong da xu ly rieng o tren)
+    val otherDoors = if (balconyDoor != null) doors.filter { it != balconyDoor } else doors
+    if (otherDoors.isNotEmpty()) add(SuggestTip(
+        "door", otherDoors.first().title, otherDoors.first().body, "Đóng"))
     // (goi y chuyen dong da gom theo phong o tren: addAll(motionTips))
     // Dieu hoa chay trong khi cua mo cung phong -> ton dien
     doors.forEach { d ->
@@ -448,6 +459,21 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
         "Đã ${hour}h — bật chế độ đêm cho an tâm.",
         "Xem an ninh",
     ))
+    // 9-11h: nhieu den dang bat -> nhac tat (troi sang roi)
+    if (hour in 9..11 && state.lightsOn.size >= 3) add(SuggestTip(
+        key = "lights_day",
+        title = "Đang bật ${state.lightsOn.size} đèn",
+        sub = "Trời sáng rồi — tắt bớt đèn tiết kiệm điện?",
+        action = "Tắt hết đèn",
+        doneLabel = "Đã tắt",
+    ))
+    // 17-20h: toi dan, pin thap -> han che tai nang
+    if (hour in 17..20 && state.battery.soc in 1..49 && state.solarNowKw < 0.5) add(SuggestTip(
+        key = "evening_battery",
+        title = "Tối rồi, pin còn ${state.battery.soc}%",
+        sub = "Hạn chế dùng thiết bị nặng để dành pin qua đêm.",
+        action = "Xem pin",
+    ))
     // Goi y ve chuyen dong/hieu nang cua dien thoai: bo qua,
     // khong dua vao danh sach goi y.
     // Chong trung tieu de giua cac loai goi y: giu goi y dau tien (moi nhat).
@@ -472,19 +498,36 @@ fun SuggestCard(
 ) {
     // Goi y phan ung truc tiep theo state (chuyen dong -> camera, cua mo, pin yeu)
     // + goi y AI phan tich sau.
-    val allTips = buildSuggestTips(state) +
-        aiTips.map { SuggestTip(it.key, it.title, it.sub, it.action) }
+    val ruleTips = buildSuggestTips(state)
+    // Chong trung: neu rule da co goi y pin, bo goi y AI ve pin (user bao bi double).
+    val hasBatteryTip = ruleTips.any { it.key == "battery" }
+    val aiFiltered = aiTips.filterNot { tip ->
+        hasBatteryTip && (tip.title.contains("pin", ignoreCase = true) ||
+            tip.sub.contains("pin", ignoreCase = true))
+    }
+    val allTips = ruleTips + aiFiltered.map { SuggestTip(it.key, it.title, it.sub, it.action) }
     // Goi y da bi user xoa: luu key -> noi dung luc xoa; hien lai neu co su kien moi (noi dung doi)
     val dismissed = remember { mutableStateMapOf<String, String>() }
+    // Theo doi thoi gian xuat hien de tu dong an the cu (qua 60 phut).
+    val firstSeen = remember { mutableStateMapOf<String, Long>() }
+    val nowMs = System.currentTimeMillis()
     // Dieu kien da het (vd het chuyen dong) -> quen trang thai xoa de su kien moi hien lai goi y
     LaunchedEffect(allTips.map { it.key }) {
         val liveKeys = allTips.map { it.key }.toSet()
         dismissed.keys.filter { it !in liveKeys }.forEach { dismissed.remove(it) }
+        firstSeen.keys.filter { it !in liveKeys }.forEach { firstSeen.remove(it) }
+    }
+    // Ghi nhan thoi gian xuat hien lan dau cua moi tip.
+    LaunchedEffect(allTips.map { it.key }) {
+        allTips.forEach { tip -> firstSeen.getOrPut(tip.key) { nowMs } }
     }
     val tips = allTips.filter { tip ->
         val d = dismissed[tip.key]
-        d == null || d != tip.title + "|" + tip.sub
-    }
+        if (d != null && d == tip.title + "|" + tip.sub) return@filter false
+        // Tu dong an the da hien qua 60 phut.
+        val seen = firstSeen[tip.key] ?: nowMs
+        nowMs - seen < 60 * 60 * 1000L
+    }.take(10)
     if (tips.isEmpty()) return
     val pagerState = rememberPagerState(pageCount = { tips.size })
     val doneMap = remember { mutableStateMapOf<String, Boolean>() }
@@ -596,8 +639,14 @@ fun SuggestCard(
                                 } ?: onOpenSecurity()
                             }
                             tip.key == "door" -> doneMap[tip.key] = true
+                            tip.key == "door_balcony" -> doneMap[tip.key] = true
                             tip.key == "sun" -> onOpenEnergy()
                             tip.key == "night" -> onOpenSecurity()
+                            tip.key == "lights_day" -> {
+                                onTipAction(tip.key)
+                                doneMap[tip.key] = true
+                            }
+                            tip.key == "evening_battery" -> onBatteryDetail()
                             tip.key.startsWith("toggle_ac:") -> {
                                 onTipAction(tip.key)
                                 doneMap[tip.key] = true
@@ -743,18 +792,18 @@ private fun SuggestTipRow(
             modifier = Modifier
                 .pressMorphCard(
                     pressedScale = 0.9f,
-                    corner = 20.dp,
-                    pressedCorner = 13.dp,
+                    corner = 14.dp,
+                    pressedCorner = 10.dp,
                     onClick = if (done) null else onAction,
                 )
                 // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
                 .alpha(if (done) 0.6f else 1f)
                 .background(cs.onTertiaryContainer)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 7.dp),
         ) {
             Text(
                 if (done) tip.doneLabel else tip.action,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.tertiaryContainer,
             )

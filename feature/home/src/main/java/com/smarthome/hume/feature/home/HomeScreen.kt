@@ -292,6 +292,7 @@ fun HomeScreen(
                                                 key == "ac" -> viewModel.ac26()
                                                 key.startsWith("toggle_ac:") ->
                                                     viewModel.toggleClimate(key.removePrefix("toggle_ac:"))
+                                                key == "lights_day" -> viewModel.turnOffAllLights()
                                             }
                                         },
                                         onBatteryDetail = {
