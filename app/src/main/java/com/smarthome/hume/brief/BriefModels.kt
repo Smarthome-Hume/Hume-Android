@@ -50,6 +50,8 @@ data class BriefMonthly(
     val monthLabel: String,
     val gridKwh: Double,
     val costVnd: Long,
+    /** Tien thuc te ca nha tieu thu trong ky (sensor.home_cost). Default 0 de doc duoc cache cu. */
+    val homeCostVnd: Long = 0L,
     val pvKwh: Double,
     val savedVnd: Long,
     val floors: List<BriefFloorStat>,

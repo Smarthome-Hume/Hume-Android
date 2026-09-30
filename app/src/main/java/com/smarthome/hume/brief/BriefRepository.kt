@@ -182,6 +182,8 @@ class BriefRepository(
         // khong co du lieu.
         val costVnd = getState(E.GRID_COST)?.roundToLong()
             ?: (gridKwh * unitPrice * 1.10).roundToLong()
+        // Tien thuc te ca nha tieu thu trong ky (tinh tu sensor.energy_home).
+        val homeCostVnd = getState(E.HOME_COST)?.roundToLong() ?: 0L
         val floors = listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
             .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
             .awaitAll()
@@ -203,6 +205,7 @@ class BriefRepository(
             monthLabel = "${ym.monthValue}/${ym.year}",
             gridKwh = r1(gridKwh),
             costVnd = costVnd,
+            homeCostVnd = homeCostVnd,
             pvKwh = r1(pvKwh),
             savedVnd = (pvKwh * unitPrice).roundToLong(),
             floors = floors,
@@ -505,6 +508,7 @@ class BriefRepository(
         const val YESTERDAY_PV = "sensor.solis_s6_eh1p_pv_yesterday_energy_generation_2"
         const val PV_MONTH = "sensor.solis_s6_eh1p_pv_current_month_energy_generation_2"
         const val GRID_COST = "sensor.grid_cost"
+        const val HOME_COST = "sensor.home_cost"
         const val GRID_IMPORT_BILLING = "sensor.grid_import_billing"
         const val EVN_MONTHLY = "sensor.aptomat_evn_monthly"
         const val T1_MONTHLY = "sensor.aptomat_t1_energy_monthly"

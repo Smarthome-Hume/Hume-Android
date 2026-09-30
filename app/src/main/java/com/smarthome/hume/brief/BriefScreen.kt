@@ -393,6 +393,26 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         modifier = Modifier.weight(1f),
                     )
                 }
+                // Tien thuc te ca nha tieu thu trong ky (sensor.home_cost).
+                if (m.homeCostVnd > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(cs.primaryContainer)
+                            .padding(12.dp),
+                    ) {
+                        MsIcon(Ms.home, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            "Thực tế cả nhà tiêu thụ: ≈ ${fmtVnd(m.homeCostVnd)}",
+                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer,
+                            lineHeight = 18.sp,
+                        )
+                    }
+                }
             }
         }
         StaggerCard(2, tabKey) {
