@@ -342,14 +342,23 @@ class HomeAssistantRepository {
      * An entity that some screen is actually rendering updates in realtime, with
      * no throttling at all. Everything else is frozen for the UI, because
      * repainting an entity nothing is showing only costs battery and frames.
+     *
+     * (2026-09-30) Luat gom nhom thong nhat cho toan app:
+     * - Nhom discrete (switch/light/binary_sensor/alarm/climate...): REALTIME,
+     *   bam/mo phan hoi tuc thi, su kien an ninh khong tre.
+     * - Nhom telemetry: moi entity domain sensor.* (cong suat, PV, pin, nhiet do,
+     *   do am...) deu nhay so lien tuc vai giay/lan -> TEN_SECONDS. Mat nguoi xem
+     *   "2.5 kW" thi 10s van la realtime, nhung so lan rebuild state giam ~5x,
+     *   het khựng khi scroll.
      */
     fun bucketFor(entityId: String): UpdateBucket {
         // Sheet chi tiet cam bien mo: muon realtime het de xem so nhay —
-        // uu tien truoc override (vd power sensor bi pin TEN_SECONDS o trang Nha).
+        // uu tien truoc override.
         if (_sensorsSheetOpen.value) return UpdateBucket.REALTIME
         bucketOverrides[entityId]?.let { return it }
-        if (_watched.value.contains(entityId)) return UpdateBucket.REALTIME
-        return UpdateBucket.ONE_DAY
+        if (!_watched.value.contains(entityId)) return UpdateBucket.ONE_DAY
+        return if (entityId.startsWith("sensor.")) UpdateBucket.TEN_SECONDS
+        else UpdateBucket.REALTIME
     }
 
     private fun onIncomingState(entity: HomeEntity) {
