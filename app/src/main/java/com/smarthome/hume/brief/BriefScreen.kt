@@ -87,8 +87,8 @@ fun BriefScreen(
                 }
                 Text(
                     when (tab) {
-                        0 -> daily?.let { "${it.weekdayVi} · ${it.dateLabel} · Cập nhật 6:00" } ?: "Chưa có dữ liệu"
-                        else -> monthly?.let { "Tháng ${it.monthLabel} · Cập nhật 6:00 ngày 28" }
+                        0 -> daily?.let { "${it.weekdayVi} · ${it.dateLabel}" } ?: "Chưa có dữ liệu"
+                        else -> monthly?.let { "Tháng ${it.monthLabel}" }
                             ?: monthlyLive?.let { "Tháng ${it.monthLabel}" }
                             ?: "Chưa có dữ liệu"
                     },
