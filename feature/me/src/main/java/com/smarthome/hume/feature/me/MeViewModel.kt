@@ -18,6 +18,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
 /** Trang Toi (demo v4 rev12: dong bo, thong bao, giao dien 8 seeds). */
 class MeViewModel : ViewModel() {
@@ -132,6 +136,62 @@ class MeViewModel : ViewModel() {
     fun logout() {
         viewModelScope.launch {
             HumeGraph.get().authRepository.logout()
+        }
+    }
+
+    // ---------- Kiem tra ket noi Frigate remote ----------
+
+    private val _frigateTesting = MutableStateFlow(false)
+    val frigateTesting: StateFlow<Boolean> = _frigateTesting.asStateFlow()
+
+    private val _frigateTestResult = MutableStateFlow<String?>(null)
+    val frigateTestResult: StateFlow<String?> = _frigateTestResult.asStateFlow()
+
+    /**
+     * Thu GET /api/events qua Cloudflare: 200 = token + policy OK;
+     * 302/403 = chua qua duoc Access; exception = khong toi duoc host.
+     */
+    fun testFrigate(url: String, cfClientId: String, cfClientSecret: String) {
+        if (_frigateTesting.value) return
+        viewModelScope.launch {
+            _frigateTesting.value = true
+            _frigateTestResult.value = null
+            _frigateTestResult.value = runCatching {
+                withContext(Dispatchers.IO) { probeFrigate(url, cfClientId, cfClientSecret) }
+            }.getOrElse { e ->
+                "Không kết nối được: " + (e.message ?: e.javaClass.simpleName)
+            }
+            _frigateTesting.value = false
+        }
+    }
+
+    private fun probeFrigate(url: String, cfClientId: String, cfClientSecret: String): String {
+        val base = url.trim().trimEnd('/')
+        require(base.isNotBlank()) { "Chưa nhập URL Frigate." }
+        val conn = URL(base + "/api/events?limit=1").openConnection() as HttpURLConnection
+        try {
+            conn.instanceFollowRedirects = false
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 10_000
+            if (cfClientId.isNotBlank()) {
+                conn.setRequestProperty("CF-Access-Client-Id", cfClientId.trim())
+                conn.setRequestProperty("CF-Access-Client-Secret", cfClientSecret.trim())
+            }
+            return when (conn.responseCode) {
+                200 -> {
+                    val body = runCatching {
+                        conn.inputStream.bufferedReader().use { it.readText() }
+                    }.getOrDefault("")
+                    val n = ""id"".toRegex().findAll(body).count()
+                    if (n > 0) "Kết nối OK · Frigate trả về sự kiện"
+                    else "Kết nối OK · Frigate không có sự kiện mới"
+                }
+                302 -> "Chưa qua được Cloudflare Access (302) — kiểm tra policy Service Auth"
+                401, 403 -> "Token sai hoặc policy chưa cho phép (HTTP " + conn.responseCode + ")"
+                else -> "HTTP " + conn.responseCode + " — kiểm tra lại URL"
+            }
+        } finally {
+            conn.disconnect()
         }
     }
 

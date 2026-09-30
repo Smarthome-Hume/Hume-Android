@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -47,6 +48,8 @@ import com.smarthome.hume.core.ui.components.rememberHaptic
 @Composable
 fun FrigateRemoteCard(vm: MeViewModel) {
     val settings by vm.frigateRemote.collectAsState()
+    val testing by vm.frigateTesting.collectAsState()
+    val testResult by vm.frigateTestResult.collectAsState()
     val haptic = rememberHaptic()
     val cs = MaterialTheme.colorScheme
 
@@ -173,6 +176,55 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                         modifier = Modifier.padding(start = 16.dp),
                     )
                 }
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Kiem tra bang gia tri dang nhap (secret trong = dung secret da luu)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(cs.primaryContainer)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = !testing,
+                        ) {
+                            haptic()
+                            vm.testFrigate(
+                                url = url,
+                                cfClientId = clientId,
+                                cfClientSecret = clientSecret.ifBlank { settings.cfClientSecret },
+                            )
+                        }
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                ) {
+                    if (testing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = cs.onPrimaryContainer,
+                        )
+                    } else {
+                        MsIcon(Ms.check, null, tint = cs.onPrimaryContainer, modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (testing) "Đang kiểm tra…" else "Kiểm tra kết nối",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onPrimaryContainer,
+                    )
+                }
+            }
+            testResult?.let { msg ->
+                Text(
+                    msg,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (msg.startsWith("Kết nối OK")) cs.primary else cs.error,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp),
+                )
             }
             Text(
                 "Tạo Service Token ở Cloudflare Zero Trust → Access → Service Tokens, " +
