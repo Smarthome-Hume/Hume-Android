@@ -287,12 +287,15 @@ fun HomeScreen(
                                     SuggestCard(
                                         state,
                                         aiTips = aiTips,
+                                        forceCharging = viewModel.forceCharging.collectAsState().value,
                                         onTipAction = { key ->
                                             when {
                                                 key == "ac" -> viewModel.ac26()
                                                 key.startsWith("toggle_ac:") ->
                                                     viewModel.toggleClimate(key.removePrefix("toggle_ac:"))
                                                 key == "lights_day" -> viewModel.turnOffAllLights()
+                                                key == "force_charge" -> viewModel.startForceCharge()
+                                                key == "force_charging" -> viewModel.stopForceCharge()
                                             }
                                         },
                                         onBatteryDetail = {

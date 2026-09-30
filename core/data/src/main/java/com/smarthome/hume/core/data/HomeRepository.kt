@@ -11,6 +11,9 @@ interface HomeRepository {
     val homeState: StateFlow<HomeUiState>
 
     fun toggle(entityId: String)
+    /** Bat/tat switch ro rang (khong lat nhu toggle). */
+    fun setSwitch(entityId: String, on: Boolean)
+    fun setNumber(entityId: String, value: Double)
     fun setLightBrightness(entityId: String, percent: Int)
     fun setClimateTemp(entityId: String, tempC: Double)
     fun setHvacMode(entityId: String, mode: String)

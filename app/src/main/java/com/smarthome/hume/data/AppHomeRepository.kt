@@ -169,6 +169,16 @@ class AppHomeRepository(
     }
 
     override fun toggle(entityId: String) = ha.toggle(entityId)
+    override fun setSwitch(entityId: String, on: Boolean) {
+        val service = if (on) "turn_on" else "turn_off"
+        ha.callService("switch", service, "{\"entity_id\":\"$entityId\"}", entityId)
+    }
+    override fun setNumber(entityId: String, value: Double) {
+        ha.callService(
+            "number", "set_value",
+            "{\"entity_id\":\"$entityId\",\"value\":$value}", entityId,
+        )
+    }
     override fun setLightBrightness(entityId: String, percent: Int) =
         ha.setLightBrightness(entityId, percent)
     override fun setClimateTemp(entityId: String, tempC: Double) =
@@ -227,6 +237,7 @@ class AppHomeRepository(
 
         val pvToday = entities[HumeConfig.PV_TODAY]?.numericState
         val solarNowKw = (entities[HumeConfig.PV_POWER]?.numericState ?: 0.0) / 1000.0
+        val gridNowKw = (entities[HumeConfig.GRID_POWER_NET]?.numericState ?: 0.0) / 1000.0
 
         val soc = (entities[HumeConfig.BATTERY_SOC]?.numericState ?: 0.0).toInt()
         val battPowerW = entities[HumeConfig.BATTERY_POWER]?.numericState ?: 0.0
@@ -310,6 +321,7 @@ class AppHomeRepository(
             solarWeek = cur.solarWeek,
             solarTodayKwh = pvToday,
             solarNowKw = solarNowKw,
+            gridNowKw = gridNowKw,
             battery = BatteryUi(
                 soc = soc,
                 powerKw = battPowerKw,

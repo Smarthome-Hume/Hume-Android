@@ -231,6 +231,54 @@ class HomeViewModel(
         _ui.update { it.copy(snackbar = Snack(msg, actionLabel, onAction)) }
     fun clearSnack() = _ui.update { it.copy(snackbar = null) }
 
+    /** Dang trong phien sac ep tu luoi (da bat 2 nut sac). */
+    private val _forceCharging = MutableStateFlow(false)
+    val forceCharging: StateFlow<Boolean> = _forceCharging.asStateFlow()
+
+    init {
+        // Tu dong dung sac khi SOC dat muc du tru.
+        viewModelScope.launch {
+            state.collect { s ->
+                if (_forceCharging.value && s.battery.soc >= s.battery.backupSoc) {
+                    stopForceCharge(auto = true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Bat sac ep pin tu luoi: AI chon dong sac theo cong suat luoi
+     * (luoi > 2.5kW -> 10A, nguoc lai -> 20A) de tong tai luoi < 4kW,
+     * roi bat dong thoi 2 nut: sac AC + theo thoi gian.
+     */
+    fun startForceCharge() {
+        val s = state.value
+        val gridKw = s.gridNowKw
+        // Pin ~51V: 10A ≈ 0.5kW, 20A ≈ 1kW. Luoi dang tai nang (>2.5kW)
+        // thi sac cham de tong < 4kW; luoi nhe thi sac nhanh.
+        val currentA = if (gridKw > 2.5) 10.0 else 20.0
+        viewModelScope.launch {
+            repo.setNumber(
+                "number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2",
+                currentA,
+            )
+            repo.setSwitch("switch.allow_grid_to_charge_the_battery_2", true)
+            repo.setSwitch("switch.grid_time_of_use_charging_period_1_2", true)
+            _forceCharging.value = true
+            showSnack("Đang sạc pin từ lưới ${currentA.toInt()}A (lưới ${"%.1f".format(gridKw)}kW)")
+        }
+    }
+
+    /** Dung sac ep: tat 2 nut sac. */
+    fun stopForceCharge(auto: Boolean = false) {
+        viewModelScope.launch {
+            repo.setSwitch("switch.allow_grid_to_charge_the_battery_2", false)
+            repo.setSwitch("switch.grid_time_of_use_charging_period_1_2", false)
+            _forceCharging.value = false
+            if (auto) showSnack("Pin đã đạt SOC dự trữ — đã dừng sạc")
+        }
+    }
+
     /** Tat ca thiet bi toggle duoc (den/cong tac) de tim kiem. */
     fun searchableDevices(): List<DeviceUi> {
         // Danh sach day du do AppHomeRepository build: gom climate + entity
