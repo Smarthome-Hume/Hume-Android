@@ -61,6 +61,7 @@ fun BriefScreen(
     val cs = MaterialTheme.colorScheme
     val daily = cache?.daily
     val monthly = cache?.monthly
+    val monthlyLive = cache?.monthlyLive
     var tab by remember { mutableStateOf(0) }
 
     Column(
@@ -98,7 +99,9 @@ fun BriefScreen(
                 Text(
                     when (tab) {
                         0 -> daily?.let { "${it.weekdayVi} · ${it.dateLabel} · Cập nhật 6:00" } ?: "Chưa có dữ liệu"
-                        else -> monthly?.let { "Kỳ ${it.monthLabel} · Cập nhật 6:00 ngày 28" } ?: "Chưa có dữ liệu"
+                        else -> monthly?.let { "Tháng ${it.monthLabel} · Cập nhật 6:00 ngày 28" }
+                            ?: monthlyLive?.let { "Tháng ${it.monthLabel}" }
+                            ?: "Chưa có dữ liệu"
                     },
                     fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant,
                 )
@@ -115,7 +118,7 @@ fun BriefScreen(
         ) {
             BriefTab("Hôm qua", selected = tab == 0, onClick = { tab = 0 }, modifier = Modifier.weight(1f))
             BriefTab(
-                "Tháng",
+                "Tháng ${monthly?.monthLabel?.substringBefore('/') ?: ""}".trim(),
                 selected = tab == 1, onClick = { tab = 1 }, modifier = Modifier.weight(1f),
             )
         }
@@ -128,8 +131,8 @@ fun BriefScreen(
             if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
             else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
         } else {
-            if (monthly == null) BriefEmpty({ onRefresh(true) }, refreshing)
-            else MonthlyContent(monthly, tabKey = "month")
+            if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing)
+            else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing)
         }
     }
 }
@@ -352,13 +355,78 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
 // ---------------- monthly ----------------
 
 @Composable
-private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
+private fun MonthlyTab(
+    monthly: BriefMonthly?,
+    monthlyLive: BriefMonthly?,
+    tabKey: Any,
+    onCreateLive: () -> Unit,
+    refreshing: Boolean,
+) {
     val cs = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
+    ) {
+        monthly?.let { m ->
+            MonthlySectionHeader("Tháng ${m.monthLabel}", "Đã chốt")
+            MonthlyContent(m, tabKey = "${tabKey}_closed")
+        }
+        monthlyLive?.let { m ->
+            MonthlySectionHeader("Tháng ${m.monthLabel}", "Đang chạy")
+            MonthlyContent(m, tabKey = "${tabKey}_live")
+        }
+        Spacer(Modifier.height(12.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(99.dp))
+                .background(cs.primaryContainer)
+                .clickable(onClick = onCreateLive)
+                .padding(vertical = 12.dp),
+        ) {
+            if (refreshing) CircularProgressIndicator(color = cs.onPrimaryContainer, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            else Text(
+                if (monthlyLive == null) "Tạo tổng hợp kỳ đang chạy" else "Cập nhật kỳ đang chạy",
+                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer,
+            )
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun MonthlySectionHeader(month: String, status: String) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("TỔNG HỢP $month".uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(99.dp))
+                .background(cs.secondaryContainer)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text(status, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = cs.onSecondaryContainer)
+        }
+    }
+}
+
+@Composable
+private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
+    val cs = MaterialTheme.colorScheme
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
     ) {
         StaggerCard(0, tabKey) {
             Column(
@@ -375,7 +443,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
         }
         StaggerCard(1, tabKey) {
             BriefCard {
-                SecTitle("TỔNG QUAN KỲ ${m.monthLabel}")
+                SecTitle("TỔNG QUAN THÁNG ${m.monthLabel}")
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatBox(

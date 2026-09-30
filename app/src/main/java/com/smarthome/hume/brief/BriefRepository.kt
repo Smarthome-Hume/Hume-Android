@@ -22,6 +22,7 @@ import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -101,17 +102,21 @@ class BriefRepository(
         val today = LocalDate.now(zone)
         val daily = buildDaily(today.minusDays(1))
         var monthly = _cache.value?.monthly
-        val curLabel = billingLabel(today)
-        // Ky chot dien EVN: 28 thang truoc -> 27 thang nay. Build brief ky
-        // vao ngay 27 (so lieu gan chot nhat); sensor reset 00:00 ngay 28
-        // nen khong build vao ngay 28 (so lieu da ve ~0).
-        if (today.dayOfMonth == 27) {
-            monthly = buildMonthly()
-        } else if (forceMonthly && monthly?.monthLabel != curLabel) {
-            monthly = buildMonthly()
+        var monthlyLive = _cache.value?.monthlyLive
+        val (_, schE) = scheduledPeriod(today)
+        val closedLabel = "${schE.monthValue}/${schE.year}"
+        // Ban theo lich: ky dien da chot (vd thang 9 = 28/8-27/9). Tu build
+        // khi chua co hoac da sang ky moi: ngay 27 dung so lieu live (sensor
+        // chua reset), tu ngay 28 dung last_period / lich su tai luc chot.
+        if (monthly?.monthLabel != closedLabel) {
+            monthly = buildClosedMonthly(today)
+        }
+        // User chu dong bam "Tao ngay": tong hop ky dang chay, luu RIENG biet.
+        if (forceMonthly) {
+            monthlyLive = buildLiveMonthly()
         }
         if (daily != null) {
-            saveCache(BriefCache(daily = daily, monthly = monthly, generatedAtMs = System.currentTimeMillis()))
+            saveCache(BriefCache(daily = daily, monthly = monthly, monthlyLive = monthlyLive, generatedAtMs = System.currentTimeMillis()))
             prefs.edit().putBoolean("brief_new", true).apply()
             _hasNew.value = true
         }
@@ -186,36 +191,112 @@ class BriefRepository(
             today.minusMonths(1).withDayOfMonth(28) to today.withDayOfMonth(27)
         }
 
-    /** Nhan ky dien, vd "28/9 – 27/10". */
+    /** Nhan thang cua ky dien theo thang ket thuc, vd ky 28/8-27/9 -> "9/2026". */
     private fun billingLabel(today: LocalDate = LocalDate.now(ZoneId.systemDefault())): String {
-        val (s, e) = billingPeriod(today)
-        return "${s.dayOfMonth}/${s.monthValue} – ${e.dayOfMonth}/${e.monthValue}"
+        val (_, e) = billingPeriod(today)
+        return "${e.monthValue}/${e.year}"
     }
 
-    private suspend fun buildMonthly(): BriefMonthly? = supervisorScope {
-        // kWh mua EVN theo KY CHOT (28 -> 27), khong dung sensor thang duong lich.
-        val gridKwh = getState(E.GRID_IMPORT_BILLING) ?: getState(E.EVN_MONTHLY)
-            ?: return@supervisorScope null
+    /** Ky dien lien truoc (da chot). */
+    private fun prevBillingPeriod(today: LocalDate): Pair<LocalDate, LocalDate> {
+        val (curS, _) = billingPeriod(today)
+        return curS.minusMonths(1) to curS.minusDays(1)
+    }
+
+    /**
+     * Ky dien de tong hop theo lich: ky dang chot neu hom nay la ngay 27
+     * (dung so lieu live), nguoc lai la ky vua chot (dung last_period/lich su).
+     */
+    private fun scheduledPeriod(today: LocalDate): Pair<LocalDate, LocalDate> {
+        val (s, e) = billingPeriod(today)
+        return if (today.dayOfMonth == 27) s to e else prevBillingPeriod(today)
+    }
+
+    /**
+     * Tong hop KY DANG CHAY (vd 28/9-27/10): doc truc tiep sensor live.
+     * Do user bam "Tao ngay" chu dong tao, luu rieng biet voi ban theo lich.
+     */
+    private suspend fun buildLiveMonthly(): BriefMonthly? = supervisorScope {
+        val label = billingLabel()
+        val (periodStart, periodEnd) = billingPeriod(LocalDate.now(ZoneId.systemDefault()))
+        buildMonthlyCommon(
+            label = label,
+            gridKwh = { getState(E.GRID_IMPORT_BILLING) ?: getState(E.EVN_MONTHLY) },
+            costVnd = { getState(E.GRID_COST)?.roundToLong() },
+            homeCostVnd = { getState(E.HOME_COST)?.roundToLong() ?: 0L },
+            pvKwh = { getState(E.PV_MONTH) ?: 0.0 },
+            floors = {
+                listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
+                    .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
+                    .awaitAll().sortedByDescending { it.kwh }
+            },
+            periodStart = periodStart, periodEnd = periodEnd,
+        )
+    }
+
+    /**
+     * Tong hop KY DA CHOT theo lich (vd "9/2026" = 28/8-27/9).
+     * Neu hom nay van trong ky (chua toi 28, sensor chua reset): doc live.
+     * Nguoc lai: dung last_period / lich su tai thoi diem chot ky.
+     */
+    private suspend fun buildClosedMonthly(today: LocalDate): BriefMonthly? = supervisorScope {
+        val (pS, pE) = scheduledPeriod(today)
+        val label = "${pE.monthValue}/${pE.year}"
+        val zone = ZoneId.systemDefault()
+        // Ngay 27: ky dang chot, sensor chua reset -> doc live.
+        // Tu ngay 28: ky da chot -> dung last_period / lich su tai luc chot.
+        val useLive = today.dayOfMonth == 27
+        val pEndMs = pE.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+        buildMonthlyCommon(
+            label = label,
+            gridKwh = {
+                if (useLive) getState(E.GRID_IMPORT_BILLING)
+                else getAttr(E.GRID_IMPORT_BILLING, "last_period")
+                    ?: stateAt(E.GRID_IMPORT_BILLING, pEndMs)
+            },
+            costVnd = {
+                (if (useLive) getState(E.GRID_COST) else stateAt(E.GRID_COST, pEndMs))
+                    ?.roundToLong()
+            },
+            homeCostVnd = {
+                (if (useLive) getState(E.HOME_COST) else stateAt(E.HOME_COST, pEndMs))
+                    ?.roundToLong() ?: 0L
+            },
+            pvKwh = { rangeDelta(E.PV_MONTH, pS, pE) },
+            floors = {
+                listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
+                    .map { (name, eid) -> async { BriefFloorStat(name, r1(rangeDelta(eid, pS, pE))) } }
+                    .awaitAll().sortedByDescending { it.kwh }
+            },
+            periodStart = pS, periodEnd = pE,
+        )
+    }
+
+    /** Khung chung: ghep so lieu thanh BriefMonthly (tinh savingsPct, goi AI). */
+    private suspend fun buildMonthlyCommon(
+        label: String,
+        gridKwh: suspend () -> Double?,
+        costVnd: suspend () -> Long?,
+        homeCostVnd: suspend () -> Long,
+        pvKwh: suspend () -> Double,
+        floors: suspend CoroutineScope.() -> List<BriefFloorStat>,
+        periodStart: LocalDate, periodEnd: LocalDate,
+    ): BriefMonthly? = supervisorScope {
+        val gkwh = gridKwh() ?: return@supervisorScope null
         val unitPrice = getState(E.UNIT_PRICE) ?: 2167.0
-        val pvKwh = getState(E.PV_MONTH) ?: 0.0
-        // Tien dien thang: lay truc tiep tu sensor.grid_cost (user xac nhan
-        // 2026-09-30: day la data tien theo thang). Chi tu tinh khi sensor
-        // khong co du lieu.
-        val costVnd = getState(E.GRID_COST)?.roundToLong()
-            ?: (gridKwh * unitPrice * 1.10).roundToLong()
+        val pv = pvKwh()
+        // Tien dien: lay truc tiep tu sensor.grid_cost (user xac nhan 2026-09-30:
+        // data tien theo ky). Chi tu tinh khi sensor khong co du lieu.
+        val cost = costVnd() ?: (gkwh * unitPrice * 1.10).roundToLong()
         // Tien thuc te ca nha tieu thu trong ky (tinh tu sensor.energy_home).
-        val homeCostVnd = getState(E.HOME_COST)?.roundToLong() ?: 0L
+        val homeCost = homeCostVnd()
         // Ti le tiet kiem nho PV: (tien thuc te tieu thu - tien tra EVN) / tien thuc te.
-        val savingsPct = if (homeCostVnd > 0) {
-            ((homeCostVnd - costVnd).coerceAtLeast(0).toDouble() / homeCostVnd * 100)
+        val savingsPct = if (homeCost > 0) {
+            ((homeCost - cost).coerceAtLeast(0).toDouble() / homeCost * 100)
                 .roundToInt().coerceIn(0, 100)
         } else 0
-        val floors = listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
-            .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
-            .awaitAll()
-            .sortedByDescending { it.kwh }
-        // Top thiet bi ky: delta lich su trong ky chot (28 -> 27) cho tung thiet bi.
-        val (periodStart, periodEnd) = billingPeriod(LocalDate.now(ZoneId.systemDefault()))
+        val fl = floors()
+        // Top thiet bi ky: delta lich su trong ky chot cho tung thiet bi.
         val devices = DEVICE_SENSORS.map { (eid, name, icon) ->
             async { Triple(name, icon, rangeDelta(eid, periodStart, periodEnd)) }
         }.awaitAll()
@@ -224,17 +305,17 @@ class BriefRepository(
             .take(3)
             .map { BriefDeviceStat(it.first, it.second, (it.third * 10).roundToInt() / 10.0) }
 
-        val summary = aiMonthly(billingLabel(), gridKwh, costVnd, pvKwh, floors, devices)
+        val summary = aiMonthly(label, gkwh, cost, pv, fl, devices)
 
         BriefMonthly(
-            monthLabel = billingLabel(),
-            gridKwh = r1(gridKwh),
-            costVnd = costVnd,
-            homeCostVnd = homeCostVnd,
+            monthLabel = label,
+            gridKwh = r1(gkwh),
+            costVnd = cost,
+            homeCostVnd = homeCost,
             savingsPct = savingsPct,
-            pvKwh = r1(pvKwh),
-            savedVnd = (pvKwh * unitPrice).roundToLong(),
-            floors = floors,
+            pvKwh = r1(pv),
+            savedVnd = (pv * unitPrice).roundToLong(),
+            floors = fl,
             topDevices = devices,
             aiSummary = summary,
         )
@@ -243,33 +324,54 @@ class BriefRepository(
     // ---------------- HA ----------------
 
     /** Doc 1 state so; local truoc, remote sau (chi fallback khi loi ket noi). */
-    private suspend fun getState(entityId: String): Double? = withContext(Dispatchers.IO) {
-        val bases = listOf(localUrl, remoteUrl).map { it.trim().trimEnd('/') }
-            .filter { it.isNotBlank() }.distinct()
-        for (base in bases) {
-            try {
-                val req = Request.Builder()
-                    .url("$base/api/states/$entityId")
-                    .header("Authorization", "Bearer $token")
-                    .build()
-                http.newCall(req).execute().use { resp ->
-                    if (!resp.isSuccessful) return@withContext null
-                    val body = resp.body?.string().orEmpty()
-                    val st = json.parseToJsonElement(body).let {
-                        it as? kotlinx.serialization.json.JsonObject
-                    }?.get("state")?.let {
-                        (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+    private suspend fun getState(entityId: String): Double? {
+        val st = fetchEntityJson(entityId)
+            ?.get("state")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
+        return st?.toDoubleOrNull()
+    }
+
+    /** Doc mot attribute so cua entity (vd "last_period" cua utility_meter). */
+    private suspend fun getAttr(entityId: String, attr: String): Double? {
+        val v = fetchEntityJson(entityId)
+            ?.get("attributes")?.let { it as? kotlinx.serialization.json.JsonObject }
+            ?.get(attr)?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
+        return v?.toDoubleOrNull()
+    }
+
+    private suspend fun fetchEntityJson(entityId: String): kotlinx.serialization.json.JsonObject? =
+        withContext(Dispatchers.IO) {
+            val bases = listOf(localUrl, remoteUrl).map { it.trim().trimEnd('/') }
+                .filter { it.isNotBlank() }.distinct()
+            for (base in bases) {
+                try {
+                    val req = Request.Builder()
+                        .url("$base/api/states/$entityId")
+                        .header("Authorization", "Bearer $token")
+                        .build()
+                    http.newCall(req).execute().use { resp ->
+                        if (!resp.isSuccessful) return@withContext null
+                        val body = resp.body?.string().orEmpty()
+                        return@withContext json.parseToJsonElement(body).let {
+                            it as? kotlinx.serialization.json.JsonObject
+                        }
                     }
-                    val v = st?.toDoubleOrNull()
-                    if (v != null) return@withContext v
-                    return@withContext null
+                } catch (t: Exception) {
+                    Log.w(tag, "fetch $entityId via $base failed: ${t.message}")
+                    // thu base tiep theo
                 }
-            } catch (t: Exception) {
-                Log.w(tag, "getState $entityId via $base failed: ${t.message}")
-                // thu base tiep theo
             }
+            null
         }
-        null
+
+    /** Gia tri cua sensor tai mot thoi diem (diem lich su gan nhat truoc atMs). */
+    private suspend fun stateAt(entityId: String, atMs: Long): Double? {
+        ensureHistoryConfigured()
+        return try {
+            HistoryFetcher.fetchRange(entityId, atMs - 3_600_000L, atMs).lastOrNull()?.value
+        } catch (t: Exception) {
+            Log.w(tag, "stateAt $entityId failed: ${t.message}")
+            null
+        }
     }
 
     /** San luong tang trong 1 ngay: hieu so cuoi - dau cua sensor tich luy. */
