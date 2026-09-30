@@ -105,14 +105,14 @@ fun AiSettingsCard(vm: MeViewModel) {
             Column(Modifier.weight(1f)) {
                 Text(
                     "Trí tuệ nhân tạo",
-                    fontSize = 15.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                 )
                 Text(
                     if (settings.hasApiKey) "Đã lưu API key · ${settings.provider.label}"
                     else "Chưa cấu hình — gợi ý dùng luật có sẵn",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
@@ -189,7 +189,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                     Text(
                         // Hien URL mac dinh de user biet diem den
                         "Endpoint: ${providerDefaultUrl(provider)}",
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         color = cs.onSurfaceVariant,
                         modifier = Modifier.padding(start = 4.dp),
                     )
@@ -239,7 +239,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                     ) {
                         Text(
                             "Lưu",
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = cs.onPrimary,
                         )
@@ -276,7 +276,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                         Spacer(Modifier.width(8.dp))
                         Text(
                             if (testing) "Đang kiểm tra…" else "Kiểm tra kết nối",
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = cs.onPrimaryContainer,
                         )
@@ -287,7 +287,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                 testResult?.let { msg ->
                     Text(
                         msg,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
                         color = if (msg.startsWith("Kết nối thành công")) cs.primary else cs.error,
                         modifier = Modifier.padding(start = 4.dp, top = 8.dp),

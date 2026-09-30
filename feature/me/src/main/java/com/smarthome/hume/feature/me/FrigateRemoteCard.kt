@@ -87,14 +87,14 @@ fun FrigateRemoteCard(vm: MeViewModel) {
             Column(Modifier.weight(1f)) {
                 Text(
                     "Camera từ xa",
-                    fontSize = 15.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                 )
                 Text(
                     if (settings.hasAccess) "Đã cấu hình Cloudflare Access"
                     else "Chưa cấu hình — tắt VPN sẽ không xem được camera",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
@@ -167,7 +167,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                 ) {
                     Text(
                         "Lưu",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = cs.onPrimary,
                     )
@@ -213,7 +213,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                     Spacer(Modifier.width(8.dp))
                     Text(
                         if (testing) "Đang kiểm tra…" else "Kiểm tra kết nối",
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = cs.onPrimaryContainer,
                     )
@@ -222,7 +222,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
             testResult?.let { msg ->
                 Text(
                     msg,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = if (msg.startsWith("Kết nối OK")) cs.primary else cs.error,
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp),

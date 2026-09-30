@@ -216,7 +216,7 @@ fun MeScreen(
                 // demo .phdr h2: 26px/700 ls -.3px
                 Text(
                     "Thông tin",
-                    fontSize = 26.sp,
+                    style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -262,7 +262,7 @@ fun MeScreen(
         ) {
             Text(
                 "MÀU CHỦ ĐẠO",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
@@ -280,7 +280,7 @@ fun MeScreen(
         ) {
             Text(
                 "MÀU TÙY CHỈNH",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
@@ -403,7 +403,7 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 "FONT CHỮ",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
@@ -411,7 +411,7 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
             Spacer(Modifier.height(2.dp))
             Text(
                 current,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
@@ -454,14 +454,14 @@ private fun FontPickerSheet(
         ) {
             Text(
                 "Chọn font chữ",
-                fontSize = 20.sp,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "Font từ Google Fonts — chọn để tải về và áp dụng. Font có dấu ✓ hỗ trợ tiếng Việt.",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
@@ -486,7 +486,7 @@ private fun FontPickerSheet(
                     ) {
                         Text(
                             "Không tải được danh sách font.\nKiểm tra mạng rồi thử lại.",
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -533,7 +533,7 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     font.family,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = if (selected) cs.onPrimaryContainer else cs.onSurface,
                 )
@@ -541,7 +541,7 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
                     Spacer(Modifier.width(6.dp))
                     Text(
                         "✓",
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = cs.primary,
                     )
@@ -549,7 +549,7 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
             }
             Text(
                 "AaBbCcDd 0123456789",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = if (selected) cs.onPrimaryContainer else cs.onSurfaceVariant,
             )
         }
@@ -620,7 +620,7 @@ private fun MeAvatarCard(
         ) {
             Text(
                 "Đổi",
-                fontSize = 15.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
@@ -637,7 +637,7 @@ private fun MeAvatarCard(
             ) {
                 Text(
                     "Gỡ",
-                    fontSize = 15.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
@@ -655,7 +655,7 @@ private fun MeAvatarCard(
         ) {
             Text(
                 "Đăng xuất",
-                fontSize = 15.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
@@ -701,10 +701,10 @@ private fun NotifCard(onViewCamera: () -> Unit) {
             )
         }
         Column(Modifier.weight(1f)) {
-            Text("Phát hiện chuyển động", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Phát hiện chuyển động", style = MaterialTheme.typography.titleSmall)
             Text(
                 "Camera sân trước · 2 phút trước",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(top = 3.dp, bottom = 12.dp),
@@ -789,7 +789,7 @@ private fun RowScope.NButton(
     ) {
         MsIcon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = fg)
+        Text(text, style = MaterialTheme.typography.titleSmall, color = fg)
     }
 }
 
@@ -816,7 +816,7 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
             .background(cs.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Text("Chế độ hiển thị", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text("Chế độ hiển thị", style = MaterialTheme.typography.titleSmall)
         // Cum 3 che do: nen surfaceHighest bo 24, moi option nen rieng
         Row(
             Modifier
@@ -868,7 +868,7 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
                 ) {
                     Text(
                         labels[i],
-                        fontSize = 12.5.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
                         color = fg,
                         maxLines = 1,
@@ -1008,7 +1008,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("S", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
+            Text("S", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
             androidx.compose.material3.Slider(
                 value = sat,
                 onValueChange = { sat = it },
@@ -1019,7 +1019,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("V", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
+            Text("V", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
             androidx.compose.material3.Slider(
                 value = value,
                 onValueChange = { value = it },
@@ -1040,9 +1040,9 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                     .border(1.dp, cs.outlineVariant, RoundedCornerShape(10.dp)),
             )
             Column(Modifier.weight(1f)) {
-                Text("HEX $hexString", fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                Text("RGB $rgbString", fontSize = 11.sp, color = cs.onSurfaceVariant)
-                Text("HSV $hsvString", fontSize = 11.sp, color = cs.onSurfaceVariant)
+                Text("HEX $hexString", style = MaterialTheme.typography.bodySmall)
+                Text("RGB $rgbString", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                Text("HSV $hsvString", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
             }
             Box(
                 Modifier
@@ -1063,7 +1063,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             ) {
                 Text(
                     "Áp dụng",
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onPrimaryContainer,
                 )
@@ -1072,7 +1072,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
         feedback?.let { (msg, isError) ->
             Text(
                 msg,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = if (isError) cs.error else cs.primary,
                 modifier = Modifier.padding(start = 4.dp, top = 6.dp),

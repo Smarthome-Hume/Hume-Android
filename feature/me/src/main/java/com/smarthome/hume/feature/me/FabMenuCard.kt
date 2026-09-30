@@ -78,7 +78,7 @@ fun FabMenuCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     "FAB menu",
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                 )
@@ -117,13 +117,13 @@ private fun FabMenuConfigSheet(
         ) {
             Text(
                 "FAB menu",
-                fontSize = 22.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
             )
             Text(
                 "Nhập entity và chọn trạng thái cho từng chức năng.",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = cs.onSurfaceVariant,
             )
             FabFunction.entries.forEach { func ->
@@ -149,7 +149,7 @@ private fun FabMenuConfigSheet(
             ) {
                 Text(
                     "Xong",
-                    fontSize = 15.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onPrimary,
                 )
@@ -187,7 +187,7 @@ private fun FabFunctionConfigRow(
     ) {
         Text(
             func.label,
-            fontSize = 15.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = cs.onSurface,
         )
@@ -224,7 +224,7 @@ private fun FabFunctionConfigRow(
             ) {
                 Text(
                     "Lưu",
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (dirty) cs.onPrimary else cs.onSurfaceVariant,
                 )
