@@ -104,6 +104,7 @@ import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.theme.M3ESeed
@@ -367,7 +368,8 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
                 .background(cs.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            MsIcon("text_fields", contentDescription = null, tint = cs.onPrimaryContainer)
+            // text_fields khong co trong font subset -> dung language (2026-09-30).
+            MsIcon(Ms.language, contentDescription = null, tint = cs.onPrimaryContainer)
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -387,7 +389,7 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
             )
         }
         MsIcon(
-            "chevron_right",
+            Ms.chevron_right,
             contentDescription = null,
             tint = cs.onSurfaceVariant,
             // Size explicit: tranh MsIcon do size tu constraints (2026-09-30).
@@ -527,7 +529,7 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
         }
         if (selected) {
             MsIcon(
-                "check",
+                Ms.check,
                 contentDescription = null,
                 tint = cs.onPrimaryContainer,
                 // Size explicit: tranh MsIcon do size tu constraints (2026-09-30).
