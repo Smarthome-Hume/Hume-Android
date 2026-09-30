@@ -31,8 +31,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import android.os.SystemClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -106,6 +108,10 @@ private fun RoomCard(
 ) {
     val cs = MaterialTheme.colorScheme
     val haptic = rememberHaptic()
+    // Chan nested clickable: trong Compose nut con + the cha deu fire onClick
+    // khi bam nut den. Nut con ghi timestamp, the cha bo qua tap trong 400ms
+    // sau do (fix 2026-09-30).
+    var lastLightTapMs by remember { mutableLongStateOf(0L) }
     Box(
         modifier = modifier
             .riseIn(riseDelayMs)
@@ -113,7 +119,11 @@ private fun RoomCard(
                 pressedScale = 0.95f,
                 corner = 28.dp,
                 pressedCorner = 20.dp,
-                onClick = { haptic(); onOpen() },
+                onClick = {
+                    if (SystemClock.uptimeMillis() - lastLightTapMs > 400) {
+                        haptic(); onOpen()
+                    }
+                },
             )
             .background(
                 if (room.lightOn) cs.primaryContainer
@@ -137,6 +147,7 @@ private fun RoomCard(
                                 if (room.lightOn) cs.primary else cs.surfaceContainer,
                             )
                             .pressMorph(pressedScale = 0.85f) {
+                                lastLightTapMs = SystemClock.uptimeMillis()
                                 haptic()
                                 onToggleLight()
                             },
