@@ -75,6 +75,7 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MarqueeText
@@ -87,23 +88,6 @@ import kotlinx.coroutines.delay
  * chon camera, feed Frigate (khoa/mo), clip gan day,
  * grid Cua/Chuyen dong/Moi truong.
  */
-
-/**
- * Rise entrance theo demo: opacity 0->1 + translateY 22px->0,
- * 700ms emphasized decelerate, delay tuy section (.42s -> .54s).
- */
-private fun Modifier.riseIn(delayMs: Int = 0): Modifier = composed {
-    val density = LocalDensity.current
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        if (delayMs > 0) delay(delayMs.toLong())
-        progress.animateTo(1f, animationSpec = tween(700, easing = M3EMotion.emphasized))
-    }
-    this.graphicsLayer {
-        alpha = progress.value
-        translationY = (1f - progress.value) * with(density) { 22.dp.toPx() }
-    }
-}
 
 @Composable
 fun SecurityScreen(

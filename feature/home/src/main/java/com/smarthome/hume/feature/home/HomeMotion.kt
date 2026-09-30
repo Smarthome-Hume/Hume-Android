@@ -34,24 +34,9 @@ import kotlinx.coroutines.delay
  * translationY 22dp->0 trong 700ms easing emphasized cubic-bezier(.05,.7,.1,1),
  * bat dau sau delayMs (stagger .02/.14/.155/.165/.2/.22/.24/.34s + room cards
  * 360ms + 30ms/card).
+ *
+ * Da chuyen vao core:ui (M3ERise.kt) de dung chung toan app.
  */
-fun Modifier.riseIn(delayMs: Int): Modifier = composed {
-    var target by remember { mutableStateOf(0f) }
-    val density = LocalDensity.current
-    LaunchedEffect(delayMs) {
-        delay(delayMs.toLong())
-        target = 1f
-    }
-    val p by animateFloatAsState(
-        targetValue = target,
-        animationSpec = tween(700, easing = M3EMotion.emphasized),
-        label = "rise",
-    )
-    this.graphicsLayer {
-        alpha = p
-        translationY = with(density) { 22.dp.toPx() } * (1f - p)
-    }
-}
 
 /**
  * Press morph theo demo rev12: khi nhan, scale xuong [pressedScale] DONG THOI
