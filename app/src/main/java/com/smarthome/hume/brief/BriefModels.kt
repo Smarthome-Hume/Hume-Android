@@ -52,6 +52,8 @@ data class BriefMonthly(
     val costVnd: Long,
     /** Tien thuc te ca nha tieu thu trong ky (sensor.home_cost). Default 0 de doc duoc cache cu. */
     val homeCostVnd: Long = 0L,
+    /** Ti le % tiet kiem duoc nho dien mat troi = (homeCost - gridCost) / homeCost. */
+    val savingsPct: Int = 0,
     val pvKwh: Double,
     val savedVnd: Long,
     val floors: List<BriefFloorStat>,

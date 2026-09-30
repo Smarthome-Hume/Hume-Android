@@ -205,6 +205,11 @@ class BriefRepository(
             ?: (gridKwh * unitPrice * 1.10).roundToLong()
         // Tien thuc te ca nha tieu thu trong ky (tinh tu sensor.energy_home).
         val homeCostVnd = getState(E.HOME_COST)?.roundToLong() ?: 0L
+        // Ti le tiet kiem nho PV: (tien thuc te tieu thu - tien tra EVN) / tien thuc te.
+        val savingsPct = if (homeCostVnd > 0) {
+            ((homeCostVnd - costVnd).coerceAtLeast(0).toDouble() / homeCostVnd * 100)
+                .roundToInt().coerceIn(0, 100)
+        } else 0
         val floors = listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
             .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
             .awaitAll()
@@ -226,6 +231,7 @@ class BriefRepository(
             gridKwh = r1(gridKwh),
             costVnd = costVnd,
             homeCostVnd = homeCostVnd,
+            savingsPct = savingsPct,
             pvKwh = r1(pvKwh),
             savedVnd = (pvKwh * unitPrice).roundToLong(),
             floors = floors,

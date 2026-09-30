@@ -407,7 +407,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         MsIcon(Ms.home, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            "Thực tế cả nhà tiêu thụ: ≈ ${fmtVnd(m.homeCostVnd)}",
+                            "Thực tế cả nhà tiêu thụ: ≈ ${fmtVnd(m.homeCostVnd)} · Tiết kiệm ${m.savingsPct}% nhờ PV",
                             fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer,
                             lineHeight = 18.sp,
                         )
