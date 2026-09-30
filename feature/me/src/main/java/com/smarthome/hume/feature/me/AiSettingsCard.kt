@@ -196,9 +196,10 @@ fun AiSettingsCard(vm: MeViewModel) {
                 }
 
                 Spacer(Modifier.height(12.dp))
-                // Hang 2: API key 1 dong + nut Luu nho ben canh (width co dinh)
+                // Hang 2: API key 1 dong + nut Luu nho ben canh (width co dinh).
+                // Can day de nut thang hang voi o nhap (nhan M3E nam ngoai phia tren).
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     M3ETextField(

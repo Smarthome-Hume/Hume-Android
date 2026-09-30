@@ -126,7 +126,8 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Secret + nut Luu: can day de nut thang hang voi o nhap.
+            Row(verticalAlignment = Alignment.Bottom) {
                 M3ETextField(
                     value = clientSecret,
                     onValueChange = { clientSecret = it; dirty = true },
