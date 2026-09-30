@@ -323,6 +323,11 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     DeviceRow(dev, max, i, tabKey)
                     if (i < d.topDevices.lastIndex) Spacer(Modifier.height(10.dp))
                 }
+                // Phan tieu thu chua co sensor do: hien ro thay vi gia vo top 3 la day du.
+                if (d.unmeasuredKwh > 0.5) {
+                    Spacer(Modifier.height(10.dp))
+                    UnmeasuredRow(d.unmeasuredKwh, max)
+                }
                 Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier
@@ -504,6 +509,10 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                     DeviceRow(dev, max, i, tabKey)
                     if (i < m.topDevices.lastIndex) Spacer(Modifier.height(10.dp))
                 }
+                if (m.unmeasuredKwh > 1.0) {
+                    Spacer(Modifier.height(10.dp))
+                    UnmeasuredRow(m.unmeasuredKwh, max)
+                }
             }
         }
         Spacer(Modifier.height(20.dp))
@@ -600,6 +609,45 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
             }
             Spacer(Modifier.height(6.dp))
             AnimBar(fraction = (dev.kwh / max).toFloat(), tabKey = tabKey, color = cs.primary)
+        }
+    }
+}
+
+/**
+ * Dong "thiet bi khac (chua do)": hien phan tieu thu khong co sensor do duoc,
+ * de user biet danh sach top chua day du (vd dieu hoa mat du lieu se roi vao day).
+ */
+@Composable
+private fun UnmeasuredRow(kwh: Double, max: Double, tabKey: Any) {
+    val cs = MaterialTheme.colorScheme
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(22.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(cs.surfaceContainerHigh),
+        ) {
+            MsIcon(Ms.info, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(14.dp))
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(cs.surfaceContainer),
+        ) {
+            MsIcon(Ms.power, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Thiết bị khác (chưa đo)", style = MaterialTheme.typography.titleSmall, color = cs.onSurfaceVariant)
+                Text("${countUpText(kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(6.dp))
+            AnimBar(fraction = (kwh / max).toFloat(), tabKey = tabKey, color = cs.onSurfaceVariant)
         }
     }
 }

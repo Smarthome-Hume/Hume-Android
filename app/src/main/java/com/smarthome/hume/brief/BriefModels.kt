@@ -36,6 +36,9 @@ data class BriefDaily(
     val billingCostVnd: Long,
     val billingKwh: Double,
     val topDevices: List<BriefDeviceStat>,
+    /** kWh tieu thu chua duoc do boi sensor thiet bi (tong - tong cac sensor co du lieu).
+     * Hien thi de user biet danh sach top chua day du. Default 0 de doc duoc cache cu. */
+    val unmeasuredKwh: Double = 0.0,
     val aiInsight: String,
     val aiTip: String,
     val weather: BriefWeather,
@@ -60,6 +63,8 @@ data class BriefMonthly(
     val savedVnd: Long,
     val floors: List<BriefFloorStat>,
     val topDevices: List<BriefDeviceStat>,
+    /** kWh chua duoc do boi sensor thiet bi (xem BriefDaily.unmeasuredKwh). */
+    val unmeasuredKwh: Double = 0.0,
     val aiSummary: String,
 )
 

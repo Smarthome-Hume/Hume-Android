@@ -187,13 +187,17 @@ class BriefRepository(
 
         // Ten thiet bi: uu tien friendly_name tu HA (dong bo voi cac trang khac).
         val nameMap = friendlyNameMap()
-        val devices = DEVICE_SENSORS.map { (eid, fallbackName, icon) ->
+        val allDevices = DEVICE_SENSORS.map { (eid, fallbackName, icon) ->
             async { Triple(nameMap[eid] ?: fallbackName, icon, yesterdayDelta(eid, yesterday)) }
         }.awaitAll()
             .filter { it.third > 0.05 }
             .sortedByDescending { it.third }
+        val devices = allDevices
             .take(3)
             .map { BriefDeviceStat(it.first, it.second, (it.third * 10).roundToInt() / 10.0) }
+        // Phan tieu thu chua duoc do: neu lon bat thuong (vd dieu hoa mat du lieu)
+        // thi hien ro thay vi gia vo danh sach top la day du.
+        val unmeasuredKwh = (total - allDevices.sumOf { it.third }).coerceAtLeast(0.0)
 
         val weather = fetchWeather()
 
@@ -210,6 +214,7 @@ class BriefRepository(
             billingCostVnd = billingCost,
             billingKwh = r1(billingKwh),
             topDevices = devices,
+            unmeasuredKwh = (unmeasuredKwh * 10).roundToInt() / 10.0,
             aiInsight = insight,
             aiTip = tip,
             weather = weather,
@@ -347,14 +352,16 @@ class BriefRepository(
         // Ten: uu tien friendly_name tu HA (dong bo voi cac trang khac).
         val nameMap = friendlyNameMap()
         val statMap = statisticsSums(DEVICE_SENSORS.map { it.first }, dataStart, dataEnd)
-        val devices = DEVICE_SENSORS
+        val allDevices = DEVICE_SENSORS
             .map { (eid, fallbackName, icon) ->
                 Triple(nameMap[eid] ?: fallbackName, icon, statMap[eid] ?: 0.0)
             }
             .filter { it.third > 0.5 }
             .sortedByDescending { it.third }
+        val devices = allDevices
             .take(3)
             .map { BriefDeviceStat(it.first, it.second, (it.third * 10).roundToInt() / 10.0) }
+        val unmeasuredKwh = ((gkwh + pv) - allDevices.sumOf { it.third }).coerceAtLeast(0.0)
 
         val summary = aiMonthly(label, gkwh, cost, pv, fl, devices)
 
@@ -369,6 +376,7 @@ class BriefRepository(
             savedVnd = (pv * unitPrice).roundToLong(),
             floors = fl,
             topDevices = devices,
+            unmeasuredKwh = (unmeasuredKwh * 10).roundToInt() / 10.0,
             aiSummary = summary,
         )
     }

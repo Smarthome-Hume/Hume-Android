@@ -56,6 +56,8 @@ import com.smarthome.hume.core.model.EnergyPowerKind
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.model.EnergyWeekPoint
 import com.smarthome.hume.core.ui.components.M3ECard
+import com.smarthome.hume.core.ui.components.MarqueeText
+import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
@@ -187,12 +189,12 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat2(
                 label = "Điện lưới",
-                value = (state.cost.gridVnd + gridJit).toVnd(),
+                vnd = state.cost.gridVnd + gridJit,
                 modifier = Modifier.weight(1f),
             )
             Stat2(
                 label = "Điện tiêu thụ",
-                value = (state.cost.homeVnd + homeJit).toVnd(),
+                vnd = state.cost.homeVnd + homeJit,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -206,7 +208,8 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 }
 
 @Composable
-private fun Stat2(label: String, value: String, modifier: Modifier = Modifier) {
+private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
+    val (big, unit) = vnd.toSmartVndParts()
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
@@ -219,20 +222,23 @@ private fun Stat2(label: String, value: String, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelMedium),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
         Row(
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier.padding(top = 4.dp),
         ) {
-            Text(
-                value,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold,
-                ).tnum(),
+            MarqueeText(
+                text = big,
+                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
             )
+            Spacer(Modifier.width(4.dp))
             Text(
-                " VND",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    style = MaterialTheme.typography.labelMedium),
+                unit,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
