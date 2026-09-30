@@ -423,17 +423,8 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
         "Pin đã ${state.battery.soc}%, đang phát ${"%.1f".format(state.solarNowKw)} kW — chạy máy nặng lúc này.",
         "Xem điện",
     ))
-    // Am cao / phong nong theo tung phong
+    // Phong nong theo tung phong (khong goi y do am: nha khong co he thong thong gio)
     state.rooms.forEach { r ->
-        r.humidityPct?.takeIf { it >= 75 }?.let { h ->
-            add(SuggestTip(
-                key = "humid:${r.key}",
-                title = "Độ ẩm cao ở ${r.name}",
-                sub = "Đang ${h.toInt()}% — nên thông gió hoặc hút ẩm.",
-                action = "Đã hiểu",
-                doneLabel = "Đã hiểu",
-            ))
-        }
         val t = r.tempC
         val cl = r.climate
         if (t != null && t >= 31 && cl != null && !cl.isOn) add(SuggestTip(
@@ -651,8 +642,7 @@ fun SuggestCard(
                                 onTipAction(tip.key)
                                 doneMap[tip.key] = true
                             }
-                            tip.key.startsWith("humid:") ||
-                                tip.key.startsWith("alert:") ->
+                            tip.key.startsWith("alert:") ->
                                 dismissed[tip.key] = tip.title + "|" + tip.sub
                             tip.key.startsWith("ai_") ->
                                 dismissed[tip.key] = tip.title + "|" + tip.sub
