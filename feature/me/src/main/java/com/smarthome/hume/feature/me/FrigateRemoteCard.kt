@@ -154,7 +154,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                         .width(88.dp)
                         .height(56.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(cs.surfaceContainerHigh)
+                        .background(cs.primary)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -166,7 +166,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                         "Lưu",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = cs.onSurface,
+                        color = cs.onPrimary,
                         modifier = Modifier.padding(start = 16.dp),
                     )
                 }

@@ -228,7 +228,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                             .width(88.dp)
                             .height(56.dp)
                             .clip(RoundedCornerShape(20.dp))
-                            .background(cs.surfaceContainerHigh)
+                            .background(cs.primary)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -240,7 +240,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                             "Lưu",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = cs.onSurfaceVariant,
+                            color = cs.onPrimary,
                         )
                     }
                 }
@@ -297,7 +297,8 @@ fun AiSettingsCard(vm: MeViewModel) {
     }
 }
 
-/** Dropdown gon dung chung cho provider/model: weight 1f trong Row. */
+/** Dropdown gon dung chung cho provider/model: weight 1f trong Row.
+ * Menu popup theo template M3E: bo 24dp + nen surfaceContainerHigh. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RowScope.AiDropdown(
@@ -306,6 +307,7 @@ private fun RowScope.AiDropdown(
     options: List<String>,
     onSelect: (String) -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -325,6 +327,8 @@ private fun RowScope.AiDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = cs.surfaceContainerHigh,
         ) {
             options.forEach { opt ->
                 DropdownMenuItem(
