@@ -12,12 +12,18 @@ import com.smarthome.hume.core.data.HomeRepository
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeUiState
+import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomUi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -232,14 +238,22 @@ class HomeViewModel(
     fun clearSnack() = _ui.update { it.copy(snackbar = null) }
 
     /** Dang trong phien sac ep tu luoi (da bat 2 nut sac). */
-    private val _forceCharging = MutableStateFlow(false)
-    val forceCharging: StateFlow<Boolean> = _forceCharging.asStateFlow()
+    private val _manualForceCharging = MutableStateFlow(false)
+    /**
+     * Trang thai sac ep = nut bam tay (phan hoi ngay) HOAC 2 switch that
+     * dang BAT tren HA (tu phat hien sau khi app restart).
+     */
+    val forceCharging: StateFlow<Boolean> = combine(
+        _manualForceCharging,
+        state.map { it.chargeSwitchesOn }.distinctUntilChanged(),
+    ) { manual, ha -> manual || ha }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         // Tu dong dung sac khi SOC dat muc du tru.
         viewModelScope.launch {
             state.collect { s ->
-                if (_forceCharging.value && s.battery.soc >= s.battery.backupSoc) {
+                if (forceCharging.value && s.battery.soc >= s.battery.backupSoc) {
                     stopForceCharge(auto = true)
                 }
             }
@@ -259,12 +273,12 @@ class HomeViewModel(
         val currentA = if (gridKw > 2.5) 10.0 else 20.0
         viewModelScope.launch {
             repo.setNumber(
-                "number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2",
+                HumeConfig.NUMBER_CHARGE_CURRENT_AC,
                 currentA,
             )
-            repo.setSwitch("switch.allow_grid_to_charge_the_battery_2", true)
-            repo.setSwitch("switch.grid_time_of_use_charging_period_1_2", true)
-            _forceCharging.value = true
+            repo.setSwitch(HumeConfig.SWITCH_AC_CHARGE, true)
+            repo.setSwitch(HumeConfig.SWITCH_TIME_CHARGE, true)
+            _manualForceCharging.value = true
             showSnack("Đang sạc pin từ lưới ${currentA.toInt()}A (lưới ${"%.1f".format(gridKw)}kW)")
         }
     }
@@ -272,9 +286,9 @@ class HomeViewModel(
     /** Dung sac ep: tat 2 nut sac. */
     fun stopForceCharge(auto: Boolean = false) {
         viewModelScope.launch {
-            repo.setSwitch("switch.allow_grid_to_charge_the_battery_2", false)
-            repo.setSwitch("switch.grid_time_of_use_charging_period_1_2", false)
-            _forceCharging.value = false
+            repo.setSwitch(HumeConfig.SWITCH_AC_CHARGE, false)
+            repo.setSwitch(HumeConfig.SWITCH_TIME_CHARGE, false)
+            _manualForceCharging.value = false
             if (auto) showSnack("Pin đã đạt SOC dự trữ — đã dừng sạc")
         }
     }

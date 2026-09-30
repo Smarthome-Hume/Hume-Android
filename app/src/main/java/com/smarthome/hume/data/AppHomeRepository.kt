@@ -153,6 +153,8 @@ class AppHomeRepository(
         // gia tri stale tu luc mo app (nguyen nhan the pin mat cum thoi gian).
         ids.add(HumeConfig.BATTERY_TIME_LEFT); ids.add(HumeConfig.BATTERY_TIME_TO_FULL)
         ids.add(HumeConfig.BACKUP_SOC)
+        // Trang thai 2 nut sac de tu phat hien phien sac ep sau khi app restart.
+        ids.add(HumeConfig.SWITCH_AC_CHARGE); ids.add(HumeConfig.SWITCH_TIME_CHARGE)
         // Nang luong pin (SoH/DoD): tu tinh gio sac thay cho sensor Solis bao ao.
         ids.add(HumeConfig.BATTERY_EFF_CAPACITY); ids.add(HumeConfig.BATTERY_REMAINING_ENERGY)
         // An ninh: sensor cua/chuyen dong/khoi/nuoc.
@@ -238,6 +240,9 @@ class AppHomeRepository(
         val pvToday = entities[HumeConfig.PV_TODAY]?.numericState
         val solarNowKw = (entities[HumeConfig.PV_POWER]?.numericState ?: 0.0) / 1000.0
         val gridNowKw = (entities[HumeConfig.GRID_POWER_NET]?.numericState ?: 0.0) / 1000.0
+        // Ca 2 nut sac dang BAT -> dang trong phien sac ep (ke ca app vua restart).
+        val chargeSwitchesOn = entities[HumeConfig.SWITCH_AC_CHARGE]?.state == "on" &&
+            entities[HumeConfig.SWITCH_TIME_CHARGE]?.state == "on"
 
         val soc = (entities[HumeConfig.BATTERY_SOC]?.numericState ?: 0.0).toInt()
         val battPowerW = entities[HumeConfig.BATTERY_POWER]?.numericState ?: 0.0
@@ -322,6 +327,7 @@ class AppHomeRepository(
             solarTodayKwh = pvToday,
             solarNowKw = solarNowKw,
             gridNowKw = gridNowKw,
+            chargeSwitchesOn = chargeSwitchesOn,
             battery = BatteryUi(
                 soc = soc,
                 powerKw = battPowerKw,
