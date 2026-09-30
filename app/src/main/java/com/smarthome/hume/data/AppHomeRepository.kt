@@ -145,6 +145,17 @@ class AppHomeRepository(
             lastWatched = ids
             ha.setWatchedEntities(ids)
         }
+        // Telemetry cong suat: pin TEN_SECONDS thay vi REALTIME. Sensor cong suat
+        // (Tuya/Zigbee) nhay vai giay/lan; REALTIME se rebuild HomeUiState + recompose
+        // lien tuc -> khựng khi scroll trang Nha (2026-09-30). 10s/lan van du "realtime"
+        // cho mat nguoi (hien "2.5 kW"), trong khi on/off cua switch giu REALTIME
+        // nen phan hoi bam van tuc thi.
+        com.smarthome.hume.core.model.RoomBubbleConfig.all
+            .flatMap { it.devices }
+            .mapNotNull { it.powerEntity }
+            .forEach { ha.setBucket(it, com.smarthome.hume.core.ha.UpdateBucket.TEN_SECONDS) }
+        ha.setBucket(HumeConfig.PV_POWER, com.smarthome.hume.core.ha.UpdateBucket.TEN_SECONDS)
+        ha.setBucket(HumeConfig.BATTERY_POWER, com.smarthome.hume.core.ha.UpdateBucket.TEN_SECONDS)
     }
 
     override fun toggle(entityId: String) = ha.toggle(entityId)

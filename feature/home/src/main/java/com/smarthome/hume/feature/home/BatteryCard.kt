@@ -26,12 +26,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
@@ -288,6 +291,33 @@ private fun AnimatedWavyBar(
             )
         }
         if (wavyW > 0.dp) {
+            // Path song build 1 LAN theo chieu rong (remember) — moi frame chi
+            // translate + drawPath, khong tessellate Path 60fps (fix khựng 2026-09-30).
+            // Path phu rong hon 1 buoc song moi ben de translate khong ho vien.
+            val density = LocalDensity.current
+            val wavePath = remember(wavyW, density) {
+                val wPx = with(density) { wavyW.toPx() }
+                val wl = with(density) { 15.dp.toPx() }
+                val amp = with(density) { 4.dp.toPx() }
+                val cy = with(density) { 14.dp.toPx() } / 2f
+                Path().apply {
+                    var x = -wl
+                    var up = true
+                    moveTo(x, cy)
+                    while (x < wPx + 2 * wl) {
+                        val cx = x + wl / 4f
+                        val ex = x + wl / 2f
+                        quadraticBezierTo(
+                            cx,
+                            if (up) cy - 2f * amp else cy + 2f * amp,
+                            ex,
+                            cy,
+                        )
+                        x = ex
+                        up = !up
+                    }
+                }
+            }
             Canvas(
                 Modifier
                     .offset(x = wavyL)
@@ -297,32 +327,13 @@ private fun AnimatedWavyBar(
                     .clip(pill),
             ) {
                 val wavelength = 15.dp.toPx()
-                val amplitude = 4.dp.toPx()
-                val cy = size.height / 2f
-                // Ve song rong hon segment, dich trai theo phase de tao chuyen dong
-                val shift = phase * wavelength
-                val path = Path().apply {
-                    var x = -shift
-                    var up = true
-                    moveTo(x, cy)
-                    while (x < size.width + wavelength) {
-                        val cx = x + wavelength / 4f
-                        val ex = x + wavelength / 2f
-                        quadraticBezierTo(
-                            cx,
-                            if (up) cy - 2f * amplitude else cy + 2f * amplitude,
-                            ex,
-                            cy,
-                        )
-                        x = ex
-                        up = !up
-                    }
+                translate(left = -phase * wavelength) {
+                    drawPath(
+                        path = wavePath,
+                        color = primary,
+                        style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
+                    )
                 }
-                drawPath(
-                    path = path,
-                    color = primary,
-                    style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
-                )
             }
         }
         if (trackW > 0.dp) {

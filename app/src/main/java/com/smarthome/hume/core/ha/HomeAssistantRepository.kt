@@ -344,8 +344,10 @@ class HomeAssistantRepository {
      * repainting an entity nothing is showing only costs battery and frames.
      */
     fun bucketFor(entityId: String): UpdateBucket {
-        bucketOverrides[entityId]?.let { return it }
+        // Sheet chi tiet cam bien mo: muon realtime het de xem so nhay —
+        // uu tien truoc override (vd power sensor bi pin TEN_SECONDS o trang Nha).
         if (_sensorsSheetOpen.value) return UpdateBucket.REALTIME
+        bucketOverrides[entityId]?.let { return it }
         if (_watched.value.contains(entityId)) return UpdateBucket.REALTIME
         return UpdateBucket.ONE_DAY
     }
