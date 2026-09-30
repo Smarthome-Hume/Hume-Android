@@ -447,7 +447,8 @@ class AppHomeRepository(
             "tivi" in n || "tv" in n || "ti vi" in n -> "tv"
             "quạt" in n || "quat" in n || "fan" in n -> "fan"
             "điều hoà" in n || "dieu hoa" in n || "máy lạnh" in n || "may lanh" in n -> "snowflake"
-            "bếp" in n || "bep" in n || "nồi chiên" in n || "noi chien" in n || "cooking" in n -> "cooking"
+            "nồi chiên" in n || "noi chien" in n || "airfryer" in n -> "airfryer"
+            "bếp" in n || "bep" in n || "cooking" in n -> "cooking"
             "đèn" in n || "den" in n || "light" in n -> "bulb"
             "ổ cắm" in n || "o cam" in n || "plug" in n || "outlet" in n -> "plug"
             else -> fallback

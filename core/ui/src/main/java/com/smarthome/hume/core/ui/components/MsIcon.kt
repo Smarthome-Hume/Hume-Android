@@ -154,9 +154,13 @@ object Ms {
     val chevron_right = "\uE409"
     val child_care = "\uEB41"
     val close = "\uE14C"
+    /** Noi tren bep — dung cho bep tu (them 2026-09-30). */
+    val cooking = "\uE2B6"
     val dark_mode = "\uE51C"
     val desk = "\uF8F4"
     val device_thermostat = "\uE1FF"
+    /** May rua bat (them 2026-09-30). */
+    val dishwasher = "\uE9A0"
     val donut_large = "\uE917"
     val door_front = "\uEFFD"
     val electric_meter = "\uEC1B"

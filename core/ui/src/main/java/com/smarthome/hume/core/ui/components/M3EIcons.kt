@@ -94,8 +94,10 @@ object M3EIcons {
         "bulb", "lightbulb", "light" -> Light
         "switch" -> Power
         // Thiet bi theo ten (2026-09-30): map key cau hinh sang glyph Ms co san.
+        // Bep tu / noi chien / may rua bat: icon rieng, khong dung chung soup_kitchen.
         "washer", "dryer" -> Ms.local_laundry_service
-        "cooking", "dishwasher" -> Ms.soup_kitchen
+        "cooking" -> Ms.cooking
+        "dishwasher" -> Ms.dishwasher
         "stairs" -> Ms.stairs
         else -> Power
     }
@@ -109,7 +111,48 @@ object M3EIcons {
         "fridge" -> Fridge
         "fan" -> Fan
         "tv" -> Tv
+        "airfryer" -> AirFryer
         else -> null
+    }
+
+    /**
+     * Noi chien khong dau — than hop bo goc + panel dieu khien + tay cam khay (2026-09-30).
+     * Stroke 2dp, dau tron, viewport 24 (cung style Fridge/Fan/Tv).
+     */
+    val AirFryer: ImageVector by lazy {
+        ImageVector.Builder("air_fryer", 24.dp, 24.dp, 24f, 24f).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // Than may
+                moveTo(7f, 3.5f); horizontalLineTo(17f)
+                arcTo(2f, 2f, 0f, false, true, 19f, 5.5f)
+                verticalLineTo(18.5f)
+                arcTo(2f, 2f, 0f, false, true, 17f, 20.5f)
+                horizontalLineTo(7f)
+                arcTo(2f, 2f, 0f, false, true, 5f, 18.5f)
+                verticalLineTo(5.5f)
+                arcTo(2f, 2f, 0f, false, true, 7f, 3.5f)
+                close()
+                // Vach ngan panel dieu khien
+                moveTo(5f, 8.5f); horizontalLineTo(19f)
+                // Man hinh nho tren panel
+                moveTo(10f, 6f); horizontalLineTo(14f)
+                // Tay cam khay chien
+                moveTo(10.5f, 12.5f); horizontalLineTo(13.5f)
+                arcTo(1f, 1f, 0f, false, true, 14.5f, 13.5f)
+                verticalLineTo(14.5f)
+                arcTo(1f, 1f, 0f, false, true, 13.5f, 15.5f)
+                horizontalLineTo(10.5f)
+                arcTo(1f, 1f, 0f, false, true, 9.5f, 14.5f)
+                verticalLineTo(13.5f)
+                arcTo(1f, 1f, 0f, false, true, 10.5f, 12.5f)
+                close()
+            }
+        }.build()
     }
 
     /** Tu lanh 2 canh — stroke 2dp, dau tron, viewport 24. */
