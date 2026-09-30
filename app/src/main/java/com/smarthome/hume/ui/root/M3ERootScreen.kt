@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.drawToBitmap
+import com.smarthome.hume.brief.BriefEdgeHost
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -319,6 +320,9 @@ fun M3ERootScreen(
                     onDismiss = { camPopup = null; bgSnapshot = null },
                 )
             }
+            // Trang Brief sang: mo bang vuot canh trai, dong bang vuot phai->trai.
+            // Lop tren cung: phu ca navbar + overlay khi mo.
+            BriefEdgeHost()
         }
     }
 }

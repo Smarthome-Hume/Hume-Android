@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import com.smarthome.hume.brief.BriefWorker
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.frigate.FrigateStore
 import com.smarthome.hume.core.ha.HomeAssistantRepository
@@ -66,6 +67,8 @@ class HumeApplication : Application(), ImageLoaderFactory {
         super.onCreate()
         // Graph moi (multi-module M3E): khoi tao 1 lan, cac feature lay qua HumeGraph.get().
         HumeGraph.init(this)
+        // Brief sang: hen worker 6:00 hang ngay (KEEP neu da hen).
+        BriefWorker.schedule(this)
         // Nap cau hinh Frigate remote: FrigateStore + Coil interceptor dung chung.
         appScope.launch {
             HumeGraph.get().sessionStore.frigateRemote.collect { cfg ->
