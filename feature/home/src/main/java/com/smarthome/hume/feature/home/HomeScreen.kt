@@ -315,17 +315,7 @@ fun HomeScreen(
                             RiseIn(200) { SolarWeekCard(state) }
                         }
                     }
-                    item {
-                        Column(Modifier.padding(bottom = 14.dp)) {
-                            RiseIn(220) {
-                                SolarLiveCard(
-                                    state,
-                                    onClick = { chartDetail = ChartDetailType.Solar },
-                                    loadHistory = loadChartHistory,
-                                )
-                            }
-                        }
-                    }
+                    // (The cong suat PV da xoa theo yeu cau user 2026-09-30)
                     item {
                         Column(Modifier.padding(bottom = 20.dp)) {
                             RiseIn(240) {

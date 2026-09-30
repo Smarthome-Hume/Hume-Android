@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -98,14 +99,27 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             }
         }
         Spacer(Modifier.height(10.dp))
-        // Trang thai 3 che do theo entity: DANG SAC / DANG XA / NGHI
-        Text(
-            battery.statusText,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 1.5.sp,
-            color = cs.onSurfaceVariant,
-        )
+        // Trang thai 3 che do theo entity: DANG SAC / DANG XA / NGHI — pill nen mau
+        val (pillBg, pillFg) = when {
+            battery.isCharging -> Color(0xFF2E7D32) to Color.White // sac: xanh
+            battery.isDischarging -> Color(0xFFEF6C00) to Color.White // xa: da cam
+            else -> cs.surfaceContainerHigh to cs.onSurfaceVariant // nghi: trung tinh
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(pillBg)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Text(
+                battery.statusText,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.5.sp,
+                color = pillFg,
+            )
+        }
         // Hume goc: chi hien thoi gian lon + ket thuc luc khi KHONG nghi
         // VA chi khi parse duoc duration that (null = template tra text trang thai).
         if (!battery.isResting && bigTime != null) {

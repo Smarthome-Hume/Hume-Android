@@ -26,8 +26,8 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import com.smarthome.hume.core.ui.components.M3ETextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -147,13 +147,11 @@ fun AiSettingsCard(vm: MeViewModel) {
                     )
                     if (provider == AiProvider.Custom) {
                         // Custom: model tu do (endpoint OpenAI-compatible bat ky)
-                        OutlinedTextField(
+                        M3ETextField(
                             value = model,
                             onValueChange = { model = it; dirty = true },
-                            label = { Text("Model") },
-                            singleLine = true,
+                            label = "Model",
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                            shape = RoundedCornerShape(20.dp),
                             modifier = Modifier.weight(1f),
                         )
                     } else {
@@ -174,18 +172,16 @@ fun AiSettingsCard(vm: MeViewModel) {
                 // Base URL chi hien cho Custom
                 if (provider == AiProvider.Custom) {
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
+                    M3ETextField(
                         value = baseUrl,
                         onValueChange = { baseUrl = it; dirty = true },
-                        label = { Text("Base URL (OpenAI-compatible)") },
-                        placeholder = { Text("https://example.com/v1") },
+                        label = "Base URL (OpenAI-compatible)",
+                        placeholder = "https://example.com/v1",
                         leadingIcon = { MsIcon(Ms.link, null) },
-                        singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Next,
                         ),
-                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
@@ -205,11 +201,11 @@ fun AiSettingsCard(vm: MeViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    OutlinedTextField(
+                    M3ETextField(
                         value = apiKey,
                         onValueChange = { apiKey = it; dirty = true },
-                        label = { Text("API key", maxLines = 1) },
-                        placeholder = { Text(if (settings.hasApiKey) "Trống = giữ key cũ" else "") },
+                        label = "API key",
+                        placeholder = if (settings.hasApiKey) "Trống = giữ key cũ" else "",
                         leadingIcon = { MsIcon(Ms.key, null, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {
                             IconButton(onClick = { keyVisible = !keyVisible }) {
@@ -221,12 +217,10 @@ fun AiSettingsCard(vm: MeViewModel) {
                         },
                         visualTransformation = if (keyVisible) VisualTransformation.None
                         else PasswordVisualTransformation(),
-                        singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done,
                         ),
-                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.weight(1f),
                     )
                     Box(
@@ -318,14 +312,12 @@ private fun RowScope.AiDropdown(
         onExpandedChange = { expanded = it },
         modifier = Modifier.weight(1f),
     ) {
-        OutlinedTextField(
+        M3ETextField(
             value = value,
             onValueChange = {},
             readOnly = true,
-            label = { Text(label) },
+            label = label,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            singleLine = true,
-            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth(),

@@ -19,7 +19,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -39,6 +38,7 @@ import com.smarthome.hume.core.datastore.FabActionConfig
 import com.smarthome.hume.core.datastore.FabFunction
 import com.smarthome.hume.core.datastore.FabMenuStore
 import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.launch
 
@@ -192,13 +192,11 @@ private fun FabFunctionConfigRow(
             color = cs.onSurface,
         )
         // Entity ID
-        OutlinedTextField(
+        M3ETextField(
             value = entityId,
             onValueChange = { entityId = it; dirty = true },
-            label = { Text("Entity ID", maxLines = 1) },
-            placeholder = { Text("vd: light.phong_khach") },
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
+            label = "Entity ID",
+            placeholder = "vd: light.phong_khach",
             modifier = Modifier.fillMaxWidth(),
         )
         // Trang thai + nut Luu
@@ -250,14 +248,12 @@ private fun StateDropdown(
         onExpandedChange = { expanded = it },
         modifier = modifier,
     ) {
-        OutlinedTextField(
+        M3ETextField(
             value = labels[value] ?: value,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Trạng thái") },
+            label = "Trạng thái",
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth(),

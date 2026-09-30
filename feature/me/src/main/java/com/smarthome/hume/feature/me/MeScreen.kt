@@ -53,7 +53,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -99,6 +98,7 @@ import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
@@ -245,8 +245,7 @@ fun MeScreen(
 
         // (Muc "FAB menu" tam xoa theo yeu cau 29/09)
 
-        // demo: .sec.rise cua "Giao dien" khong co animation-delay
-        Box(Modifier.riseEntrance(0)) { SecTitle("Giao diện") }
+        // (Title "Giao dien" da xoa theo yeu cau 2026-09-30)
         ThemeModeCard(
             mode = darkMode,
             onSelect = { haptic(); vm.setDarkMode(it) },
@@ -466,13 +465,11 @@ private fun FontPickerSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
+            M3ETextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Tìm font…") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
+                placeholder = "Tìm font…",
             )
             Spacer(Modifier.height(8.dp))
             when {

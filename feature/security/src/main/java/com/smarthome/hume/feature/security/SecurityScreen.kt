@@ -187,8 +187,8 @@ fun SecurityScreen(
 
                 // Recent recordings (rise .46s / .48s)
                 SecHeader(
-                    title = "Video ghi hình gần đây",
-                    action = "Tải 10 clip",
+                    title = "Video",
+                    action = "Tải video",
                     delayMs = 460,
                     onAction = {
                         haptic()

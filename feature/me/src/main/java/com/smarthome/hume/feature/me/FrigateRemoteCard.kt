@@ -16,7 +16,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.rememberHaptic
@@ -102,39 +102,35 @@ fun FrigateRemoteCard(vm: MeViewModel) {
         }
 
         Column(Modifier.padding(top = 12.dp)) {
-            OutlinedTextField(
+            M3ETextField(
                 value = url,
                 onValueChange = { url = it; dirty = true },
-                label = { Text("Frigate qua Cloudflare") },
-                placeholder = { Text("https://frigate.haiha93.xyz") },
+                label = "Frigate qua Cloudflare",
+                placeholder = "https://frigate.haiha93.xyz",
                 leadingIcon = { MsIcon(Ms.link, null, modifier = Modifier.size(20.dp)) },
-                singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next,
                 ),
-                shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
+            M3ETextField(
                 value = clientId,
                 onValueChange = { clientId = it; dirty = true },
-                label = { Text("CF-Access Client ID") },
-                placeholder = { Text("Service Token ID") },
+                label = "CF-Access Client ID",
+                placeholder = "Service Token ID",
                 leadingIcon = { MsIcon(Ms.key, null, modifier = Modifier.size(20.dp)) },
-                singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
+                M3ETextField(
                     value = clientSecret,
                     onValueChange = { clientSecret = it; dirty = true },
-                    label = { Text("CF-Access Client Secret", maxLines = 1) },
-                    placeholder = { Text(if (settings.hasAccess) "Trống = giữ secret cũ" else "") },
+                    label = "CF-Access Client Secret",
+                    placeholder = if (settings.hasAccess) "Trống = giữ secret cũ" else "",
                     leadingIcon = { MsIcon(Ms.lock, null, modifier = Modifier.size(20.dp)) },
                     trailingIcon = {
                         IconButton(onClick = { secretVisible = !secretVisible }) {
@@ -146,12 +142,10 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                     },
                     visualTransformation = if (secretVisible) VisualTransformation.None
                     else PasswordVisualTransformation(),
-                    singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
                     ),
-                    shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(Modifier.width(8.dp))
@@ -232,13 +226,6 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp),
                 )
             }
-            Text(
-                "Tạo Service Token ở Cloudflare Zero Trust → Access → Service Tokens, " +
-                    "rồi thêm policy Service Auth cho hostname Frigate.",
-                fontSize = 11.sp,
-                color = cs.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp),
-            )
         }
     }
 }

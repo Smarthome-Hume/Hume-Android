@@ -31,7 +31,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,6 +60,7 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ESwitch
+import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 
@@ -362,11 +362,11 @@ private fun ManualTokenField(
     viewModel: LoginViewModel,
     focus: androidx.compose.ui.focus.FocusManager,
 ) {
-    OutlinedTextField(
+    M3ETextField(
         value = state.token,
         onValueChange = viewModel::onTokenChange,
-        label = { Text("Token", style = MaterialTheme.typography.bodySmall) },
-        placeholder = { Text("Dán token vào đây") },
+        label = "Token",
+        placeholder = "Dán token vào đây",
         leadingIcon = { MsIcon(Ms.key, null) },
         trailingIcon = {
             IconButton(onClick = viewModel::onToggleTokenVisibility) {
@@ -376,7 +376,6 @@ private fun ManualTokenField(
                 )
             }
         },
-        singleLine = true,
         textStyle = MaterialTheme.typography.bodyMedium,
         visualTransformation = if (state.tokenVisible) VisualTransformation.None
         else PasswordVisualTransformation(),
@@ -385,10 +384,7 @@ private fun ManualTokenField(
             focus.clearFocus()
             viewModel.onLogin()
         }),
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = Modifier.fillMaxWidth(),
     )
     Spacer(Modifier.height(8.dp))
     Text(
@@ -452,13 +448,12 @@ private fun UrlField(
     placeholder: String,
     focus: androidx.compose.ui.focus.FocusManager,
 ) {
-    OutlinedTextField(
+    M3ETextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
-        placeholder = { Text(placeholder) },
+        label = label,
+        placeholder = placeholder,
         leadingIcon = { MsIcon(Ms.link, null) },
-        singleLine = true,
         textStyle = MaterialTheme.typography.bodyMedium,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Uri,
@@ -467,9 +462,6 @@ private fun UrlField(
         keyboardActions = KeyboardActions(
             onNext = { focus.moveFocus(FocusDirection.Down) },
         ),
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = Modifier.fillMaxWidth(),
     )
 }
