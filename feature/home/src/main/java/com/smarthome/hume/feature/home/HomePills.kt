@@ -1,6 +1,7 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -161,7 +162,9 @@ fun PillsRow(
 }
 
 /** .pill.secpill: nen surfaceHighest co dinh; chi .pic/icon/ps doi theo mode.
- * :active = scale(.93) + bo 28->18 + nen primaryContainer (nhu demo). */
+ * :active = scale(.93) + bo 28->18 + nen primaryContainer (nhu demo).
+ * animateContentSize: khi thu/mo cum an ninh, chieu rong pill doi muot
+ * thay vi snap (fix cung A: thu menu sau scroll, 2026-09-30). */
 @Composable
 private fun SecPill(
     mode: SecurityMode,
@@ -206,6 +209,10 @@ private fun SecPill(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp),
         modifier = modifier
+            .animateContentSize(
+                animationSpec = tween(300, easing = M3EMotion.emphasized),
+                label = "pillSize",
+            )
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .clip(RoundedCornerShape(radius))
             .background(bg)
@@ -276,6 +283,10 @@ private fun BulbPill(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp),
         modifier = modifier
+            .animateContentSize(
+                animationSpec = tween(300, easing = M3EMotion.emphasized),
+                label = "bulbSize",
+            )
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .clip(RoundedCornerShape(radius))
             .background(bg)

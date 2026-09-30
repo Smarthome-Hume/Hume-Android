@@ -170,10 +170,18 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
     ) { padding ->
         val pullState = rememberPullToRefreshState()
-        // Scroll state de tu dong dong cum an ninh khi user scroll trang
+        // Scroll state: tu dong thu cum an ninh SAU KHI scroll dung han
+        // (2026-09-30, fix khung): khong thu ngay khi scroll bat dau nua —
+        // exit animation 300ms de len scroll gay rot frame. Scroll stop ->
+        // debounce 350ms (user cham lai thi huy) -> thu.
         val listState = rememberLazyListState()
+        var collapseArmed by remember { mutableStateOf(false) }
         LaunchedEffect(listState.isScrollInProgress) {
-            if (listState.isScrollInProgress && ui.securityExpanded) {
+            if (listState.isScrollInProgress) {
+                collapseArmed = true
+            } else if (collapseArmed && ui.securityExpanded) {
+                delay(350)
+                collapseArmed = false
                 viewModel.collapseSecurity()
             }
         }
