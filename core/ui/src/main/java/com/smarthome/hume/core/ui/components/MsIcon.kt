@@ -82,8 +82,14 @@ fun MsIcon(
         },
         contentAlignment = Alignment.Center,
     ) {
+        // Kich thuoc chu = canh nho nhat cua constraints KHI ca 2 chieu deu huu han
+        // (tuc la modifier co size co dinh nhu Modifier.size(44.dp)).
+        // Neu 1 chieu vo han (vd: icon nam trong Column scroll duoc) thi KHONG
+        // duoc lay chieu con lai lam co chu — truoc day lay width ~380dp lam
+        // fontSize -> icon phong to thanh chu khong lo pha vo layout
+        // (2026-09-30, the font chu hien "chevron_right" khong lo).
         val side = minOf(maxWidth, maxHeight)
-        val fs = if (side.isFinite) {
+        val fs = if (maxWidth.isFinite && maxHeight.isFinite) {
             with(LocalDensity.current) { side.toSp() }
         } else {
             24.sp

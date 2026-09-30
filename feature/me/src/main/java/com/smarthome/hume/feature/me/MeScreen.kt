@@ -386,7 +386,13 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
                 color = cs.onSurface,
             )
         }
-        MsIcon("chevron_right", contentDescription = null, tint = cs.onSurfaceVariant)
+        MsIcon(
+            "chevron_right",
+            contentDescription = null,
+            tint = cs.onSurfaceVariant,
+            // Size explicit: tranh MsIcon do size tu constraints (2026-09-30).
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
@@ -520,7 +526,13 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
             )
         }
         if (selected) {
-            MsIcon("check", contentDescription = null, tint = cs.onPrimaryContainer)
+            MsIcon(
+                "check",
+                contentDescription = null,
+                tint = cs.onPrimaryContainer,
+                // Size explicit: tranh MsIcon do size tu constraints (2026-09-30).
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
