@@ -15,7 +15,6 @@ import com.smarthome.hume.core.ha.HaEndpointResolver
 import com.smarthome.hume.core.ha.HistoryFetcher
 import java.io.File
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
@@ -92,7 +91,8 @@ class BriefRepository(
     // ---------------- public ----------------
 
     /**
-     * Worker 6:00 goi: brief ngay (hom qua) + brief thang (neu hom nay mung 1).
+     * Worker 6:00 goi: brief ngay (hom qua) + brief ky (neu hom nay ngay 27,
+     * ngay cuoi ky chot dien).
      * [forceMonthly] = true khi user bam "Tao ngay" o tab Thang: build luon
      * brief thang hien tai (luy ke den hom nay) thay vi cho den mung 1.
      */
@@ -101,12 +101,14 @@ class BriefRepository(
         val today = LocalDate.now(zone)
         val daily = buildDaily(today.minusDays(1))
         var monthly = _cache.value?.monthly
-        val curYm = YearMonth.from(today)
-        val curLabel = "${curYm.monthValue}/${curYm.year}"
-        if (today.dayOfMonth == 1) {
-            monthly = buildMonthly(YearMonth.from(today.minusDays(1)))
+        val curLabel = billingLabel(today)
+        // Ky chot dien EVN: 28 thang truoc -> 27 thang nay. Build brief ky
+        // vao ngay 27 (so lieu gan chot nhat); sensor reset 00:00 ngay 28
+        // nen khong build vao ngay 28 (so lieu da ve ~0).
+        if (today.dayOfMonth == 27) {
+            monthly = buildMonthly()
         } else if (forceMonthly && monthly?.monthLabel != curLabel) {
-            monthly = buildMonthly(curYm)
+            monthly = buildMonthly()
         }
         if (daily != null) {
             saveCache(BriefCache(daily = daily, monthly = monthly, generatedAtMs = System.currentTimeMillis()))
@@ -173,8 +175,27 @@ class BriefRepository(
 
     // ---------------- monthly ----------------
 
-    private suspend fun buildMonthly(ym: YearMonth): BriefMonthly? = supervisorScope {
-        val gridKwh = getState(E.EVN_MONTHLY) ?: return@supervisorScope null
+    /**
+     * Ky chot dien EVN: tu ngay 28 thang truoc den ngay 27 thang nay.
+     * Tra ve cap (ngayBatDau, ngayKetThuc) cua ky chua [today].
+     */
+    private fun billingPeriod(today: LocalDate): Pair<LocalDate, LocalDate> =
+        if (today.dayOfMonth >= 28) {
+            today.withDayOfMonth(28) to today.plusMonths(1).withDayOfMonth(27)
+        } else {
+            today.minusMonths(1).withDayOfMonth(28) to today.withDayOfMonth(27)
+        }
+
+    /** Nhan ky dien, vd "28/9 – 27/10". */
+    private fun billingLabel(today: LocalDate = LocalDate.now(ZoneId.systemDefault())): String {
+        val (s, e) = billingPeriod(today)
+        return "${s.dayOfMonth}/${s.monthValue} – ${e.dayOfMonth}/${e.monthValue}"
+    }
+
+    private suspend fun buildMonthly(): BriefMonthly? = supervisorScope {
+        // kWh mua EVN theo KY CHOT (28 -> 27), khong dung sensor thang duong lich.
+        val gridKwh = getState(E.GRID_IMPORT_BILLING) ?: getState(E.EVN_MONTHLY)
+            ?: return@supervisorScope null
         val unitPrice = getState(E.UNIT_PRICE) ?: 2167.0
         val pvKwh = getState(E.PV_MONTH) ?: 0.0
         // Tien dien thang: lay truc tiep tu sensor.grid_cost (user xac nhan
@@ -188,21 +209,20 @@ class BriefRepository(
             .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
             .awaitAll()
             .sortedByDescending { it.kwh }
-        // Top thiet bi thang: delta lich su ca thang cho tung thiet bi.
-        val monthStart = ym.atDay(1)
-        val monthEnd = ym.atEndOfMonth()
+        // Top thiet bi ky: delta lich su trong ky chot (28 -> 27) cho tung thiet bi.
+        val (periodStart, periodEnd) = billingPeriod(LocalDate.now(ZoneId.systemDefault()))
         val devices = DEVICE_SENSORS.map { (eid, name, icon) ->
-            async { Triple(name, icon, rangeDelta(eid, monthStart, monthEnd)) }
+            async { Triple(name, icon, rangeDelta(eid, periodStart, periodEnd)) }
         }.awaitAll()
             .filter { it.third > 0.5 }
             .sortedByDescending { it.third }
             .take(3)
             .map { BriefDeviceStat(it.first, it.second, (it.third * 10).roundToInt() / 10.0) }
 
-        val summary = aiMonthly(ym, gridKwh, costVnd, pvKwh, floors, devices)
+        val summary = aiMonthly(billingLabel(), gridKwh, costVnd, pvKwh, floors, devices)
 
         BriefMonthly(
-            monthLabel = "${ym.monthValue}/${ym.year}",
+            monthLabel = billingLabel(),
             gridKwh = r1(gridKwh),
             costVnd = costVnd,
             homeCostVnd = homeCostVnd,
@@ -467,15 +487,15 @@ class BriefRepository(
     }
 
     private suspend fun aiMonthly(
-        ym: YearMonth, gridKwh: Double, costVnd: Long, pvKwh: Double,
+        periodLabel: String, gridKwh: Double, costVnd: Long, pvKwh: Double,
         floors: List<BriefFloorStat>, devices: List<BriefDeviceStat>,
     ): String {
         val floorStr = floors.joinToString("; ") { "${it.name} ${r1(it.kwh)} kWh" }
         val devStr = devices.joinToString("; ") { "${it.name} ${r1(it.kwh)} kWh" }
-        val user = "Số liệu tháng ${ym.monthValue}/${ym.year}: mua EVN ${r1(gridKwh)} kWh (khoảng ${fmtVnd(costVnd)}), " +
+        val user = "Số liệu kỳ chốt điện $periodLabel: mua EVN ${r1(gridKwh)} kWh (khoảng ${fmtVnd(costVnd)}), " +
             "PV sản xuất ${r1(pvKwh)} kWh. Theo tầng: $floorStr. Top thiết bị: $devStr. " +
-            "Trả JSON: {\"summary\": \"3-4 câu tổng kết + 1 dự báo/gợi ý cho tháng tới\"}"
-        val fallback = "Tháng ${ym.monthValue} nhà mua ${r1(gridKwh)} kWh từ EVN (khoảng ${fmtVnd(costVnd)}), " +
+            "Trả JSON: {\"summary\": \"3-4 câu tổng kết + 1 dự báo/gợi ý cho kỳ tới\"}"
+        val fallback = "Kỳ $periodLabel nhà mua ${r1(gridKwh)} kWh từ EVN (khoảng ${fmtVnd(costVnd)}), " +
             "PV sản xuất ${r1(pvKwh)} kWh." +
             (floors.firstOrNull()?.let { " ${it.name} tiêu thụ nhiều nhất (${r1(it.kwh)} kWh)." } ?: "")
         return when (val r = ai.chat(aiSystem, user)) {

@@ -98,7 +98,7 @@ fun BriefScreen(
                 Text(
                     when (tab) {
                         0 -> daily?.let { "${it.weekdayVi} · ${it.dateLabel} · Cập nhật 6:00" } ?: "Chưa có dữ liệu"
-                        else -> monthly?.let { "Tháng ${it.monthLabel} · Cập nhật 6:00 ngày 1" } ?: "Chưa có dữ liệu"
+                        else -> monthly?.let { "Kỳ ${it.monthLabel} · Cập nhật 6:00 ngày 28" } ?: "Chưa có dữ liệu"
                     },
                     fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant,
                 )
@@ -115,7 +115,7 @@ fun BriefScreen(
         ) {
             BriefTab("Hôm qua", selected = tab == 0, onClick = { tab = 0 }, modifier = Modifier.weight(1f))
             BriefTab(
-                "Tháng ${monthly?.monthLabel?.substringBefore('/') ?: ""}".trim(),
+                "Tháng",
                 selected = tab == 1, onClick = { tab = 1 }, modifier = Modifier.weight(1f),
             )
         }
@@ -375,7 +375,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
         }
         StaggerCard(1, tabKey) {
             BriefCard {
-                SecTitle("TỔNG QUAN THÁNG ${m.monthLabel}")
+                SecTitle("TỔNG QUAN KỲ ${m.monthLabel}")
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatBox(

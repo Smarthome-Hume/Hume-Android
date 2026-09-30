@@ -46,7 +46,7 @@ data class BriefFloorStat(val name: String, val kwh: Double)
 
 @Serializable
 data class BriefMonthly(
-    /** "9/2026" */
+    /** Nhan ky chot dien, vd "28/9 – 27/10" */
     val monthLabel: String,
     val gridKwh: Double,
     val costVnd: Long,
