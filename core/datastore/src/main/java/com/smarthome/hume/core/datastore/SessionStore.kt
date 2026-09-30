@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
@@ -140,16 +141,23 @@ class SessionStore(private val context: Context) {
         tokenFlow.value = readToken()
     }
 
+    /**
+     * Kich hoat phat lai [frigateRemote] sau moi lan luu. Can thiet vi
+     * cfClientId/Secret nam trong encrypted prefs (ngoai DataStore): neu user
+     * chi doi secret ma URL giu nguyen, DataStore co the khong emit.
+     */
+    private val frigateRefresh = MutableStateFlow(0)
+
     /** Cau hinh xem Frigate tu xa (doi theo realtime khi user sua o tab Toi). */
     val frigateRemote: Flow<FrigateRemoteConfig> =
-        context.humeDataStore.data.map { prefs ->
+        combine(context.humeDataStore.data, frigateRefresh) { prefs, _ ->
             val (id, secret) = readCfAccess()
             FrigateRemoteConfig(
                 remoteUrl = prefs[Keys.FrigateRemoteUrl] ?: DEFAULT_FRIGATE_REMOTE_URL,
                 cfClientId = id,
                 cfClientSecret = secret,
             )
-        }
+        }.distinctUntilChanged()
 
     suspend fun saveFrigateRemote(url: String, cfClientId: String, cfClientSecret: String) {
         context.humeDataStore.edit { prefs ->
@@ -157,9 +165,13 @@ class SessionStore(private val context: Context) {
             if (clean.isNotBlank()) prefs[Keys.FrigateRemoteUrl] = clean
             else prefs.remove(Keys.FrigateRemoteUrl)
         }
+        // O nhap trong = giu gia tri cu (dung nhu hint tren UI), tranh vo tinh
+        // xoa secret khi user quay lai card va bam Luu ma khong nhap lai secret.
+        val (oldId, oldSecret) = readCfAccess()
         encryptedPrefs().edit()
-            .putString("cf_access_id", cfClientId.trim())
-            .putString("cf_access_secret", cfClientSecret.trim())
+            .putString("cf_access_id", cfClientId.trim().ifBlank { oldId })
+            .putString("cf_access_secret", cfClientSecret.trim().ifBlank { oldSecret })
             .apply()
+        frigateRefresh.value++
     }
 }

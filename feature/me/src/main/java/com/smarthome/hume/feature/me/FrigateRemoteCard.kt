@@ -191,10 +191,16 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                             enabled = !testing,
                         ) {
                             haptic()
+                            // Luu truoc roi moi test (save giu secret cu khi o nhap
+                            // trong) -> ket qua test phan anh dung cau hinh that.
+                            val urlNow = url
+                            val idNow = clientId
+                            val secretNow = clientSecret.ifBlank { settings.cfClientSecret }
+                            doSave()
                             vm.testFrigate(
-                                url = url,
-                                cfClientId = clientId,
-                                cfClientSecret = clientSecret.ifBlank { settings.cfClientSecret },
+                                url = urlNow,
+                                cfClientId = idNow,
+                                cfClientSecret = secretNow,
                             )
                         }
                         .padding(horizontal = 18.dp, vertical = 12.dp),
