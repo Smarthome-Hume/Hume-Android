@@ -75,7 +75,7 @@ class AppSecurityRepository(
     override fun refreshRecordings(cameraKey: String) {
         scope.launch {
             val settings = settingsStore.settings.first()
-            runCatching { frigate.refresh(cameraKey, settings.haUrl, settings.haToken) }
+            runCatching { frigate.refresh(cameraKey, ha.getBaseUrl(), settings.haToken) }
             refreshed += cameraKey
         }
     }

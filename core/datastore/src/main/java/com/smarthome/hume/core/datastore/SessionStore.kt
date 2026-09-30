@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.smarthome.hume.core.model.AuthSession
+import com.smarthome.hume.core.model.isLocalHaUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,13 +30,17 @@ val Context.humeDataStore by preferencesDataStore("hume_settings")
 class SessionStore(private val context: Context) {
 
     private object Keys {
-        val HaUrl = stringPreferencesKey("ha_url")
+        val HaUrl = stringPreferencesKey("ha_url") // legacy: 1 URL duy nhat (truoc dual-path)
+        val HaLocalUrl = stringPreferencesKey("ha_local_url")
+        val HaRemoteUrl = stringPreferencesKey("ha_remote_url")
         val HaTokenLegacy = stringPreferencesKey("ha_token")
         val HaAvatarUrl = stringPreferencesKey("ha_avatar_url")
     }
 
     companion object {
         const val DEFAULT_URL = "http://192.168.102.22:8123"
+        const val DEFAULT_LOCAL_URL = "http://192.168.102.22:8123"
+        const val DEFAULT_REMOTE_URL = "https://haiha93.xyz"
     }
 
     @Suppress("DEPRECATION")
@@ -76,17 +81,27 @@ class SessionStore(private val context: Context) {
 
     val session: Flow<AuthSession> =
         context.humeDataStore.data.map { prefs ->
+            // Migrate 1 lan: ha_url cu (1 URL duy nhat) -> local hoac remote tuy dia chi.
+            val legacy = prefs[Keys.HaUrl]?.trim().orEmpty()
+            val migratedLocal = prefs[Keys.HaLocalUrl] ?: legacy.takeIf { it.isNotBlank() && isLocalHaUrl(it) }
+            val migratedRemote = prefs[Keys.HaRemoteUrl] ?: legacy.takeIf { it.isNotBlank() && !isLocalHaUrl(it) }
             AuthSession(
-                serverUrl = prefs[Keys.HaUrl] ?: DEFAULT_URL,
+                localUrl = migratedLocal ?: DEFAULT_LOCAL_URL,
+                remoteUrl = migratedRemote ?: DEFAULT_REMOTE_URL,
                 avatarUrl = prefs[Keys.HaAvatarUrl] ?: "",
             )
         }.combine(tokenFlow) { s, token -> s.copy(token = token) }
 
-    suspend fun save(url: String, token: String, avatarUrl: String = "") {
-        val cleanUrl = url.trim().trimEnd('/')
+    suspend fun save(localUrl: String, remoteUrl: String, token: String, avatarUrl: String = "") {
+        val cleanLocal = localUrl.trim().trimEnd('/')
+        val cleanRemote = remoteUrl.trim().trimEnd('/')
         val cleanToken = token.trim()
         context.humeDataStore.edit { prefs ->
-            prefs[Keys.HaUrl] = cleanUrl
+            if (cleanLocal.isNotBlank()) prefs[Keys.HaLocalUrl] = cleanLocal
+            else prefs.remove(Keys.HaLocalUrl)
+            if (cleanRemote.isNotBlank()) prefs[Keys.HaRemoteUrl] = cleanRemote
+            else prefs.remove(Keys.HaRemoteUrl)
+            prefs.remove(Keys.HaUrl) // legacy da migrate sang 2 key moi
             // Luon ghi/xoa avatar key de khong giu avatar cu cua user truoc
             if (avatarUrl.isNotBlank()) prefs[Keys.HaAvatarUrl] = avatarUrl
             else prefs.remove(Keys.HaAvatarUrl)
@@ -95,10 +110,17 @@ class SessionStore(private val context: Context) {
         tokenFlow.value = cleanToken
     }
 
+    /** Tuong thich nguoc: luu 1 URL duy nhat nhu ban cu (mac dinh coi la local). */
+    suspend fun save(url: String, token: String, avatarUrl: String = "") {
+        save(localUrl = url, remoteUrl = "", token = token, avatarUrl = avatarUrl)
+    }
+
     suspend fun clear() {
         encryptedPrefs().edit().remove("ha_token").apply()
         context.humeDataStore.edit { prefs ->
             prefs.remove(Keys.HaUrl)
+            prefs.remove(Keys.HaLocalUrl)
+            prefs.remove(Keys.HaRemoteUrl)
             prefs.remove(Keys.HaAvatarUrl)
         }
         tokenFlow.value = ""

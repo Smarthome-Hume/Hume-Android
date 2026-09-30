@@ -374,7 +374,7 @@ class AppHomeRepository(
         val freshSynthetics = mutableListOf<HomeNotification>()
         for (cam in FRIGATE_CAMERA_KEYS) {
             val (label, start) = runCatching {
-                frigateStore.latestEvent(cam, settings.haUrl, settings.haToken)
+                frigateStore.latestEvent(cam, ha.getBaseUrl(), settings.haToken)
             }.getOrNull() ?: continue
             if (label.isBlank()) continue
             val ageSec = now / 1000 - start

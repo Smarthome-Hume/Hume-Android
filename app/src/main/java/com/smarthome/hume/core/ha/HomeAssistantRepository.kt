@@ -1,5 +1,6 @@
 package com.smarthome.hume.core.ha
 
+import android.os.SystemClock
 import android.util.Log
 import com.smarthome.hume.core.model.HAEntity
 import com.smarthome.hume.core.model.HomeEntity
@@ -57,12 +58,14 @@ class HomeAssistantRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var ws: WebSocket? = null
     private var msgId = 1
-    private var baseUrl = ""
+    /** Chon duong noi HA: local (WireGuard/WiFi) uu tien, rot ve remote (Cloudflare). */
+    val endpoint = HaEndpointResolver()
     private var token = ""
 
     /** True while the app wants a live socket. Used to decide whether to auto-reconnect. */
     private var wantConnection = false
     private var reconnectAttempt = 0
+    private var lastNetSwitchMs = 0L
 
     private val _entities = MutableStateFlow<Map<String, HomeEntity>>(emptyMap())
     val entities: StateFlow<Map<String, HomeEntity>> = _entities.asStateFlow()
@@ -169,31 +172,38 @@ class HomeAssistantRepository {
 
     /* ---------------- configuration and lifecycle ---------------- */
 
-    fun configure(url: String, token: String) {
-        this.baseUrl = url.trim().trimEnd('/')
+    fun configure(localUrl: String, remoteUrl: String, token: String) {
+        endpoint.configure(localUrl, remoteUrl)
         this.token = token.trim()
-        Log.i(TAG, "Configured HA baseUrl=$baseUrl tokenLength=${this.token.length}")
+        Log.i(TAG, "Configured HA local=${endpoint.localUrl} remote=${endpoint.remoteUrl} tokenLength=${this.token.length}")
     }
 
-    private val isConfigured: Boolean
-        get() = baseUrl.isNotBlank() && token.isNotBlank()
+    /** Tuong thich nguoc: 1 URL duy nhat (coi la local). */
+    fun configure(url: String, token: String) = configure(localUrl = url, remoteUrl = "", token = token)
 
-    /** Base URL cua HA (de resolve entity_picture tuong doi). */
-    fun getBaseUrl(): String = baseUrl
+    private val isConfigured: Boolean
+        get() = token.isNotBlank() &&
+            (endpoint.localUrl.isNotBlank() || endpoint.remoteUrl.isNotBlank())
+
+    /** Base URL dang dung (de resolve entity_picture tuong doi). */
+    fun getBaseUrl(): String = endpoint.currentBaseUrl
 
     /** True khi da cau hinh nhung chua ket noi (dang ket noi). */
     fun isConnecting(): Boolean = isConfigured && !_connected.value
 
     fun connect() {
         if (!isConfigured) {
-            Log.w(TAG, "connect() skipped: baseUrl or token is empty")
+            Log.w(TAG, "connect() skipped: endpoint or token is empty")
             return
         }
         wantConnection = true
         reconnectAttempt = 0
         closeSocket()
-        scope.launch { fetchInitialStates() }
-        openSocket()
+        scope.launch {
+            val base = endpoint.resolve()
+            fetchInitialStates()
+            openSocket(base)
+        }
         startFlushLoop()
     }
 
@@ -208,8 +218,11 @@ class HomeAssistantRepository {
         if (!isConfigured) return
         wantConnection = true
         reconnectAttempt = 0
-        scope.launch { fetchInitialStates() }
-        if (ws == null) openSocket()
+        scope.launch {
+            val base = endpoint.resolve()
+            fetchInitialStates()
+            if (ws == null) openSocket(base)
+        }
         startFlushLoop()
     }
 
@@ -219,6 +232,28 @@ class HomeAssistantRepository {
         stopFlushLoop()
         closeSocket()
         Log.i(TAG, "App backgrounded, WebSocket released")
+    }
+
+    /**
+     * Goi tu ConnectivityManager callback khi doi mang (bat/tat WireGuard, WiFi <-> 4G):
+     * probe lai de tu chuyen local <-> remote. Debounce de tranh flap.
+     */
+    fun noteNetworkChanged() {
+        if (!isConfigured || !wantConnection) return
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastNetSwitchMs < 2_000) return
+        lastNetSwitchMs = now
+        Log.i(TAG, "Network changed -> re-resolve HA endpoint")
+        endpoint.invalidate()
+        reconnectAttempt = 0
+        closeSocket()
+        scope.launch {
+            delay(800) // cho VPN/WiFi on dinh truoc khi probe
+            if (!wantConnection || !isActive) return@launch
+            val base = endpoint.resolve()
+            fetchInitialStates()
+            openSocket(base)
+        }
     }
 
     private fun startFlushLoop() {
@@ -243,10 +278,8 @@ class HomeAssistantRepository {
         _connected.value = false
     }
 
-    private fun openSocket() {
-        val wsUrl = baseUrl
-            .replaceFirst("http://", "ws://")
-            .replaceFirst("https://", "wss://") + "/api/websocket"
+    private fun openSocket(base: String) {
+        val wsUrl = HaEndpointResolver.wsUrl(base)
         Log.i(TAG, "WebSocket connecting to $wsUrl")
         ws = client.newWebSocket(Request.Builder().url(wsUrl).build(), listener)
     }
@@ -260,9 +293,12 @@ class HomeAssistantRepository {
         scope.launch {
             delay(delayMs)
             if (!wantConnection) return@launch
+            // Probe lai duong truyen: VPN vua tat -> rot ve remote, VPN vua bat -> ve local.
+            endpoint.invalidate()
+            val base = endpoint.resolve()
             // Refresh over REST too, so the UI stays correct even if the socket keeps failing.
             fetchInitialStates()
-            openSocket()
+            openSocket(base)
         }
     }
 
@@ -641,7 +677,7 @@ class HomeAssistantRepository {
     }
 
     suspend fun fetchInitialStates() = withContext(Dispatchers.IO) {
-        val url = "$baseUrl/api/states"
+        val url = "${endpoint.currentBaseUrl}/api/states"
         try {
             val req = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
             client.newCall(req).execute().use { resp ->
@@ -693,7 +729,7 @@ class HomeAssistantRepository {
 
     /** Re-read a single entity instead of pulling the whole state table. */
     private suspend fun fetchEntityState(entityId: String) = withContext(Dispatchers.IO) {
-        val url = "$baseUrl/api/states/$entityId"
+        val url = "${endpoint.currentBaseUrl}/api/states/$entityId"
         try {
             val req = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
             client.newCall(req).execute().use { resp ->
@@ -714,7 +750,7 @@ class HomeAssistantRepository {
      */
     suspend fun fetchHistory(entityId: String, hours: Int = 24): List<HistoryPoint> = withContext(Dispatchers.IO) {
         val startIso = Instant.ofEpochMilli(System.currentTimeMillis() - hours * 3_600_000L).toString()
-        val url = "$baseUrl/api/history/period/$startIso" +
+        val url = "${endpoint.currentBaseUrl}/api/history/period/$startIso" +
             "?filter_entity_id=$entityId&minimal_response&significant_changes_only"
         try {
             val req = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
@@ -767,7 +803,7 @@ class HomeAssistantRepository {
             applyLocalState(optimisticEntityId, expectedState)
         }
         scope.launch {
-            val url = "$baseUrl/api/services/$domain/$service"
+            val url = "${endpoint.currentBaseUrl}/api/services/$domain/$service"
             var accepted = false
             try {
                 val body = dataJson.toRequestBody("application/json".toMediaType())

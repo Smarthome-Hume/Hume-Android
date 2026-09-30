@@ -1,7 +1,11 @@
 package com.smarthome.hume
 
 import android.graphics.Color
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -47,6 +51,21 @@ class MainActivity : ComponentActivity() {
             }
         })
 
+        // Doi mang (bat/tat WireGuard, WiFi <-> 4G) -> tu chuyen local <-> remote.
+        val connectivityManager = getSystemService(ConnectivityManager::class.java)
+        connectivityManager?.registerDefaultNetworkCallback(
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    app.haRepository.noteNetworkChanged()
+                }
+
+                override fun onLost(network: Network) {
+                    app.haRepository.noteNetworkChanged()
+                }
+            },
+            Handler(Looper.getMainLooper()),
+        )
+
         setContent {
             // Nguon su that cho gate dang nhap: AuthRepository cua kien truc moi.
             // (Doc chung file "hume_settings"/"hume_secrets" voi SettingsStore cu.)
@@ -56,9 +75,9 @@ class MainActivity : ComponentActivity() {
                 if (session.isLoggedIn) {
                     // Dong bo lai SettingsStore cu (tokenFlow cua no khong tu refresh).
                     app.settingsStore.refresh()
-                    app.haRepository.configure(session.serverUrl, session.token)
+                    app.haRepository.configure(session.localUrl, session.remoteUrl, session.token)
                     // Duong lay lich su rieng (timeout dai) cho bieu do 7 ngay.
-                    HistoryFetcher.configure(session.serverUrl, session.token)
+                    HistoryFetcher.configure(app.haRepository.endpoint, session.token)
                     app.haRepository.connect()
                 }
             }

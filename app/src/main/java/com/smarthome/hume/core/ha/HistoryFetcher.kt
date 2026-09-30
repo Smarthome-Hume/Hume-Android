@@ -40,27 +40,38 @@ object HistoryFetcher {
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
+    /** Dung chung resolver voi HomeAssistantRepository: tu chuyen local <-> remote. */
     @Volatile
-    private var baseUrl: String = ""
+    private var endpoint: HaEndpointResolver? = null
 
     @Volatile
     private var token: String = ""
 
     val isConfigured: Boolean
-        get() = baseUrl.isNotBlank() && token.isNotBlank()
+        get() = endpoint != null && token.isNotBlank()
 
+    fun configure(endpoint: HaEndpointResolver, token: String) {
+        this.endpoint = endpoint
+        this.token = token.trim()
+    }
+
+    /** Tuong thich nguoc: 1 URL duy nhat (coi la local). */
     fun configure(url: String, token: String) {
-        this.baseUrl = url.trim().trimEnd('/')
+        val r = HaEndpointResolver()
+        r.configure(url, "")
+        this.endpoint = r
         this.token = token.trim()
     }
 
     /** Lich su cua mot khoang thoi gian bat ky. Rong neu goi that bai. */
     suspend fun fetchRange(entityId: String, startMs: Long, endMs: Long): List<HistoryPoint> =
         withContext(Dispatchers.IO) {
-            if (!isConfigured) return@withContext emptyList()
+            val ep = endpoint
+            if (ep == null || token.isBlank()) return@withContext emptyList()
+            val base = ep.resolve()
             val start = URLEncoder.encode(Instant.ofEpochMilli(startMs).toString(), "UTF-8")
             val end = URLEncoder.encode(Instant.ofEpochMilli(endMs).toString(), "UTF-8")
-            val url = "$baseUrl/api/history/period/$start" +
+            val url = "$base/api/history/period/$start" +
                 "?filter_entity_id=$entityId&end_time=$end&minimal_response&no_attributes"
             try {
                 val req = Request.Builder().url(url)

@@ -25,26 +25,49 @@ class AuthRepository(
     val session: Flow<AuthSession> =
         combine(memorySession, sessionStore.session) { mem, stored -> mem ?: stored }
 
-    suspend fun login(rawUrl: String, rawToken: String, rememberMe: Boolean = true): AuthResult {
-        val result = validator.validate(rawUrl, rawToken)
-        if (result is AuthResult.Success) {
-            val url = HaAuthValidator.normalizeUrl(rawUrl) ?: rawUrl.trim().trimEnd('/')
-            val token = rawToken.trim()
-            // Lay avatar user tu HA (khong bat buoc, that bai -> bo qua)
-            val avatar = runCatching { validator.fetchAvatarUrl(url, token) }
-                .getOrDefault("")
-            if (rememberMe) {
-                memorySession.value = null
-                sessionStore.save(url, token, avatar)
-            } else {
-                memorySession.value = AuthSession(
-                    serverUrl = url,
-                    token = token,
-                    avatarUrl = avatar,
-                )
+    suspend fun login(rawUrl: String, rawToken: String, rememberMe: Boolean = true): AuthResult =
+        login(rawLocalUrl = rawUrl, rawRemoteUrl = "", rawToken = rawToken, rememberMe = rememberMe)
+
+    /**
+     * Dang nhap voi 2 duong song song: thu local truoc (nhanh), that bai thi thu remote.
+     * Chi can 1 trong 2 toi duoc la dang nhap thanh cong; luu ca 2 URL de app tu chuyen.
+     */
+    suspend fun login(
+        rawLocalUrl: String,
+        rawRemoteUrl: String,
+        rawToken: String,
+        rememberMe: Boolean = true,
+    ): AuthResult {
+        val token = rawToken.trim()
+        if (token.isBlank()) return AuthResult.Error("Nhập Long-Lived Access Token.")
+        val local = HaAuthValidator.normalizeUrl(rawLocalUrl) ?: rawLocalUrl.trim().trimEnd('/')
+        val remote = HaAuthValidator.normalizeUrl(rawRemoteUrl) ?: rawRemoteUrl.trim().trimEnd('/')
+        val candidates = listOf(local, remote).filter { it.isNotBlank() }.distinct()
+        if (candidates.isEmpty()) return AuthResult.Error("Nhập địa chỉ máy chủ (nội bộ hoặc domain).")
+        var lastError: AuthResult.Error? = null
+        for (url in candidates) {
+            when (val result = validator.validate(url, token)) {
+                is AuthResult.Success -> {
+                    // Lay avatar user tu HA (khong bat buoc, that bai -> bo qua)
+                    val avatar = runCatching { validator.fetchAvatarUrl(url, token) }
+                        .getOrDefault("")
+                    if (rememberMe) {
+                        memorySession.value = null
+                        sessionStore.save(local, remote, token, avatar)
+                    } else {
+                        memorySession.value = AuthSession(
+                            localUrl = local,
+                            remoteUrl = remote,
+                            token = token,
+                            avatarUrl = avatar,
+                        )
+                    }
+                    return AuthResult.Success
+                }
+                is AuthResult.Error -> lastError = result
             }
         }
-        return result
+        return lastError ?: AuthResult.Error("Không kết nối được máy chủ.")
     }
 
     suspend fun logout() {

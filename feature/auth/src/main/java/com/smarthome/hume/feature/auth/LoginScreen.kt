@@ -64,18 +64,6 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 
-private val ServerMode.label: String
-    get() = if (this == ServerMode.Local) "Nội bộ" else "Domain"
-
-private val ServerMode.iconGlyph: String
-    get() = if (this == ServerMode.Local) Ms.home else Ms.language
-
-private val ServerMode.urlHint: String
-    get() = if (this == ServerMode.Local) "http://192.168.1.10:8123" else "https://nha-cua-ban.duckdns.org"
-
-private val ServerMode.helper: String
-    get() = if (this == ServerMode.Local) "IP nội bộ trong nhà" else "Tên miền truy cập từ xa"
-
 private val TokenEntryMode.label: String
     get() = when (this) {
         TokenEntryMode.Manual -> "Nhập tay"
@@ -162,44 +150,37 @@ fun LoginScreen(
                     )
                     Spacer(Modifier.height(20.dp))
 
-                    // Segment Noi bo / Domain
+                    // 2 duong song song: noi bo (WireGuard/WiFi nha) + domain (Cloudflare)
                     Text(
                         text = "Địa chỉ máy chủ",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(10.dp))
-                    M3EConnectedButtonGroup(
-                        options = ServerMode.entries,
-                        selected = state.serverMode,
-                        onSelect = viewModel::onServerModeChange,
-                        label = { it.label },
-                        icon = { it.iconGlyph },
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = state.serverUrl,
-                        onValueChange = viewModel::onUrlChange,
-                        label = { Text("Địa chỉ IP / Domain", style = MaterialTheme.typography.bodySmall) },
-                        placeholder = { Text(state.serverMode.urlHint) },
-                        leadingIcon = { MsIcon(Ms.link, null) },
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Uri,
-                            imeAction = ImeAction.Next,
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focus.moveFocus(FocusDirection.Down) },
-                        ),
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
+                    UrlField(
+                        value = state.localUrl,
+                        onValueChange = viewModel::onLocalUrlChange,
+                        label = "Nội bộ (Local)",
+                        placeholder = "http://192.168.102.22:8123",
+                        focus = focus,
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = state.serverMode.helper,
+                        text = "Qua WireGuard hoặc WiFi nhà — nhanh, không qua internet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    UrlField(
+                        value = state.remoteUrl,
+                        onValueChange = viewModel::onRemoteUrlChange,
+                        label = "Từ xa (Domain)",
+                        placeholder = "https://haiha93.xyz",
+                        focus = focus,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Qua Cloudflare — dùng khi không bật VPN",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -460,4 +441,35 @@ private fun QrShowSection(
             )
         }
     }
+}
+
+/** O nhap URL dung chung cho 2 duong noi bo / domain. */
+@Composable
+private fun UrlField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    focus: androidx.compose.ui.focus.FocusManager,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+        placeholder = { Text(placeholder) },
+        leadingIcon = { MsIcon(Ms.link, null) },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Uri,
+            imeAction = ImeAction.Next,
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { focus.moveFocus(FocusDirection.Down) },
+        ),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+    )
 }
