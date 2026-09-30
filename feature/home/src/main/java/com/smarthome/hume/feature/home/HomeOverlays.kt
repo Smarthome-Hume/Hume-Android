@@ -436,8 +436,7 @@ fun DeviceSearchView(
                         value = query,
                         onValueChange = onQuery,
                         singleLine = true,
-                        textStyle = TextStyle(
-                            style = MaterialTheme.typography.titleMedium,
+                        textStyle = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Medium,
                             color = cs.onSurface,
                         ),

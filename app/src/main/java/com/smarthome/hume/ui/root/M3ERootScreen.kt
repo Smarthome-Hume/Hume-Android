@@ -529,7 +529,6 @@ private fun M3ENavBar(
                             Text(
                                 item.tab.label,
                                 style = MaterialTheme.typography.labelSmall,
-                                style = MaterialTheme.typography.labelSmall,
                                 lineHeight = 13.sp,
                                 fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
                                 color = if (isSel) cs.onSurface

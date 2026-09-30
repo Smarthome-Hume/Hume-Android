@@ -182,8 +182,7 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     ) {
         Text(
             "Chi phí điện",
-            style = MaterialTheme.typography.titleSmall.copy(
-                style = MaterialTheme.typography.titleSmall),
+            style = MaterialTheme.typography.titleSmall.copy(),
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -202,7 +201,7 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PBox("Giá mua", (state.cost.buyPrice).toVnd(), Modifier.weight(1f))
             PBox("Giá EVN", (state.cost.evnPrice).toVnd(), Modifier.weight(1f))
-            PBox("Tiết kiệm", "${vnd(state.cost.savedVnd)}đ", Modifier.weight(1f))
+            PBox("Tiết kiệm", "${state.cost.savedVnd.toVnd()}đ", Modifier.weight(1f))
         }
     }
 }
@@ -218,8 +217,7 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                style = MaterialTheme.typography.labelMedium),
+            style = MaterialTheme.typography.labelMedium.copy(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
@@ -256,14 +254,12 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
             ).tnum(),
@@ -284,8 +280,7 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     ) {
         Text(
             "Công suất hoạt động",
-            style = MaterialTheme.typography.titleSmall.copy(
-                style = MaterialTheme.typography.titleSmall),
+            style = MaterialTheme.typography.titleSmall.copy(),
         )
         Spacer(Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -334,13 +329,11 @@ private fun PowerRow(
         ) {
             Text(
                 label,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    style = MaterialTheme.typography.labelMedium),
+                style = MaterialTheme.typography.labelMedium.copy(),
             )
             Text(
                 "${if (watts < 0) "−" else ""}${abs(watts).roundToInt()} W",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.labelMedium.copy( fontWeight = FontWeight.ExtraBold,
                 ).tnum(),
             )
         }
@@ -409,23 +402,20 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Column {
                 Text(
                     "Cơ cấu tiêu thụ",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        style = MaterialTheme.typography.bodySmall),
+                    style = MaterialTheme.typography.bodySmall.copy(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         kwh1(state.donutTotalKwh),
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            style = MaterialTheme.typography.headlineLarge,
+                        style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.3).sp,
                         ).tnum(),
                     )
                     Text(
                         " kWh",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            style = MaterialTheme.typography.titleSmall),
+                        style = MaterialTheme.typography.titleSmall.copy(),
                     )
                 }
             }
@@ -479,8 +469,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         // luc nghi van cach 10.dp nhu cu.
                         Text(
                             s.name,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                style = MaterialTheme.typography.labelMedium),
+                            style = MaterialTheme.typography.labelMedium.copy(),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             modifier = Modifier
@@ -491,8 +480,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         // cot % rong co dinh, can phai -> cac hang dóng thẳng
                         Text(
                             "${(s.fraction * 100).roundToInt()}%",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onSurface,
                             ).tnum(),
@@ -563,8 +551,7 @@ private fun DevicesCard(
             ) {
                 Text(
                     "Thiết bị",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        style = MaterialTheme.typography.titleMedium),
+                    style = MaterialTheme.typography.titleMedium.copy(),
                 )
                 Row(
                     modifier = Modifier
@@ -602,8 +589,7 @@ private fun DevicesCard(
                                 }
                                 Text(
                                     if (m == DeviceMode.Power) "Công suất" else "Năng lượng",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        style = MaterialTheme.typography.labelMedium),
+                                    style = MaterialTheme.typography.labelMedium.copy(),
                                     color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
                                     // demo .dvsegi{white-space:nowrap}: khong de vo 2 dong
@@ -654,8 +640,7 @@ private fun DeviceRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 d.name,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    style = MaterialTheme.typography.bodyMedium),
+                style = MaterialTheme.typography.bodyMedium.copy(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -675,8 +660,7 @@ private fun DeviceRow(
             }
             Text(
                 num,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 ).tnum(),
@@ -699,9 +683,8 @@ private fun DeviceRow(
                     .widthIn(min = 64.dp),
             ) {
                 Text(
-                    vnd((cost * factor).toLong()),
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        style = MaterialTheme.typography.bodyMedium,
+                    (cost * factor).toLong().toVnd(),
+                    style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = LocalHumeExtraColors.current.success,
                     ).tnum(),
@@ -733,8 +716,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
         ) {
             Text(
                 "Pin thiết bị yếu",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    style = MaterialTheme.typography.titleSmall),
+                style = MaterialTheme.typography.titleSmall.copy(),
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
             )
             if (state.lowBatteries.isEmpty()) {
@@ -765,8 +747,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     Spacer(Modifier.width(12.dp))
                     Text(
                         b.name,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            style = MaterialTheme.typography.labelLarge),
+                        style = MaterialTheme.typography.labelLarge.copy(),
                         modifier = Modifier.weight(1f),
                     )
                     Box(
@@ -790,8 +771,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "${b.pct.roundToInt()}%",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleSmall.copy( fontWeight = FontWeight.ExtraBold,
                         ).tnum(),
                         color = if (b.pct <= 20) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,

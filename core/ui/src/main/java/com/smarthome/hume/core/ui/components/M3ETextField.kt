@@ -90,10 +90,9 @@ fun M3ETextField(
             trailingIcon = trailingIcon,
             singleLine = singleLine,
             readOnly = readOnly,
-            textStyle = textStyle ?: LocalTextStyle.current.copy(
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-            ),
+            textStyle = textStyle ?: LocalTextStyle.current
+                .merge(MaterialTheme.typography.bodyMedium)
+                .copy(fontWeight = FontWeight.Medium),
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             visualTransformation = visualTransformation,

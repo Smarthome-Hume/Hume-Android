@@ -160,7 +160,7 @@ fun SecurityScreen(
                         .fillMaxWidth()
                         .riseIn(420),
                     // demo .dvsegi: 12px/600, padding 8px 10px, icon check 16px
-                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
                     fontWeight = FontWeight.SemiBold,
                     itemPadding = PaddingValues(vertical = 8.dp, horizontal = 10.dp),
                     checkSize = 16.dp,

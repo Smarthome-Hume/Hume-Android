@@ -120,16 +120,14 @@ fun EnergyDonut(
                     String.format(Locale.US, "%.1f", total * selSlice.fraction)
                 else
                     String.format(Locale.US, "%.1f", total),
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.ExtraBold,
                     fontFeatureSettings = "tnum",
                 ),
             )
             Text(
                 selSlice?.name ?: "kWh",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 maxLines = 1,

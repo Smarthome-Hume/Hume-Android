@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
@@ -326,7 +327,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                 // Phan tieu thu chua co sensor do: hien ro thay vi gia vo top 3 la day du.
                 if (d.unmeasuredKwh > 0.5) {
                     Spacer(Modifier.height(10.dp))
-                    UnmeasuredRow(d.unmeasuredKwh, max)
+                    UnmeasuredRow(d.unmeasuredKwh, max, tabKey)
                 }
                 Spacer(Modifier.height(10.dp))
                 Row(
@@ -511,7 +512,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                 }
                 if (m.unmeasuredKwh > 1.0) {
                     Spacer(Modifier.height(10.dp))
-                    UnmeasuredRow(m.unmeasuredKwh, max)
+                    UnmeasuredRow(m.unmeasuredKwh, max, tabKey)
                 }
             }
         }
@@ -710,6 +711,7 @@ private fun countUpDouble(target: Double, tabKey: Any): Double {
     return target * p
 }
 
+@Composable
 private fun countUpText(target: Double, decimals: Int, tabKey: Any): String {
     val v = countUpDouble(target, tabKey)
     val pattern = "%.${decimals}f"

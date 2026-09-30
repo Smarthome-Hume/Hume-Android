@@ -137,8 +137,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Tải tiêu thụ",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    style = MaterialTheme.typography.titleSmall),
+                style = MaterialTheme.typography.titleSmall.copy(),
                 modifier = Modifier.alignByBaseline(),
             )
             Row(
@@ -146,8 +145,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             ) {
                 Text(
                     String.format("%.1f", state.loadTotalKw),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontFeatureSettings = "tnum",
                     ),
@@ -155,8 +153,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 )
                 Text(
                     " kW",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        style = MaterialTheme.typography.labelMedium),
+                    style = MaterialTheme.typography.labelMedium.copy(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.alignByBaseline(),
                 )
@@ -171,8 +168,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             ) {
                 Text(
                     t.name,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        style = MaterialTheme.typography.labelMedium),
+                    style = MaterialTheme.typography.labelMedium.copy(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
@@ -182,7 +178,6 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 Text(
                     "${String.format("%.1f", t.kw)} kW",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontFeatureSettings = "tnum",
@@ -222,13 +217,11 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Pin S6",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    style = MaterialTheme.typography.titleSmall),
+                style = MaterialTheme.typography.titleSmall.copy(),
             )
             Text(
                 "SOC ${state.battery.soc.roundToInt()}%",
                 style = MaterialTheme.typography.bodySmall.copy(
-                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = extra.success,
                 ),
@@ -295,7 +288,7 @@ private fun miniVal(vararg parts: Pair<String, String>): AnnotatedString =
             if (i > 0) append(" · ")
             append(num)
             withStyle(SpanStyle(
-                style = MaterialTheme.typography.labelSmall,
+                fontSize = MaterialTheme.typography.labelSmall.fontSize,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )) { append(" $unit") }
@@ -312,14 +305,12 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.ExtraBold,
                 fontFeatureSettings = "tnum",
             ),
@@ -380,14 +371,12 @@ private fun Expander(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        style = MaterialTheme.typography.titleSmall),
+                    style = MaterialTheme.typography.titleSmall.copy(),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        style = MaterialTheme.typography.bodySmall),
+                    style = MaterialTheme.typography.bodySmall.copy(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -430,8 +419,7 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
     ) {
         Text(
             c.name,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                style = MaterialTheme.typography.labelLarge),
+            style = MaterialTheme.typography.labelLarge.copy(),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
@@ -448,8 +436,7 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
             BatteryControlKind.Time -> {
                 Text(
                     c.state.take(5),
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        style = MaterialTheme.typography.bodySmall),
+                    style = MaterialTheme.typography.bodySmall.copy(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -467,7 +454,6 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
         Text(
             "${value.roundToInt()}$unit",
             style = MaterialTheme.typography.bodyMedium.copy(
-                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.ExtraBold,
                 fontFeatureSettings = "tnum",
             ),
@@ -491,8 +477,7 @@ private fun StepperBtn(text: String, onClick: () -> Unit) {
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium.copy(
-                style = MaterialTheme.typography.titleMedium),
+            style = MaterialTheme.typography.titleMedium.copy(),
             color = MaterialTheme.colorScheme.onSurface,
         )
     }

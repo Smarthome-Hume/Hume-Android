@@ -141,8 +141,7 @@ fun EnergyFlowCard(
                 Column {
                     Text(
                         "Năng lượng",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            style = MaterialTheme.typography.titleLarge),
+                        style = MaterialTheme.typography.titleLarge.copy(),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                 }
@@ -158,15 +157,13 @@ fun EnergyFlowCard(
                     Text(
                         String.format(Locale.US, "%.1f", flow.todayKwh),
                         style = MaterialTheme.typography.titleLarge.copy(
-                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",
                         ),
                     )
                     Text(
                         " kWh",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            style = MaterialTheme.typography.bodyMedium),
+                        style = MaterialTheme.typography.bodyMedium.copy(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -180,7 +177,7 @@ fun EnergyFlowCard(
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             Spacer(Modifier.height(12.dp))
-            val footStyle = MaterialTheme.typography.bodySmall.copy(style = MaterialTheme.typography.bodySmall)
+            val footStyle = MaterialTheme.typography.bodySmall.copy()
             val footColor = MaterialTheme.colorScheme.onSurfaceVariant
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -276,8 +273,7 @@ private fun FlowArea(
             ) {
                 Text(
                     if (flow.gridOn) "Cấp điện" else "Mất điện",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        style = MaterialTheme.typography.labelSmall),
+                    style = MaterialTheme.typography.labelSmall.copy(),
                     color = gridBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -337,14 +333,12 @@ private fun FlowArea(
             ) {
                 Text(
                     "SOC",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     "${soc.roundToInt()}%",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -556,8 +550,7 @@ private fun FlowNode(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     iconBadge,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        style = MaterialTheme.typography.labelSmall),
+                    style = MaterialTheme.typography.labelSmall.copy(),
                     color = iconBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -606,7 +599,6 @@ private fun FlowNode(
             Text(
                 num,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     fontFeatureSettings = "tnum",
                 ),
@@ -616,8 +608,7 @@ private fun FlowNode(
             )
             Text(
                 " $unit",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    style = MaterialTheme.typography.bodySmall),
+                style = MaterialTheme.typography.bodySmall.copy(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -681,8 +672,7 @@ private fun SegBar(
             items.forEach { (name, _) ->
                 Text(
                     name,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
