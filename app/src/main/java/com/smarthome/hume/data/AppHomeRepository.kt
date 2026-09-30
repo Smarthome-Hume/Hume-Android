@@ -148,6 +148,10 @@ class AppHomeRepository(
         ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
         ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
         ids.add(HumeConfig.GRID_STATUS)
+        // Thoi gian pin + backup SOC: the pin doc nhung truoc day quen watch ->
+        // gia tri stale tu luc mo app (nguyen nhan the pin mat cum thoi gian).
+        ids.add(HumeConfig.BATTERY_TIME_LEFT); ids.add(HumeConfig.BATTERY_TIME_TO_FULL)
+        ids.add(HumeConfig.BACKUP_SOC)
         // An ninh: sensor cua/chuyen dong/khoi/nuoc.
         runCatching {
             ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
@@ -241,7 +245,12 @@ class AppHomeRepository(
             runtimeEntity?.attributes?.get("friendly_time")?.jsonPrimitive?.contentOrNull
                 ?.replace("\"", "")?.trim()?.takeIf { it.isNotBlank() }
                 ?: runtimeEntity?.state?.takeIf { it.isNotBlank() && it != "unknown" }
-        val endTime = if (resting) null else runtimeEntity?.state?.let { parseDurationToEndTime(it) }
+        val endTime = if (resting) null else
+            // Uu tien friendly_time (cong thuc Hume goc), fallback raw state —
+            // truoc day chi parse state nen lech voi bigTime (an oan khi
+            // friendly_time la duration ma state khong phai).
+            parseDurationToEndTime(runtimeText ?: "")
+                ?: runtimeEntity?.state?.let { parseDurationToEndTime(it) }
 
         val alarmId = alarmEntityId()
         val alarmEntity = alarmId?.let { entities[it] }

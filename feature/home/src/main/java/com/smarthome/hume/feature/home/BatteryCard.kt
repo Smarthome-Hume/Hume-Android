@@ -219,17 +219,31 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
  * friendly_time dang "6:50" -> "6h 50m"; neu da dang doc duoc thi giu nguyen.
  * Null (khi NGHI) -> "".
  */
-private fun parseDurationBig(timeText: String?): String? {
+/**
+ * Parse duration kieu Solis/template: "6:50:00" | "6:50" | "410" (phut).
+ * Tra ve tong so phut; null neu khong phai duration (template tra text
+ * trang thai nhu "Dang sac/Cho") -> UI an dong gio lon, khong hien rac
+ * nhu "\"Dang sac/C".
+ * (2026-09-30) Truoc day chi hieu H:MM nen so phut thuan bi an oan.
+ */
+private fun parseDurationMinutes(timeText: String?): Int? {
     if (timeText.isNullOrBlank()) return null
-    val m = Regex("""(\d+):(\d{1,2})""").find(timeText)
+    val m = Regex("""(\d+):(\d{1,2})(?::\d{1,2})?""").find(timeText)
     if (m != null) {
         val h = m.groupValues[1].toIntOrNull() ?: 0
         val min = m.groupValues[2].toIntOrNull() ?: 0
-        return if (h > 0) "${h}h ${min}m" else "${min}m"
+        return h * 60 + min
     }
-    // Khong phai duration (template tra text trang thai nhu "Dang sac/Cho")
-    // -> null de UI an dong gio lon, khong hien rac nhu "\"Dang sac/C".
+    val mins = timeText.trim().toDoubleOrNull()?.toInt()
+    if (mins != null && mins >= 0) return mins
     return null
+}
+
+private fun parseDurationBig(timeText: String?): String? {
+    val mins = parseDurationMinutes(timeText) ?: return null
+    val h = mins / 60
+    val m = mins % 60
+    return if (h > 0) "${h}h ${m}m" else "${m}m"
 }
 
 /**
