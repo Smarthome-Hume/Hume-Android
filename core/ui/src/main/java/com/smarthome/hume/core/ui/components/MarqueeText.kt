@@ -17,7 +17,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.layout.layout
 import kotlinx.coroutines.delay
+
+/**
+ * Forward baseline tu Text con ra ngoai de Row co the dung alignByBaseline().
+ * (Box mac dinh khong forward baseline cua con.)
+ */
+private fun Modifier.forwardBaseline() = this.then(
+    Modifier.layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        val first = placeable[FirstBaseline]
+        val last = placeable[LastBaseline]
+        val lines = mutableMapOf<Alignment.Line, Int>()
+        if (first != AlignmentLine.Unspecified) lines[FirstBaseline] = first
+        if (last != AlignmentLine.Unspecified) lines[LastBaseline] = last
+        layout(placeable.width, placeable.height, alignmentLines = lines) {
+            placeable.placeRelative(0, 0)
+        }
+    }
+)
 
 /**
  * Chu chay marquee khi tran khung.
@@ -70,7 +93,9 @@ fun MarqueeText(
         }
     }
     Box(
-        modifier = modifier.horizontalScroll(scrollState, enabled = false),
+        modifier = modifier
+            .horizontalScroll(scrollState, enabled = false)
+            .forwardBaseline(),
     ) {
         Text(
             text,

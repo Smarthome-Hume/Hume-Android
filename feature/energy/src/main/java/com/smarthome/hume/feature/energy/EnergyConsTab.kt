@@ -221,8 +221,8 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
+        // Nguyen tac: baseline don vi = baseline gia tri (alignByBaseline, khong dung Alignment.Bottom).
         Row(
-            verticalAlignment = Alignment.Bottom,
             modifier = Modifier.padding(top = 4.dp),
         ) {
             MarqueeText(
@@ -231,13 +231,16 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .alignByBaseline(),
             )
             Spacer(Modifier.width(4.dp))
             Text(
                 unit,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.alignByBaseline(),
             )
         }
     }
@@ -405,17 +408,19 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     style = MaterialTheme.typography.bodySmall.copy(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(verticalAlignment = Alignment.Bottom) {
+                Row {
                     Text(
                         kwh1(state.donutTotalKwh),
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.3).sp,
                         ).tnum(),
+                        modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         " kWh",
                         style = MaterialTheme.typography.titleSmall.copy(),
+                        modifier = Modifier.alignByBaseline(),
                     )
                 }
             }

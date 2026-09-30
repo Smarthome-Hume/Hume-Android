@@ -556,18 +556,22 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
         }
         Spacer(Modifier.height(6.dp))
         // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
-        Row(verticalAlignment = Alignment.Bottom) {
+        // Nguyen tac: baseline don vi = baseline gia tri (alignByBaseline).
+        Row {
             MarqueeText(
                 text = big,
                 fontSize = MaterialTheme.typography.titleLarge.fontSize,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
                 color = cs.onSurface,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .alignByBaseline(),
             )
             Spacer(Modifier.width(4.dp))
             Text(
                 unit, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant,
+                modifier = Modifier.alignByBaseline(),
             )
         }
         Spacer(Modifier.weight(1f))
