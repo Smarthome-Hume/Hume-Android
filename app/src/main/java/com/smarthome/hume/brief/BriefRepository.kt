@@ -14,6 +14,7 @@ import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.ha.HaEndpointResolver
 import com.smarthome.hume.core.ha.HistoryFetcher
 import java.io.File
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -103,13 +104,19 @@ class BriefRepository(
         val daily = buildDaily(today.minusDays(1))
         var monthly = _cache.value?.monthly
         var monthlyLive = _cache.value?.monthlyLive
-        val (_, schE) = scheduledPeriod(today)
-        val closedLabel = "${schE.monthValue}/${schE.year}"
-        // Ban theo lich: ky dien da chot (vd thang 9 = 28/8-27/9). Tu build
-        // khi chua co hoac da sang ky moi: ngay 27 dung so lieu live (sensor
-        // chua reset), tu ngay 28 dung last_period / lich su tai luc chot.
-        if (monthly?.monthLabel != closedLabel) {
+        val (schS, schE) = scheduledPeriod(today)
+        val closedKey = "${schS}_${schE}"
+        // Ban theo lich: ky dien da chot (vd thang 9 = 28/8-27/9). So sanh bang
+        // periodKey (khong dung monthLabel) de cache cu thang duong lich
+        // ("9/2026") khong bi nham la da build. Ngay 27 dung so lieu live
+        // (sensor chua reset), tu ngay 28 dung last_period / lich su tai luc chot.
+        if (monthly?.periodKey != closedKey) {
             monthly = buildClosedMonthly(today)
+        }
+        // Ban on-demand cua ky dang chay: xoa khi da sang ky moi.
+        val (curS, curE) = billingPeriod(today)
+        if (monthlyLive?.periodKey != "${curS}_${curE}") {
+            monthlyLive = null
         }
         // User chu dong bam "Tao ngay": tong hop ky dang chay, luu RIENG biet.
         if (forceMonthly) {
@@ -217,20 +224,22 @@ class BriefRepository(
      * Do user bam "Tao ngay" chu dong tao, luu rieng biet voi ban theo lich.
      */
     private suspend fun buildLiveMonthly(): BriefMonthly? = supervisorScope {
-        val label = billingLabel()
-        val (periodStart, periodEnd) = billingPeriod(LocalDate.now(ZoneId.systemDefault()))
+        val today = LocalDate.now(ZoneId.systemDefault())
+        val (cycleStart, cycleEnd) = billingPeriod(today)
         buildMonthlyCommon(
-            label = label,
+            label = billingLabel(today),
+            periodKey = "${cycleStart}_${cycleEnd}",
             gridKwh = { getState(E.GRID_IMPORT_BILLING) ?: getState(E.EVN_MONTHLY) },
             costVnd = { getState(E.GRID_COST)?.roundToLong() },
             homeCostVnd = { getState(E.HOME_COST)?.roundToLong() ?: 0L },
-            pvKwh = { getState(E.PV_MONTH) ?: 0.0 },
+            // PV/tang: sensor thang reset ngay 1 -> tach ky tai moc sang thang.
+            pvKwh = { billingCycleDelta(E.PV_MONTH, cycleStart, today) },
             floors = {
                 listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
-                    .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
+                    .map { (name, eid) -> async { BriefFloorStat(name, r1(billingCycleDelta(eid, cycleStart, today))) } }
                     .awaitAll().sortedByDescending { it.kwh }
             },
-            periodStart = periodStart, periodEnd = periodEnd,
+            dataStart = cycleStart, dataEnd = today,
         )
     }
 
@@ -249,6 +258,7 @@ class BriefRepository(
         val pEndMs = pE.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
         buildMonthlyCommon(
             label = label,
+            periodKey = "${pS}_${pE}",
             gridKwh = {
                 if (useLive) getState(E.GRID_IMPORT_BILLING)
                 else getAttr(E.GRID_IMPORT_BILLING, "last_period")
@@ -262,25 +272,26 @@ class BriefRepository(
                 (if (useLive) getState(E.HOME_COST) else stateAt(E.HOME_COST, pEndMs))
                     ?.roundToLong() ?: 0L
             },
-            pvKwh = { rangeDelta(E.PV_MONTH, pS, pE) },
+            pvKwh = { billingCycleDelta(E.PV_MONTH, pS, pE) },
             floors = {
                 listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
-                    .map { (name, eid) -> async { BriefFloorStat(name, r1(rangeDelta(eid, pS, pE))) } }
+                    .map { (name, eid) -> async { BriefFloorStat(name, r1(billingCycleDelta(eid, pS, pE))) } }
                     .awaitAll().sortedByDescending { it.kwh }
             },
-            periodStart = pS, periodEnd = pE,
+            dataStart = pS, dataEnd = pE,
         )
     }
 
     /** Khung chung: ghep so lieu thanh BriefMonthly (tinh savingsPct, goi AI). */
     private suspend fun buildMonthlyCommon(
         label: String,
+        periodKey: String,
         gridKwh: suspend () -> Double?,
         costVnd: suspend () -> Long?,
         homeCostVnd: suspend () -> Long,
         pvKwh: suspend () -> Double,
         floors: suspend CoroutineScope.() -> List<BriefFloorStat>,
-        periodStart: LocalDate, periodEnd: LocalDate,
+        dataStart: LocalDate, dataEnd: LocalDate,
     ): BriefMonthly? = supervisorScope {
         val gkwh = gridKwh() ?: return@supervisorScope null
         val unitPrice = getState(E.UNIT_PRICE) ?: 2167.0
@@ -296,9 +307,9 @@ class BriefRepository(
                 .roundToInt().coerceIn(0, 100)
         } else 0
         val fl = floors()
-        // Top thiet bi ky: delta lich su trong ky chot cho tung thiet bi.
+        // Top thiet bi ky: DEVICE_SENSORS la sensor daily -> cong don max tung ngay.
         val devices = DEVICE_SENSORS.map { (eid, name, icon) ->
-            async { Triple(name, icon, rangeDelta(eid, periodStart, periodEnd)) }
+            async { Triple(name, icon, monthlyTotalFromDaily(eid, dataStart, dataEnd)) }
         }.awaitAll()
             .filter { it.third > 0.5 }
             .sortedByDescending { it.third }
@@ -309,6 +320,7 @@ class BriefRepository(
 
         BriefMonthly(
             monthLabel = label,
+            periodKey = periodKey,
             gridKwh = r1(gkwh),
             costVnd = cost,
             homeCostVnd = homeCost,
@@ -374,6 +386,26 @@ class BriefRepository(
         }
     }
 
+    /**
+     * Tong san luong trong mot ky cua sensor DAILY (reset ve 0 moi ngay):
+     * cong don gia tri max cua tung ngay. Dung cho top thiet bi thang vi
+     * DEVICE_SENSORS deu la sensor daily (rangeDelta last-first cho so vo nghia).
+     */
+    private suspend fun monthlyTotalFromDaily(entityId: String, from: LocalDate, to: LocalDate): Double {
+        ensureHistoryConfigured()
+        return try {
+            val zone = ZoneId.systemDefault()
+            val startMs = from.atStartOfDay(zone).toInstant().toEpochMilli()
+            val endMs = to.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+            val pts = HistoryFetcher.fetchRange(entityId, startMs, endMs)
+            pts.groupBy { Instant.ofEpochMilli(it.millis).atZone(zone).toLocalDate() }
+                .values.sumOf { dayPts -> dayPts.maxOfOrNull { it.value } ?: 0.0 }
+        } catch (t: Exception) {
+            Log.w(tag, "monthlyTotal $entityId failed: ${t.message}")
+            0.0
+        }
+    }
+
     /** San luong tang trong 1 ngay: hieu so cuoi - dau cua sensor tich luy. */
     private suspend fun yesterdayDelta(entityId: String, day: LocalDate): Double {
         val zone = ZoneId.systemDefault()
@@ -397,6 +429,21 @@ class BriefRepository(
         } catch (t: Exception) {
             Log.w(tag, "history $entityId failed: ${t.message}")
             0.0
+        }
+    }
+
+    /**
+     * Delta cua sensor THANG (reset 00:00 ngay 1) trong mot ky 28->27:
+     * tach ky tai moc sang thang de khong bi lech khi sensor reset giua ky.
+     * Vd ky 28/8-27/9: (31/8 - 28/8) + (27/9 - 1/9).
+     */
+    private suspend fun billingCycleDelta(entityId: String, pS: LocalDate, pE: LocalDate): Double {
+        val monthStart = pE.withDayOfMonth(1)
+        return if (!pS.isBefore(monthStart)) {
+            rangeDelta(entityId, pS, pE)
+        } else {
+            rangeDelta(entityId, pS, monthStart.minusDays(1)) +
+                rangeDelta(entityId, monthStart, pE)
         }
     }
 

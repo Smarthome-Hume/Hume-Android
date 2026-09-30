@@ -48,6 +48,8 @@ data class BriefFloorStat(val name: String, val kwh: Double)
 data class BriefMonthly(
     /** "9/2026" — ky dien ket thuc trong thang 9 (28/8-27/9). */
     val monthLabel: String,
+    /** Khoa dinh danh ky, vd "2026-08-28_2026-09-27". "" = cache cu -> luon build lai. */
+    val periodKey: String = "",
     val gridKwh: Double,
     val costVnd: Long,
     /** Tien thuc te ca nha tieu thu trong ky (sensor.home_cost). Default 0 de doc duoc cache cu. */
