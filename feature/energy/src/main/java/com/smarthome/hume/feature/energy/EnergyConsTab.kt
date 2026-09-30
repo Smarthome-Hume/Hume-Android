@@ -59,6 +59,7 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.tnum
 import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.Ms
@@ -76,8 +77,6 @@ private fun vnd(v: Long): String = vn.format(v)
 
 /** Chu so nghin nho, giu so nguyen giong demo (18.450 VND). */
 private fun kwh1(v: Double): String = String.format(Locale.US, "%.1f", v)
-
-private fun TextStyle.tnum(): TextStyle = copy(fontFeatureSettings = "tnum")
 
 @Composable
 fun EnergyConsTab(
