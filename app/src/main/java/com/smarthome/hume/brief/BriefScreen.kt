@@ -126,7 +126,7 @@ fun BriefScreen(
             }
         } else if (tab == 0) {
             if (daily == null) BriefEmpty(onRefresh, refreshing)
-            else DailyContent(daily, onRequestLocation, tabKey = "day")
+            else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
         } else {
             if (monthly == null) BriefEmpty(onRefresh, refreshing)
             else MonthlyContent(monthly, tabKey = "month")
@@ -204,7 +204,7 @@ private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean) {
 // ---------------- daily ----------------
 
 @Composable
-private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, tabKey: Any) {
+private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshing: Boolean, tabKey: Any) {
     val cs = MaterialTheme.colorScheme
     Column(
         Modifier
@@ -267,10 +267,13 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, tabKey: A
                         modifier = Modifier
                             .clip(RoundedCornerShape(99.dp))
                             .background(cs.surfaceContainer)
-                            .clickable(onClick = onRequestLocation)
+                            .clickable(enabled = !refreshing, onClick = onRequestLocation)
                             .padding(horizontal = 14.dp, vertical = 8.dp),
                     ) {
-                        Text("Cho phép vị trí để lấy thời tiết chính xác", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.primary)
+                        Text(
+                            if (refreshing) "Đang lấy thời tiết…" else "Cho phép vị trí để lấy thời tiết chính xác",
+                            fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.primary,
+                        )
                     }
                 }
             }
