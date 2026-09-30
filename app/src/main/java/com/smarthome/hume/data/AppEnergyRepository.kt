@@ -128,10 +128,13 @@ class AppEnergyRepository(
         val charging = battCurrent > 0
         // Trang thai luoi dien (2026-09-30, user): nhan on/off/1/0/text tieng Viet;
         // khong doc duoc -> mac dinh co dien (mat dien la trang thai ngoai le).
-        val gridStatusRaw = entities[HumeConfig.GRID_STATUS]?.state?.lowercase() ?: ""
+        // (2026-09-30) verify that: sensor that tra "On Grid"/"Off Grid"
+        // (Solis, co dau cach) -> normalize dau gach ve space truoc khi so.
+        val gridStatusRaw = entities[HumeConfig.GRID_STATUS]?.state?.lowercase()
+            ?.replace('-', ' ')?.replace('_', ' ') ?: ""
         val gridOn = !(gridStatusRaw == "off" || gridStatusRaw == "0" ||
             gridStatusRaw == "false" || gridStatusRaw == "no" ||
-            "off-grid" in gridStatusRaw || "outage" in gridStatusRaw ||
+            "off grid" in gridStatusRaw || "outage" in gridStatusRaw ||
             "mất" in gridStatusRaw || "mat dien" in gridStatusRaw)
         val cb1 = v("sensor.aptomat_t1_power") / 1000.0
         val cb2 = v("sensor.aptomat_t2_power") / 1000.0
