@@ -105,13 +105,13 @@ fun NotificationSheet(
             item {
                 Text(
                     "Thông báo",
-                    fontSize = 24.sp,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurface,
                 )
                 Text(
                     "Cửa, cảm biến & thiết bị mới hoạt động",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
@@ -134,7 +134,7 @@ fun NotificationSheet(
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 "Không có thông báo mới",
-                                fontSize = 14.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = cs.onSurfaceVariant,
                             )
@@ -279,13 +279,13 @@ private fun NotifRow(n: HomeNotification, index: Int) {
             Column(Modifier.weight(1f)) {
                 Text(
                     n.title,
-                    fontSize = 13.5.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                 )
                 Text(
                     n.body,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
@@ -294,7 +294,7 @@ private fun NotifRow(n: HomeNotification, index: Int) {
             if (n.timeText.isNotBlank()) {
                 Text(
                     n.timeText,
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                 )
@@ -337,7 +337,7 @@ fun LightsSheet(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "${lights.size} đèn đang sáng",
-                        fontSize = 24.sp,
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Medium,
                         color = cs.onSurface,
                     )
@@ -437,7 +437,7 @@ fun DeviceSearchView(
                         onValueChange = onQuery,
                         singleLine = true,
                         textStyle = TextStyle(
-                            fontSize = 16.sp,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium,
                             color = cs.onSurface,
                         ),
@@ -450,7 +450,7 @@ fun DeviceSearchView(
                                 if (query.isEmpty()) {
                                     Text(
                                         "Tìm thiết bị…",
-                                        fontSize = 16.sp,
+                                        style = MaterialTheme.typography.titleMedium,
                                         color = cs.onSurfaceVariant,
                                     )
                                 }
@@ -477,7 +477,7 @@ fun DeviceSearchView(
                 }
                 Text(
                     "TÌM GẦN ĐÂY",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.6.sp,
                     color = cs.onSurfaceVariant,
@@ -496,7 +496,7 @@ fun DeviceSearchView(
                 }
                 Text(
                     "THIẾT BỊ",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.6.sp,
                     color = cs.onSurfaceVariant,
@@ -505,7 +505,7 @@ fun DeviceSearchView(
                 if (results.isEmpty()) {
                     Text(
                         "Không tìm thấy thiết bị",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = cs.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -559,7 +559,7 @@ fun DeviceSearchView(
                             item {
                                 Text(
                                     "ĐIỀU HÒA",
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
@@ -578,7 +578,7 @@ fun DeviceSearchView(
                             item {
                                 Text(
                                     "ĐÈN",
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
@@ -597,7 +597,7 @@ fun DeviceSearchView(
                             item {
                                 Text(
                                     "Ổ CẮM",
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
@@ -616,7 +616,7 @@ fun DeviceSearchView(
                             item {
                                 Text(
                                     "CÔNG TẮC",
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
@@ -686,7 +686,7 @@ private fun SearchChip(label: String, onClick: () -> Unit) {
     ) {
         Text(
             label,
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )

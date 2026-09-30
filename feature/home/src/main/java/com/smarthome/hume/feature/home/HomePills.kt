@@ -262,13 +262,13 @@ private fun SecPill(
         Column {
             Text(
                 "An ninh",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
             )
             Text(
                 ps,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(top = 1.dp),
@@ -336,13 +336,13 @@ private fun BulbPill(
         Column {
             Text(
                 if (count > 0) "$count bóng" else "Không có",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
             )
             Text(
                 if (count > 0) "Đang sáng" else "Đèn tắt",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(top = 1.dp),
@@ -429,7 +429,7 @@ private fun SecModeCard(
                     SecurityMode.Night -> "Ban đêm"
                     SecurityMode.Off -> "Tắt"
                 },
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = labelColor,
                 maxLines = 1,

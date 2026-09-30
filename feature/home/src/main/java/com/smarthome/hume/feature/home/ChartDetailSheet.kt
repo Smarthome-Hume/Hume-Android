@@ -111,13 +111,13 @@ fun ChartDetailSheet(
                     Column {
                         Text(
                             if (type == ChartDetailType.Battery) "Hiệu năng pin" else "Điện mặt trời",
-                            fontSize = 24.sp,
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Medium,
                             color = cs.onSurface,
                         )
                         Text(
                             "Lịch sử 24 giờ qua",
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = cs.onSurfaceVariant,
                         )
                     }
@@ -253,13 +253,13 @@ private fun ChartCard(
         ) {
             Text(
                 title,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
             )
             Text(
                 unit,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = cs.onSurfaceVariant,
             )
         }
@@ -369,7 +369,7 @@ private fun AreaChart(
             // Max value label
             Text(
                 "${"%.1f".format(maxV)}$unit",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
                 modifier = Modifier
@@ -391,7 +391,7 @@ private fun AreaChart(
                 val idx = i.coerceIn(0, times.size - 1)
                 Text(
                     fmt.format(Date(times[idx])),
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = cs.onSurfaceVariant,
                 )
             }
@@ -467,7 +467,7 @@ private fun PowerBarChart(
                 val idx = i.coerceIn(0, times.size - 1)
                 Text(
                     fmt.format(Date(times[idx])),
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = cs.onSurfaceVariant,
                 )
             }
@@ -487,7 +487,7 @@ private fun LegendDot(color: Color, label: String) {
         )
         Text(
             label,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelSmall,
             color = cs.onSurfaceVariant,
             modifier = Modifier.padding(start = 5.dp),
         )

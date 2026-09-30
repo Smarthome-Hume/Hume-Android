@@ -164,7 +164,7 @@ private fun RoomCard(
                     room.tempC?.let { temp ->
                         Text(
                             "%.1f°".format(temp),
-                            fontSize = 28.sp,
+                            style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Light,
                             color = if (room.lightOn) cs.onPrimaryContainer
                             else cs.onSurface,
@@ -176,7 +176,7 @@ private fun RoomCard(
                 Spacer(Modifier.height(10.dp))
                 com.smarthome.hume.core.ui.components.MarqueeText(
                     text = room.name,
-                    fontSize = 13.5.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (room.lightOn) cs.onPrimaryContainer
                     else cs.onSurface,
@@ -185,7 +185,7 @@ private fun RoomCard(
                 val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
                 Text(
                     sub,
-                    fontSize = 11.5.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = if (room.lightOn) cs.onPrimaryContainer
                     else cs.onSurfaceVariant,
@@ -253,14 +253,14 @@ fun RoomSheet(
                         Spacer(Modifier.width(10.dp))
                         Text(
                             room.name,
-                            fontSize = 24.sp,
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Medium,
                             color = cs.onSurface,
                         )
                     }
                     Text(
                         "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
                         color = cs.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
@@ -295,7 +295,7 @@ fun RoomSheet(
                 item {
                     Text(
                         "Thiết bị",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = cs.onSurface,
                         modifier = Modifier.padding(top = 4.dp),
@@ -344,13 +344,13 @@ private fun EnvTile(
             Column {
                 Text(
                     value,
-                    fontSize = 22.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurface,
                 )
                 Text(
                     label,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
@@ -411,7 +411,7 @@ private fun ClimateCard(
                 }
                 Text(
                     "%.0f°".format(target),
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = cs.onSurface,
                     maxLines = 1,
@@ -542,7 +542,7 @@ private fun ClimateModeGroup(
             ) {
                 Text(
                     hvacLabels[m] ?: m,
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (sel) cs.onPrimaryContainer else cs.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -609,7 +609,7 @@ fun DeviceRow(
         Column(Modifier.weight(1f)) {
             Text(
                 d.label,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
             )
@@ -625,7 +625,7 @@ fun DeviceRow(
                 } + (if (d.isOn && powerW != null && powerW > 0)
                     " · ${if (powerW >= 1000) "%.1f kW".format(powerW / 1000) else "%.0f W".format(powerW)}"
                 else "") + roomSuffix,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
@@ -645,7 +645,7 @@ fun DeviceRow(
             ) {
                 Text(
                     if (contactOpen) "MỞ" else "ĐÓNG",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 0.5.sp,
                     color = if (contactOpen) cs.onErrorContainer

@@ -414,7 +414,7 @@ fun HomeScreen(
 private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
-        fontSize = 16.sp,
+        style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         letterSpacing = (-0.1).sp,
         color = MaterialTheme.colorScheme.onSurface,
@@ -494,7 +494,7 @@ private fun M3ESnackbar(data: SnackbarData) {
         ) {
             Text(
                 data.visuals.message,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),
@@ -502,7 +502,7 @@ private fun M3ESnackbar(data: SnackbarData) {
             data.visuals.actionLabel?.let { label ->
                 Text(
                     label,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.primary,
                     modifier = Modifier
@@ -583,14 +583,14 @@ private fun EcoDialog(
                     Spacer(Modifier.height(16.dp))
                     Text(
                         "Bật tiết kiệm điện?",
-                        fontSize = 24.sp,
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Medium,
                         color = cs.onSurface,
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
                         "Sẽ tắt các thiết bị không cần thiết và giảm độ sáng đèn còn 50%.",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         lineHeight = 20.sp,
                         color = cs.onSurfaceVariant,
                     )
@@ -632,7 +632,7 @@ private fun DialogButton(label: String, onClick: () -> Unit) {
     ) {
         Text(
             label,
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = cs.primary,
         )

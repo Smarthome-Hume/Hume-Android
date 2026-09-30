@@ -78,7 +78,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 "Hiệu năng pin",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
             )
@@ -114,7 +114,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 battery.statusText,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 1.5.sp,
                 color = pillFg,
@@ -131,7 +131,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 bigTime,
-                fontSize = 44.sp,
+                style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Light,
                 letterSpacing = (-0.5).sp,
                 color = cs.onSurface,
@@ -142,7 +142,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         "KẾT THÚC LÚC",
-                        fontSize = 10.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
                         color = cs.onSurfaceVariant,
@@ -150,7 +150,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     )
                     Text(
                         et,
-                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = cs.onSurface,
                         modifier = Modifier.padding(top = 2.dp),
@@ -180,13 +180,13 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Dự trữ",
-                    fontSize = 11.5.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
                 )
                 Text(
                     "$reserve%",
-                    fontSize = 11.5.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.ExtraBold,
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
@@ -213,13 +213,13 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Sử dụng",
-                    fontSize = 11.5.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
                 )
                 Text(
                     "$usage%",
-                    fontSize = 11.5.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.ExtraBold,
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),

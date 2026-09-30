@@ -234,7 +234,7 @@ fun HomeHeader(
             val name = state.userName.ifBlank { "Gia đình" }
             Text(
                 text = "Hi, $name",
-                fontSize = 22.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.2).sp,
                 color = cs.onSurface,
@@ -243,7 +243,7 @@ fun HomeHeader(
             )
             Text(
                 text = greeting(),
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
@@ -299,7 +299,7 @@ fun HomeHeader(
                 ) {
                     Text(
                         "$count",
-                        fontSize = 10.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         lineHeight = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = cs.onPrimary,
@@ -723,14 +723,14 @@ private fun SuggestTipRow(
             // The co dinh 1 dong tieu de + 1 dong mo ta; chu dai tu chay marquee
             MarqueeText(
                 text = tip.title,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onTertiaryContainer,
                 startPadding = 14.dp,
             )
             MarqueeText(
                 text = tip.sub,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
                 modifier = Modifier.padding(top = 2.dp),
@@ -754,7 +754,7 @@ private fun SuggestTipRow(
         ) {
             Text(
                 if (done) tip.doneLabel else tip.action,
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.tertiaryContainer,
             )
@@ -789,7 +789,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         ) {
             Text(
                 "Điện mặt trời",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -798,7 +798,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             )
             Text(
                 "%.1f".format(todayShown),
-                fontSize = 26.sp,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.3).sp,
                 color = cs.onSurface,
@@ -806,7 +806,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             )
             Text(
                 "kWh",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier
@@ -824,7 +824,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         } else {
             Text(
                 "Đang tải dữ liệu…",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = cs.onSurfaceVariant,
             )
         }
@@ -873,7 +873,7 @@ fun NotificationCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     latest.title,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                     maxLines = 1,
@@ -881,7 +881,7 @@ fun NotificationCard(
                 )
                 Text(
                     "${latest.body} · ${latest.timeText}",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = cs.onSurfaceVariant,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2,
@@ -892,7 +892,7 @@ fun NotificationCard(
                 aiSummary?.let { summary ->
                     Text(
                         summary,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = cs.primary,
                         fontWeight = FontWeight.Medium,
                         maxLines = 2,
@@ -904,7 +904,7 @@ fun NotificationCard(
                     TextButton(onClick = onViewAll) {
                         Text(
                             "Xem tất cả (${notifications.size})",
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                         )
                     }

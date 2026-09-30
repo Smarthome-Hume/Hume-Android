@@ -181,7 +181,7 @@ private fun FabMenuItem(
             )
             Text(
                 label,
-                fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall,
                 color = cs.onPrimaryContainer,
             )
         }
