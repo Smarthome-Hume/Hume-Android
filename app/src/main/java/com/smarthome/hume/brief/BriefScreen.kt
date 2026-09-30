@@ -81,7 +81,7 @@ fun BriefScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brief", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                    Text("Brief", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                     Spacer(Modifier.width(8.dp))
                     AiPill()
                 }
@@ -92,7 +92,7 @@ fun BriefScreen(
                             ?: monthlyLive?.let { "Tháng ${it.monthLabel}" }
                             ?: "Chưa có dữ liệu"
                     },
-                    fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,
                 )
             }
         }
@@ -138,7 +138,7 @@ private fun AiPill() {
     ) {
         MsIcon(Ms.auto_awesome, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(4.dp))
-        Text("AI", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = cs.onPrimaryContainer)
+        Text("AI", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = cs.onPrimaryContainer)
     }
 }
 
@@ -155,7 +155,7 @@ private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modif
             .padding(vertical = 9.dp),
     ) {
         Text(
-            text, fontSize = 12.sp,
+            text, style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
             color = if (selected) cs.onSurface else cs.onSurfaceVariant,
         )
@@ -172,11 +172,11 @@ private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean) {
     ) {
         MsIcon(Ms.wb_sunny, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(48.dp))
         Spacer(Modifier.height(12.dp))
-        Text("Chưa có bản brief", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
+        Text("Chưa có bản brief", style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
         Spacer(Modifier.height(6.dp))
         Text(
             "Brief được tạo tự động lúc 6:00 sáng. Bạn cũng có thể tạo ngay bây giờ.",
-            fontSize = 12.sp, color = cs.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
         Box(
@@ -188,7 +188,7 @@ private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean) {
                 .padding(horizontal = 24.dp, vertical = 12.dp),
         ) {
             if (refreshing) CircularProgressIndicator(color = cs.onPrimaryContainer, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-            else Text("Tạo ngay", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer)
+            else Text("Tạo ngay", style = MaterialTheme.typography.titleSmall, color = cs.onPrimaryContainer)
         }
     }
 }
@@ -215,7 +215,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
             ) {
                 SecTitle("NHẬN ĐỊNH", light = true)
                 Spacer(Modifier.height(8.dp))
-                Text(d.aiInsight, fontSize = 13.sp, lineHeight = 21.sp, fontWeight = FontWeight.Medium, color = cs.onPrimaryContainer)
+                Text(d.aiInsight, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
             }
         }
         // Thoi tiet
@@ -232,17 +232,17 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     MsIcon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(d.weather.conditionVi, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
+                        Text(d.weather.conditionVi, style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
                         Text(
                             "${d.weather.tempMin}° – ${d.weather.tempMax}°C · Độ ẩm ${d.weather.humidity}%",
-                            fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("PV dự kiến", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
+                        Text("PV dự kiến", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                         Text(
                             "≈ ${countUpText(d.weather.pvEstimateKwh, 1, tabKey)} kWh",
-                            fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = cs.primary,
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = cs.primary,
                         )
                     }
                 }
@@ -251,7 +251,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MsIcon(Ms.wb_sunny, contentDescription = null, tint = cs.primary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Theo vị trí của bạn · Met.no", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant)
+                        Text("Theo vị trí của bạn · Met.no", style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
                     }
                 } else {
                     Spacer(Modifier.height(10.dp))
@@ -264,7 +264,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     ) {
                         Text(
                             if (refreshing) "Đang lấy thời tiết…" else "Cho phép vị trí để lấy thời tiết chính xác",
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold, color = cs.primary,
+                            style = MaterialTheme.typography.labelSmall, color = cs.primary,
                         )
                     }
                 }
@@ -304,7 +304,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     Spacer(Modifier.width(10.dp))
                     Text(
                         "Lũy kế kỳ này: ${fmtVnd(d.billingCostVnd)} · ${countUpText(d.billingKwh, 1, tabKey)} kWh",
-                        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer,
+                        style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer,
                         lineHeight = 18.sp,
                     )
                 }
@@ -331,8 +331,8 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     MsIcon(Ms.lightbulb, contentDescription = null, tint = cs.primary, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        d.aiTip, fontSize = 12.sp, lineHeight = 20.sp,
-                        fontWeight = FontWeight.Medium, color = cs.onSurface,
+                        d.aiTip, style = MaterialTheme.typography.bodySmall, lineHeight = 20.sp,
+                        color = cs.onSurface,
                     )
                 }
             }
@@ -380,7 +380,7 @@ private fun MonthlyTab(
             if (refreshing) CircularProgressIndicator(color = cs.onPrimaryContainer, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
             else Text(
                 if (monthlyLive == null) "Tạo tổng hợp kỳ đang chạy" else "Cập nhật kỳ đang chạy",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer,
+                style = MaterialTheme.typography.titleSmall, color = cs.onPrimaryContainer,
             )
         }
         Spacer(Modifier.height(20.dp))
@@ -397,14 +397,14 @@ private fun MonthlySectionHeader(month: String, status: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("TỔNG HỢP $month".uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
+        Text("TỔNG HỢP $month".uppercase(), style = MaterialTheme.typography.titleSmall, color = cs.onSurface)
         Box(
             Modifier
                 .clip(RoundedCornerShape(99.dp))
                 .background(cs.secondaryContainer)
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
-            Text(status, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = cs.onSecondaryContainer)
+            Text(status, style = MaterialTheme.typography.labelMedium, color = cs.onSecondaryContainer)
         }
     }
 }
@@ -427,7 +427,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
             ) {
                 SecTitle("AI TỔNG KẾT THÁNG", light = true)
                 Spacer(Modifier.height(8.dp))
-                Text(m.aiSummary, fontSize = 13.sp, lineHeight = 21.sp, fontWeight = FontWeight.Medium, color = cs.onPrimaryContainer)
+                Text(m.aiSummary, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
             }
         }
         StaggerCard(1, tabKey) {
@@ -468,7 +468,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         Spacer(Modifier.width(10.dp))
                         Text(
                             "Thực tế cả nhà tiêu thụ: ≈ ${fmtVnd(m.homeCostVnd)} · Tiết kiệm ${m.savingsPct}% nhờ PV",
-                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer,
+                            style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer,
                             lineHeight = 18.sp,
                         )
                     }
@@ -482,14 +482,14 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                 val max = m.floors.maxOfOrNull { it.kwh } ?: 1.0
                 m.floors.forEachIndexed { i, f ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(f.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurface, modifier = Modifier.width(64.dp))
+                        Text(f.name, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = cs.onSurface, modifier = Modifier.width(64.dp))
                         AnimBar(
                             fraction = (f.kwh / max).toFloat(), tabKey = tabKey, height = 10.dp,
                             color = if (i == 0) Color(0xFFEF6C00) else cs.primary,
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
-                        Text("${countUpText(f.kwh, 1, tabKey)} kWh", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, modifier = Modifier.width(76.dp))
+                        Text("${countUpText(f.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, modifier = Modifier.width(76.dp))
                     }
                     if (i < m.floors.lastIndex) Spacer(Modifier.height(10.dp))
                 }
@@ -529,7 +529,7 @@ private fun BriefCard(content: @Composable () -> Unit) {
 private fun SecTitle(text: String, light: Boolean = false) {
     val cs = MaterialTheme.colorScheme
     Text(
-        text, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+        text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold,
         letterSpacing = 1.5.sp,
         color = if (light) cs.onPrimaryContainer else cs.onSurfaceVariant,
     )
@@ -551,7 +551,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
                 MsIcon(icon, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    label, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+                    label, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.sp,
                     color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 14.sp,
                 )
             }
@@ -560,12 +560,12 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
         // Gia tri + don vi can theo baseline (khong dung Alignment.Bottom).
         Row {
             Text(
-                big, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface,
+                big, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
             )
             Spacer(Modifier.width(4.dp))
             Text(
-                unit, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant,
+                unit, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant,
                 modifier = Modifier.alignByBaseline(),
             )
         }
@@ -573,7 +573,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
         Spacer(Modifier.height(4.dp))
         // Vung phu co dinh 2 dong de day 2 the can nhau.
         Box(Modifier.height(32.dp), contentAlignment = Alignment.TopStart) {
-            Text(sub, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 15.sp)
+            Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 15.sp)
         }
     }
 }
@@ -589,7 +589,7 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
                 .clip(RoundedCornerShape(11.dp))
                 .background(cs.surfaceContainerHigh),
         ) {
-            Text("${index + 1}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurfaceVariant)
+            Text("${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = cs.onSurfaceVariant)
         }
         Spacer(Modifier.width(10.dp))
         Box(
@@ -604,8 +604,8 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(dev.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = cs.onSurface)
-                Text("${countUpText(dev.kwh, 1, tabKey)} kWh", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant)
+                Text(dev.name, style = MaterialTheme.typography.titleSmall, color = cs.onSurface)
+                Text("${countUpText(dev.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
             }
             Spacer(Modifier.height(6.dp))
             AnimBar(fraction = (dev.kwh / max).toFloat(), tabKey = tabKey, color = cs.primary)
