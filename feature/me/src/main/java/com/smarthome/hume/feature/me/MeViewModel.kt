@@ -182,7 +182,7 @@ class MeViewModel : ViewModel() {
                     val body = runCatching {
                         conn.inputStream.bufferedReader().use { it.readText() }
                     }.getOrDefault("")
-                    val n = ""id"".toRegex().findAll(body).count()
+                    val n = "\"id\"".toRegex().findAll(body).count()
                     if (n > 0) "Kết nối OK · Frigate trả về sự kiện"
                     else "Kết nối OK · Frigate không có sự kiện mới"
                 }
