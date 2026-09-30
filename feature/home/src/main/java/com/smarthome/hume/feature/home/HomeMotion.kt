@@ -72,7 +72,10 @@ fun Modifier.pressMorphCard(
     }
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
+    // Doc scale trong graphicsLayer lambda -> chi invalidate draw,
+    // khong recompose moi frame (fix 2026-09-30). Radius giu nguyen
+    // (transient 450ms khi nhan, clip khong lambda duoc).
+    val scale = animateFloatAsState(
         targetValue = if (pressed) pressedScale else 1f,
         animationSpec = tween(300, easing = M3EMotion.spring),
         label = "pmScale",
@@ -83,7 +86,10 @@ fun Modifier.pressMorphCard(
         label = "pmRadius",
     )
     this
-        .graphicsLayer(scaleX = scale, scaleY = scale)
+        .graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+        }
         .clip(RoundedCornerShape(radius))
         .clickable(
             interactionSource = interaction,

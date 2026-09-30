@@ -19,8 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 
@@ -40,6 +39,9 @@ object M3EMotion {
 /**
  * Press morph theo demo: khi nhan, scale xuong [pressedScale] voi spring.
  * Dung thay cho clickable mac dinh o moi the co press effect.
+ *
+ * Doc gia tri animation trong graphicsLayer lambda -> chi invalidate draw,
+ * khong recompose moi frame (fix 2026-09-30).
  */
 fun Modifier.pressMorph(
     pressedScale: Float = 0.93f,
@@ -47,13 +49,16 @@ fun Modifier.pressMorph(
 ): Modifier = composed {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
+    val scale = animateFloatAsState(
         targetValue = if (pressed) pressedScale else 1f,
         animationSpec = tween(300, easing = M3EMotion.spring),
         label = "pressMorph",
     )
     this
-        .scale(scale)
+        .graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+        }
         .clickable(
             interactionSource = interaction,
             indication = null,
@@ -63,10 +68,13 @@ fun Modifier.pressMorph(
 
 /**
  * Blink vo han cho LIVE dot / neon — demo: blink 1.2–1.6s infinite.
+ *
+ * Doc alpha trong graphicsLayer lambda -> infinite transition chi
+ * invalidate draw, khong recompose 60fps vinh vien (fix 2026-09-30).
  */
 fun Modifier.blink(periodMs: Int = 1400): Modifier = composed {
     val t = rememberInfiniteTransition(label = "blink")
-    val alpha by t.animateFloat(
+    val alpha = t.animateFloat(
         initialValue = 1f,
         targetValue = 0.25f,
         animationSpec = infiniteRepeatable(
@@ -75,7 +83,9 @@ fun Modifier.blink(periodMs: Int = 1400): Modifier = composed {
         ),
         label = "blinkAlpha",
     )
-    this.alpha(alpha)
+    this.graphicsLayer {
+        this.alpha = alpha.value
+    }
 }
 
 /**
