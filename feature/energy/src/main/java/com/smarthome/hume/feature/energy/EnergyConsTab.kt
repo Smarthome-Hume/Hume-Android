@@ -60,20 +60,17 @@ import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.tnum
+import com.smarthome.hume.core.ui.components.toVnd
 import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
-import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlinx.coroutines.delay
-
-private val vn = NumberFormat.getInstance(Locale("vi", "VN"))
-private fun vnd(v: Long): String = vn.format(v)
 
 /** Chu so nghin nho, giu so nguyen giong demo (18.450 VND). */
 private fun kwh1(v: Double): String = String.format(Locale.US, "%.1f", v)
@@ -189,19 +186,19 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat2(
                 label = "Điện lưới",
-                value = vnd(state.cost.gridVnd + gridJit),
+                value = (state.cost.gridVnd + gridJit).toVnd(),
                 modifier = Modifier.weight(1f),
             )
             Stat2(
                 label = "Điện tiêu thụ",
-                value = vnd(state.cost.homeVnd + homeJit),
+                value = (state.cost.homeVnd + homeJit).toVnd(),
                 modifier = Modifier.weight(1f),
             )
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PBox("Giá mua", "${vnd(state.cost.buyPrice)}đ", Modifier.weight(1f))
-            PBox("Giá EVN", "${vnd(state.cost.evnPrice)}đ", Modifier.weight(1f))
+            PBox("Giá mua", (state.cost.buyPrice).toVnd(), Modifier.weight(1f))
+            PBox("Giá EVN", (state.cost.evnPrice).toVnd(), Modifier.weight(1f))
             PBox("Tiết kiệm", "${vnd(state.cost.savedVnd)}đ", Modifier.weight(1f))
         }
     }

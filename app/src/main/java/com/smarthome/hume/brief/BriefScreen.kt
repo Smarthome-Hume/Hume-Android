@@ -50,7 +50,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
-import java.util.Locale
+import com.smarthome.hume.core.ui.components.toVnd
 
 /** Trang Brief sang: mo bang vuot phai tren navbar, dong bang vuot phai->trai / nut back he thong. */
 @Composable
@@ -281,7 +281,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                         icon = Ms.bolt, label = "MUA EVN",
                         big = "${countUpText(d.gridImportKwh, 1, tabKey)}",
                         unit = "kWh",
-                        sub = "≈ ${fmtVnd(d.gridCostVnd)} gồm VAT",
+                        sub = "≈ ${(d.gridCostVnd).toVnd()} gồm VAT",
                         modifier = Modifier.weight(1f),
                     )
                     StatBox(
@@ -304,7 +304,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     MsIcon(Ms.electric_meter, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        "Lũy kế kỳ này: ${fmtVnd(d.billingCostVnd)} · ${countUpText(d.billingKwh, 1, tabKey)} kWh",
+                        "Lũy kế kỳ này: ${(d.billingCostVnd).toVnd()} · ${countUpText(d.billingKwh, 1, tabKey)} kWh",
                         style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer,
                         lineHeight = 18.sp,
                     )
@@ -448,7 +448,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         icon = Ms.solar_power, label = "PV CẢ THÁNG",
                         big = countUpText(m.pvKwh, 0, tabKey),
                         unit = "kWh",
-                        sub = "≈ ${fmtVnd(m.savedVnd)} tiết kiệm",
+                        sub = "≈ ${(m.savedVnd).toVnd()} tiết kiệm",
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -466,7 +466,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         MsIcon(Ms.home, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            "Thực tế cả nhà tiêu thụ: ≈ ${fmtVnd(m.homeCostVnd)} · Tiết kiệm ${m.savingsPct}% nhờ PV",
+                            "Thực tế cả nhà tiêu thụ: ≈ ${(m.homeCostVnd).toVnd()} · Tiết kiệm ${m.savingsPct}% nhờ PV",
                             style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer,
                             lineHeight = 18.sp,
                         )
@@ -658,9 +658,6 @@ private fun countUpText(target: Double, decimals: Int, tabKey: Any): String {
     val pattern = "%.${decimals}f"
     return String.format(Locale("vi"), pattern, target * p)
 }
-
-private fun fmtVnd(v: Long): String =
-    "%,d".format(Locale.US, v).replace(',', '.') + "đ"
 
 private fun briefIcon(key: String): String = when (key) {
     "ac_unit" -> Ms.ac_unit
