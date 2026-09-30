@@ -137,6 +137,17 @@ class AppHomeRepository(
         // Nang luong: PV + pin.
         ids.add(HumeConfig.PV_POWER); ids.add(HumeConfig.PV_TODAY)
         ids.add(HumeConfig.BATTERY_SOC); ids.add(HumeConfig.BATTERY_POWER)
+        // Flow tab Dien: cac sensor cong suat thoi gian thuc (deu la sensor.*
+        // -> tu dong vao nhom telemetry 10s theo bucketFor). Truoc day thieu
+        // nen gia tri luoi/nha co the stale, gay bug "duong chay khi hien 0".
+        ids.add("sensor.aptomat_tong_power"); ids.add("sensor.cong_suat_nha")
+        ids.add("sensor.solis_s6_eh1p_pv_power_1_3")
+        ids.add("sensor.solis_s6_eh1p_pv_power_2_3")
+        ids.add("sensor.aptomat_t1_power"); ids.add("sensor.aptomat_t2_power")
+        ids.add("sensor.aptomat_t3_power")
+        ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
+        ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
+        ids.add(HumeConfig.GRID_STATUS)
         // An ninh: sensor cua/chuyen dong/khoi/nuoc.
         runCatching {
             ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)

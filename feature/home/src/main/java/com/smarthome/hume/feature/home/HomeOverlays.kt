@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -546,6 +547,10 @@ fun DeviceSearchView(
                     }
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
+                        // Quy tac chung (2026-09-30, user): the cuoi cach navbar
+                        // noi ~20px -> bottom 140.dp giong trang Nha. Truoc day
+                        // thieu nen khong cuon het noi dung len tren duoc.
+                        contentPadding = PaddingValues(bottom = 140.dp),
                         modifier = Modifier
                             .weight(1f, fill = false)
                             .fillMaxWidth(),

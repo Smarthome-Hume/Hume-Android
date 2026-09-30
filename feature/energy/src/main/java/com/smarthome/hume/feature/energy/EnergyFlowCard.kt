@@ -93,6 +93,24 @@ private fun sweepMs(powerKw: Double): Int =
     (minOf(14.0, maxOf(4.0, 18.0 / maxOf(0.15, kotlin.math.abs(powerKw)))) * 1000).roundToInt()
 
 /**
+ * Don vi linh hoat (2026-09-30, user): |W| < 1000 -> hien W (0 so le),
+ * >= 1000W -> hien kW (1 so le). Tra ve (so, don vi) de style rieng.
+ */
+private fun powerNumUnit(watts: Double): Pair<String, String> {
+    val a = kotlin.math.abs(watts)
+    return if (a < 1000) watts.roundToInt().toString() to "W"
+    else String.format(Locale.US, "%.1f", watts / 1000.0) to "kW"
+}
+
+/**
+ * Co dong chay = gia tri HIEN THI khac 0.
+ * Fix bug (2026-09-30): truoc day nguong animation la 5W trong khi hien thi
+ * lam tron den 0.1kW -> gia tri 5-50W hien "0.0 kW" nhung duong van chay.
+ * Gio: hien "0 W" <=> khong chay, khong con lech.
+ */
+private fun hasPowerFlow(watts: Double): Boolean = watts.roundToInt() != 0
+
+/**
  * Flow card M3E: 4 node + hub bolt o giua, sweep tren elbow track.
  * Port tu demo v4 rev12 (.flx).
  */
@@ -239,11 +257,17 @@ private fun FlowArea(
                 total = prodTot,
             )
         }
+        // Trang thai luoi dien cung hang icon (2026-09-30, user): pill tonal M3E
+        // dua vao sensor.grid_status; mat dien = do cung (#BA1A1A).
+        val gridBadgeFg = if (flow.gridOn) Color(0xFF16A34A) else Color(0xFFBA1A1A)
         FlowNode(
             icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(24.dp)) },
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
+            iconBadge = if (flow.gridOn) "Cấp điện" else "Mất điện",
+            iconBadgeBg = gridBadgeFg.copy(alpha = 0.16f),
+            iconBadgeFg = gridBadgeFg,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
@@ -252,7 +276,9 @@ private fun FlowArea(
             icon = { MsIcon(M3EIcons.Home, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) },
             tintBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
             tintFg = MaterialTheme.colorScheme.primary,
-            label = "Tiêu thụ", valueKw = flow.consKw,
+            // Mat dien: tai chay qua cong backup -> doi ten node (2026-09-30, user).
+            label = if (flow.gridOn) "Tiêu thụ" else "Cổng phụ",
+            valueKw = flow.consKw,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(6f), fy(VB_H - 6f - NODE_H)),
@@ -404,23 +430,23 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
     val primary = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.outlineVariant
     val transition = rememberInfiniteTransition(label = "flsweep")
-    data class Track(val path: Path, val powerKw: Double, val reverse: Boolean)
+    data class Track(val path: Path, val powerW: Double, val reverse: Boolean)
     val tracks = listOf(
-        Track(prodPath(), flow.prodKw, false),
+        Track(prodPath(), flow.prodKw * 1000, false),
         // gridPath huong hub->node; khi grid > 0 (mua dien) dong chay nguoc lai node->hub
-        Track(gridPath(), flow.gridKw, flow.gridKw > 0.005),
-        Track(consPath(), flow.consKw, false),
-        Track(battPath(), flow.battKw, !charging),
+        Track(gridPath(), flow.gridKw * 1000, (flow.gridKw * 1000).roundToInt() > 0),
+        Track(consPath(), flow.consKw * 1000, false),
+        Track(battPath(), flow.battKw * 1000, !charging),
     )
     val phases = tracks.mapIndexed { idx, t ->
-        // Track khong co dong nang luong (< 5W) -> phase tinh 0, khong chay
+        // Khong co dong nang luong (hien thi "0 W") -> phase tinh 0, khong chay
         // animation vo han (fix nong may 2026-09-30, nhat la ban dem PV = 0).
-        if (kotlin.math.abs(t.powerKw) < 0.005) {
+        if (!hasPowerFlow(t.powerW)) {
             remember(idx) { mutableFloatStateOf(0f) }
         } else {
             // demo: chi set lai --dur khi toc do lech >12% de tranh restart animation
-            var dur by remember(idx) { mutableIntStateOf(sweepMs(t.powerKw)) }
-            val ms = sweepMs(t.powerKw)
+            var dur by remember(idx) { mutableIntStateOf(sweepMs(t.powerW / 1000.0)) }
+            val ms = sweepMs(t.powerW / 1000.0)
             if (kotlin.math.abs(ms - dur) / dur.toFloat() > 0.12f) dur = ms
             val target = if (t.reverse) 1270f else -1270f
             transition.animateFloat(
@@ -436,9 +462,9 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
         val sx = size.width / VB_W
         val sy = size.height / VB_H
         // Do day net chay theo gia tri: lon nhat 4.5.dp (= 5.dp hien tai - 10%), nho nhat 1.5.dp
-        val maxP = tracks.maxOf { kotlin.math.abs(it.powerKw) }.coerceAtLeast(0.01)
+        val maxP = tracks.maxOf { kotlin.math.abs(it.powerW) }.coerceAtLeast(0.01)
         tracks.forEachIndexed { i, t ->
-            val frac = (kotlin.math.abs(t.powerKw) / maxP).toFloat().coerceIn(0.08f, 1f)
+            val frac = (kotlin.math.abs(t.powerW) / maxP).toFloat().coerceIn(0.08f, 1f)
             val sweepW = 1.5.dp + 3.dp * frac
             val glowW = sweepW * 2.2f
             val path = Path().apply {
@@ -450,6 +476,9 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
                 color = trackColor.copy(alpha = 0.45f),
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
+            // Khong co dong (hien "0 W") -> chi ve track mo, khong ve net sweep
+            // (ca doan dash tinh cung khong hien).
+            if (!hasPowerFlow(t.powerW)) return@forEachIndexed
             val dash = PathEffect.dashPathEffect(floatArrayOf(70f * sx, 1200f * sx), phases[i].value * sx)
             // glow underlay (demo: drop-shadow(0 0 7px primary 70%) tren net sweep 5px)
             drawPath(
@@ -475,6 +504,11 @@ private fun FlowNode(
     badge: String? = null,
     badgeBg: Color = Color.Transparent,
     badgeFg: Color = Color.Transparent,
+    // Badge trang thai nam CUNG HANG voi icon (2026-09-30, user; vd trang thai
+    // luoi dien) — pill tonal M3E.
+    iconBadge: String? = null,
+    iconBadgeBg: Color = Color.Transparent,
+    iconBadgeFg: Color = Color.Transparent,
     onClick: (() -> Unit)? = null,
     bottom: @Composable () -> Unit = {},
 ) {
@@ -486,18 +520,36 @@ private fun FlowNode(
             .pressMorph(pressedScale = 0.93f, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(tintBg),
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(28.dp),
                 contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(tintBg),
             ) {
-                icon()
+                Box(
+                    modifier = Modifier.size(28.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    icon()
+                }
+            }
+            if (iconBadge != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    iconBadge,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                    color = iconBadgeFg,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(iconBadgeBg)
+                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                )
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -532,8 +584,10 @@ private fun FlowNode(
         Row(
             modifier = Modifier.padding(top = 1.dp),
         ) {
+            // Don vi linh hoat (2026-09-30, user): < 1000W hien W, >= 1000W hien kW.
+            val (num, unit) = powerNumUnit(valueKw * 1000)
             Text(
-                String.format(Locale.US, "%.1f", valueKw),
+                num,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
@@ -544,7 +598,7 @@ private fun FlowNode(
                 modifier = Modifier.alignByBaseline(),
             )
             Text(
-                " kW",
+                " $unit",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp, fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

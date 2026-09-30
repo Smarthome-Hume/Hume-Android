@@ -126,6 +126,13 @@ class AppEnergyRepository(
         // > 0 = dang sac, < 0 = dang xa (cung dau voi power vi P = V * I, V luon duong)
         val battCurrent = v("sensor.battery_current_flow")
         val charging = battCurrent > 0
+        // Trang thai luoi dien (2026-09-30, user): nhan on/off/1/0/text tieng Viet;
+        // khong doc duoc -> mac dinh co dien (mat dien la trang thai ngoai le).
+        val gridStatusRaw = entities[HumeConfig.GRID_STATUS]?.state?.lowercase() ?: ""
+        val gridOn = !(gridStatusRaw == "off" || gridStatusRaw == "0" ||
+            gridStatusRaw == "false" || gridStatusRaw == "no" ||
+            "off-grid" in gridStatusRaw || "outage" in gridStatusRaw ||
+            "mất" in gridStatusRaw || "mat dien" in gridStatusRaw)
         val cb1 = v("sensor.aptomat_t1_power") / 1000.0
         val cb2 = v("sensor.aptomat_t2_power") / 1000.0
         val cb3 = v("sensor.aptomat_t3_power") / 1000.0
@@ -146,6 +153,7 @@ class AppEnergyRepository(
             soc = soc,
             todayKwh = pvToday,
             selfUsePct = selfUse,
+            gridOn = gridOn,
         )
 
         val tiers = listOf(

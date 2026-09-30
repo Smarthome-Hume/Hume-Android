@@ -17,6 +17,8 @@ object HumeConfig {
     const val BATTERY_TIME_TO_FULL = "sensor.battery_time_to_full_2"
     const val GRID_DAILY = "sensor.aptomat_tong_daily"
     const val HOME_DAILY = "sensor.energy_home_daily"
+    /** Trang thai luoi dien: on/off (template sensor cua user). */
+    const val GRID_STATUS = "sensor.grid_status"
 
     // ---- Alarm (AlarmLights.swift) ----
     const val ALARM_PRIMARY = "alarm_control_panel.alarmo"

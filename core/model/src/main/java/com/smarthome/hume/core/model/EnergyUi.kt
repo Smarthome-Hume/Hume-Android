@@ -40,6 +40,8 @@ data class EnergyFlowState(
     val soc: Double = 0.0,
     val todayKwh: Double = 0.0,
     val selfUsePct: Double = 0.0,
+    /** true = luoi co dien; false = mat dien (chay qua cong backup). */
+    val gridOn: Boolean = true,
 )
 
 /** Mot dong trong the "Thiet bi tieu thu". */
