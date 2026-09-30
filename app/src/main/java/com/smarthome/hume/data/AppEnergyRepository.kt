@@ -210,7 +210,8 @@ class AppEnergyRepository(
             }
             EnergyWeekPoint(labels[date.dayOfWeek.value - 1], v)
         } + EnergyWeekPoint(
-            "Hôm nay",
+            // Cot hom nay cung dung nhan thu (T2..CN) nhu cac ngay khac (2026-09-30).
+            labels[today.dayOfWeek.value - 1],
             withContext(Dispatchers.Main) {
                 ha.entities.value["sensor.energy_home_daily"]?.numericState ?: 0.0
             },
