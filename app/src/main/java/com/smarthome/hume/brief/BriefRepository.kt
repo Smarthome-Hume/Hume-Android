@@ -4,11 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.CancellationSignal
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.smarthome.hume.core.data.AiRepository
 import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.ha.HaEndpointResolver
@@ -35,6 +35,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
@@ -260,8 +261,8 @@ class BriefRepository(
             suspendCoroutine { cont ->
                 try {
                     val fused = LocationServices.getFusedLocationProviderClient(context)
-                    val cts = CancellationSignal()
-                    fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts)
+                    val cts = CancellationTokenSource()
+                    fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.token)
                         .addOnSuccessListener { l ->
                             if (l != null) {
                                 prefs.edit()
@@ -307,8 +308,8 @@ class BriefRepository(
                     val data = o["data"] as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
                     val details = (data["instant"] as? kotlinx.serialization.json.JsonObject)?.get("details") as? kotlinx.serialization.json.JsonObject
                     val temp = details?.get("air_temperature")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.toDoubleOrNull() } ?: return@mapNotNull null
-                    val hum = details.get("relative_humidity")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.toDoubleOrNull() }?.roundToInt() ?: 0
-                    val cloud = details.get("cloud_area_fraction")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.toDoubleOrNull() } ?: 50.0
+                    val hum = details?.get("relative_humidity")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.toDoubleOrNull() }?.roundToInt() ?: 0
+                    val cloud = details?.get("cloud_area_fraction")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.toDoubleOrNull() } ?: 50.0
                     val sym = (data["next_6_hours"] as? kotlinx.serialization.json.JsonObject)?.get("summary")
                         ?.let { (it as? kotlinx.serialization.json.JsonObject)?.get("symbol_code") }
                         ?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }

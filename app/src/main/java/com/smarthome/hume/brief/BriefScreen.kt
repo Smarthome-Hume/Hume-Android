@@ -544,9 +544,11 @@ private fun StaggerCard(index: Int, tabKey: Any, content: @Composable () -> Unit
     LaunchedEffect(tabKey) { visible = true }
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(tween(380, delayMillis = index * 70), easing = M3EMotion.emphasized) +
+        enter = fadeIn(
+            tween(380, delayMillis = index * 70, easing = M3EMotion.emphasized),
+        ) +
             slideInVertically(
-                tween(480, delayMillis = index * 70), easing = M3EMotion.emphasized,
+                tween(480, delayMillis = index * 70, easing = M3EMotion.emphasized),
             ) { it / 3 },
     ) {
         Column {
