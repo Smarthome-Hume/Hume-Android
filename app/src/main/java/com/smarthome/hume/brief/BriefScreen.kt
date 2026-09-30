@@ -91,7 +91,7 @@ fun BriefScreen(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brief sáng", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                    Text("Brief", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                     Spacer(Modifier.width(8.dp))
                     AiPill()
                 }
@@ -221,7 +221,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     .background(cs.primaryContainer)
                     .padding(18.dp),
             ) {
-                SecTitle("AI NHẬN ĐỊNH", light = true)
+                SecTitle("NHẬN ĐỊNH", light = true)
                 Spacer(Modifier.height(8.dp))
                 Text(d.aiInsight, fontSize = 13.sp, lineHeight = 21.sp, fontWeight = FontWeight.Medium, color = cs.onPrimaryContainer)
             }
