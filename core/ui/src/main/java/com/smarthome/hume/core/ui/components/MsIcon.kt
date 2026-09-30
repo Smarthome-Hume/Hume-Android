@@ -210,7 +210,8 @@ object Ms {
     val whatshot = "\uE80E"
     val wifi = "\uE63E"
     val remote_gen = "\uE83E"
-    val snowflake = "\uF16F"
+    // snowflake: codepoint official ED5B (ban cu F16F tro nham glyph power).
+    val snowflake = "\uED5B"
     val lock_open = "\uE898"
     val door_open = "\uE77C"
 }

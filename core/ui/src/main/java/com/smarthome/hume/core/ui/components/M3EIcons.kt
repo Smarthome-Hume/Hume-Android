@@ -112,7 +112,44 @@ object M3EIcons {
         "fan" -> Fan
         "tv" -> Tv
         "airfryer" -> AirFryer
+        // Dieu hoa: dan lanh treo tuong ve tay (2026-09-30, user yeu cau
+        // thiet ke lai — Ms.snowflake dang tro sai codepoint F16F = glyph power).
+        "snowflake" -> AirConditioner
         else -> null
+    }
+
+    /**
+     * Dieu hoa treo tuong — dan lanh + cua gio + gio thoi (2026-09-30).
+     * Stroke 2dp, dau tron, viewport 24 (cung style Fridge/Fan/Tv/AirFryer).
+     */
+    val AirConditioner: ImageVector by lazy {
+        ImageVector.Builder("air_conditioner", 24.dp, 24.dp, 24f, 24f).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // Than dan lanh
+                moveTo(5f, 4.5f); horizontalLineTo(19f)
+                arcTo(2f, 2f, 0f, false, true, 21f, 6.5f)
+                verticalLineTo(9.5f)
+                arcTo(2f, 2f, 0f, false, true, 19f, 11.5f)
+                horizontalLineTo(5f)
+                arcTo(2f, 2f, 0f, false, true, 3f, 9.5f)
+                verticalLineTo(6.5f)
+                arcTo(2f, 2f, 0f, false, true, 5f, 4.5f)
+                close()
+                // Vach mat truoc + den hien thi
+                moveTo(5f, 8f); horizontalLineTo(19f)
+                moveTo(16.5f, 6.2f); horizontalLineTo(18.5f)
+                // Cua gio
+                moveTo(6f, 14.5f); horizontalLineTo(18f)
+                // Gio thoi xuong
+                moveTo(9.5f, 16.5f); verticalLineTo(19.5f)
+                moveTo(14.5f, 16.5f); verticalLineTo(19.5f)
+            }
+        }.build()
     }
 
     /**
