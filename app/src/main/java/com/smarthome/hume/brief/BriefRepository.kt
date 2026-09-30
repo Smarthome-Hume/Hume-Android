@@ -177,6 +177,11 @@ class BriefRepository(
         val gridKwh = getState(E.EVN_MONTHLY) ?: return@supervisorScope null
         val unitPrice = getState(E.UNIT_PRICE) ?: 2167.0
         val pvKwh = getState(E.PV_MONTH) ?: 0.0
+        // Tien dien thang: lay truc tiep tu sensor.grid_cost (user xac nhan
+        // 2026-09-30: day la data tien theo thang). Chi tu tinh khi sensor
+        // khong co du lieu.
+        val costVnd = getState(E.GRID_COST)?.roundToLong()
+            ?: (gridKwh * unitPrice * 1.10).roundToLong()
         val floors = listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
             .map { (name, eid) -> async { BriefFloorStat(name, r1(getState(eid) ?: 0.0)) } }
             .awaitAll()
@@ -192,12 +197,12 @@ class BriefRepository(
             .take(3)
             .map { BriefDeviceStat(it.first, it.second, (it.third * 10).roundToInt() / 10.0) }
 
-        val summary = aiMonthly(ym, gridKwh, (gridKwh * unitPrice * 1.10).roundToLong(), pvKwh, floors, devices)
+        val summary = aiMonthly(ym, gridKwh, costVnd, pvKwh, floors, devices)
 
         BriefMonthly(
             monthLabel = "${ym.monthValue}/${ym.year}",
             gridKwh = r1(gridKwh),
-            costVnd = (gridKwh * unitPrice * 1.10).roundToLong(),
+            costVnd = costVnd,
             pvKwh = r1(pvKwh),
             savedVnd = (pvKwh * unitPrice).roundToLong(),
             floors = floors,
