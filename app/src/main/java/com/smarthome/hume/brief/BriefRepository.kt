@@ -59,6 +59,11 @@ class BriefRepository(
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private val vi = Locale("vi", "VN")
 
+    companion object {
+        /** conditionVi cua BriefWeather khi chua lay duoc du lieu that. */
+        const val WEATHER_NO_DATA = "Chưa có dữ liệu"
+    }
+
     private val http = OkHttpClient.Builder()
         .connectTimeout(4, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
@@ -327,7 +332,7 @@ class BriefRepository(
         // Moi duong that bai -> hasLocation=false de lan mo Brief sau tu retry
         // (refreshIfStale chi thu lai khi hasLocation=false). Chi duong parse
         // thanh cong moi tra hasLocation=true.
-        val fallback = BriefWeather("cloudy", "Chưa có dữ liệu", 0, 0, 0, 0.0, false)
+        val fallback = BriefWeather("cloudy", WEATHER_NO_DATA, 0, 0, 0, 0.0, false)
         val (lat, lon) = currentLatLon() ?: run {
             Log.w(tag, "weather: no location (chua cap quyen hoac tat dinh vi he thong)")
             return@withContext fallback
