@@ -74,6 +74,7 @@ import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.M3ESectionHeader
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
@@ -170,7 +171,7 @@ fun SecurityScreen(
                 Spacer(Modifier.height(8.dp))
 
                 // Recent recordings (rise .46s / .48s)
-                SecHeader(
+                M3ESectionHeader(
                     title = "Video",
                     action = "Tải video",
                     delayMs = 460,
@@ -200,11 +201,11 @@ fun SecurityScreen(
             }
 
             // Sensor grids
-            SecHeader(title = "Cửa", delayMs = 500)
+            M3ESectionHeader(title = "Cửa", delayMs = 500)
             SensorGrid(sensors = state.doorSensors)
-            SecHeader(title = "Chuyển động", delayMs = 520)
+            M3ESectionHeader(title = "Chuyển động", delayMs = 520)
             SensorGrid(sensors = motionSensors)
-            SecHeader(title = "Môi trường", delayMs = 540)
+            M3ESectionHeader(title = "Môi trường", delayMs = 540)
             SensorGrid(sensors = state.envSensors)
         }
 
@@ -222,52 +223,6 @@ fun SecurityScreen(
 
 private fun recs(state: SecurityUiState, selectedCam: Int): List<RecordingUi> =
     state.cameras.getOrNull(selectedCam)?.let { state.recordings[it.key] }.orEmpty()
-
-@Composable
-private fun SecHeader(
-    title: String,
-    action: String? = null,
-    delayMs: Int = 0,
-    onAction: (() -> Unit)? = null,
-    actionLoading: Boolean = false,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 12.dp)
-            .padding(horizontal = 4.dp)
-            .riseIn(delayMs),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        // demo .sec: align-items baseline
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            title,
-            // demo .sec h3: 16px/700/ls -.1px
-            style = MaterialTheme.typography.titleMedium.copy(letterSpacing = (-0.1).sp),
-            fontWeight = FontWeight.Bold,
-        )
-        if (actionLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        } else if (action != null) {
-            Text(
-                action,
-                // demo .secmore: 12px/700/ls 0
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable(
-                    enabled = onAction != null,
-                    onClick = { onAction?.invoke() },
-                ),
-            )
-        }
-    }
-}
 
 // ---------- camera ----------
 
