@@ -786,21 +786,36 @@ private val VI_NAME_DICT = listOf(
 )
 
 /**
- * Parse duration tu sensor HA (vi du "2:30", "1:15:30", "90") thanh gio ket thuc "hh:mm".
- * Tra ve null neu khong parse duoc.
+ * Parse duration tu sensor HA (vi du "2:30", "1:15:30", "90",
+ * "6 giờ 50 phút") thanh gio ket thuc "hh:mm". Tra ve null neu khong parse duoc.
  */
 private fun parseDurationToEndTime(duration: String): String? {
+    val totalMinutes = durationToMinutes(duration) ?: return null
+    val now = java.time.LocalTime.now()
+    val end = now.plusMinutes(totalMinutes.toLong())
+    return String.format("%02d:%02d", end.hour, end.minute)
+}
+
+private fun durationToMinutes(duration: String): Int? {
+    val t = duration.trim()
+    if (t.isEmpty()) return null
+    // Tieng Viet tu template sensor: "6 giờ 50 phút", "2 giờ", "45 phút".
+    val lower = t.lowercase()
+    val hM = Regex("""(\d+)\s*(giờ|gio|tiếng|tieng|h)\b""").find(lower)
+    val pM = Regex("""(\d+)\s*(phút|phut|p)\b""").find(lower)
+    if (hM != null || pM != null) {
+        val h = hM?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        val m = pM?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        return h * 60 + m
+    }
     return try {
-        val parts = duration.trim().split(":")
-        val totalMinutes = when (parts.size) {
+        val parts = t.split(":")
+        when (parts.size) {
             3 -> parts[0].toInt() * 60 + parts[1].toInt() // h:mm:ss
             2 -> parts[0].toInt() * 60 + parts[1].toInt() // h:mm hoac m:ss
             1 -> parts[0].toDouble().toInt() // so phut
-            else -> return null
+            else -> null
         }
-        val now = java.time.LocalTime.now()
-        val end = now.plusMinutes(totalMinutes.toLong())
-        String.format("%02d:%02d", end.hour, end.minute)
     } catch (e: Exception) {
         null
     }

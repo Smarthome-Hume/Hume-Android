@@ -234,6 +234,17 @@ private fun parseDurationMinutes(timeText: String?): Int? {
         val min = m.groupValues[2].toIntOrNull() ?: 0
         return h * 60 + min
     }
+    // Tieng Viet tu template sensor: "6 giờ 50 phút", "2 giờ", "45 phút",
+    // "3 tiếng 15p". (2026-09-30) Truoc 0c61975 hien take(12) nen van thay
+    // thong tin; sau 0c61975 bi an oan vi parser khong hieu.
+    val lower = timeText.lowercase()
+    val hM = Regex("""(\d+)\s*(giờ|gio|tiếng|tieng|h)\b""").find(lower)
+    val pM = Regex("""(\d+)\s*(phút|phut|p)\b""").find(lower)
+    if (hM != null || pM != null) {
+        val h = hM?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        val min = pM?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        return h * 60 + min
+    }
     val mins = timeText.trim().toDoubleOrNull()?.toInt()
     if (mins != null && mins >= 0) return mins
     return null
