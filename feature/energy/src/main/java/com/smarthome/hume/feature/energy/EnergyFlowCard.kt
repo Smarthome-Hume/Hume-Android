@@ -270,19 +270,25 @@ private fun FlowArea(
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
         ) {
-            Text(
-                if (flow.gridOn) "Cấp điện" else "Mất điện",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                color = gridBadgeFg,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(gridBadgeFg.copy(alpha = 0.16f))
-                    .padding(horizontal = 9.dp, vertical = 4.dp),
-            )
+            // Pill trang thai luoi: can giua ngang trong node (2026-09-30, user).
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (flow.gridOn) "Cấp điện" else "Mất điện",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                    color = gridBadgeFg,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(gridBadgeFg.copy(alpha = 0.16f))
+                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                )
+            }
         }
         FlowNode(
             icon = { MsIcon(M3EIcons.Home, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) },
