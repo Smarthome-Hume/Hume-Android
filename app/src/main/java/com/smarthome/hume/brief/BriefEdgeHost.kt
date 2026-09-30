@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.graphics.Rect
+import android.view.View
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,12 +72,31 @@ fun BriefEdgeHost(modifier: Modifier = Modifier) {
     }
 
     // Exclusion rect canh trai khi dong: vuot canh thuoc ve app, khong phai system back.
-    LaunchedEffect(open) {
-        view.systemGestureExclusionRects = if (open) {
-            emptyList()
-        } else {
-            val w = (48 * density.density).toInt()
-            listOf(Rect(0, 0, w, view.height))
+    // (2026-09-30, fix vuot canh khong mo duoc Brief) Ban cu dat rect trong
+    // LaunchedEffect(open) ngay sau composition dau tien — luc do view CHUA
+    // layout nen view.height = 0 -> rect rong vinh vien (effect chi chay lai
+    // khi open doi, ma open khong bao gio true neu gesture bi system cuop).
+    // -> system back gesture luon thang, dai vuot cua app khong bao gio nhan
+    // duoc touch. Ban moi: cap nhat rect sau moi lan layout (OnLayoutChange).
+    val openState = rememberUpdatedState(open)
+    DisposableEffect(view) {
+        fun refreshExclusion() {
+            val h = view.height
+            view.systemGestureExclusionRects =
+                if (!openState.value && h > 0) {
+                    listOf(Rect(0, 0, (48 * density.density).toInt(), h))
+                } else {
+                    emptyList()
+                }
+        }
+        val listener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            refreshExclusion()
+        }
+        view.addOnLayoutChangeListener(listener)
+        refreshExclusion()
+        onDispose {
+            view.removeOnLayoutChangeListener(listener)
+            view.systemGestureExclusionRects = emptyList()
         }
     }
 
@@ -98,7 +119,8 @@ fun BriefEdgeHost(modifier: Modifier = Modifier) {
         if (has) vm.refresh() else locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
-    // Dai vuot canh trai: mo brief.
+    // Dai vuot canh trai: mo brief. Rong 48dp = khop vung system gesture
+    // exclusion, de ngon tay dat lech vao trong van trung dai vuot.
     val openThresholdPx = with(density) { 60.dp.toPx() }
     val closeThresholdPx = with(density) { 60.dp.toPx() }
     Box(modifier.fillMaxSize()) {
@@ -106,7 +128,7 @@ fun BriefEdgeHost(modifier: Modifier = Modifier) {
             Box(
                 Modifier
                     .fillMaxHeight()
-                    .width(32.dp)
+                    .width(48.dp)
                     .align(Alignment.CenterStart)
                     .pointerInput(Unit) {
                         var acc = 0f
