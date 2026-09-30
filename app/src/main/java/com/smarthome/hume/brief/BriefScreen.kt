@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
 import com.smarthome.hume.core.ui.components.Ms
@@ -207,12 +209,10 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(cs.primaryContainer)
-                    .padding(18.dp),
+            M3ECard(
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = cs.primaryContainer,
+                contentPadding = 18.dp,
             ) {
                 M3ESectionLabel("NHẬN ĐỊNH", light = true)
                 Spacer(Modifier.height(8.dp))
@@ -419,12 +419,10 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
             .padding(horizontal = 16.dp),
     ) {
         StaggerCard(0, tabKey) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(cs.primaryContainer)
-                    .padding(18.dp),
+            M3ECard(
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = cs.primaryContainer,
+                contentPadding = 18.dp,
             ) {
                 M3ESectionLabel("AI TỔNG KẾT THÁNG", light = true)
                 Spacer(Modifier.height(8.dp))
@@ -514,16 +512,14 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
 // ---------------- pieces ----------------
 
 @Composable
-private fun BriefCard(content: @Composable () -> Unit) {
-    val cs = MaterialTheme.colorScheme
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(28.dp))
-            .clip(RoundedCornerShape(28.dp))
-            .background(cs.surfaceContainerHigh)
-            .padding(18.dp),
-    ) { content() }
+private fun BriefCard(content: @Composable ColumnScope.() -> Unit) {
+    M3ECard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentPadding = 18.dp,
+        elevation = 8.dp,
+        content = content,
+    )
 }
 
 @Composable

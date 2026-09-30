@@ -26,6 +26,7 @@ fun M3ECard(
     shape: Shape = MaterialTheme.shapes.medium,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentPadding: Dp = 20.dp,
+    elevation: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val clickMod = if (onClick != null) {
@@ -34,7 +35,7 @@ fun M3ECard(
     Card(
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         modifier = modifier.then(clickMod),
     ) {
         Column(Modifier.padding(contentPadding), content = content)
