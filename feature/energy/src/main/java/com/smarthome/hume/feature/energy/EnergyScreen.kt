@@ -97,7 +97,7 @@ fun EnergyScreen(
                     Text(
                         "Điện",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 26.sp,
+                            style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.3).sp,
                         ),

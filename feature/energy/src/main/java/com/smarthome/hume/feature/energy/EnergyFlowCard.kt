@@ -143,7 +143,7 @@ fun EnergyFlowCard(
                     Text(
                         "Năng lượng",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleLarge),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                 }
@@ -159,7 +159,7 @@ fun EnergyFlowCard(
                     Text(
                         String.format(Locale.US, "%.1f", flow.todayKwh),
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 22.sp,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",
                         ),
@@ -167,7 +167,7 @@ fun EnergyFlowCard(
                     Text(
                         " kWh",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 13.sp, fontWeight = FontWeight.Medium),
+                            style = MaterialTheme.typography.bodyMedium),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -181,7 +181,7 @@ fun EnergyFlowCard(
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             Spacer(Modifier.height(12.dp))
-            val footStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+            val footStyle = MaterialTheme.typography.bodySmall.copy(style = MaterialTheme.typography.bodySmall)
             val footColor = MaterialTheme.colorScheme.onSurfaceVariant
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -278,7 +278,7 @@ private fun FlowArea(
                 Text(
                     if (flow.gridOn) "Cấp điện" else "Mất điện",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.labelSmall),
                     color = gridBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -339,13 +339,13 @@ private fun FlowArea(
                 Text(
                     "SOC",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     "${soc.roundToInt()}%",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -558,7 +558,7 @@ private fun FlowNode(
                 Text(
                     iconBadge,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.labelSmall),
                     color = iconBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -607,7 +607,7 @@ private fun FlowNode(
             Text(
                 num,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 17.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     fontFeatureSettings = "tnum",
                 ),
@@ -618,7 +618,7 @@ private fun FlowNode(
             Text(
                 " $unit",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.bodySmall),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -683,7 +683,7 @@ private fun SegBar(
                 Text(
                     name,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,

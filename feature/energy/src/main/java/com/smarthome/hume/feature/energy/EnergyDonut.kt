@@ -121,7 +121,7 @@ fun EnergyDonut(
                 else
                     String.format(Locale.US, "%.1f", total),
                 style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = 19.sp,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold,
                     fontFeatureSettings = "tnum",
                 ),
@@ -129,7 +129,7 @@ fun EnergyDonut(
             Text(
                 selSlice?.name ?: "kWh",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
