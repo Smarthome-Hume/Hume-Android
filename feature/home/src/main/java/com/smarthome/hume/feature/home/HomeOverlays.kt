@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -386,12 +389,16 @@ fun DeviceSearchView(
             color = cs.surface,
             modifier = Modifier.fillMaxSize(),
         ) {
+            // Header search nam DUOI dai mo top (2026-09-30): top inset =
+            // status bar + 14dp, dai mo chi phu vung status bar phia tren.
+            val statusBarTop = WindowInsets.statusBars.asPaddingValues()
+                .calculateTopPadding()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(topStart = 56.dp, topEnd = 56.dp))
                     .background(cs.surface)
-                    .padding(top = 14.dp, start = 16.dp, end = 16.dp),
+                    .padding(top = statusBarTop + 14.dp, start = 16.dp, end = 16.dp),
             ) {
                 // .svbar: back + input tran + clear
                 Row(

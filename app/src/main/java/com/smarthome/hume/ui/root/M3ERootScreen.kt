@@ -249,13 +249,16 @@ fun M3ERootScreen(
             }
             } // CompositionLocalProvider(LocalContentColor)
             // Lop phu gradient mo dan sau status bar (2026-09-30, user yeu
-            // cau theo kieu app Muse): dinh dac nhat (alpha 0.92, van nhin
+            // cau theo kieu app Muse): dinh dac nhat (alpha 0.95, van nhin
             // lo mo thay noi dung ben duoi) -> trong suot dan xuong duoi.
             // Noi dung scroll chui xuong duoi va mo dan lien mach, khong co
             // duong cat cung. Khong chan touch (khong co clickable).
+            // Redesign 2026-09-30 (feedback): dai mo CHI phu vung status bar,
+            // nam TREN header cua app — khong tran xuong che header nhu ban cu
+            // (statusBar + 80dp phu ca header search "Tim thiet bi").
             // Tren content 4 tab, duoi navbar/overlay.
             val fadeTop = WindowInsets.statusBars.asPaddingValues()
-                .calculateTopPadding() + 80.dp
+                .calculateTopPadding() + 6.dp
             val scrim = MaterialTheme.colorScheme.surface
             Box(
                 Modifier
@@ -264,8 +267,8 @@ fun M3ERootScreen(
                     .height(fadeTop)
                     .background(
                         Brush.verticalGradient(
-                            0.0f to scrim.copy(alpha = 0.92f),
-                            0.55f to scrim.copy(alpha = 0.45f),
+                            0.0f to scrim.copy(alpha = 0.95f),
+                            0.6f to scrim.copy(alpha = 0.4f),
                             1.0f to scrim.copy(alpha = 0.0f),
                         ),
                     ),
