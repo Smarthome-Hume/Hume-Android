@@ -160,7 +160,7 @@ fun BriefEdgeHost(
                     refreshing = refreshing,
                     onClose = { onOpenChange(false) },
                     onRequestLocation = requestLocation,
-                    onRefresh = { vm.refresh() },
+                    onRefresh = { forceMonthly -> vm.refresh(forceMonthly) },
                 )
             }
         }

@@ -91,14 +91,22 @@ class BriefRepository(
 
     // ---------------- public ----------------
 
-    /** Worker 6:00 goi: brief ngay (hom qua) + brief thang (neu hom nay mung 1). */
-    suspend fun refreshAll() {
+    /**
+     * Worker 6:00 goi: brief ngay (hom qua) + brief thang (neu hom nay mung 1).
+     * [forceMonthly] = true khi user bam "Tao ngay" o tab Thang: build luon
+     * brief thang hien tai (luy ke den hom nay) thay vi cho den mung 1.
+     */
+    suspend fun refreshAll(forceMonthly: Boolean = false) {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         val daily = buildDaily(today.minusDays(1))
         var monthly = _cache.value?.monthly
+        val curYm = YearMonth.from(today)
+        val curLabel = "${curYm.monthValue}/${curYm.year}"
         if (today.dayOfMonth == 1) {
             monthly = buildMonthly(YearMonth.from(today.minusDays(1)))
+        } else if (forceMonthly && monthly?.monthLabel != curLabel) {
+            monthly = buildMonthly(curYm)
         }
         if (daily != null) {
             saveCache(BriefCache(daily = daily, monthly = monthly, generatedAtMs = System.currentTimeMillis()))
@@ -338,9 +346,10 @@ class BriefRepository(
             return@withContext fallback
         }
         try {
-            val url = "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f".format(lat, lon)
+            val url = "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f"
+                .format(Locale.US, lat, lon)
             val req = Request.Builder().url(url)
-                .header("User-Agent", "HumeAndroid/1.0")
+                .header("User-Agent", "HumeAndroid/1.0 (https://github.com/Smarthome-Hume/Hume-Android)")
                 .build()
             http.newCall(req).execute().use { resp ->
                 if (!resp.isSuccessful) {

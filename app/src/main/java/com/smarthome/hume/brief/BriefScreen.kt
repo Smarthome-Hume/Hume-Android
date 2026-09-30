@@ -55,7 +55,7 @@ fun BriefScreen(
     refreshing: Boolean,
     onClose: () -> Unit,
     onRequestLocation: () -> Unit,
-    onRefresh: () -> Unit,
+    onRefresh: (forceMonthly: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -125,10 +125,10 @@ fun BriefScreen(
                 CircularProgressIndicator(color = cs.primary)
             }
         } else if (tab == 0) {
-            if (daily == null) BriefEmpty(onRefresh, refreshing)
+            if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
             else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
         } else {
-            if (monthly == null) BriefEmpty(onRefresh, refreshing)
+            if (monthly == null) BriefEmpty({ onRefresh(true) }, refreshing)
             else MonthlyContent(monthly, tabKey = "month")
         }
     }

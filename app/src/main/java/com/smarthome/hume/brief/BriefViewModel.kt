@@ -63,13 +63,13 @@ class BriefViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun refresh() {
+    fun refresh(forceMonthly: Boolean = false) {
         val r = repo ?: return
         if (_refreshing.value) return
         viewModelScope.launch {
             _refreshing.value = true
             try {
-                r.refreshAll()
+                r.refreshAll(forceMonthly)
                 _cache.value = r.loadCache()
                 _hasNew.value = r.hasNew.value
             } finally {
