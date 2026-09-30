@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -1077,69 +1076,91 @@ private val seedNames = mapOf(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
+/** Hang mau chu dao: 2 hang x 5 mau (2026-09-30, user yeu cau) —
+ *  moi hang la Row SpaceBetween de luon du 5 dot/hang, khong wrap lech. */
+@Composable
 private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
-    FlowRow(
+    Column(
         // Nam trong card nen chi can khoang cach voi label phia tren
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        M3ESeed.entries.forEach { s ->
-            val color = seedColors[s] ?: Color.Gray
-            val on = s == selected
-            val interaction = remember { MutableInteractionSource() }
-            val pressed by interaction.collectIsPressedAsState()
-            val scale by animateFloatAsState(
-                if (pressed) 0.86f else 1f,
-                tween(300, easing = M3EMotion.spring),
-                label = "seedScale",
-            )
-            val checkAlpha by animateFloatAsState(
-                if (on) 1f else 0f,
-                tween(300, easing = M3EMotion.spring),
-                label = "seedCheckAlpha",
-            )
-            val checkScale by animateFloatAsState(
-                if (on) 1f else 0.5f,
-                tween(300, easing = M3EMotion.spring),
-                label = "seedCheckScale",
-            )
-            // ring ::after: inset -7px => khung ngoai 72dp, border 2px mau seed
-            Box(
-                Modifier
-                    .size(56.dp)
-                    .then(
-                        if (on) Modifier.border(2.dp, color, CircleShape)
-                        else Modifier
-                    ),
-                contentAlignment = Alignment.Center,
+        M3ESeed.entries.chunked(5).forEach { rowSeeds ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    Modifier
-                        .size(44.dp)
-                        .scale(scale)
-                        .clip(CircleShape)
-                        .background(color)
-                        .clickable(
-                            interactionSource = interaction,
-                            indication = null,
-                            onClick = { onSelect(s) },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    MsIcon(
-                        M3EIcons.Check,
-                        contentDescription = seedNames[s],
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(26.dp)
-                            .scale(checkScale)
-                            .alpha(checkAlpha),
+                rowSeeds.forEach { s ->
+                    SeedDot(
+                        seed = s,
+                        selected = s == selected,
+                        onSelect = onSelect,
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SeedDot(
+    seed: M3ESeed,
+    selected: Boolean,
+    onSelect: (M3ESeed) -> Unit,
+) {
+    val color = seedColors[seed] ?: Color.Gray
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        if (pressed) 0.86f else 1f,
+        tween(300, easing = M3EMotion.spring),
+        label = "seedScale",
+    )
+    val checkAlpha by animateFloatAsState(
+        if (selected) 1f else 0f,
+        tween(300, easing = M3EMotion.spring),
+        label = "seedCheckAlpha",
+    )
+    val checkScale by animateFloatAsState(
+        if (selected) 1f else 0.5f,
+        tween(300, easing = M3EMotion.spring),
+        label = "seedCheckScale",
+    )
+    // ring ::after: inset -7px => khung ngoai 72dp, border 2px mau seed
+    Box(
+        Modifier
+            .size(56.dp)
+            .then(
+                if (selected) Modifier.border(2.dp, color, CircleShape)
+                else Modifier
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(44.dp)
+                .scale(scale)
+                .clip(CircleShape)
+                .background(color)
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onClick = { onSelect(seed) },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            MsIcon(
+                M3EIcons.Check,
+                contentDescription = seedNames[seed],
+                tint = Color.White,
+                modifier = Modifier
+                    .size(26.dp)
+                    .scale(checkScale)
+                    .alpha(checkAlpha),
+            )
         }
     }
 }
