@@ -8,7 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -112,13 +112,20 @@ fun PillsRow(
             modifier = (if (securityExpanded) Modifier.widthIn(min = 150.dp)
             else Modifier.weight(1f)).height(80.dp),
         )
-        // .secmodes: chi hien khi expanded; dong co bounce (scaleOut spring)
+        // .secmodes: chi hien khi expanded.
+        // (2026-09-30, fix nhay khi thu gon) exit PHAI shrink layout width:
+        // exit cu chi fade+scale (graphicsLayer, khong doi layout size) nen
+        // trong 300ms exit, Row mat horizontalScroll bi tran (4 card ~400dp
+        // > viewport) -> 2 pill weight(1f) bi do ve width 0 roi moi bat lai
+        // khi exit xong = hien tuong "nhay". shrinkHorizontally cho width
+        // cua secmodes 400->0 trong 350ms, 2 pill weight gian no mem theo
+        // cung nhip, khong snap.
         AnimatedVisibility(
             visible = securityExpanded,
             enter = fadeIn(tween(450, easing = M3EMotion.emphasized)),
-            exit = fadeOut(tween(300)) + scaleOut(
-                animationSpec = tween(300, easing = M3EMotion.spring),
-                targetScale = 0.9f,
+            exit = fadeOut(tween(300)) + shrinkHorizontally(
+                animationSpec = tween(350, easing = M3EMotion.emphasizedAcc),
+                shrinkTowards = Alignment.Start,
             ),
         ) {
             Row(
