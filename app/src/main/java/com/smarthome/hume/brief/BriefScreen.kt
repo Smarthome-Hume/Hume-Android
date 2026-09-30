@@ -382,7 +382,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         icon = Ms.electric_meter, label = "TIỀN ĐIỆN DỰ KIẾN",
                         big = countUpText(m.costVnd / 1_000_000.0, 2, tabKey),
                         unit = "tr đ",
-                        sub = "${countUpText(m.gridKwh, 1, tabKey)} kWh mua EVN",
+                        sub = "${countUpText(m.gridKwh, 1, tabKey)} kWh · Mua từ EVN",
                         modifier = Modifier.weight(1f),
                     )
                     StatBox(
