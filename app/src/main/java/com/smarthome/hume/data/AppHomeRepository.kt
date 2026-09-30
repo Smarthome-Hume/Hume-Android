@@ -126,6 +126,13 @@ class AppHomeRepository(
         // Tat ca thiet bi tren UI (config phong + climate) — bao gom sensor dien.
         s.searchDevices.forEach { ids.add(it.entityId) }
         s.lightsOn.forEach { ids.add(it.entityId) }
+        // Sensor cong suat cua o cam/cong tac co do cong suat: UI hien "· X W"
+        // khi bat. Khong watch -> roi bucket ONE_DAY, WS giam toi 24h -> powerW
+        // null/stale mai (bug 2026-09-30: cong tac nong lanh khong hien cong suat).
+        com.smarthome.hume.core.model.RoomBubbleConfig.all
+            .flatMap { it.devices }
+            .mapNotNull { it.powerEntity }
+            .forEach { ids.add(it) }
         s.alarm?.let { ids.add(it.entityId) }
         // Nang luong: PV + pin.
         ids.add(HumeConfig.PV_POWER); ids.add(HumeConfig.PV_TODAY)
@@ -213,10 +220,12 @@ class AppHomeRepository(
             entities[HumeConfig.BATTERY_TIME_LEFT]
         else
             entities[HumeConfig.BATTERY_TIME_TO_FULL]
-        // Hume goc: uu tien friendly_time attribute, fallback raw state
+        // Hume goc: uu tien friendly_time attribute, fallback raw state.
+        // friendly_time co the chua quote thua do template (vd "\"Dang sac/Cho\"")
+        // -> dung contentOrNull (khong phai toString) roi lot sach quote.
         val runtimeText = if (resting) null else
-            runtimeEntity?.attributes?.get("friendly_time")?.toString()
-                ?.trim('"')?.takeIf { it.isNotBlank() }
+            runtimeEntity?.attributes?.get("friendly_time")?.jsonPrimitive?.contentOrNull
+                ?.replace("\"", "")?.trim()?.takeIf { it.isNotBlank() }
                 ?: runtimeEntity?.state?.takeIf { it.isNotBlank() && it != "unknown" }
         val endTime = if (resting) null else runtimeEntity?.state?.let { parseDurationToEndTime(it) }
 

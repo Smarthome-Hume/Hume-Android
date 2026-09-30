@@ -104,7 +104,8 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             color = cs.onSurfaceVariant,
         )
         // Hume goc: chi hien thoi gian lon + ket thuc luc khi KHONG nghi
-        if (!battery.isResting) {
+        // VA chi khi parse duoc duration that (null = template tra text trang thai).
+        if (!battery.isResting && bigTime != null) {
         Spacer(Modifier.height(2.dp))
         // Thoi gian lon + ket thuc luc (layout anh mau)
         Row(
@@ -215,15 +216,17 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
  * friendly_time dang "6:50" -> "6h 50m"; neu da dang doc duoc thi giu nguyen.
  * Null (khi NGHI) -> "".
  */
-private fun parseDurationBig(timeText: String?): String {
-    if (timeText.isNullOrBlank()) return ""
+private fun parseDurationBig(timeText: String?): String? {
+    if (timeText.isNullOrBlank()) return null
     val m = Regex("""(\d+):(\d{1,2})""").find(timeText)
     if (m != null) {
         val h = m.groupValues[1].toIntOrNull() ?: 0
         val min = m.groupValues[2].toIntOrNull() ?: 0
         return if (h > 0) "${h}h ${min}m" else "${min}m"
     }
-    return timeText.take(12)
+    // Khong phai duration (template tra text trang thai nhu "Dang sac/Cho")
+    // -> null de UI an dong gio lon, khong hien rac nhu "\"Dang sac/C".
+    return null
 }
 
 /**
