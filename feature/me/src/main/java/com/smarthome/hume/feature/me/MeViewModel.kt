@@ -128,6 +128,13 @@ class MeViewModel : ViewModel() {
         }
     }
 
+    /** Dang xuat HA: xoa token + URL; MainActivity tu ngat socket va quay ve login. */
+    fun logout() {
+        viewModelScope.launch {
+            HumeGraph.get().authRepository.logout()
+        }
+    }
+
     // ---------- Font chu (Google Fonts) ----------
 
     val fontFamily: StateFlow<String> = themeStore.settings

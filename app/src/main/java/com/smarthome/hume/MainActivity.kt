@@ -79,6 +79,9 @@ class MainActivity : ComponentActivity() {
                     // Duong lay lich su rieng (timeout dai) cho bieu do 7 ngay.
                     HistoryFetcher.configure(app.haRepository.endpoint, session.token)
                     app.haRepository.connect()
+                } else {
+                    // Vua dang xuat (hoac session het han): ngat socket cu ngay.
+                    app.haRepository.disconnect()
                 }
             }
             // Chua dang nhap -> man hinh login M3E moi (feature/auth).

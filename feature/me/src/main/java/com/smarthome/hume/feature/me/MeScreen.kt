@@ -154,6 +154,7 @@ fun MeScreen(
         if (userKey.isNotBlank()) avatarStore.load(userKey)
     }
     var showChooser by remember { mutableStateOf(false) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
     var showFontSheet by remember { mutableStateOf(false) }
 
     fun onPicked(uri: Uri, isVideo: Boolean) {
@@ -232,6 +233,7 @@ fun MeScreen(
                 onRemove = if (userAvatar != null && userKey.isNotBlank()) {
                     { scope.launch { avatarStore.clearAvatar(userKey) } }
                 } else null,
+                onLogout = { showLogoutConfirm = true },
             )
         }
 
@@ -339,6 +341,31 @@ fun MeScreen(
                 }
             },
             confirmButton = {},
+        )
+    }
+
+    // Xac nhan dang xuat
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = { Text("Đăng xuất?") },
+            text = { Text("App sẽ ngắt kết nối Home Assistant và quay về màn hình đăng nhập.") },
+            confirmButton = {
+                TextButton(
+                    onClick = { showLogoutConfirm = false; vm.logout() },
+                ) {
+                    Text(
+                        "Đăng xuất",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
+                    Text("Hủy")
+                }
+            },
         )
     }
 
@@ -565,6 +592,7 @@ private fun MeAvatarCard(
     avatar: UserAvatar?,
     onChange: () -> Unit,
     onRemove: (() -> Unit)?,
+    onLogout: () -> Unit,
 ) {
     Row(
         Modifier
@@ -617,6 +645,23 @@ private fun MeAvatarCard(
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
+        }
+        // Nut Dang xuat: canh cum Doi/Go (2026-09-30).
+        Spacer(Modifier.width(8.dp))
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .pressMorph(pressedScale = 0.88f, onClick = onLogout)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "Đăng xuất",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         }
     }
 }
