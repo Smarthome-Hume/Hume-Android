@@ -489,7 +489,14 @@ class BriefRepository(
         ensureHistoryConfigured()
         return try {
             val pts = HistoryFetcher.fetchRange(entityId, startMs, endMs)
-            if (pts.size < 2) 0.0 else (pts.last().value - pts.first().value).coerceAtLeast(0.0)
+            if (pts.size < 2) 0.0 else {
+                // Sensor utility_meter reset ve 0 luc nua dem: diem history dau tien
+                // van la gia tri cu (truoc reset) -> "cuoi - dau" ra so am -> 0 sai.
+                // Dung "cuoi - min" (min = gia tri sau reset): dung cho ca sensor
+                // reset lan khong reset (min = first khi khong co reset).
+                val min = pts.minOf { it.value }
+                (pts.last().value - min).coerceAtLeast(0.0)
+            }
         } catch (t: Exception) {
             Log.w(tag, "history $entityId failed: ${t.message}")
             0.0
