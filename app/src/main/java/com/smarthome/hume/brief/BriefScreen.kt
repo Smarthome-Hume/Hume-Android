@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -433,7 +434,10 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
             BriefCard {
                 SecTitle("TỔNG QUAN THÁNG ${m.monthLabel}")
                 Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                ) {
                     StatBox(
                         icon = Ms.electric_meter, label = "TIỀN ĐIỆN DỰ KIẾN",
                         big = countUpText(m.costVnd / 1_000_000.0, 2, tabKey),
@@ -536,23 +540,41 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
     val cs = MaterialTheme.colorScheme
     Column(
         modifier
+            .fillMaxHeight()
             .clip(RoundedCornerShape(20.dp))
             .background(cs.surfaceContainer)
             .padding(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            MsIcon(icon, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = cs.onSurfaceVariant)
+        // Vung label co dinh 2 dong: the nao nhan cung cao bang nhau.
+        Box(Modifier.height(30.dp), contentAlignment = Alignment.TopStart) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MsIcon(icon, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    label, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+                    color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 14.sp,
+                )
+            }
         }
         Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(big, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+        // Gia tri + don vi can theo baseline (khong dung Alignment.Bottom).
+        Row {
+            Text(
+                big, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface,
+                modifier = Modifier.alignByBaseline(),
+            )
             Spacer(Modifier.width(4.dp))
-            Text(unit, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant, modifier = Modifier.padding(bottom = 2.dp))
+            Text(
+                unit, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant,
+                modifier = Modifier.alignByBaseline(),
+            )
         }
+        Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(4.dp))
-        Text(sub, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant)
+        // Vung phu co dinh 2 dong de day 2 the can nhau.
+        Box(Modifier.height(32.dp), contentAlignment = Alignment.TopStart) {
+            Text(sub, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 15.sp)
+        }
     }
 }
 
