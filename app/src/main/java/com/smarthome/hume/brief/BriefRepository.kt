@@ -324,22 +324,31 @@ class BriefRepository(
     }
 
     private suspend fun fetchWeather(): BriefWeather = withContext(Dispatchers.IO) {
+        // Moi duong that bai -> hasLocation=false de lan mo Brief sau tu retry
+        // (refreshIfStale chi thu lai khi hasLocation=false). Chi duong parse
+        // thanh cong moi tra hasLocation=true.
         val fallback = BriefWeather("cloudy", "Chưa có dữ liệu", 0, 0, 0, 0.0, false)
-        val (lat, lon) = currentLatLon() ?: return@withContext fallback
+        val (lat, lon) = currentLatLon() ?: run {
+            Log.w(tag, "weather: no location (chua cap quyen hoac tat dinh vi he thong)")
+            return@withContext fallback
+        }
         try {
             val url = "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f".format(lat, lon)
             val req = Request.Builder().url(url)
                 .header("User-Agent", "HumeAndroid/1.0")
                 .build()
             http.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) return@withContext fallback.copy(hasLocation = true)
+                if (!resp.isSuccessful) {
+                    Log.w(tag, "weather http ${resp.code}")
+                    return@withContext fallback
+                }
                 val root = json.parseToJsonElement(resp.body?.string().orEmpty()).let {
-                    (it as? kotlinx.serialization.json.JsonObject) ?: return@withContext fallback.copy(hasLocation = true)
+                    (it as? kotlinx.serialization.json.JsonObject) ?: return@withContext fallback
                 }
                 val zone = ZoneId.systemDefault()
                 val today = LocalDate.now(zone)
                 val series = root["properties"]?.let { (it as? kotlinx.serialization.json.JsonObject)?.get("timeseries") }
-                    ?.let { it as? kotlinx.serialization.json.JsonArray } ?: return@withContext fallback.copy(hasLocation = true)
+                    ?.let { it as? kotlinx.serialization.json.JsonArray } ?: return@withContext fallback
 
                 data class P(val dt: java.time.ZonedDateTime, val temp: Double, val hum: Int, val cloud: Double, val symbol: String?)
                 val points = series.mapNotNull { el ->
@@ -356,7 +365,7 @@ class BriefRepository(
                         ?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
                     P(dt, temp, hum, cloud, sym)
                 }.filter { it.dt.toLocalDate() == today }
-                if (points.isEmpty()) return@withContext fallback.copy(hasLocation = true)
+                if (points.isEmpty()) return@withContext fallback
 
                 val tMin = points.minOf { it.temp }.roundToInt()
                 val tMax = points.maxOf { it.temp }.roundToInt()
@@ -370,7 +379,7 @@ class BriefRepository(
             }
         } catch (t: Exception) {
             Log.w(tag, "weather failed: ${t.message}")
-            fallback.copy(hasLocation = true)
+            fallback
         }
     }
 
