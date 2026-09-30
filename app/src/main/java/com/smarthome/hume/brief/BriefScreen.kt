@@ -48,12 +48,11 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import java.util.Locale
 
-/** Trang Brief sang: mo bang vuot canh trai, dong bang vuot phai->trai / nut back. */
+/** Trang Brief sang: mo bang vuot phai tren navbar, dong bang vuot phai->trai / nut back he thong. */
 @Composable
 fun BriefScreen(
     cache: BriefCache?,
     refreshing: Boolean,
-    onClose: () -> Unit,
     onRequestLocation: () -> Unit,
     onRefresh: (forceMonthly: Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -79,17 +78,6 @@ fun BriefScreen(
                     start = 16.dp, end = 16.dp, bottom = 4.dp,
                 ),
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(21.dp))
-                    .background(cs.surfaceContainer)
-                    .clickable(onClick = onClose),
-            ) {
-                MsIcon(Ms.arrow_back, contentDescription = "Đóng", modifier = Modifier.size(24.dp))
-            }
-            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Brief", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
