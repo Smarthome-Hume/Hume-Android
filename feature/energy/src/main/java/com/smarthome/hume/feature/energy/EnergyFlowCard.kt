@@ -70,11 +70,12 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val VB_W = 380f
-private const val VB_H = 460f
+private const val VB_H = 430f
 // Node 150 rong de mep trong cach xa hub 64px: kenh line 68px cho elbow
 // thoang (2026-09-30, user: node ap sat inverter lam line bi bop).
+// Giam chieu cao node 190->175 (2026-10-01, user: the can doi hon).
 private const val NODE_W = 150f
-private const val NODE_H = 190f
+private const val NODE_H = 175f
 
 private fun prodPath() = Path().apply {
     moveTo(146f, 62f); lineTo(166f, 62f); quadraticTo(176f, 62f, 176f, 78f); lineTo(176f, 198f)
@@ -170,46 +171,6 @@ fun EnergyFlowCard(
             }
             Spacer(Modifier.height(6.dp))
             FlowArea(flow = flow, charging = charging, soc = soc, vm = vm)
-            // footer: divider border-top 1px outlineVariant (demo .flfoot)
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-            Spacer(Modifier.height(12.dp))
-            val footStyle = MaterialTheme.typography.bodySmall.copy()
-            val footColor = MaterialTheme.colorScheme.onSurfaceVariant
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    buildAnnotatedString {
-                        append("Hôm nay sản xuất ")
-                        withStyle(SpanStyle(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )) {
-                            append("${String.format(Locale.US, "%.1f", flow.todayKwh)} kWh")
-                        }
-                    },
-                    style = footStyle,
-                    color = footColor,
-                )
-                Text(
-                    buildAnnotatedString {
-                        append("Tự dùng ")
-                        withStyle(SpanStyle(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )) {
-                            append("${flow.selfUsePct.roundToInt()}%")
-                        }
-                    },
-                    style = footStyle,
-                    color = footColor,
-                )
-            }
         }
     }
 }
