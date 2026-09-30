@@ -152,6 +152,8 @@ class AppHomeRepository(
         // gia tri stale tu luc mo app (nguyen nhan the pin mat cum thoi gian).
         ids.add(HumeConfig.BATTERY_TIME_LEFT); ids.add(HumeConfig.BATTERY_TIME_TO_FULL)
         ids.add(HumeConfig.BACKUP_SOC)
+        // Nang luong pin (SoH/DoD): tu tinh gio sac thay cho sensor Solis bao ao.
+        ids.add(HumeConfig.BATTERY_EFF_CAPACITY); ids.add(HumeConfig.BATTERY_REMAINING_ENERGY)
         // An ninh: sensor cua/chuyen dong/khoi/nuoc.
         runCatching {
             ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
@@ -233,7 +235,20 @@ class AppHomeRepository(
         // Hume goc: resting = power 0..5W -> khong hien thoi gian
         val resting = battPowerW in 0.0..5.0
         val discharging = battPowerW < 0.0
-        // Sensor runtime theo huong: xa -> TIME_LEFT, sac/nghi -> TIME_TO_FULL
+        val charging = !resting && !discharging
+        // (2026-09-30) sensor.battery_time_to_full_2 cua Solis bao AO (lich su
+        // 17h-02h: 0, 7.8, 18.7, 67.3, 1091.3h nhay loan) -> luc SAC tu tinh:
+        // (dung luong hieu dung - nang luong con lai) / cong suat sac.
+        // 2 sensor nay chuan (4.62/20.99 kWh khop SOC 22%).
+        val effCapKwh = entities[HumeConfig.BATTERY_EFF_CAPACITY]?.numericState
+        val remainKwh = entities[HumeConfig.BATTERY_REMAINING_ENERGY]?.numericState
+        val chargeMins: Int? =
+            if (charging && effCapKwh != null && remainKwh != null && battPowerW > 20.0) {
+                ((effCapKwh - remainKwh).coerceAtLeast(0.0) / (battPowerW / 1000.0) * 60)
+                    .toInt().takeIf { it > 0 }
+            } else null
+        // Sensor runtime theo huong: xa -> TIME_LEFT (template user, dang dung
+        // tot -> giu nguyen), sac -> tu tinh o tren, fallback sensor Solis.
         val runtimeEntity = if (discharging)
             entities[HumeConfig.BATTERY_TIME_LEFT]
         else
@@ -241,16 +256,26 @@ class AppHomeRepository(
         // Hume goc: uu tien friendly_time attribute, fallback raw state.
         // friendly_time co the chua quote thua do template (vd "\"Dang sac/Cho\"")
         // -> dung contentOrNull (khong phai toString) roi lot sach quote.
-        val runtimeText = if (resting) null else
+        val sensorText = if (resting) null else
             runtimeEntity?.attributes?.get("friendly_time")?.jsonPrimitive?.contentOrNull
                 ?.replace("\"", "")?.trim()?.takeIf { it.isNotBlank() }
                 ?: runtimeEntity?.state?.takeIf { it.isNotBlank() && it != "unknown" }
-        val endTime = if (resting) null else
+        // Luc sac: "H:MM" tu so phut tu tinh de parser hien tai hieu ngay.
+        val runtimeText = if (resting) null else when {
+            chargeMins != null -> "${chargeMins / 60}:${(chargeMins % 60).toString().padStart(2, '0')}"
+            else -> sensorText
+        }
+        val endTime = if (resting) null else when {
+            chargeMins != null -> {
+                val end = java.time.LocalTime.now().plusMinutes(chargeMins.toLong())
+                String.format("%02d:%02d", end.hour, end.minute)
+            }
             // Uu tien friendly_time (cong thuc Hume goc), fallback raw state —
             // truoc day chi parse state nen lech voi bigTime (an oan khi
             // friendly_time la duration ma state khong phai).
-            parseDurationToEndTime(runtimeText ?: "")
+            else -> parseDurationToEndTime(sensorText ?: "")
                 ?: runtimeEntity?.state?.let { parseDurationToEndTime(it) }
+        }
 
         val alarmId = alarmEntityId()
         val alarmEntity = alarmId?.let { entities[it] }

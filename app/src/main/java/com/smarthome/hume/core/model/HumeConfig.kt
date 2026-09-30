@@ -15,6 +15,10 @@ object HumeConfig {
     const val BACKUP_SOC = "number.solis_s6_eh1p_backup_soc_2"
     const val BATTERY_TIME_LEFT = "sensor.thoi_gian_pin_con_lai"
     const val BATTERY_TIME_TO_FULL = "sensor.battery_time_to_full_2"
+    /** Dung luong hieu dung (SoH/DoD) + nang luong con lai: tu tinh gio sac
+     * (sensor.battery_time_to_full_2 cua Solis bao ao: 0/1091h nhay loan). */
+    const val BATTERY_EFF_CAPACITY = "sensor.battery_effective_capacity_soh_dod"
+    const val BATTERY_REMAINING_ENERGY = "sensor.battery_remaining_energy_soh_dod"
     const val GRID_DAILY = "sensor.aptomat_tong_daily"
     const val HOME_DAILY = "sensor.energy_home_daily"
     /** Trang thai luoi dien: on/off (template sensor cua user). */
