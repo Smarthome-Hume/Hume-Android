@@ -141,32 +141,80 @@ private fun themed(weight: FontWeight, name: String) = androidx.compose.ui.text.
     Font(googleFont = GoogleFont(name), fontProvider = FontProvider, weight = weight)
 )
 
-/** Dung Typography voi font tuy chon — gan cho TOAN BO text styles. */
+/** Dung Typography voi font tuy chon — gan cho TOAN BO text styles.
+ *
+ * He thong chu M3E (Montserrat), dinh nghia day du de toan app dung chung
+ * qua MaterialTheme.typography.* thay vi hardcode fontSize/fontWeight roi rac:
+ * - Display: so lieu hero, tieu de cuc lon (57/700 da duyet).
+ * - Headline: tieu de man hinh (24/500 da duyet).
+ * - Title: tieu de the / muc.
+ * - Body: van ban chinh.
+ * - Label: nhan nho, chu tren nut.
+ */
 fun humeTypography(fontName: String): Typography {
     val family = googleFontFamily(fontName)
-    return with(Typography()) {
-        copy(
-            displayLarge = displayLarge.copy(
-                fontFamily = family, fontWeight = FontWeight.Bold,
-                fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
-            displayMedium = displayMedium.copy(fontFamily = family),
-            displaySmall = displaySmall.copy(fontFamily = family),
-            headlineLarge = headlineLarge.copy(fontFamily = family),
-            headlineMedium = headlineMedium.copy(
-                fontFamily = family, fontWeight = FontWeight.Medium,
-                fontSize = 24.sp, lineHeight = 32.sp),
-            headlineSmall = headlineSmall.copy(fontFamily = family),
-            titleLarge = titleLarge.copy(fontFamily = family),
-            titleMedium = titleMedium.copy(fontFamily = family),
-            titleSmall = titleSmall.copy(fontFamily = family),
-            bodyLarge = bodyLarge.copy(fontFamily = family),
-            bodyMedium = bodyMedium.copy(fontFamily = family),
-            bodySmall = bodySmall.copy(fontFamily = family),
-            labelLarge = labelLarge.copy(fontFamily = family),
-            labelMedium = labelMedium.copy(fontFamily = family),
-            labelSmall = labelSmall.copy(fontFamily = family),
-        )
-    }
+    return Typography(
+        displayLarge = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp,
+        ),
+        displayMedium = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 45.sp, lineHeight = 52.sp,
+        ),
+        displaySmall = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 36.sp, lineHeight = 44.sp,
+        ),
+        headlineLarge = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.SemiBold,
+            fontSize = 32.sp, lineHeight = 40.sp,
+        ),
+        headlineMedium = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Medium,
+            fontSize = 24.sp, lineHeight = 32.sp,
+        ),
+        headlineSmall = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.SemiBold,
+            fontSize = 20.sp, lineHeight = 28.sp,
+        ),
+        titleLarge = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 22.sp, lineHeight = 28.sp,
+        ),
+        titleMedium = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 16.sp, lineHeight = 24.sp,
+        ),
+        titleSmall = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 14.sp, lineHeight = 20.sp,
+        ),
+        bodyLarge = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Medium,
+            fontSize = 16.sp, lineHeight = 24.sp,
+        ),
+        bodyMedium = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Medium,
+            fontSize = 14.sp, lineHeight = 20.sp,
+        ),
+        bodySmall = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Medium,
+            fontSize = 12.sp, lineHeight = 16.sp,
+        ),
+        labelLarge = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp, lineHeight = 20.sp,
+        ),
+        labelMedium = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp, lineHeight = 16.sp,
+        ),
+        labelSmall = TextStyle(
+            fontFamily = family, fontWeight = FontWeight.Bold,
+            fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp,
+        ),
+    )
 }
 
 /** @Deprecated dung humeTypography(fontName) — giu de khong vo API cu. */
