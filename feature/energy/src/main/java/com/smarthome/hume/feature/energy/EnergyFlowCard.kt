@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -330,50 +331,56 @@ private fun FlowArea(
 
         // hub inverter 64px o giua + ping ring flping 2.2s (demo .flhub::before)
         // Dong nang luong chay tu 4 node ve inverter.
+        // Ping ring chi pulse khi co dong nang luong that (>= 5W o 1 track)
+        // — khong flow (ban dem) thi khong tao infinite transition (fix 2026-09-30).
         val hub = fx(64f)
         val primary = MaterialTheme.colorScheme.primary
-        val pingT = rememberInfiniteTransition(label = "flping")
-        val pScale by pingT.animateFloat(
-            initialValue = 1f,
-            targetValue = 1.9f,
-            animationSpec = infiniteRepeatable(
-                animation = keyframes {
-                    durationMillis = 2200
-                    1f at 0
-                    1.9f at 1760 with LinearEasing
-                    1.9f at 2200
-                },
-            ),
-            label = "pingScale",
-        )
-        val pAlpha by pingT.animateFloat(
-            initialValue = 0.7f,
-            targetValue = 0f,
-            animationSpec = infiniteRepeatable(
-                animation = keyframes {
-                    durationMillis = 2200
-                    0.7f at 0
-                    0f at 1760
-                    0f at 2200
-                },
-            ),
-            label = "pingAlpha",
-        )
+        val hasFlow = listOf(flow.prodKw, flow.gridKw, flow.consKw, flow.battKw)
+            .any { kotlin.math.abs(it) >= 0.005 }
         Box(
             modifier = Modifier
                 .size(hub)
                 .offset(fx(VB_W / 2 - 32f), fy(VB_H / 2 - 32f)),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = pScale
-                        scaleY = pScale
-                        alpha = pAlpha
-                    }
-                    .border(2.dp, primary, CircleShape),
-            )
+            if (hasFlow) {
+                val pingT = rememberInfiniteTransition(label = "flping")
+                val pScale by pingT.animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.9f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 2200
+                            1f at 0
+                            1.9f at 1760 with LinearEasing
+                            1.9f at 2200
+                        },
+                    ),
+                    label = "pingScale",
+                )
+                val pAlpha by pingT.animateFloat(
+                    initialValue = 0.7f,
+                    targetValue = 0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 2200
+                            0.7f at 0
+                            0f at 1760
+                            0f at 2200
+                        },
+                    ),
+                    label = "pingAlpha",
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = pScale
+                            scaleY = pScale
+                            alpha = pAlpha
+                        }
+                        .border(2.dp, primary, CircleShape),
+                )
+            }
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -406,18 +413,24 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
         Track(battPath(), flow.battKw, !charging),
     )
     val phases = tracks.mapIndexed { idx, t ->
-        // demo: chi set lai --dur khi toc do lech >12% de tranh restart animation
-        var dur by remember(idx) { mutableIntStateOf(sweepMs(t.powerKw)) }
-        val ms = sweepMs(t.powerKw)
-        if (kotlin.math.abs(ms - dur) / dur.toFloat() > 0.12f) dur = ms
-        val target = if (t.reverse) 1270f else -1270f
-        transition.animateFloat(
-            initialValue = 0f, targetValue = target,
-            animationSpec = infiniteRepeatable(
-                animation = tween(dur, easing = LinearEasing),
-            ),
-            label = "sweep",
-        )
+        // Track khong co dong nang luong (< 5W) -> phase tinh 0, khong chay
+        // animation vo han (fix nong may 2026-09-30, nhat la ban dem PV = 0).
+        if (kotlin.math.abs(t.powerKw) < 0.005) {
+            remember(idx) { mutableFloatStateOf(0f) }
+        } else {
+            // demo: chi set lai --dur khi toc do lech >12% de tranh restart animation
+            var dur by remember(idx) { mutableIntStateOf(sweepMs(t.powerKw)) }
+            val ms = sweepMs(t.powerKw)
+            if (kotlin.math.abs(ms - dur) / dur.toFloat() > 0.12f) dur = ms
+            val target = if (t.reverse) 1270f else -1270f
+            transition.animateFloat(
+                initialValue = 0f, targetValue = target,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(dur, easing = LinearEasing),
+                ),
+                label = "sweep$idx",
+            )
+        }
     }
     Canvas(Modifier.fillMaxSize()) {
         val sx = size.width / VB_W
