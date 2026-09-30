@@ -86,7 +86,7 @@ fun BriefScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brief", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                    Text("Brief", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
                     Spacer(Modifier.width(8.dp))
                     AiPill()
                 }
