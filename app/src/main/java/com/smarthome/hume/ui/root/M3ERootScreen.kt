@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.drawToBitmap
 import com.smarthome.hume.brief.BriefEdgeHost
@@ -42,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -112,6 +115,10 @@ fun M3ERootScreen(
     val customColor = themeSettings.customColor?.let { androidx.compose.ui.graphics.Color(it.toULong()) }
     HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor, fontFamily = themeSettings.fontFamily) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
+        // Trang Brief: mo bang vuot ngang sang phai TREN THANH NAVBAR
+        // (2026-09-30, user chon thay cho vuot canh trai de tranh nham voi
+        // system back gesture cua thiet bi).
+        var briefOpen by rememberSaveable { mutableStateOf(false) }
         // Overlay toan man hinh (viewer avatar / popup camera): ve o tang root,
         // TREN navbar, de lop mo + blur phu ca navbar chu khong chi vung content.
         // Nhan request tu HomeScreen qua callback (HomeScreen khong tu ve overlay).
@@ -280,6 +287,7 @@ fun M3ERootScreen(
             M3ENavBar(
                 selected = selected,
                 onSelect = { selected = it },
+                onSwipeOpenBrief = { briefOpen = true },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
             // Lop nen mo blur + overlay: ve SAU navbar de phu toan man hinh.
@@ -320,9 +328,13 @@ fun M3ERootScreen(
                     onDismiss = { camPopup = null; bgSnapshot = null },
                 )
             }
-            // Trang Brief sang: mo bang vuot canh trai, dong bang vuot phai->trai.
-            // Lop tren cung: phu ca navbar + overlay khi mo.
-            BriefEdgeHost()
+            // Trang Brief sang: mo bang vuot ngang sang phai tren thanh navbar,
+            // dong bang vuot phai->trai / nut dong / back. Lop tren cung:
+            // phu ca navbar khi mo.
+            BriefEdgeHost(
+                open = briefOpen,
+                onOpenChange = { briefOpen = it },
+            )
         }
     }
 }
@@ -387,6 +399,7 @@ private fun eraseAvatarGhost(small: Bitmap, view: View, rect: Rect) {
 private fun M3ENavBar(
     selected: Int,
     onSelect: (Int) -> Unit,
+    onSwipeOpenBrief: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -394,11 +407,36 @@ private fun M3ENavBar(
     val pill = RoundedCornerShape(34.dp)
     val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
+    // Vuot ngang sang phai tren navbar -> mo trang Brief (2026-09-30, user
+    // chon thay cho vuot canh trai). Nguong 80dp de tap lech tay khong mo
+    // nham. Chi nhan vuot sang phai (cung huong truot vao cua Brief).
+    // Luu y: vuot bat dau tren mot item van kich hoat onPress cua item truoc
+    // (haptic + press spring), nhung tryAwaitRelease tra ve false khi drag
+    // vuot slop ngang -> np.release() tu huy, khong ket dinh trang thai.
+    val openBriefState = rememberUpdatedState(onSwipeOpenBrief)
+    val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
     Box(
         modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 20.dp)
+            .pointerInput(Unit) {
+                var acc = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { acc = 0f },
+                    onDragEnd = { acc = 0f },
+                    onDragCancel = { acc = 0f },
+                    onHorizontalDrag = { _, dragAmount ->
+                        if (dragAmount > 0) {
+                            acc += dragAmount
+                            if (acc > swipeThresholdPx) {
+                                openBriefState.value()
+                                acc = 0f
+                            }
+                        } else acc = 0f
+                    },
+                )
+            },
         contentAlignment = Alignment.BottomCenter,
     ) {
         Row(
