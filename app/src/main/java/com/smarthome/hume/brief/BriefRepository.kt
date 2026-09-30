@@ -184,8 +184,10 @@ class BriefRepository(
         val billingCost = getState(E.GRID_COST)?.roundToLong() ?: 0L
         val billingKwh = getState(E.GRID_IMPORT_BILLING) ?: 0.0
 
-        val devices = DEVICE_SENSORS.map { (eid, name, icon) ->
-            async { Triple(name, icon, yesterdayDelta(eid, yesterday)) }
+        // Ten thiet bi: uu tien friendly_name tu HA (dong bo voi cac trang khac).
+        val nameMap = friendlyNameMap()
+        val devices = DEVICE_SENSORS.map { (eid, fallbackName, icon) ->
+            async { Triple(nameMap[eid] ?: fallbackName, icon, yesterdayDelta(eid, yesterday)) }
         }.awaitAll()
             .filter { it.third > 0.05 }
             .sortedByDescending { it.third }
@@ -341,9 +343,13 @@ class BriefRepository(
         val fl = floors()
         // Top thiet bi ky: DEVICE_SENSORS la sensor daily -> lay tong tu
         // long-term statistics (chinh xac ca khi history da bi purge).
+        // Ten: uu tien friendly_name tu HA (dong bo voi cac trang khac).
+        val nameMap = friendlyNameMap()
         val statMap = statisticsSums(DEVICE_SENSORS.map { it.first }, dataStart, dataEnd)
         val devices = DEVICE_SENSORS
-            .map { (eid, name, icon) -> Triple(name, icon, statMap[eid] ?: 0.0) }
+            .map { (eid, fallbackName, icon) ->
+                Triple(nameMap[eid] ?: fallbackName, icon, statMap[eid] ?: 0.0)
+            }
             .filter { it.third > 0.5 }
             .sortedByDescending { it.third }
             .take(3)
@@ -407,6 +413,49 @@ class BriefRepository(
             }
             null
         }
+
+    /**
+     * Map entity_id -> friendly_name (1 request /api/states).
+     * Dung de dong bo ten thiet bi trong Brief voi cac trang khac
+     * (cac trang lay ten truc tiep tu HA, khong hardcode).
+     */
+    private suspend fun friendlyNameMap(): Map<String, String> = withContext(Dispatchers.IO) {
+        val bases = listOf(localUrl, remoteUrl).map { it.trim().trimEnd('/') }
+            .filter { it.isNotBlank() }.distinct()
+        for (base in bases) {
+            try {
+                val req = Request.Builder()
+                    .url("$base/api/states")
+                    .header("Authorization", "Bearer $token")
+                    .build()
+                http.newCall(req).execute().use { resp ->
+                    if (!resp.isSuccessful) return@withContext emptyMap()
+                    val body = resp.body?.string().orEmpty()
+                    val arr = json.parseToJsonElement(body)
+                        as? kotlinx.serialization.json.JsonArray
+                        ?: return@withContext emptyMap()
+                    return@withContext arr.mapNotNull { el ->
+                        val obj = el as? kotlinx.serialization.json.JsonObject
+                            ?: return@mapNotNull null
+                        val eid = (obj["entity_id"]
+                            as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+                            ?: return@mapNotNull null
+                        val fname = (obj["attributes"]
+                            as? kotlinx.serialization.json.JsonObject)
+                            ?.get("friendly_name")
+                            ?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
+                            ?.trim()?.takeIf { it.isNotBlank() }
+                            ?: return@mapNotNull null
+                        eid to fname
+                    }.toMap()
+                }
+            } catch (t: Exception) {
+                Log.w(tag, "friendlyNameMap via $base failed: ${t.message}")
+                // thu base tiep theo
+            }
+        }
+        emptyMap()
+    }
 
     /** Gia tri cua sensor tai mot thoi diem (diem lich su gan nhat truoc atMs). */
     private suspend fun stateAt(entityId: String, atMs: Long): Double? {
@@ -776,19 +825,21 @@ class BriefRepository(
         const val UNIT_PRICE = "sensor.evn_current_unit_price"
     }
 
-    /** Sensor dien nang ngay cua tung thiet bi -> ten hien thi + icon Ms. */
+    /** Sensor dien nang ngay cua tung thiet bi -> ten hien thi + icon Ms.
+     * Ten mac dinh (fallback) dong bo voi friendly_name tren HA 2026-09-30;
+     * khi build se uu tien lay friendly_name truc tiep tu HA. */
     private val DEVICE_SENSORS = listOf(
-        Triple("sensor.dieu_hoa_daily_energy_climatic", "Điều hòa", "ac_unit"),
-        Triple("sensor.air_condition_daily_energy_ac", "Điều hòa tầng 2", "ac_unit"),
+        Triple("sensor.dieu_hoa_daily_energy_climatic", "A/C phòng trẻ em", "ac_unit"),
+        Triple("sensor.air_condition_daily_energy_ac", "A/C phòng ngủ chính", "ac_unit"),
         Triple("sensor.o_cam_bep_tu_daily_energy_stove", "Bếp từ", "cooking"),
-        Triple("sensor.cong_tac_nong_lanh_daily_energy_boiler", "Bình nóng lạnh", "whatshot"),
+        Triple("sensor.cong_tac_nong_lanh_daily_energy_boiler", "Nóng lạnh", "whatshot"),
         Triple("sensor.o_cam_tu_lanh_daily_energy_fridge", "Tủ lạnh", "soup_kitchen"),
         Triple("sensor.o_cam_may_rua_bat_daily_energy_dishwasher", "Máy rửa bát", "dishwasher"),
         Triple("sensor.o_cam_may_say_daily_energy_dryer", "Máy sấy", "local_laundry_service"),
-        Triple("sensor.o_cam_phong_giat_daily_energy_washing", "Phòng giặt", "local_laundry_service"),
-        Triple("sensor.o_cam_noi_chien_daily_energy_oven", "Nồi chiên", "cooking"),
-        Triple("sensor.o_cam_ban_lam_viec_daily_energy_table", "Bàn làm việc", "desk"),
-        Triple("sensor.o_cam_ngoai_vi_daily_energy_bicycle", "Ổ cắm ngoại vi", "power"),
-        Triple("sensor.o_cam_tuong_phong_ngu_lon_daily_energy_wall", "Ổ cắm tường PN", "power"),
+        Triple("sensor.o_cam_phong_giat_daily_energy_washing", "Máy giặt", "local_laundry_service"),
+        Triple("sensor.o_cam_noi_chien_daily_energy_oven", "Oven", "cooking"),
+        Triple("sensor.o_cam_ban_lam_viec_daily_energy_table", "Bàn học", "desk"),
+        Triple("sensor.o_cam_ngoai_vi_daily_energy_bicycle", "Sạc xe điện", "power"),
+        Triple("sensor.o_cam_tuong_phong_ngu_lon_daily_energy_wall", "Wall", "power"),
     )
 }
