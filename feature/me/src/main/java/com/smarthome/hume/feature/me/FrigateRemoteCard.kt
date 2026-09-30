@@ -3,6 +3,7 @@ package com.smarthome.hume.feature.me
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -161,13 +162,13 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                             onClick = ::doSave,
                         ),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         "Lưu",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = cs.onPrimary,
-                        modifier = Modifier.padding(start = 16.dp),
                     )
                 }
             }
