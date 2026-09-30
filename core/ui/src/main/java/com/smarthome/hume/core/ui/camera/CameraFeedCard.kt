@@ -153,6 +153,9 @@ fun CameraFeedCard(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(if (unlocked) "$url?t=$frame" else url)
+                    // Downsample ve kich thuoc hien thi (fix nong may 2026-09-30):
+                    // truoc day decode full-res + upload texture moi 3s.
+                    .size(960, 540)
                     .memoryCachePolicy(if (unlocked) CachePolicy.DISABLED else CachePolicy.ENABLED)
                     .build(),
                 contentDescription = camName,
