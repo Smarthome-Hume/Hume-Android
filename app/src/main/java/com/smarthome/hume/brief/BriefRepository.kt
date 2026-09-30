@@ -14,9 +14,9 @@ import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.ha.HaEndpointResolver
 import com.smarthome.hume.core.ha.HistoryFetcher
 import java.io.File
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.coroutines.resume
@@ -39,7 +39,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import java.util.concurrent.TimeUnit
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Brief sang: gom so lieu nang luong tu HA + thoi tiet Met.no (theo vi tri)
@@ -256,12 +260,14 @@ class BriefRepository(
             gridKwh = { getState(E.GRID_IMPORT_BILLING) ?: getState(E.EVN_MONTHLY) },
             costVnd = { getState(E.GRID_COST)?.roundToLong() },
             homeCostVnd = { getState(E.HOME_COST)?.roundToLong() ?: 0L },
-            // PV/tang: sensor thang reset ngay 1 -> tach ky tai moc sang thang.
-            pvKwh = { billingCycleDelta(E.PV_MONTH, cycleStart, today) },
+            // PV/tang theo ky 28->27: lay tu long-term statistics (khong bi purge).
+            pvKwh = { statisticsSums(listOf(E.PV_TOTAL), cycleStart, today)[E.PV_TOTAL] ?: 0.0 },
             floors = {
+                val ids = listOf(E.T1_MONTHLY, E.T2_MONTHLY, E.T3_MONTHLY)
+                val m = statisticsSums(ids, cycleStart, today)
                 listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
-                    .map { (name, eid) -> async { BriefFloorStat(name, r1(billingCycleDelta(eid, cycleStart, today))) } }
-                    .awaitAll().sortedByDescending { it.kwh }
+                    .map { (name, eid) -> BriefFloorStat(name, r1(m[eid] ?: 0.0)) }
+                    .sortedByDescending { it.kwh }
             },
             dataStart = cycleStart, dataEnd = today,
         )
@@ -296,11 +302,13 @@ class BriefRepository(
                 (if (useLive) getState(E.HOME_COST) else stateAt(E.HOME_COST, pEndMs))
                     ?.roundToLong() ?: 0L
             },
-            pvKwh = { billingCycleDelta(E.PV_MONTH, pS, pE) },
+            pvKwh = { statisticsSums(listOf(E.PV_TOTAL), pS, pE)[E.PV_TOTAL] ?: 0.0 },
             floors = {
+                val ids = listOf(E.T1_MONTHLY, E.T2_MONTHLY, E.T3_MONTHLY)
+                val m = statisticsSums(ids, pS, pE)
                 listOf("Tầng 1" to E.T1_MONTHLY, "Tầng 2" to E.T2_MONTHLY, "Tầng 3" to E.T3_MONTHLY)
-                    .map { (name, eid) -> async { BriefFloorStat(name, r1(billingCycleDelta(eid, pS, pE))) } }
-                    .awaitAll().sortedByDescending { it.kwh }
+                    .map { (name, eid) -> BriefFloorStat(name, r1(m[eid] ?: 0.0)) }
+                    .sortedByDescending { it.kwh }
             },
             dataStart = pS, dataEnd = pE,
         )
@@ -331,10 +339,11 @@ class BriefRepository(
                 .roundToInt().coerceIn(0, 100)
         } else 0
         val fl = floors()
-        // Top thiet bi ky: DEVICE_SENSORS la sensor daily -> cong don max tung ngay.
-        val devices = DEVICE_SENSORS.map { (eid, name, icon) ->
-            async { Triple(name, icon, monthlyTotalFromDaily(eid, dataStart, dataEnd)) }
-        }.awaitAll()
+        // Top thiet bi ky: DEVICE_SENSORS la sensor daily -> lay tong tu
+        // long-term statistics (chinh xac ca khi history da bi purge).
+        val statMap = statisticsSums(DEVICE_SENSORS.map { it.first }, dataStart, dataEnd)
+        val devices = DEVICE_SENSORS
+            .map { (eid, name, icon) -> Triple(name, icon, statMap[eid] ?: 0.0) }
             .filter { it.third > 0.5 }
             .sortedByDescending { it.third }
             .take(3)
@@ -410,38 +419,11 @@ class BriefRepository(
         }
     }
 
-    /**
-     * Tong san luong trong mot ky cua sensor DAILY (reset ve 0 moi ngay):
-     * cong don gia tri max cua tung ngay. Dung cho top thiet bi thang vi
-     * DEVICE_SENSORS deu la sensor daily (rangeDelta last-first cho so vo nghia).
-     */
-    private suspend fun monthlyTotalFromDaily(entityId: String, from: LocalDate, to: LocalDate): Double {
-        ensureHistoryConfigured()
-        return try {
-            val zone = ZoneId.systemDefault()
-            val startMs = from.atStartOfDay(zone).toInstant().toEpochMilli()
-            val endMs = to.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
-            val pts = HistoryFetcher.fetchRange(entityId, startMs, endMs)
-            pts.groupBy { Instant.ofEpochMilli(it.millis).atZone(zone).toLocalDate() }
-                .values.sumOf { dayPts -> dayPts.maxOfOrNull { it.value } ?: 0.0 }
-        } catch (t: Exception) {
-            Log.w(tag, "monthlyTotal $entityId failed: ${t.message}")
-            0.0
-        }
-    }
-
     /** San luong tang trong 1 ngay: hieu so cuoi - dau cua sensor tich luy. */
     private suspend fun yesterdayDelta(entityId: String, day: LocalDate): Double {
         val zone = ZoneId.systemDefault()
         val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
         val end = day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
-        return rangeDeltaMs(entityId, start, end)
-    }
-
-    private suspend fun rangeDelta(entityId: String, from: LocalDate, to: LocalDate): Double {
-        val zone = ZoneId.systemDefault()
-        val start = from.atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = to.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
         return rangeDeltaMs(entityId, start, end)
     }
 
@@ -457,17 +439,94 @@ class BriefRepository(
     }
 
     /**
-     * Delta cua sensor THANG (reset 00:00 ngay 1) trong mot ky 28->27:
-     * tach ky tai moc sang thang de khong bi lech khi sensor reset giua ky.
-     * Vd ky 28/8-27/9: (31/8 - 28/8) + (27/9 - 1/9).
+     * Tong san luong cac sensor trong [from, to] (bao ca 2 dau) lay tu
+     * long-term statistics cua HA (giữ vĩnh viễn, khong bi purge nhu history).
+     * Dung cho PV/tang/thiet bi theo ky thanh toan 28->27.
+     * Tra ve map entityId -> kWh (chi nhung sensor co du lieu).
      */
-    private suspend fun billingCycleDelta(entityId: String, pS: LocalDate, pE: LocalDate): Double {
-        val monthStart = pE.withDayOfMonth(1)
-        return if (!pS.isBefore(monthStart)) {
-            rangeDelta(entityId, pS, pE)
-        } else {
-            rangeDelta(entityId, pS, monthStart.minusDays(1)) +
-                rangeDelta(entityId, monthStart, pE)
+    private suspend fun statisticsSums(
+        entityIds: List<String>, from: LocalDate, to: LocalDate,
+    ): Map<String, Double> {
+        if (entityIds.isEmpty()) return emptyMap()
+        val zone = ZoneId.systemDefault()
+        val fmt = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+        val startIso = from.atStartOfDay(zone).toOffsetDateTime().format(fmt)
+        val endIso = to.plusDays(1).atStartOfDay(zone).toOffsetDateTime().format(fmt)
+        val bases = listOf(localUrl, remoteUrl).map { it.trim().trimEnd('/') }
+        for (base in bases) {
+            val wsUrl = base.replaceFirst(Regex("^http"), "ws") + "/api/websocket"
+            val r = wsStatisticsSums(wsUrl, entityIds, startIso, endIso)
+            if (r != null) return r
+        }
+        return emptyMap()
+    }
+
+    private suspend fun wsStatisticsSums(
+        wsUrl: String, entityIds: List<String>, startIso: String, endIso: String,
+    ): Map<String, Double>? = withTimeoutOrNull(20_000) {
+        suspendCancellableCoroutine { cont ->
+            var settled = false
+            fun settle(v: Map<String, Double>?) {
+                if (!settled) { settled = true; cont.resume(v) }
+            }
+            var ws: WebSocket? = null
+            val req = Request.Builder().url(wsUrl).build()
+            ws = http.newWebSocket(req, object : WebSocketListener() {
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    try {
+                        val o = JSONObject(text)
+                        when (o.optString("type")) {
+                            "auth_required" -> webSocket.send(
+                                JSONObject().put("type", "auth")
+                                    .put("access_token", token).toString()
+                            )
+                            "auth_ok" -> webSocket.send(
+                                JSONObject()
+                                    .put("id", 1)
+                                    .put("type", "recorder/statistics_during_period")
+                                    .put("start_time", startIso)
+                                    .put("end_time", endIso)
+                                    .put("statistic_ids", JSONArray(entityIds))
+                                    .put("period", "day")
+                                    .put("types", JSONArray().put("change"))
+                                    .toString()
+                            )
+                            "result" -> {
+                                val out = mutableMapOf<String, Double>()
+                                if (o.optBoolean("success", false)) {
+                                    val result = o.optJSONObject("result")
+                                    for (eid in entityIds) {
+                                        val arr = result?.optJSONArray(eid) ?: continue
+                                        var sum = 0.0
+                                        var found = false
+                                        for (i in 0 until arr.length()) {
+                                            val c = arr.optJSONObject(i)?.optDouble("change", Double.NaN)
+                                            if (c != null && !c.isNaN() && c >= 0) {
+                                                sum += c; found = true
+                                            }
+                                        }
+                                        if (found) out[eid] = sum
+                                    }
+                                }
+                                webSocket.close(1000, "done")
+                                settle(out)
+                            }
+                        }
+                    } catch (t: Exception) {
+                        Log.w(tag, "ws stats parse: ${t.message}")
+                    }
+                }
+
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    Log.w(tag, "ws stats $wsUrl: ${t.message}")
+                    settle(null)
+                }
+
+                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    settle(null)
+                }
+            })
+            cont.invokeOnCancellation { ws?.close(1000, "cancel") }
         }
     }
 
@@ -706,6 +765,7 @@ class BriefRepository(
         const val YESTERDAY_IMPORT = "sensor.solis_s6_eh1p_yesterday_energy_imported_from_grid_2"
         const val YESTERDAY_PV = "sensor.solis_s6_eh1p_pv_yesterday_energy_generation_2"
         const val PV_MONTH = "sensor.solis_s6_eh1p_pv_current_month_energy_generation_2"
+        const val PV_TOTAL = "sensor.solis_s6_eh1p_pv_total_energy_generation_2"
         const val GRID_COST = "sensor.grid_cost"
         const val HOME_COST = "sensor.home_cost"
         const val GRID_IMPORT_BILLING = "sensor.grid_import_billing"
