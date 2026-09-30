@@ -1075,7 +1075,6 @@ private val seedNames = mapOf(
  * check hien opacity/scale spring .3s; ring ::after inset -7px border 2px mau seed.
  */
 @OptIn(ExperimentalLayoutApi::class)
-@Composable
 /** Hang mau chu dao: 2 hang x 5 mau (2026-09-30, user yeu cau) —
  *  moi hang la Row SpaceBetween de luon du 5 dot/hang, khong wrap lech. */
 @Composable
