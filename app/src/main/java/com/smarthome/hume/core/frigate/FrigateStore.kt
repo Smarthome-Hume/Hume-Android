@@ -1,6 +1,7 @@
 package com.smarthome.hume.core.frigate
 
 import android.content.Context
+import com.smarthome.hume.core.model.FrigateRemoteConfig
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,24 @@ data class FrigateRecording(
 )
 
 class FrigateStore private constructor(context: Context) {
+
+    /** Cau hinh xem Frigate tu xa qua Cloudflare (do HumeApplication nap tu SessionStore). */
+    @Volatile
+    var remoteConfig: FrigateRemoteConfig = FrigateRemoteConfig()
+
+    fun configureRemote(config: FrigateRemoteConfig) {
+        remoteConfig = config
+    }
+
+    /**
+     * Base URL Frigate theo duong dang dung:
+     * - remote: hostname tren Cloudflare (can CF-Access headers)
+     * - local: IP LAN truc tiep
+     */
+    fun baseUrl(useRemote: Boolean): String {
+        val r = remoteConfig.remoteUrl.trim().trimEnd('/')
+        return if (useRemote && r.isNotBlank()) r else FRIGATE
+    }
 
     private val dir = File(context.filesDir, "frigate").apply { mkdirs() }
     private val indexFile = File(dir, "index.json")
@@ -80,21 +99,27 @@ class FrigateStore private constructor(context: Context) {
      * The candidate list mirrors the Swift one: the Home Assistant proxy with a
      * bearer token first for events, the LAN address first for the media files.
      */
-    suspend fun refresh(camera: String, haUrl: String, token: String) = withContext(Dispatchers.IO) {
+    suspend fun refresh(camera: String, haUrl: String, token: String, useRemote: Boolean = false) = withContext(Dispatchers.IO) {
         if (_downloading.value.contains(camera)) return@withContext
         _downloading.value = _downloading.value + camera
         _lastError.value = _lastError.value - camera
 
         val proxy = haUrl.trimEnd('/') + "/frigate"
         val old = recordings(camera)
+        // Remote: chi di qua hostname Cloudflare (CF-Access headers); local: IP LAN truc tiep.
+        // (proxy {haUrl}/frigate giu lai cho tuong thich, hien 404 o ca 2 duong)
+        val frigateCandidates: (String) -> List<Pair<String, String?>> = { path ->
+            if (useRemote) listOf(baseUrl(true) + path to null)
+            else listOf(
+                proxy + path to token,
+                FRIGATE + path to null,
+            )
+        }
 
         val eventsRaw = fetchFirst(
-            listOf(
-                proxy + "/api/events?cameras=" + camera + "&limit=15" to token,
-                proxy + "/api/events?camera=" + camera + "&limit=15" to token,
-                FRIGATE + "/api/events?cameras=" + camera + "&limit=15" to null,
-                FRIGATE + "/api/events?camera=" + camera + "&limit=15" to null,
-            ),
+            frigateCandidates("/api/events?cameras=" + camera + "&limit=15") +
+                frigateCandidates("/api/events?camera=" + camera + "&limit=15"),
+            useRemote,
         )
 
         val events = eventsRaw?.let { bytes ->
@@ -131,20 +156,12 @@ class FrigateStore private constructor(context: Context) {
             val thumb = File(dir, thumbName)
 
             if (!clip.exists()) {
-                fetchFirst(
-                    listOf(
-                        FRIGATE + "/api/events/" + id + "/clip.mp4" to null,
-                        proxy + "/api/events/" + id + "/clip.mp4" to token,
-                    ),
-                )?.let { clip.writeBytes(it) }
+                fetchFirst(frigateCandidates("/api/events/" + id + "/clip.mp4"), useRemote)
+                    ?.let { clip.writeBytes(it) }
             }
             if (!thumb.exists()) {
-                fetchFirst(
-                    listOf(
-                        FRIGATE + "/api/events/" + id + "/snapshot.jpg" to null,
-                        proxy + "/api/events/" + id + "/snapshot.jpg" to token,
-                    ),
-                )?.let { thumb.writeBytes(it) }
+                fetchFirst(frigateCandidates("/api/events/" + id + "/snapshot.jpg"), useRemote)
+                    ?.let { thumb.writeBytes(it) }
             }
             if (clip.exists()) {
                 fresh += FrigateRecording(id, camera, label, start, clipName, thumbName)
@@ -166,17 +183,23 @@ class FrigateStore private constructor(context: Context) {
         save()
     }
 
-    private fun fetchFirst(candidates: List<Pair<String, String?>>): ByteArray? {
+    private fun fetchFirst(candidates: List<Pair<String, String?>>, useRemote: Boolean = false): ByteArray? {
         for ((url, token) in candidates) {
-            val bytes = fetch(url, token)
+            val bytes = fetch(url, token, useRemote)
             if (bytes != null) return bytes
         }
         return null
     }
 
-    private fun fetch(url: String, token: String?): ByteArray? = runCatching {
+    private fun fetch(url: String, token: String?, useRemote: Boolean = false): ByteArray? = runCatching {
         val builder = Request.Builder().url(url)
         if (!token.isNullOrBlank()) builder.header("Authorization", "Bearer " + token)
+        // Di qua Cloudflare Access: Frigate goc khong co auth, dung Service Token.
+        val rc = remoteConfig
+        if (useRemote && rc.hasAccess && url.startsWith(rc.remoteUrl.trim().trimEnd('/'))) {
+            builder.header("CF-Access-Client-Id", rc.cfClientId)
+            builder.header("CF-Access-Client-Secret", rc.cfClientSecret)
+        }
         client.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) return null
             response.body?.bytes()
@@ -191,16 +214,22 @@ class FrigateStore private constructor(context: Context) {
      * Nhe (chi goi /api/events, khong tai clip) de tab Nha gan nhan doi
      * tuong cho the goi y chuyen dong. Tra ve null khi khong lay duoc.
      */
-    suspend fun latestEvent(camera: String, haUrl: String, token: String): Pair<String, Double>? =
+    suspend fun latestEvent(
+        camera: String,
+        haUrl: String,
+        token: String,
+        useRemote: Boolean = false,
+    ): Pair<String, Double>? =
         withContext(Dispatchers.IO) {
             val proxy = haUrl.trimEnd('/') + "/frigate"
+            val candidates: (String) -> List<Pair<String, String?>> = { path ->
+                if (useRemote) listOf(baseUrl(true) + path to null)
+                else listOf(proxy + path to token, FRIGATE + path to null)
+            }
             val raw = fetchFirst(
-                listOf(
-                    proxy + "/api/events?cameras=" + camera + "&limit=5" to token,
-                    proxy + "/api/events?camera=" + camera + "&limit=5" to token,
-                    FRIGATE + "/api/events?cameras=" + camera + "&limit=5" to null,
-                    FRIGATE + "/api/events?camera=" + camera + "&limit=5" to null,
-                ),
+                candidates("/api/events?cameras=" + camera + "&limit=5") +
+                    candidates("/api/events?camera=" + camera + "&limit=5"),
+                useRemote,
             ) ?: return@withContext null
             val events = runCatching {
                 json.parseToJsonElement(String(raw)) as JsonArray

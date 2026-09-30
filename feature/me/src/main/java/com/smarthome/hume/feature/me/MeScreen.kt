@@ -238,6 +238,9 @@ fun MeScreen(
         Box(Modifier.riseEntrance(620)) { SecTitle("Trí tuệ nhân tạo") }
         Box(Modifier.riseEntrance(640)) { AiSettingsCard(vm = vm) }
 
+        Box(Modifier.riseEntrance(660)) { SecTitle("Camera") }
+        Box(Modifier.riseEntrance(680)) { FrigateRemoteCard(vm = vm) }
+
         // (Muc "FAB menu" tam xoa theo yeu cau 29/09)
 
         // demo: .sec.rise cua "Giao dien" khong co animation-delay

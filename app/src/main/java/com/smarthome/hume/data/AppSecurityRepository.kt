@@ -3,6 +3,7 @@ package com.smarthome.hume.data
 import android.content.Context
 import com.smarthome.hume.core.data.SecurityRepository
 import com.smarthome.hume.core.frigate.FrigateStore
+import com.smarthome.hume.core.ha.HaEndpointMode
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.HomeEntity as LegacyEntity
 import com.smarthome.hume.core.model.RecordingUi
@@ -43,6 +44,11 @@ class AppSecurityRepository(
     private val frigate = FrigateStore.get(context)
     private val refreshed = mutableSetOf<String>()
 
+    /** true khi dang di duong remote va da cau hinh Frigate qua Cloudflare. */
+    private fun useRemoteFrigate(): Boolean =
+        ha.endpoint.currentMode == HaEndpointMode.REMOTE &&
+            frigate.remoteConfig.remoteUrl.isNotBlank()
+
     init {
         scope.launch {
             ha.entities.collect { entities -> rebuild(entities) }
@@ -75,13 +81,13 @@ class AppSecurityRepository(
     override fun refreshRecordings(cameraKey: String) {
         scope.launch {
             val settings = settingsStore.settings.first()
-            runCatching { frigate.refresh(cameraKey, ha.getBaseUrl(), settings.haToken) }
+            runCatching { frigate.refresh(cameraKey, ha.getBaseUrl(), settings.haToken, useRemoteFrigate()) }
             refreshed += cameraKey
         }
     }
 
     override fun snapshotUrl(cameraKey: String): String =
-        "http://192.168.102.64:5000/api/$cameraKey/latest.jpg"
+        frigate.baseUrl(useRemoteFrigate()) + "/api/$cameraKey/latest.jpg"
 
     private fun rebuild(entities: Map<String, LegacyEntity>) {
         _state.value = _state.value.copy(

@@ -2,6 +2,7 @@ package com.smarthome.hume.data
 
 import com.smarthome.hume.core.data.HomeRepository
 import com.smarthome.hume.core.ha.HistoryFetcher
+import com.smarthome.hume.core.ha.HaEndpointMode
 import com.smarthome.hume.core.ha.HomeAssistantRepository
 import com.smarthome.hume.core.model.AlarmUi
 import com.smarthome.hume.core.model.BatteryUi
@@ -374,7 +375,11 @@ class AppHomeRepository(
         val freshSynthetics = mutableListOf<HomeNotification>()
         for (cam in FRIGATE_CAMERA_KEYS) {
             val (label, start) = runCatching {
-                frigateStore.latestEvent(cam, ha.getBaseUrl(), settings.haToken)
+                frigateStore.latestEvent(
+                    cam, ha.getBaseUrl(), settings.haToken,
+                    ha.endpoint.currentMode == HaEndpointMode.REMOTE &&
+                        frigateStore.remoteConfig.remoteUrl.isNotBlank(),
+                )
             }.getOrNull() ?: continue
             if (label.isBlank()) continue
             val ageSec = now / 1000 - start

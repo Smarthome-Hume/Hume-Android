@@ -27,3 +27,17 @@ sealed interface AuthResult {
     data object Success : AuthResult
     data class Error(val message: String) : AuthResult
 }
+
+/**
+ * Cau hinh xem Frigate tu xa qua Cloudflare Tunnel:
+ * - remoteUrl: hostname Frigate tren tunnel (vd https://frigate.haiha93.xyz)
+ * - cfClientId / cfClientSecret: Cloudflare Access Service Token de app
+ *   vuot qua man hinh Access (Frigate goc khong co auth).
+ */
+data class FrigateRemoteConfig(
+    val remoteUrl: String = "",
+    val cfClientId: String = "",
+    val cfClientSecret: String = "",
+) {
+    val hasAccess: Boolean get() = cfClientId.isNotBlank() && cfClientSecret.isNotBlank()
+}

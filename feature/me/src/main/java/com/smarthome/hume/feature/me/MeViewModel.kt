@@ -8,6 +8,7 @@ import com.smarthome.hume.core.datastore.AiProvider
 import com.smarthome.hume.core.datastore.AiSettings
 import com.smarthome.hume.core.datastore.FabMenuStore
 import com.smarthome.hume.core.datastore.ThemeStore
+import com.smarthome.hume.core.model.FrigateRemoteConfig
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,6 +112,19 @@ class MeViewModel : ViewModel() {
                 is AiResult.Err -> result.message
             }
             _aiTesting.value = false
+        }
+    }
+
+    // ---------- Camera tu xa (Frigate qua Cloudflare) ----------
+
+    private val sessionStore = HumeGraph.get().sessionStore
+
+    val frigateRemote = sessionStore.frigateRemote
+        .stateIn(viewModelScope, SharingStarted.Eagerly, FrigateRemoteConfig())
+
+    fun saveFrigateRemote(url: String, cfClientId: String, cfClientSecret: String) {
+        viewModelScope.launch {
+            sessionStore.saveFrigateRemote(url, cfClientId, cfClientSecret)
         }
     }
 

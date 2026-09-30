@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.smarthome.hume.core.model.AuthSession
+import com.smarthome.hume.core.model.FrigateRemoteConfig
 import com.smarthome.hume.core.model.isLocalHaUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +34,7 @@ class SessionStore(private val context: Context) {
         val HaUrl = stringPreferencesKey("ha_url") // legacy: 1 URL duy nhat (truoc dual-path)
         val HaLocalUrl = stringPreferencesKey("ha_local_url")
         val HaRemoteUrl = stringPreferencesKey("ha_remote_url")
+        val FrigateRemoteUrl = stringPreferencesKey("frigate_remote_url")
         val HaTokenLegacy = stringPreferencesKey("ha_token")
         val HaAvatarUrl = stringPreferencesKey("ha_avatar_url")
     }
@@ -41,6 +43,7 @@ class SessionStore(private val context: Context) {
         const val DEFAULT_URL = "http://192.168.102.22:8123"
         const val DEFAULT_LOCAL_URL = "http://192.168.102.22:8123"
         const val DEFAULT_REMOTE_URL = "https://haiha93.xyz"
+        const val DEFAULT_FRIGATE_REMOTE_URL = "https://frigate.haiha93.xyz"
     }
 
     @Suppress("DEPRECATION")
@@ -78,6 +81,12 @@ class SessionStore(private val context: Context) {
     }
 
     private val tokenFlow = MutableStateFlow(readToken())
+
+    private fun readCfAccess(): Pair<String, String> {
+        val prefs = encryptedPrefs()
+        return (prefs.getString("cf_access_id", null).orEmpty() to
+            prefs.getString("cf_access_secret", null).orEmpty())
+    }
 
     val session: Flow<AuthSession> =
         context.humeDataStore.data.map { prefs ->
@@ -129,5 +138,28 @@ class SessionStore(private val context: Context) {
     /** Doc lai tu disk (dung sau khi noi khac ghi de). */
     fun refresh() {
         tokenFlow.value = readToken()
+    }
+
+    /** Cau hinh xem Frigate tu xa (doi theo realtime khi user sua o tab Toi). */
+    val frigateRemote: Flow<FrigateRemoteConfig> =
+        context.humeDataStore.data.map { prefs ->
+            val (id, secret) = readCfAccess()
+            FrigateRemoteConfig(
+                remoteUrl = prefs[Keys.FrigateRemoteUrl] ?: DEFAULT_FRIGATE_REMOTE_URL,
+                cfClientId = id,
+                cfClientSecret = secret,
+            )
+        }
+
+    suspend fun saveFrigateRemote(url: String, cfClientId: String, cfClientSecret: String) {
+        context.humeDataStore.edit { prefs ->
+            val clean = url.trim().trimEnd('/')
+            if (clean.isNotBlank()) prefs[Keys.FrigateRemoteUrl] = clean
+            else prefs.remove(Keys.FrigateRemoteUrl)
+        }
+        encryptedPrefs().edit()
+            .putString("cf_access_id", cfClientId.trim())
+            .putString("cf_access_secret", cfClientSecret.trim())
+            .apply()
     }
 }
