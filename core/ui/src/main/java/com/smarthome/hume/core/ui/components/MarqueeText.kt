@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.LastBaseline
@@ -33,7 +32,7 @@ private fun Modifier.forwardBaseline() = this.then(
         val placeable = measurable.measure(constraints)
         val first = placeable[FirstBaseline]
         val last = placeable[LastBaseline]
-        val lines = mutableMapOf<Alignment.Line, Int>()
+        val lines = mutableMapOf<AlignmentLine, Int>()
         if (first != AlignmentLine.Unspecified) lines[FirstBaseline] = first
         if (last != AlignmentLine.Unspecified) lines[LastBaseline] = last
         layout(placeable.width, placeable.height, alignmentLines = lines) {
