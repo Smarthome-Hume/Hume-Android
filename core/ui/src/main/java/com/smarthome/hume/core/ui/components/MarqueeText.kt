@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -33,6 +35,7 @@ fun MarqueeText(
     fontWeight: FontWeight,
     color: Color,
     modifier: Modifier = Modifier,
+    fontFamily: FontFamily? = null,
     /**
      * Khoang cach tu mep trai khung cuon den vi tri text luc nghi.
      * Dung de mo rong viewport den sat vien icon tron.
@@ -73,10 +76,35 @@ fun MarqueeText(
             text,
             fontSize = fontSize,
             fontWeight = fontWeight,
+            fontFamily = fontFamily,
             color = color,
             maxLines = 1,
             softWrap = false,
             modifier = Modifier.padding(start = startPadding),
         )
     }
+}
+
+/**
+ * Overload nhan TextStyle (cho code da migrate sang MaterialTheme.typography).
+ * fontWeight neu truyen se ghi de len style.fontWeight.
+ */
+@Composable
+fun MarqueeText(
+    text: String,
+    style: TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier,
+    fontWeight: FontWeight? = null,
+    startPadding: Dp = 0.dp,
+) {
+    MarqueeText(
+        text = text,
+        fontSize = style.fontSize,
+        fontWeight = fontWeight ?: style.fontWeight ?: FontWeight.Normal,
+        color = color,
+        modifier = modifier,
+        fontFamily = style.fontFamily,
+        startPadding = startPadding,
+    )
 }

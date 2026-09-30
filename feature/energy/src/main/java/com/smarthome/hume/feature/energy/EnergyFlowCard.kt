@@ -65,6 +65,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.toSmartPowerParts
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -97,9 +98,7 @@ private fun sweepMs(powerKw: Double): Int =
  * >= 1000W -> hien kW (1 so le). Tra ve (so, don vi) de style rieng.
  */
 private fun powerNumUnit(watts: Double): Pair<String, String> {
-    val a = kotlin.math.abs(watts)
-    return if (a < 1000) watts.roundToInt().toString() to "W"
-    else String.format(Locale.US, "%.1f", watts / 1000.0) to "kW"
+    return watts.toSmartPowerParts()
 }
 
 /**

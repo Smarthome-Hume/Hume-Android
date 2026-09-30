@@ -60,6 +60,7 @@ import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.tnum
+import com.smarthome.hume.core.ui.components.toSmartPowerParts
 import com.smarthome.hume.core.ui.components.toVnd
 import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.components.pressMorph
@@ -662,8 +663,7 @@ private fun DeviceRow(
         val v = d.value * factor
         Column(horizontalAlignment = Alignment.End) {
             val (num, unit) = if (mode == DeviceMode.Power) {
-                if (v >= 1000) String.format(Locale.US, "%.1f", v / 1000) to "kW"
-                else v.roundToInt().toString() to "W"
+                v.toSmartPowerParts()
             } else {
                 kwh1(v) to "kWh"
             }

@@ -48,8 +48,10 @@ import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
+import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.toVnd
 
 /** Trang Brief sang: mo bang vuot phai tren navbar, dong bang vuot phai->trai / nut back he thong. */
@@ -424,8 +426,6 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                 containerColor = cs.primaryContainer,
                 contentPadding = 18.dp,
             ) {
-                M3ESectionLabel("AI TỔNG KẾT THÁNG", light = true)
-                Spacer(Modifier.height(8.dp))
                 Text(m.aiSummary, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
             }
         }
@@ -437,11 +437,12 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.height(IntrinsicSize.Min),
                 ) {
+                    val (costBig, costUnit) = countUpDouble(m.costVnd.toDouble(), tabKey).toSmartVndParts()
                     StatBox(
                         icon = Ms.electric_meter, label = "TIỀN ĐIỆN DỰ KIẾN",
-                        big = countUpText(m.costVnd / 1_000_000.0, 2, tabKey),
-                        unit = "tr đ",
-                        sub = "${countUpText(m.gridKwh, 1, tabKey)} kWh · Mua từ EVN",
+                        big = costBig,
+                        unit = costUnit,
+                        sub = "${countUpText(m.gridKwh, 1, tabKey)} kWh",
                         modifier = Modifier.weight(1f),
                     )
                     StatBox(
@@ -544,16 +545,19 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
             }
         }
         Spacer(Modifier.height(6.dp))
-        // Gia tri + don vi can theo baseline (khong dung Alignment.Bottom).
-        Row {
-            Text(
-                big, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = cs.onSurface,
-                modifier = Modifier.alignByBaseline(),
+        // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
+        Row(verticalAlignment = Alignment.Bottom) {
+            MarqueeText(
+                text = big,
+                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
+                color = cs.onSurface,
+                modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(4.dp))
             Text(
                 unit, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant,
-                modifier = Modifier.alignByBaseline(),
             )
         }
         Spacer(Modifier.weight(1f))
@@ -648,15 +652,20 @@ private fun StaggerCard(index: Int, tabKey: Any, content: @Composable () -> Unit
 
 /** Dem so chay len kieu M3E khi mo tab. */
 @Composable
-private fun countUpText(target: Double, decimals: Int, tabKey: Any): String {
+private fun countUpDouble(target: Double, tabKey: Any): Double {
     var started by remember(tabKey, target) { mutableStateOf(false) }
     val p by animateFloatAsState(
         targetValue = if (started) 1f else 0f,
         animationSpec = tween(900, easing = M3EMotion.emphasized), label = "countUp",
     )
     LaunchedEffect(tabKey, target) { started = true }
+    return target * p
+}
+
+private fun countUpText(target: Double, decimals: Int, tabKey: Any): String {
+    val v = countUpDouble(target, tabKey)
     val pattern = "%.${decimals}f"
-    return String.format(Locale("vi"), pattern, target * p)
+    return String.format(Locale("vi"), pattern, v)
 }
 
 private fun briefIcon(key: String): String = when (key) {

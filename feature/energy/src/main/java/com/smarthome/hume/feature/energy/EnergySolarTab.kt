@@ -48,6 +48,7 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.toSmartPowerParts
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlin.math.roundToInt
 
@@ -259,8 +260,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             MiniBox(
                 "Công suất",
-                miniVal(
-                    String.format("%.1f", kotlin.math.abs(state.battery.powerW) / 1000) to "kW"),
+                miniVal(kotlin.math.abs(state.battery.powerW).toSmartPowerParts()),
                 Modifier.weight(1f),
             )
             MiniBox(
