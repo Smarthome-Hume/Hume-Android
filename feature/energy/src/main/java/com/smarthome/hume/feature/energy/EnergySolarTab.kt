@@ -252,7 +252,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     .fillMaxWidth(socFrac)
                     .height(8.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF16A34A)),
+                    .background(extra.success),
             )
         }
         Spacer(Modifier.height(14.dp))

@@ -47,6 +47,7 @@ import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -161,7 +162,7 @@ private fun BatterySocChart(loadHistory: ChartHistoryLoader) {
             AreaChart(
                 vals = vals,
                 times = times,
-                color = Color(0xFF16A34A),
+                color = LocalHumeExtraColors.current.success,
                 fillAlpha = 0.25f,
             )
         }
@@ -190,7 +191,7 @@ private fun BatteryPowerChart(loadHistory: ChartHistoryLoader) {
             PowerBarChart(
                 vals = vals,
                 times = times,
-                posColor = Color(0xFF16A34A),
+                posColor = LocalHumeExtraColors.current.success,
                 negColor = cs.error,
             )
         }

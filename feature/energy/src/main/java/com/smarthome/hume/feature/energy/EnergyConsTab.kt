@@ -701,7 +701,7 @@ private fun DeviceRow(
                     style = MaterialTheme.typography.bodyLarge.copy(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF16A34A),
+                        color = LocalHumeExtraColors.current.success,
                     ).tnum(),
                     textAlign = TextAlign.End,
                 )

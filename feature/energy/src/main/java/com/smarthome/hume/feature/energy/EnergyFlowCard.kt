@@ -260,7 +260,7 @@ private fun FlowArea(
         // Trang thai luoi dien: pill tonal M3E DAT DUOI CUNG node (2026-09-30,
         // user) — de cung hang icon bi tran (node ~146dp, icon+badge can ~159dp).
         // Mat dien = do cung (#BA1A1A).
-        val gridBadgeFg = if (flow.gridOn) Color(0xFF16A34A) else Color(0xFFBA1A1A)
+        val gridBadgeFg = if (flow.gridOn) LocalHumeExtraColors.current.success else Color(0xFFBA1A1A)
         FlowNode(
             icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(24.dp)) },
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
@@ -312,7 +312,7 @@ private fun FlowArea(
             )
         }
         // Khi pin xa: chu "Dang xa" + icon pin mau da cam (2026-09-30, user yeu cau).
-        val battFg = if (charging) Color(0xFF16A34A) else Color(0xFFF97316)
+        val battFg = if (charging) LocalHumeExtraColors.current.success else Color(0xFFF97316)
         FlowNode(
             icon = {
                 HorizontalBatteryIcon(
@@ -368,7 +368,7 @@ private fun FlowArea(
                         .fillMaxWidth(socFrac)
                         .height(6.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF16A34A)),
+                        .background(LocalHumeExtraColors.current.success),
                 )
             }
         }
