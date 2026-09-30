@@ -123,7 +123,7 @@ fun WeekChartD(
                     ) {
                         Text(
                             "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} kWh",
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = cs.onSurface,
                             textAlign = TextAlign.Center,
@@ -146,7 +146,7 @@ fun WeekChartD(
             ) {
                 Text(
                     "TB ${"%.1f".format(avg)}",
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                     maxLines = 1,
@@ -163,7 +163,7 @@ fun WeekChartD(
             val today = i == labels.lastIndex
             Text(
                 l,
-                fontSize = 10.5.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
                 color = if (today) cs.primary else cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,

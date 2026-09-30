@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -193,7 +194,7 @@ fun CameraFeedCard(
                 )
                 Text(
                     "LIVE",
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp,
                     color = Color.White,
@@ -202,7 +203,7 @@ fun CameraFeedCard(
             // name badge (demo .scname: radius 999px, padding 6px 12px; blur: gioi han sandbox)
             Text(
                 camName,
-                fontSize = 11.5.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 modifier = Modifier
@@ -233,7 +234,7 @@ fun CameraFeedCard(
                         "Chạm để mở khoá",
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }

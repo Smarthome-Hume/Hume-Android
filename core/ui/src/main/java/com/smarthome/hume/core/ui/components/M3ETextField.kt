@@ -65,7 +65,7 @@ fun M3ETextField(
         if (label.isNotEmpty()) {
             Text(
                 label,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurfaceVariant,
                 maxLines = 1,
@@ -91,7 +91,7 @@ fun M3ETextField(
             singleLine = singleLine,
             readOnly = readOnly,
             textStyle = textStyle ?: LocalTextStyle.current.copy(
-                fontSize = 15.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
             ),
             keyboardOptions = keyboardOptions,
