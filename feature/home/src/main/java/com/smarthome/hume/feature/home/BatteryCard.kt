@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -99,10 +98,11 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             }
         }
         Spacer(Modifier.height(10.dp))
-        // Trang thai 3 che do theo entity: DANG SAC / DANG XA / NGHI — pill nen mau
+        // Trang thai 3 che do theo entity: DANG SAC / DANG XA / NGHI.
+        // Pill dung mau theme (khong hardcode xanh/cam) de dong bo voi seed dang chon.
         val (pillBg, pillFg) = when {
-            battery.isCharging -> Color(0xFF2E7D32) to Color.White // sac: xanh
-            battery.isDischarging -> Color(0xFFEF6C00) to Color.White // xa: da cam
+            battery.isCharging -> cs.primaryContainer to cs.onPrimaryContainer
+            battery.isDischarging -> cs.secondaryContainer to cs.onSecondaryContainer
             else -> cs.surfaceContainerHigh to cs.onSurfaceVariant // nghi: trung tinh
         }
         Box(
