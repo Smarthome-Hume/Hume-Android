@@ -1,7 +1,9 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,7 +11,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -51,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -390,7 +392,8 @@ fun DeviceSearchView(
             modifier = Modifier.fillMaxSize(),
         ) {
             // Header search nam DUOI dai mo top (2026-09-30): top inset =
-            // status bar + 14dp, dai mo chi phu vung status bar phia tren.
+            // status bar + 20dp, cach mep tren thiet bi ~20px, khong tran
+            // len status bar; dai mo chi phu vung status bar phia tren.
             val statusBarTop = WindowInsets.statusBars.asPaddingValues()
                 .calculateTopPadding()
             Column(
@@ -398,12 +401,19 @@ fun DeviceSearchView(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(topStart = 56.dp, topEnd = 56.dp))
                     .background(cs.surface)
-                    .padding(top = statusBarTop + 14.dp, start = 16.dp, end = 16.dp),
+                    .padding(top = statusBarTop + 20.dp, start = 16.dp, end = 16.dp),
             ) {
-                // .svbar: back + input tran + clear
+                // .svbar M3E (2026-09-30, user yeu cau): back + input + clear
+                // boc chung trong 1 thanh tonal surfaceContainerHighest,
+                // bo 28dp; nut back/X giu pressMorph scale .88.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(cs.surfaceContainerHighest)
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -431,7 +441,9 @@ fun DeviceSearchView(
                             color = cs.onSurface,
                         ),
                         cursorBrush = SolidColor(cs.primary),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
                         decorationBox = { inner ->
                             Box(contentAlignment = Alignment.CenterStart) {
                                 if (query.isEmpty()) {
@@ -630,8 +642,9 @@ fun DeviceSearchView(
     }
 }
 
-/** .svchip: vien 1px outline, nen trong suot, 13px/600, padding 9px 16px,
- *  bo 999px; :active nen secondaryContainer + bo 12px. */
+/** .svchip M3E (2026-09-30, user yeu cau): nen tonal surfaceContainerHighest
+ *  (bo vien outline kieu baseline), nhan -> secondaryContainer + bo goc
+ *  999->12dp + scale .95, easing spring giong cac nut M3E khac. */
 @Composable
 private fun SearchChip(label: String, onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
@@ -642,12 +655,23 @@ private fun SearchChip(label: String, onClick: () -> Unit) {
         animationSpec = tween(300, easing = M3EMotion.spring),
         label = "chipR",
     )
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = tween(300, easing = M3EMotion.spring),
+        label = "chipScale",
+    )
+    val bg by animateColorAsState(
+        targetValue = if (pressed) cs.secondaryContainer
+        else cs.surfaceContainerHighest,
+        animationSpec = tween(300),
+        label = "chipBg",
+    )
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
+            .graphicsLayer(scaleX = scale, scaleY = scale)
             .clip(RoundedCornerShape(radius))
-            .background(if (pressed) cs.secondaryContainer else Color.Transparent)
-            .border(1.dp, cs.outline, RoundedCornerShape(radius))
+            .background(bg)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
