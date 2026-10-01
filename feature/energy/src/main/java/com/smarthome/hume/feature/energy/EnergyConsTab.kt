@@ -195,7 +195,7 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PBox("Giá mua", (state.cost.buyPrice).toVnd(), Modifier.weight(1f))
             PBox("Giá EVN", (state.cost.evnPrice).toVnd(), Modifier.weight(1f))
-            PBox("Tiết kiệm", "${state.cost.savedVnd.toVnd()}đ", Modifier.weight(1f))
+            PBox("Tiết kiệm", state.cost.savedVnd.toVnd(), Modifier.weight(1f))
         }
     }
 }
