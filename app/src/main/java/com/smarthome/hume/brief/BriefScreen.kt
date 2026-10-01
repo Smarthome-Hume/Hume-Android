@@ -2,8 +2,6 @@ package com.smarthome.hume.brief
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -46,7 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +57,7 @@ import java.util.Locale
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
+import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -111,24 +111,15 @@ fun BriefScreen(
                 )
             }
         }
-        // ---- tabs (connected button group M3E) ----
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(99.dp))
-                .background(cs.surfaceContainer)
-                .padding(4.dp),
-        ) {
-            BriefTab("Hôm qua", selected = tab == 0, onClick = { tab = 0 }, modifier = Modifier.weight(1f))
-            BriefTab(
-                "Tháng ${monthly?.monthLabel?.substringBefore('/') ?: ""}".trim(),
-                selected = tab == 1, onClick = { tab = 1 }, modifier = Modifier.weight(1f),
-            )
-        }
-        // ---- content ----
-        // Box chua scroll + lop fade: noi dung scroll chui xuong duoi header
-        // co dinh va mo dan lien mach (giong scrim vung header trang Nha).
+        // ---- tabs + content ----
+        // Box chung: tab co dinh ve SAU (tren) lop fade — fade chui xuong
+        // duoi tab, khong che tab; noi dung scroll mo dan khi chui xuong
+        // duoi. Giong scrim vung header trang Nha.
+        val density = LocalDensity.current
+        var tabBarH by remember { mutableStateOf(0.dp) }
+        // Fade cao hon tab 28dp: phan nhin thay duoi tab mo tu ~0.5 -> 0.
+        val fadeH = tabBarH + 28.dp
+        val fadeStop = if (fadeH > 0.dp) (tabBarH / fadeH).coerceIn(0f, 1f) else 0f
         Box(
             Modifier
                 .weight(1f)
@@ -160,20 +151,40 @@ fun BriefScreen(
                     }
                 }
             }
-            // Lop phu gradient mo dan duoi header co dinh: dinh dac (surface)
-            // -> trong suot dan xuong duoi. Khong chan touch (khong clickable).
+            // Lop fade: dinh dac nam SAU tab (bi tab che), mo dan xuong duoi.
+            // Tu trong suot -> mo o top muot ma, khong vet cat nho tuck sau tab.
+            // Khong chan touch (khong clickable).
             Box(
                 Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .height(28.dp)
+                    .height(fadeH)
                     .background(
                         Brush.verticalGradient(
                             0f to cs.surface,
+                            fadeStop to cs.surface.copy(alpha = 0.5f),
                             1f to cs.surface.copy(alpha = 0f),
                         ),
                     ),
             )
+            // Tab (connected button group M3E) ve SAU lop fade: fade nam duoi
+            // tab, khong che tab.
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .onSizeChanged { tabBarH = with(density) { it.height.toDp() } }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(99.dp))
+                    .background(cs.surfaceContainer)
+                    .padding(4.dp),
+            ) {
+                BriefTab("Hôm qua", selected = tab == 0, onClick = { tab = 0 }, modifier = Modifier.weight(1f))
+                BriefTab(
+                    "Tháng ${monthly?.monthLabel?.substringBefore('/') ?: ""}".trim(),
+                    selected = tab == 1, onClick = { tab = 1 }, modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -197,37 +208,21 @@ private fun AiPill() {
 @Composable
 private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
-    // Active: primaryContainer + onPrimaryContainer (giong tab Tieu thu /
-    // Dien mat troi trang Nang luong, 2026-10-01 user yeu cau) de nhin ro
-    // tren track surfaceContainer; animate mau + bong do theo M3E emphasized.
-    val bg by animateColorAsState(
-        if (selected) cs.primaryContainer else Color.Transparent,
-        animationSpec = tween(280, easing = M3EMotion.emphasized),
-        label = "briefTabBg",
-    )
-    val fg by animateColorAsState(
-        if (selected) cs.onPrimaryContainer else cs.onSurfaceVariant,
-        animationSpec = tween(280, easing = M3EMotion.emphasized),
-        label = "briefTabFg",
-    )
-    val elevation by animateDpAsState(
-        if (selected) 8.dp else 0.dp,
-        animationSpec = tween(280, easing = M3EMotion.emphasized),
-        label = "briefTabShadow",
-    )
+    // Giong he EsubGroup (tab Tieu thu/Dien mat troi): tab chon =
+    // primaryContainer + onPrimaryContainer, doi mau tuc thi (khong animate
+    // gay nhap nhay), khong shadow/vien mo; press morph khi nhan.
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .shadow(elevation, RoundedCornerShape(99.dp))
             .clip(RoundedCornerShape(99.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
+            .background(if (selected) cs.primaryContainer else Color.Transparent)
+            .pressMorph(0.94f, onClick)
             .padding(vertical = 9.dp),
     ) {
         Text(
             text, style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
-            color = fg,
+            color = if (selected) cs.onPrimaryContainer else cs.onSurfaceVariant,
         )
     }
 }
