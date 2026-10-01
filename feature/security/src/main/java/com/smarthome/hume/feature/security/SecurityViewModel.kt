@@ -40,6 +40,9 @@ class SecurityViewModel : ViewModel() {
 
     fun snapshotUrl(cameraKey: String): String = repo.snapshotUrl(cameraKey)
 
+    /** null khi remote — UI fallback ve snapshot polling. */
+    fun rtspUrl(cameraKey: String): String? = repo.rtspUrl(cameraKey)
+
     fun openClip(clip: RecordingUi) {
         _clip.value = clip
     }

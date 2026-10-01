@@ -15,4 +15,11 @@ interface SecurityRepository {
 
     /** URL snapshot Frigate cho camera (de UI tu load anh). */
     fun snapshotUrl(cameraKey: String): String
+
+    /**
+     * URL RTSP truc tiep tu Frigate/go2rtc cho camera, de stream lien tuc
+     * bang ExoPlayer. Tra ve null khi dang di duong remote (Cloudflare
+     * Tunnel khong cho RTSP) — UI tu fallback ve snapshot polling.
+     */
+    fun rtspUrl(cameraKey: String): String?
 }

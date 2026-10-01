@@ -89,6 +89,17 @@ class AppSecurityRepository(
     override fun snapshotUrl(cameraKey: String): String =
         frigate.baseUrl(useRemoteFrigate()) + "/api/$cameraKey/latest.jpg"
 
+    override fun rtspUrl(cameraKey: String): String? {
+        // Remote qua Cloudflare Tunnel: chi cho HTTP, khong stream RTSP duoc.
+        if (useRemoteFrigate()) return null
+        // Local: go2rtc tren Frigate mo RTSP o port 8554 cung host.
+        val host = frigate.baseUrl(false)
+            .removePrefix("http://").removePrefix("https://")
+            .substringBefore(":").substringBefore("/")
+            .ifBlank { return null }
+        return "rtsp://$host:8554/$cameraKey"
+    }
+
     private fun rebuild(entities: Map<String, LegacyEntity>) {
         _state.value = _state.value.copy(
             doorSensors = DOOR_SENSORS.map { it.toUi(entities) },
