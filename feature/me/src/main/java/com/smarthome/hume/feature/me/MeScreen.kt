@@ -96,6 +96,7 @@ import com.smarthome.hume.core.ui.avatar.AvatarStore
 import com.smarthome.hume.core.ui.avatar.ProfileAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
+import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
@@ -202,7 +203,7 @@ fun MeScreen(
             .padding(horizontal = 18.dp)
             // Muc cuoi (mau tuy chinh) cach navbar 20dp: navbar floating cao
             // ~86dp + margin 20dp + system inset -> day content 140dp.
-            .padding(bottom = 140.dp),
+            .padding(bottom = M3EPageBottomSpacing),
     ) {
         Spacer(Modifier.height(statusBarTop + 8.dp))
         // Title: chi title duoc boc nen
@@ -1167,7 +1168,7 @@ private fun SeedDot(
         Modifier
             .size(56.dp)
             .then(
-                if (selected) Modifier.border(2.dp, color, CircleShape)
+                if (selected) Modifier.border(1.5.dp, color, CircleShape)
                 else Modifier
             ),
         contentAlignment = Alignment.Center,

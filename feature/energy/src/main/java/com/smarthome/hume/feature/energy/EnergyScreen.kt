@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
+import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -75,7 +76,7 @@ fun EnergyScreen(
             // The cuoi trang cach navbar 20dp (navbar floating ~86dp +
             // margin 20dp + system inset).
             top = statusBarTop + 8.dp, start = 18.dp, end = 18.dp,
-            bottom = 140.dp,
+            bottom = M3EPageBottomSpacing,
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {

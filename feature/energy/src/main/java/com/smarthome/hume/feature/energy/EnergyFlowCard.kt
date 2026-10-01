@@ -376,7 +376,7 @@ private fun FlowArea(
                             scaleY = pScale
                             alpha = pAlpha
                         }
-                        .border(2.dp, primary, CircleShape),
+                        .border(1.5.dp, primary, CircleShape),
                 )
             }
             Box(

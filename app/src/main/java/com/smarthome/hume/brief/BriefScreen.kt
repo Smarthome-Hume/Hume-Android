@@ -55,6 +55,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.toVnd
+import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
 
 /** Trang Brief sang: mo bang vuot phai tren navbar, dong bang vuot phai->trai / nut back he thong. */
 @Composable
@@ -209,7 +210,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = M3EPageBottomSpacing),
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
@@ -403,7 +404,7 @@ private fun MonthlySectionHeader(month: String, status: String) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = M3EPageBottomSpacing),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

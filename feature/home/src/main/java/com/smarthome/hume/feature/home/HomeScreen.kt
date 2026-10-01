@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.DeviceKind
+import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
@@ -166,7 +167,7 @@ fun HomeScreen(
                 exit = fadeOut(tween(250)) + slideOutVertically(
                     tween(350, easing = M3EMotion.emphasizedAcc),
                 ) { with(density) { 16.dp.roundToPx() } },
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 104.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = M3EPageBottomSpacing),
             ) {
                 lastData?.let { M3ESnackbar(it) }
             }
