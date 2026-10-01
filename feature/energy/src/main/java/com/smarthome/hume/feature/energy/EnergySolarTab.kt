@@ -61,8 +61,8 @@ fun EnergySolarTab(
     vm: EnergyViewModel,
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
-    /** Deep-link "Xem pin": dinh vi the pin de cuon toi. */
-    batteryBivr: BringIntoViewRequester? = null,
+    /** Deep-link "Xem pin": dinh vi the nang luong de cuon toi. */
+    energyBivr: BringIntoViewRequester? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -116,28 +116,28 @@ fun EnergySolarTab(
                 ControlRow(c, vm)
             }
         }
-        EnergyFlowCard(flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed)
+        // The nang luong (so do dong dien toan he thong): dich deep-link "Xem pin".
+        EnergyFlowCard(
+            flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed,
+            modifier = Modifier.then(
+                if (energyBivr != null) Modifier.bringIntoViewRequester(energyBivr) else Modifier,
+            ),
+        )
         // Tai tieu thu xuong cuoi cung
-        SunsynkCard(state, risePlayed, batteryBivr)
+        SunsynkCard(state, risePlayed)
     }
 }
 
 // ---------- sunsynk summary ----------
 
 @Composable
-private fun SunsynkCard(
-    state: EnergyUiState,
-    risePlayed: MutableSet<String>,
-    batteryBivr: BringIntoViewRequester? = null,
-) {
+private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     val extra = LocalHumeExtraColors.current
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
         containerColor = extra.surfaceHighest,
-        modifier = Modifier
-            .riseOnce("sol-syn", 420, risePlayed)
-            .then(if (batteryBivr != null) Modifier.bringIntoViewRequester(batteryBivr) else Modifier),
+        modifier = Modifier.riseOnce("sol-syn", 420, risePlayed),
     ) {
         // demo .yt{align-items:baseline}
         Row(

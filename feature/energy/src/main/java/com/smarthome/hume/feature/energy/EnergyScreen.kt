@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EnergyScreen(
     vm: EnergyViewModel = viewModel(factory = EnergyViewModel.factory()),
-    /** Deep-link tu the goi y ("battery"): mo sub-tab Dien mat troi + cuon toi the pin. */
+    /** Deep-link tu the goi y ("battery"): mo sub-tab Dien mat troi + cuon toi the nang luong. */
     deepLink: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
 ) {
@@ -55,9 +55,9 @@ fun EnergyScreen(
     val scope = rememberCoroutineScope()
     var paneVisible by remember { mutableStateOf(true) }
     val risePlayed = remember { mutableSetOf<String>() }
-    // Dinh vi the pin de deep-link "Xem pin" cuon toi (BringIntoViewRequester
-    // tu dong cuon LazyColumn ke ca khi the nam long trong item).
-    val batteryBivr = remember { BringIntoViewRequester() }
+    // Dinh vi the nang luong de deep-link "Xem pin" cuon toi
+    // (BringIntoViewRequester tu dong cuon LazyColumn ke ca khi the nam long trong item).
+    val energyBivr = remember { BringIntoViewRequester() }
 
     // Doi subtab: fade/slide 180ms + vibrate 6ms (demo .etab/.pre)
     fun selectTab(i: Int) {
@@ -72,7 +72,7 @@ fun EnergyScreen(
         }
     }
 
-    // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the pin.
+    // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the nang luong.
     LaunchedEffect(deepLink) {
         if (deepLink != "battery") return@LaunchedEffect
         if (ui.tab != EnergySubTab.Solar) {
@@ -82,7 +82,7 @@ fun EnergyScreen(
             paneVisible = true
             delay(150)
         }
-        runCatching { batteryBivr.bringIntoView() }
+        runCatching { energyBivr.bringIntoView() }
         onDeepLinkConsumed()
     }
 
@@ -146,7 +146,7 @@ fun EnergyScreen(
                     )
                     EnergySubTab.Solar -> EnergySolarTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
-                        batteryBivr = batteryBivr,
+                        energyBivr = energyBivr,
                     )
                 }
             }
