@@ -463,9 +463,9 @@ private fun M3ENavBar(
             modifier = Modifier
                 // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
-                // Nen navbar 82% (2026-10-01, user: "chuyen navbar 82%/duc"):
-                // tra ve thiet ke M3E goc.
-                .background(extra.surfaceLowest.copy(alpha = 0.82f))
+                // Navbar duc 100% (2026-10-01, user: "tang do duc ve ban
+                // dau"): khong con trong suot.
+                .background(extra.surfaceLowest)
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->
