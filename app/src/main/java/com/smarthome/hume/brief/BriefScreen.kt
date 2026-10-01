@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.cos
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
@@ -117,9 +119,16 @@ fun BriefScreen(
         // duoi. Giong scrim vung header trang Nha.
         val density = LocalDensity.current
         var tabBarH by remember { mutableStateOf(0.dp) }
-        // Fade cao hon tab 28dp: phan nhin thay duoi tab mo tu ~0.5 -> 0.
+        // Fade cao hon tab 28dp. Gradient 1 lop DUY NHAT theo duong cong
+        // cosine muot (10 diem mau, khong diem noi): nhin nhu 1 lop lien
+        // mach, khong thay vet chia lop.
         val fadeH = tabBarH + 28.dp
-        val fadeStop = if (fadeH > 0.dp) (tabBarH / fadeH).coerceIn(0f, 1f) else 0f
+        val fadeStops = remember(cs.surface) {
+            List(10) { i ->
+                val t = i / 9f
+                t to cs.surface.copy(alpha = cos(t * PI / 2).toFloat())
+            }
+        }
         Box(
             Modifier
                 .weight(1f)
@@ -151,21 +160,16 @@ fun BriefScreen(
                     }
                 }
             }
-            // Lop fade: dinh dac nam SAU tab (bi tab che), mo dan xuong duoi.
-            // Tu trong suot -> mo o top muot ma, khong vet cat nho tuck sau tab.
+            // Lop fade: 1 lop gradient duy nhat theo duong cong cosine —
+            // dinh dac nam SAU tab (bi tab che), mo dan xuong duoi.
+            // Tu trong suot -> mo o top lien mach nhu 1 lop.
             // Khong chan touch (khong clickable).
             Box(
                 Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
                     .height(fadeH)
-                    .background(
-                        Brush.verticalGradient(
-                            0f to cs.surface,
-                            fadeStop to cs.surface.copy(alpha = 0.5f),
-                            1f to cs.surface.copy(alpha = 0f),
-                        ),
-                    ),
+                    .background(Brush.verticalGradient(*fadeStops.toTypedArray())),
             )
             // Tab (connected button group M3E) ve SAU lop fade: fade nam duoi
             // tab, khong che tab.
