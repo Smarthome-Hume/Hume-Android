@@ -118,7 +118,9 @@ fun BriefScreen(
         // duoi tab, khong che tab; noi dung scroll mo dan khi chui xuong
         // duoi. Giong scrim vung header trang Nha.
         val density = LocalDensity.current
-        var tabBarH by remember { mutableStateOf(0.dp) }
+        // Uoc luong chieu cao tab (~62dp) de frame dau khong nhay hinh;
+        // onSizeChanged se hieu chinh ve gia tri thuc.
+        var tabBarH by remember { mutableStateOf(62.dp) }
         // Fade cao hon tab 28dp. Gradient 1 lop DUY NHAT theo duong cong
         // cosine muot (10 diem mau, khong diem noi): nhin nhu 1 lop lien
         // mach, khong thay vet chia lop.
@@ -135,7 +137,7 @@ fun BriefScreen(
                 .fillMaxWidth(),
         ) {
             if (refreshing && daily == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize().padding(top = tabBarH), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = cs.primary)
                 }
             } else {
@@ -151,12 +153,14 @@ fun BriefScreen(
                     },
                     label = "briefTabContent",
                 ) { t ->
+                    // topPad = chieu cao tab de + 36dp: the dau khong bi tab che.
+                    val topPad = tabBarH + 36.dp
                     if (t == 0) {
-                        if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
-                        else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
+                        if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing, Modifier.padding(top = tabBarH))
+                        else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day", topPad = topPad)
                     } else {
-                        if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing)
-                        else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing)
+                        if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing, Modifier.padding(top = tabBarH))
+                        else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing, topPad = topPad)
                     }
                 }
             }
@@ -232,10 +236,10 @@ private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modif
 }
 
 @Composable
-private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean) {
+private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     Column(
-        Modifier.fillMaxSize().padding(32.dp),
+        modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -265,15 +269,16 @@ private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean) {
 // ---------------- daily ----------------
 
 @Composable
-private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshing: Boolean, tabKey: Any) {
+private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshing: Boolean, tabKey: Any, topPad: Dp) {
     val cs = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            // Top 36dp: chua vung trong cho lop fade 28dp duoi header co dinh
-            // (nghi khong bi fade, scroll len moi mo dan nhu trang Nha).
-            .padding(horizontal = 16.dp).padding(top = 36.dp, bottom = 20.dp),
+            // Top = chieu cao tab (tab de len tren noi dung) + 36dp: the dau
+            // tien khong bi tab che; 28dp trong do la vung fade (luc nghi the
+            // khong bi fade, scroll len the moi mo dan nhu trang Nha).
+            .padding(horizontal = 16.dp).padding(top = topPad, bottom = 20.dp),
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
@@ -424,15 +429,16 @@ private fun MonthlyTab(
     tabKey: Any,
     onCreateLive: () -> Unit,
     refreshing: Boolean,
+    topPad: Dp,
 ) {
     val cs = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            // Top 36dp: chua vung trong cho lop fade 28dp duoi header co dinh
-            // (nghi khong bi fade, scroll len moi mo dan nhu trang Nha).
-            .padding(top = 36.dp, bottom = 8.dp),
+            // Top = chieu cao tab (tab de len tren noi dung) + 36dp: the dau
+            // tien khong bi tab che; 28dp trong do la vung fade.
+            .padding(top = topPad, bottom = 8.dp),
     ) {
         monthly?.let { m ->
             MonthlySectionHeader("Tháng ${m.monthLabel}", "Đã chốt")
