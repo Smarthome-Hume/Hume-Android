@@ -19,12 +19,15 @@ val M3ECardGap = 14.dp
 /**
  * Padding day chuan cho moi trang: the cuoi cach navbar DUNG M3ECardGap
  * (14dp), tren moi may. navigationBarsPadding loai tru bien dong cua
- * (2026-10-01, user: navbar trong suot, bo "mang chu nhat" chan
- * content): bo 120dp, chi giu navigationBarsPadding(). Content duoc
- * cuon xuong duoi navbar trong suot, hien day du.
+ * navigation bar he thong.
+ *
+ * (2026-10-01, user: giu khoang cach the cuoi - navbar): navbar duc
+ * 100%, khong gap 20dp duoi → padding = chieu cao navbar (86dp) +
+ * M3ECardGap (14dp).
  */
 fun Modifier.m3ePageBottomPadding(): Modifier =
     navigationBarsPadding()
+        .padding(bottom = 86.dp + M3ECardGap)
 
 /**
  * Padding day cho trang full-screen KHONG co navbar (vd. Brief mo dang

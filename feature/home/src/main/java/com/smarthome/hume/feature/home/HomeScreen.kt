@@ -221,11 +221,11 @@ fun HomeScreen(
                     // Fling dam (0.6x van toc) -> cuon cham, do hon
                     flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
-                        // Bottom: chi navigation bar he thong (2026-10-01,
-                        // bo 140dp theo user: navbar trong suot, content
-                        // cuon tu do duoi navbar).
+                        // Bottom: navbar duc 100% (86dp) + gap 14dp
+                        // (2026-10-01, user: giu khoang cach the cuoi -
+                        // navbar). navigationBarsPadding da co o modifier.
                         start = 18.dp, end = 18.dp,
-                        top = statusBarTop + 8.dp,
+                        top = statusBarTop + 8.dp, bottom = 100.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
