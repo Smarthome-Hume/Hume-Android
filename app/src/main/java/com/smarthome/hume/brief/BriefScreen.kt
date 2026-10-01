@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -608,9 +609,10 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(dev.name, style = MaterialTheme.typography.titleSmall, color = cs.onSurface)
-                Text("${countUpText(dev.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(dev.name, style = MaterialTheme.typography.titleSmall, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                Text("${countUpText(dev.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant, maxLines = 1, softWrap = false)
             }
             Spacer(Modifier.height(6.dp))
             AnimBar(fraction = (dev.kwh / max).toFloat(), tabKey = tabKey, color = cs.primary)
@@ -647,9 +649,10 @@ private fun UnmeasuredRow(kwh: Double, max: Double, tabKey: Any) {
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Thiết bị khác (chưa đo)", style = MaterialTheme.typography.titleSmall, color = cs.onSurfaceVariant)
-                Text("${countUpText(kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Thiết bị khác (chưa đo)", style = MaterialTheme.typography.titleSmall, color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                Text("${countUpText(kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant, maxLines = 1, softWrap = false)
             }
             Spacer(Modifier.height(6.dp))
             AnimBar(fraction = (kwh / max).toFloat(), tabKey = tabKey, color = cs.onSurfaceVariant)
