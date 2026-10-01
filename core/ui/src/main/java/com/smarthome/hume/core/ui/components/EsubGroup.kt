@@ -1,12 +1,5 @@
 package com.smarthome.hume.core.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,15 +17,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.sp
 
 /**
  * Nhom subtab kieu demo v4 (.esub/.dvsegi):
  * nen surfaceContainer pill, padding 4dp, gap 2dp;
- * tab chon = primaryContainer + chu onPrimaryContainer + icon check hien
- * (animate width/opacity/scale nhu demo), tab thuong = chu onSurfaceVariant.
+ * tab chon = primaryContainer + chu onPrimaryContainer (khong icon check
+ * truoc title, 2026-10-01 user yeu cau), tab thuong = chu onSurfaceVariant.
  */
 @Composable
 fun EsubGroup(
@@ -40,11 +32,10 @@ fun EsubGroup(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    /** Cho phep spec khac nhau giua cac tab (Dien: 12.5sp/700/pad 10-10/icon 17; An ninh: 12sp/600/pad 8-10/icon 16). */
+    /** Cho phep spec khac nhau giua cac tab (Dien: 12.5sp/700/pad 10-10; An ninh: 12sp/600/pad 8-10). */
     fontSize: TextUnit = 12.5.sp,
     fontWeight: FontWeight = FontWeight.Bold,
     itemPadding: PaddingValues = PaddingValues(vertical = 10.dp, horizontal = 10.dp),
-    checkSize: Dp = 17.dp,
     /** Neu co: hien icon thay vi chu (vd camera picker khong du cho). */
     icons: List<String>? = null,
 ) {
@@ -85,20 +76,6 @@ fun EsubGroup(
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
-                        AnimatedVisibility(
-                            visible = isSel,
-                            enter = expandHorizontally() + fadeIn() + scaleIn(),
-                            exit = shrinkHorizontally() + fadeOut() + scaleOut(),
-                        ) {
-                            MsIcon(
-                                M3EIcons.Check,
-                                null,
-                                modifier = Modifier
-                                    .padding(end = 6.dp)
-                                    .size(checkSize),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        }
                         Text(
                             label,
                             fontSize = fontSize,

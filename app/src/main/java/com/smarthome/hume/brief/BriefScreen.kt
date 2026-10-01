@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -126,31 +127,53 @@ fun BriefScreen(
             )
         }
         // ---- content ----
-        if (refreshing && daily == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = cs.primary)
-            }
-        } else {
-            // Chuyen tab: fade + truot ngang nhe theo chieu tab (M3E emphasized).
-            AnimatedContent(
-                targetState = tab,
-                transitionSpec = {
-                    val dir = if (targetState > initialState) 1 else -1
-                    (fadeIn(tween(300, easing = M3EMotion.emphasized)) +
-                        slideInHorizontally(tween(300, easing = M3EMotion.emphasized)) { dir * it / 6 }) togetherWith
-                        (fadeOut(tween(220, easing = M3EMotion.emphasizedAcc)) +
-                            slideOutHorizontally(tween(220, easing = M3EMotion.emphasizedAcc)) { -dir * it / 6 })
-                },
-                label = "briefTabContent",
-            ) { t ->
-                if (t == 0) {
-                    if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
-                    else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
-                } else {
-                    if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing)
-                    else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing)
+        // Box chua scroll + lop fade: noi dung scroll chui xuong duoi header
+        // co dinh va mo dan lien mach (giong scrim vung header trang Nha).
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            if (refreshing && daily == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = cs.primary)
+                }
+            } else {
+                // Chuyen tab: fade + truot ngang nhe theo chieu tab (M3E emphasized).
+                AnimatedContent(
+                    targetState = tab,
+                    transitionSpec = {
+                        val dir = if (targetState > initialState) 1 else -1
+                        (fadeIn(tween(300, easing = M3EMotion.emphasized)) +
+                            slideInHorizontally(tween(300, easing = M3EMotion.emphasized)) { dir * it / 6 }) togetherWith
+                            (fadeOut(tween(220, easing = M3EMotion.emphasizedAcc)) +
+                                slideOutHorizontally(tween(220, easing = M3EMotion.emphasizedAcc)) { -dir * it / 6 })
+                    },
+                    label = "briefTabContent",
+                ) { t ->
+                    if (t == 0) {
+                        if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
+                        else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
+                    } else {
+                        if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing)
+                        else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing)
+                    }
                 }
             }
+            // Lop phu gradient mo dan duoi header co dinh: dinh dac (surface)
+            // -> trong suot dan xuong duoi. Khong chan touch (khong clickable).
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(28.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            0f to cs.surface,
+                            1f to cs.surface.copy(alpha = 0f),
+                        ),
+                    ),
+            )
         }
     }
 }
@@ -174,16 +197,16 @@ private fun AiPill() {
 @Composable
 private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
-    // Active: secondaryContainer + onSecondaryContainer (chuan M3E connected
-    // button group) de nhin ro tren track surfaceContainer; animate mau +
-    // bong do theo M3E emphasized.
+    // Active: primaryContainer + onPrimaryContainer (giong tab Tieu thu /
+    // Dien mat troi trang Nang luong, 2026-10-01 user yeu cau) de nhin ro
+    // tren track surfaceContainer; animate mau + bong do theo M3E emphasized.
     val bg by animateColorAsState(
-        if (selected) cs.secondaryContainer else Color.Transparent,
+        if (selected) cs.primaryContainer else Color.Transparent,
         animationSpec = tween(280, easing = M3EMotion.emphasized),
         label = "briefTabBg",
     )
     val fg by animateColorAsState(
-        if (selected) cs.onSecondaryContainer else cs.onSurfaceVariant,
+        if (selected) cs.onPrimaryContainer else cs.onSurfaceVariant,
         animationSpec = tween(280, easing = M3EMotion.emphasized),
         label = "briefTabFg",
     )
@@ -249,8 +272,9 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            // Brief khong co navbar: the cuoi cach chan man hinh 20dp.
-            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 20.dp),
+            // Top 36dp: chua vung trong cho lop fade 28dp duoi header co dinh
+            // (nghi khong bi fade, scroll len moi mo dan nhu trang Nha).
+            .padding(horizontal = 16.dp).padding(top = 36.dp, bottom = 20.dp),
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
@@ -407,7 +431,9 @@ private fun MonthlyTab(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(vertical = 8.dp),
+            // Top 36dp: chua vung trong cho lop fade 28dp duoi header co dinh
+            // (nghi khong bi fade, scroll len moi mo dan nhu trang Nha).
+            .padding(top = 36.dp, bottom = 8.dp),
     ) {
         monthly?.let { m ->
             MonthlySectionHeader("Tháng ${m.monthLabel}", "Đã chốt")

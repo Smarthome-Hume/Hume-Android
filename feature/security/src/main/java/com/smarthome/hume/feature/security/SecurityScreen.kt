@@ -160,11 +160,10 @@ fun SecurityScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .riseIn(420),
-                    // demo .dvsegi: 12px/600, padding 8px 10px, icon check 16px
+                    // demo .dvsegi: 12px/600, padding 8px 10px
                     fontSize = MaterialTheme.typography.bodySmall.fontSize,
                     fontWeight = FontWeight.SemiBold,
                     itemPadding = PaddingValues(vertical = 8.dp, horizontal = 10.dp),
-                    checkSize = 16.dp,
                 )
                 Spacer(Modifier.height(14.dp))
                 val cam = state.cameras[selectedCam]

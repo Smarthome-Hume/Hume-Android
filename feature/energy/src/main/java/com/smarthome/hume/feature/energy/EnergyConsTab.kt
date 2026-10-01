@@ -1,11 +1,6 @@
 package com.smarthome.hume.feature.energy
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -59,7 +54,6 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
-import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.tnum
 import com.smarthome.hume.core.ui.components.toSmartPowerParts
@@ -581,17 +575,6 @@ private fun DevicesCard(
                                 .padding(vertical = 8.dp, horizontal = 10.dp),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                AnimatedVisibility(
-                                    visible = isSel,
-                                    enter = expandHorizontally() + fadeIn(),
-                                    exit = shrinkHorizontally() + fadeOut(),
-                                ) {
-                                    MsIcon(M3EIcons.Check, null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier
-                                            .padding(end = 6.dp)
-                                            .size(16.dp))
-                                }
                                 Text(
                                     if (m == DeviceMode.Power) "Công suất" else "Năng lượng",
                                     style = MaterialTheme.typography.labelMedium.copy(),
