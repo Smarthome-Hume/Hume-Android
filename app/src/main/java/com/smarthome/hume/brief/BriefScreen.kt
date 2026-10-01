@@ -58,6 +58,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MarqueeText
@@ -121,10 +122,10 @@ fun BriefScreen(
         // Uoc luong chieu cao tab (~62dp) de frame dau khong nhay hinh;
         // onSizeChanged se hieu chinh ve gia tri thuc.
         var tabBarH by remember { mutableStateOf(62.dp) }
-        // Fade cao hon tab 28dp. Gradient 1 lop DUY NHAT theo duong cong
-        // cosine muot (10 diem mau, khong diem noi): nhin nhu 1 lop lien
-        // mach, khong thay vet chia lop.
-        val fadeH = tabBarH + 28.dp
+        // Fade cao hon tab 14dp = dung khoang cach chuan giua cac the:
+        // the dau cach tab 14dp, nam ngay mep trong suot cua fade.
+        // Gradient 1 lop DUY NHAT theo duong cong cosine muot.
+        val fadeH = tabBarH + 14.dp
         val fadeStops = remember(cs.surface) {
             List(10) { i ->
                 val t = i / 9f
@@ -153,8 +154,9 @@ fun BriefScreen(
                     },
                     label = "briefTabContent",
                 ) { t ->
-                    // topPad = chieu cao tab de + 36dp: the dau khong bi tab che.
-                    val topPad = tabBarH + 36.dp
+                    // topPad = chieu cao tab + 14dp = khoang cach chuan giua
+                    // cac the: tab -> the dau bang the -> the.
+                    val topPad = tabBarH + 14.dp
                     if (t == 0) {
                         if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing, Modifier.padding(top = tabBarH))
                         else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day", topPad = topPad)
@@ -275,10 +277,9 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            // Top = chieu cao tab (tab de len tren noi dung) + 36dp: the dau
-            // tien khong bi tab che; 28dp trong do la vung fade (luc nghi the
-            // khong bi fade, scroll len the moi mo dan nhu trang Nha).
-            .padding(horizontal = 16.dp).padding(top = topPad, bottom = 20.dp),
+            // Top = chieu cao tab (tab de len tren noi dung) + 14dp chuan;
+            // day = M3EPageBottomSpacing de the cuoi cach navbar ~14dp.
+            .padding(horizontal = 16.dp).padding(top = topPad, bottom = M3EPageBottomSpacing),
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
@@ -416,7 +417,6 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                 }
             }
         }
-        Spacer(Modifier.height(20.dp))
     }
 }
 
@@ -438,7 +438,7 @@ private fun MonthlyTab(
             .verticalScroll(rememberScrollState())
             // Top = chieu cao tab (tab de len tren noi dung) + 36dp: the dau
             // tien khong bi tab che; 28dp trong do la vung fade.
-            .padding(top = topPad, bottom = 8.dp),
+            .padding(top = topPad, bottom = M3EPageBottomSpacing),
     ) {
         monthly?.let { m ->
             MonthlySectionHeader("Tháng ${m.monthLabel}", "Đã chốt")
@@ -448,7 +448,8 @@ private fun MonthlyTab(
             MonthlySectionHeader("Tháng ${m.monthLabel}", "Đang chạy")
             MonthlyContent(m, tabKey = "${tabKey}_live")
         }
-        Spacer(Modifier.height(12.dp))
+        // Nut tao/cap nhat: cach khoi the 14dp chuan.
+        Spacer(Modifier.height(14.dp))
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -465,7 +466,6 @@ private fun MonthlyTab(
                 style = MaterialTheme.typography.titleSmall, color = cs.onPrimaryContainer,
             )
         }
-        Spacer(Modifier.height(20.dp))
     }
 }
 
@@ -589,7 +589,6 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                 }
             }
         }
-        Spacer(Modifier.height(20.dp))
     }
 }
 
