@@ -1,6 +1,7 @@
 package com.smarthome.hume.feature.energy
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
  * Tab Dien: header + esub (Tieu thu / Dien mat troi) + noi dung theo demo v4 rev12.
  * (Khong boc HumeM3ETheme o day — root M3ERootScreen da boc.)
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EnergyScreen(
     vm: EnergyViewModel = viewModel(factory = EnergyViewModel.factory()),
