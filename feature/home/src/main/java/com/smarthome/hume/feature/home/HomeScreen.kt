@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
@@ -220,19 +221,19 @@ fun HomeScreen(
                     // Fling dam (0.6x van toc) -> cuon cham, do hon
                     flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
-                        // Bottom 140dp: dong nhat voi cac tab khac (FAB da tam
-                        // xoa) — the cuoi cach navbar noi ~20px.
-                        // Top = status bar + 8dp: item dau nam duoi status bar,
-                        // khi scroll cac item truot XUONG DUOI status bar trong
-                        // suot roi moi bien mat (lien mach, khong cat cung).
+                        // Bottom: chi navigation bar he thong (2026-10-01,
+                        // bo 140dp theo user: navbar trong suot, content
+                        // cuon tu do duoi navbar).
                         start = 18.dp, end = 18.dp,
-                        top = statusBarTop + 8.dp, bottom = 140.dp,
+                        top = statusBarTop + 8.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
                     // (Khong blur live o day: M3ERootScreen chup anh tinh 1 lan
                     //  roi blur san khi mo overlay -> het khựng.)
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding(),
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
