@@ -1,10 +1,17 @@
 package com.smarthome.hume.brief
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +62,6 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.toVnd
-import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
 
 /** Trang Brief sang: mo bang vuot phai tren navbar, dong bang vuot phai->trai / nut back he thong. */
 @Composable
@@ -124,12 +130,27 @@ fun BriefScreen(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = cs.primary)
             }
-        } else if (tab == 0) {
-            if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
-            else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
         } else {
-            if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing)
-            else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing)
+            // Chuyen tab: fade + truot ngang nhe theo chieu tab (M3E emphasized).
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    val dir = if (targetState > initialState) 1 else -1
+                    (fadeIn(tween(300, easing = M3EMotion.emphasized)) +
+                        slideInHorizontally(tween(300, easing = M3EMotion.emphasized)) { dir * it / 6 }) togetherWith
+                        (fadeOut(tween(220, easing = M3EMotion.emphasizedAcc)) +
+                            slideOutHorizontally(tween(220, easing = M3EMotion.emphasizedAcc)) { -dir * it / 6 })
+                },
+                label = "briefTabContent",
+            ) { t ->
+                if (t == 0) {
+                    if (daily == null) BriefEmpty({ onRefresh(false) }, refreshing)
+                    else DailyContent(daily, onRequestLocation, refreshing, tabKey = "day")
+                } else {
+                    if (monthly == null && monthlyLive == null) BriefEmpty({ onRefresh(true) }, refreshing)
+                    else MonthlyTab(monthly, monthlyLive, tabKey = "month", onCreateLive = { onRefresh(true) }, refreshing = refreshing)
+                }
+            }
         }
     }
 }
@@ -153,19 +174,37 @@ private fun AiPill() {
 @Composable
 private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
+    // Active: secondaryContainer + onSecondaryContainer (chuan M3E connected
+    // button group) de nhin ro tren track surfaceContainer; animate mau +
+    // bong do theo M3E emphasized.
+    val bg by animateColorAsState(
+        if (selected) cs.secondaryContainer else Color.Transparent,
+        animationSpec = tween(280, easing = M3EMotion.emphasized),
+        label = "briefTabBg",
+    )
+    val fg by animateColorAsState(
+        if (selected) cs.onSecondaryContainer else cs.onSurfaceVariant,
+        animationSpec = tween(280, easing = M3EMotion.emphasized),
+        label = "briefTabFg",
+    )
+    val elevation by animateDpAsState(
+        if (selected) 8.dp else 0.dp,
+        animationSpec = tween(280, easing = M3EMotion.emphasized),
+        label = "briefTabShadow",
+    )
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
+            .shadow(elevation, RoundedCornerShape(99.dp))
             .clip(RoundedCornerShape(99.dp))
-            .then(if (selected) Modifier.shadow(8.dp, RoundedCornerShape(99.dp)) else Modifier)
-            .background(if (selected) cs.surfaceContainerHigh else Color.Transparent)
+            .background(bg)
             .clickable(onClick = onClick)
             .padding(vertical = 9.dp),
     ) {
         Text(
             text, style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
-            color = if (selected) cs.onSurface else cs.onSurfaceVariant,
+            color = fg,
         )
     }
 }
@@ -210,7 +249,8 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = M3EPageBottomSpacing),
+            // Brief khong co navbar: the cuoi cach chan man hinh 20dp.
+            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 20.dp),
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
@@ -404,7 +444,7 @@ private fun MonthlySectionHeader(month: String, status: String) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = M3EPageBottomSpacing),
+            .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

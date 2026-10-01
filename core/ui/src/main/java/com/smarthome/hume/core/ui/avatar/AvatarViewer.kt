@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,6 +51,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
+import com.smarthome.hume.core.ui.components.M3EMotion
 import java.io.File
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.filterNotNull
@@ -88,7 +90,6 @@ fun AvatarViewerOverlay(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     var overlayRect by remember { mutableStateOf<Rect?>(null) }
-    var opened by remember { mutableStateOf(false) }
     var closing by remember { mutableStateOf(false) }
 
     val circleDp = (LocalConfiguration.current.screenWidthDp * 0.78f).dp
@@ -101,19 +102,31 @@ fun AvatarViewerOverlay(
         return Rect(c.x - circlePx / 2f, c.y - circlePx / 2f, c.x + circlePx / 2f, c.y + circlePx / 2f)
     }
 
-    val rectAnim = remember { Animatable(Rect(0f, 0f, 1f, 1f), Rect.VectorConverter) }
-    val scrimAlpha by animateFloatAsState(if (closing) 0f else 0.55f, label = "scrim")
+    // Ve hinh tron NGAY tu frame dau tai dung vi tri avatar trong header
+    // (targetRect): truoc day phai doi overlayRect do xong moi ve -> avatar
+    // bien mat 1-2 frame (bong ma da bi xoa khoi anh nen) roi hinh tron moi
+    // hien ra = nhin nhu "nhay" tai vi tri avatar (user 2026-10-01).
+    val rectAnim = remember(targetRect) {
+        Animatable(targetRect ?: Rect(0f, 0f, 1f, 1f), Rect.VectorConverter)
+    }
+    // Scrim fade-in mem thay vi pop 0.55 ngay frame dau.
+    var scrimOn by remember { mutableStateOf(false) }
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (closing) 0f else if (scrimOn) 0.55f else 0f,
+        animationSpec = tween(250, easing = M3EMotion.emphasized),
+        label = "scrim",
+    )
 
     // Mo ra: tu avatar -> phong to giua man hinh.
     // Chay dung 1 lan (khoa Unit): khong lay targetRect/overlayRect lam key vi khi
     // mo viewer, content bi blur -> header do lai vi tri -> onGloballyPositioned ban
-    // lai -> key doi -> effect relaunch giua chung -> animateTo bi huy trong khi
-    // opened da true nen khong bao gio chay lai (ket: tron ket cung o avatar).
+    // lai -> key doi -> effect relaunch giua chung -> animateTo bi huy.
+    // Chi doi overlayRect de tinh dich den (bigRect); vi tri bat dau da snap
+    // san tu targetRect o tren nen khong con khoang trong nhay hinh.
     LaunchedEffect(Unit) {
+        scrimOn = true
         snapshotFlow { overlayRect }.filterNotNull().first()
         val big = bigRect() ?: return@LaunchedEffect
-        rectAnim.snapTo(targetRect ?: big)
-        opened = true
         rectAnim.animateTo(
             big,
             spring(
@@ -124,7 +137,7 @@ fun AvatarViewerOverlay(
     }
 
     fun requestClose() {
-        if (closing || !opened) return
+        if (closing) return
         closing = true
         scope.launch {
             val big = bigRect()
@@ -162,8 +175,9 @@ fun AvatarViewerOverlay(
                 onClick = ::requestClose,
             ),
     ) {
-        if (opened) {
-            Box(
+        // Hinh tron ve ngay tu frame dau (rectAnim da khoi tao tu targetRect)
+        // de khong nhay mat avatar khi mo viewer.
+        Box(
                 Modifier
                     .offset { localOffset }
                     .size(rectSize)
@@ -195,7 +209,6 @@ fun AvatarViewerOverlay(
                     )
                 }
             }
-        }
     }
 }
 

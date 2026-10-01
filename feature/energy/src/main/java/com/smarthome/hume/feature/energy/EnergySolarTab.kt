@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -59,6 +61,8 @@ fun EnergySolarTab(
     vm: EnergyViewModel,
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
+    /** Deep-link "Xem pin": dinh vi the pin de cuon toi. */
+    batteryBivr: BringIntoViewRequester? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -114,20 +118,26 @@ fun EnergySolarTab(
         }
         EnergyFlowCard(flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed)
         // Tai tieu thu xuong cuoi cung
-        SunsynkCard(state, risePlayed)
+        SunsynkCard(state, risePlayed, batteryBivr)
     }
 }
 
 // ---------- sunsynk summary ----------
 
 @Composable
-private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
+private fun SunsynkCard(
+    state: EnergyUiState,
+    risePlayed: MutableSet<String>,
+    batteryBivr: BringIntoViewRequester? = null,
+) {
     val extra = LocalHumeExtraColors.current
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
         containerColor = extra.surfaceHighest,
-        modifier = Modifier.riseOnce("sol-syn", 420, risePlayed),
+        modifier = Modifier
+            .riseOnce("sol-syn", 420, risePlayed)
+            .then(if (batteryBivr != null) Modifier.bringIntoViewRequester(batteryBivr) else Modifier),
     ) {
         // demo .yt{align-items:baseline}
         Row(

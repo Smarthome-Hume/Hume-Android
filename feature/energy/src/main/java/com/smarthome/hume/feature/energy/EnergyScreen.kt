@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +45,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun EnergyScreen(
     vm: EnergyViewModel = viewModel(factory = EnergyViewModel.factory()),
+    /** Deep-link tu the goi y ("battery"): mo sub-tab Dien mat troi + cuon toi the pin. */
+    deepLink: String? = null,
+    onDeepLinkConsumed: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
     val ui by vm.ui.collectAsState()
@@ -50,6 +55,9 @@ fun EnergyScreen(
     val scope = rememberCoroutineScope()
     var paneVisible by remember { mutableStateOf(true) }
     val risePlayed = remember { mutableSetOf<String>() }
+    // Dinh vi the pin de deep-link "Xem pin" cuon toi (BringIntoViewRequester
+    // tu dong cuon LazyColumn ke ca khi the nam long trong item).
+    val batteryBivr = remember { BringIntoViewRequester() }
 
     // Doi subtab: fade/slide 180ms + vibrate 6ms (demo .etab/.pre)
     fun selectTab(i: Int) {
@@ -62,6 +70,20 @@ fun EnergyScreen(
             vm.setTab(t)
             paneVisible = true
         }
+    }
+
+    // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the pin.
+    LaunchedEffect(deepLink) {
+        if (deepLink != "battery") return@LaunchedEffect
+        if (ui.tab != EnergySubTab.Solar) {
+            paneVisible = false
+            delay(180)
+            vm.setTab(EnergySubTab.Solar)
+            paneVisible = true
+            delay(150)
+        }
+        runCatching { batteryBivr.bringIntoView() }
+        onDeepLinkConsumed()
     }
 
     // Full-bleed tran duoi status bar trong suot (2026-09-30): inset status
@@ -124,6 +146,7 @@ fun EnergyScreen(
                     )
                     EnergySubTab.Solar -> EnergySolarTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
+                        batteryBivr = batteryBivr,
                     )
                 }
             }

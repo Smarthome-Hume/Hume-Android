@@ -125,6 +125,8 @@ fun M3ERootScreen(
     }
     HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor, fontFamily = themeSettings.fontFamily) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
+        // Deep-link "Xem pin" tu the goi y trang Nha -> tab Nang luong + cuon toi the pin.
+        var energyDeepLink by remember { mutableStateOf<String?>(null) }
         // Trang Brief: mo bang vuot ngang sang phai TREN THANH NAVBAR
         // (2026-09-30, user chon thay cho vuot canh trai de tranh nham voi
         // system back gesture cua thiet bi).
@@ -188,6 +190,10 @@ fun M3ERootScreen(
                     HumeTab.Home -> HomeScreen(
                         onOpenSecurity = { selected = 2 },
                         onOpenEnergy = { selected = 1 },
+                        onOpenEnergyBattery = {
+                            selected = 1
+                            energyDeepLink = "battery"
+                        },
                         onOpenAvatarViewer = { req ->
                             bgSnapshot = captureSnapshot(req.targetRect)
                             avatarViewer = req
@@ -209,7 +215,10 @@ fun M3ERootScreen(
                                 .map { it.timeMs to it.value }
                         },
                     )
-                    HumeTab.Energy -> M3EEnergyScreen()
+                    HumeTab.Energy -> M3EEnergyScreen(
+                        deepLink = energyDeepLink,
+                        onDeepLinkConsumed = { energyDeepLink = null },
+                    )
                     HumeTab.Security -> M3ESecurityScreen(
                         onDownloadClip = { clip ->
                             val path = clip.clipPath

@@ -99,6 +99,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory()),
     onOpenSecurity: () -> Unit = {},
     onOpenEnergy: () -> Unit = {},
+    /** Bam "Xem pin" o the goi y -> sang tab Nang luong, cuon toi the pin. */
+    onOpenEnergyBattery: () -> Unit = {},
     loadChartHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
     /**
      * Mo viewer avatar / popup camera o tang root (M3ERootScreen) de lop mo +
@@ -297,12 +299,9 @@ fun HomeScreen(
                                             }
                                         },
                                         onBatteryDetail = {
-                                            scope.launch {
-                                                // BatteryCard: index 6 khi co goi y, 4 khi khong.
-                                                listState.animateScrollToItem(
-                                                    if (tips.isNotEmpty()) 6 else 4,
-                                                )
-                                            }
+                                            // "Xem pin" o the goi y -> link sang the pin
+                                            // o trang Nang luong (user 2026-10-01).
+                                            onOpenEnergyBattery()
                                         },
                                         onOpenSecurity = onOpenSecurity,
                                         onOpenEnergy = onOpenEnergy,
