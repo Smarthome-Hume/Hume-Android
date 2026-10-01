@@ -58,7 +58,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EMotion
-import com.smarthome.hume.core.ui.components.M3EPageBottomSpacing
+import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.M3ESectionLabel
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MarqueeText
@@ -278,8 +278,8 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             // Top = chieu cao tab (tab de len tren noi dung) + 14dp chuan;
-            // day = M3EPageBottomSpacing de the cuoi cach navbar ~14dp.
-            .padding(horizontal = 16.dp).padding(top = topPad, bottom = M3EPageBottomSpacing),
+            // day = m3ePageBottomPadding: the cuoi cach navbar dung 14dp.
+            .padding(horizontal = 16.dp).padding(top = topPad).m3ePageBottomPadding(),
     ) {
         // AI nhan dinh
         StaggerCard(0, tabKey) {
@@ -438,7 +438,7 @@ private fun MonthlyTab(
             .verticalScroll(rememberScrollState())
             // Top = chieu cao tab (tab de len tren noi dung) + 36dp: the dau
             // tien khong bi tab che; 28dp trong do la vung fade.
-            .padding(top = topPad, bottom = M3EPageBottomSpacing),
+            .padding(top = topPad).m3ePageBottomPadding(),
     ) {
         monthly?.let { m ->
             MonthlySectionHeader("Tháng ${m.monthLabel}", "Đã chốt")
