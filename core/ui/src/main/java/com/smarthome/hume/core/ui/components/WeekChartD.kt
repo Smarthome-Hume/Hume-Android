@@ -164,7 +164,7 @@ fun WeekChartD(
             Text(
                 l,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (today) FontWeight.ExtraBold else FontWeight.SemiBold,
+                fontWeight = if (today) FontWeight.Bold else FontWeight.SemiBold,
                 color = if (today) cs.primary else cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 maxLines = 1,

@@ -44,7 +44,7 @@ fun M3ESectionLabel(
     Text(
         text,
         style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.Bold,
         letterSpacing = 1.5.sp,
         color = if (light) cs.onPrimaryContainer else cs.onSurfaceVariant,
         modifier = modifier,

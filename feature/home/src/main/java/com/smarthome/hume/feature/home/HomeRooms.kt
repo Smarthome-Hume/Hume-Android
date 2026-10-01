@@ -413,7 +413,7 @@ private fun ClimateCard(
                 Text(
                     "%.0f°".format(target),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                     maxLines = 1,
                     softWrap = false,
@@ -647,7 +647,7 @@ fun DeviceRow(
                 Text(
                     if (contactOpen) "MỞ" else "ĐÓNG",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp,
                     color = if (contactOpen) cs.onErrorContainer
                     else cs.onSurfaceVariant,

@@ -151,7 +151,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     Text(
                         et,
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         color = cs.onSurface,
                         modifier = Modifier.padding(top = 2.dp),
                         maxLines = 1,
@@ -187,7 +187,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Text(
                     "$reserve%",
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
                 )
@@ -220,7 +220,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Text(
                     "$usage%",
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
                 )

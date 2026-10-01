@@ -434,7 +434,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             Text(
                 chipLabel,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 0.8.sp,
                 textAlign = TextAlign.Center,
                 color = pillText,

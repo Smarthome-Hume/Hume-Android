@@ -195,7 +195,7 @@ fun CameraFeedCard(
                 Text(
                     "LIVE",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                     color = Color.White,
                 )

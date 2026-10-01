@@ -128,7 +128,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Text(
                 kwh1(todayVal),
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.3).sp,
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
@@ -228,7 +228,7 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
             MarqueeText(
                 text = big,
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -263,7 +263,7 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             ).tnum(),
             modifier = Modifier.padding(top = 4.dp),
@@ -336,7 +336,7 @@ private fun PowerRow(
             )
             Text(
                 "${if (watts < 0) "−" else ""}${abs(watts).roundToInt()} W",
-                style = MaterialTheme.typography.labelMedium.copy( fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.labelMedium.copy( fontWeight = FontWeight.Bold,
                 ).tnum(),
             )
         }
@@ -412,7 +412,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     Text(
                         kwh1(state.donutTotalKwh),
                         style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.3).sp,
                         ).tnum(),
                         modifier = Modifier.alignByBaseline(),
@@ -486,7 +486,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         Text(
                             "${(s.fraction * 100).roundToInt()}%",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                             ).tnum(),
                             maxLines = 1,
@@ -776,7 +776,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "${b.pct.roundToInt()}%",
-                        style = MaterialTheme.typography.titleSmall.copy( fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleSmall.copy( fontWeight = FontWeight.Bold,
                         ).tnum(),
                         color = if (b.pct <= 20) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,

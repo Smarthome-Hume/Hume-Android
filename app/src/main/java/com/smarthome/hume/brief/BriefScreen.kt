@@ -88,7 +88,7 @@ fun BriefScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brief", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold, color = cs.onSurface)
+                    Text("Brief", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = cs.onSurface)
                     Spacer(Modifier.width(8.dp))
                     AiPill()
                 }
@@ -145,7 +145,7 @@ private fun AiPill() {
     ) {
         MsIcon(Ms.auto_awesome, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(4.dp))
-        Text("AI", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = cs.onPrimaryContainer)
+        Text("AI", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer)
     }
 }
 
@@ -247,7 +247,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                         Text("PV dự kiến", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                         Text(
                             "≈ ${countUpText(d.weather.pvEstimateKwh, 1, tabKey)} kWh",
-                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = cs.primary,
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cs.primary,
                         )
                     }
                 }
@@ -562,7 +562,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
             MarqueeText(
                 text = big,
                 fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
                 color = cs.onSurface,
                 modifier = Modifier
@@ -595,7 +595,7 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
                 .clip(RoundedCornerShape(11.dp))
                 .background(cs.surfaceContainerHigh),
         ) {
-            Text("${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = cs.onSurfaceVariant)
+            Text("${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
         }
         Spacer(Modifier.width(10.dp))
         Box(
@@ -650,7 +650,7 @@ private fun UnmeasuredRow(kwh: Double, max: Double, tabKey: Any) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Thiết bị khác (chưa đo)", style = MaterialTheme.typography.titleSmall, color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text("Thiết bị khác", style = MaterialTheme.typography.titleSmall, color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
                 Text("${countUpText(kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant, maxLines = 1, softWrap = false)
             }

@@ -839,7 +839,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             Text(
                 "%.1f".format(todayShown),
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.3).sp,
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
