@@ -184,7 +184,8 @@ fun PillsRow(
             BulbPill(
                 count = lightsOnCount,
                 onClick = onLights,
-                modifier = Modifier.widthIn(min = bulbW),
+                // Cao bang SecPill (80dp) de 2 the bang nhau
+                modifier = Modifier.widthIn(min = bulbW).height(80.dp),
             )
         }
     }
