@@ -70,7 +70,6 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
@@ -664,13 +663,6 @@ private fun NotifCard(onViewCamera: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            // demo --shadow light: 0 12px 32px rgba(25,20,18,.10)
-            .shadow(
-                12.dp,
-                RoundedCornerShape(30.dp),
-                spotColor = Color(0x1A191412),
-                ambientColor = Color(0x1A191412),
-            )
             .clip(RoundedCornerShape(30.dp))
             .background(surfaceLow)
             .padding(18.dp),

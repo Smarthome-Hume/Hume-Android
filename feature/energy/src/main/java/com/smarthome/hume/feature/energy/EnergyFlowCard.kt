@@ -129,8 +129,7 @@ fun EnergyFlowCard(
         contentPadding = 0.dp,
         containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = modifier
-            .riseOnce("sol-flow", 410, risePlayed)
-            .shadow(12.dp, RoundedCornerShape(32.dp)),
+            .riseOnce("sol-flow", 410, risePlayed),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp)) {
             // header
@@ -486,7 +485,6 @@ private fun FlowNode(
 ) {
     Column(
         modifier = modifier
-            .shadow(4.dp, RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .pressMorph(pressedScale = 0.93f, onClick = onClick)

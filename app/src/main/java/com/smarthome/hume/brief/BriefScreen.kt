@@ -600,7 +600,6 @@ private fun BriefCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentPadding = 18.dp,
-        elevation = 8.dp,
         content = content,
     )
 }

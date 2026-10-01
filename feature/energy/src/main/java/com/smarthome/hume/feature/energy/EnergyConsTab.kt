@@ -536,8 +536,7 @@ private fun DevicesCard(
         contentPadding = 0.dp,
         containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = modifier
-            .riseOnce("cons-dev", 440, risePlayed)
-            .shadow(12.dp, RoundedCornerShape(32.dp)),
+            .riseOnce("cons-dev", 440, risePlayed),
     ) {
         Column(
             modifier = Modifier.padding(
