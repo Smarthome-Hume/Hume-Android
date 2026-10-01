@@ -422,6 +422,7 @@ private fun M3ENavBar(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
     val pill = RoundedCornerShape(34.dp)
     val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
@@ -462,10 +463,10 @@ private fun M3ENavBar(
             modifier = Modifier
                 // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
-                // Bo nen navbar (2026-10-01, user: "bo cai lop dang cat the",
-                // "giu nguyen thiet ke ban dau"): navbar khong con lop nen
-                // 82% — chi con 4 tab noi, tab dang chon co primaryContainer.
-                // The cuon duoi navbar hien day du, khong bi lop cat.
+                // Nen navbar 82% (thiet ke M3E goc): bo nen (0%) gay de tab
+                // len chu content (anh An ninh 2026-10-01). 82% du de tach
+                // navbar khoi the cuon ben duoi.
+                .background(extra.surfaceLowest.copy(alpha = 0.82f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->
