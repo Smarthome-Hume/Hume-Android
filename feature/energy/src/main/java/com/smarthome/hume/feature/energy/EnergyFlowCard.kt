@@ -158,7 +158,7 @@ fun EnergyFlowCard(
                     Text(
                         String.format(Locale.US, "%.1f", flow.todayKwh),
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum",
                         ),
                     )
@@ -539,7 +539,7 @@ private fun FlowNode(
                 Text(
                     badge,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                        fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
                     color = badgeFg,
                     // demo .flbdir{white-space:nowrap}: badge khong duoc xuong dong
                     maxLines = 1,
@@ -560,7 +560,7 @@ private fun FlowNode(
             Text(
                 num,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontFeatureSettings = "tnum",
                 ),
                 maxLines = 1,

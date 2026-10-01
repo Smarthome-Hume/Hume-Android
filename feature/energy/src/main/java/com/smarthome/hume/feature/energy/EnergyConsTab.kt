@@ -119,7 +119,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Text(
                 "Năng lượng sử dụng",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -128,7 +128,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Text(
                 kwh1(todayVal),
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.3).sp,
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
@@ -228,7 +228,7 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
             MarqueeText(
                 text = big,
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -263,7 +263,7 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
             ).tnum(),
             modifier = Modifier.padding(top = 4.dp),
@@ -336,7 +336,7 @@ private fun PowerRow(
             )
             Text(
                 "${if (watts < 0) "−" else ""}${abs(watts).roundToInt()} W",
-                style = MaterialTheme.typography.labelMedium.copy( fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelMedium.copy( fontWeight = FontWeight.SemiBold,
                 ).tnum(),
             )
         }
@@ -412,7 +412,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     Text(
                         kwh1(state.donutTotalKwh),
                         style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.3).sp,
                         ).tnum(),
                         modifier = Modifier.alignByBaseline(),
@@ -486,7 +486,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         Text(
                             "${(s.fraction * 100).roundToInt()}%",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface,
                             ).tnum(),
                             maxLines = 1,
@@ -666,7 +666,7 @@ private fun DeviceRow(
             Text(
                 num,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
                 ).tnum(),
                 textAlign = TextAlign.End,
@@ -690,7 +690,7 @@ private fun DeviceRow(
                 Text(
                     (cost * factor).toLong().toVnd(),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = LocalHumeExtraColors.current.success,
                     ).tnum(),
                     textAlign = TextAlign.End,
@@ -776,7 +776,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "${b.pct.roundToInt()}%",
-                        style = MaterialTheme.typography.titleSmall.copy( fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall.copy( fontWeight = FontWeight.SemiBold,
                         ).tnum(),
                         color = if (b.pct <= 20) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,

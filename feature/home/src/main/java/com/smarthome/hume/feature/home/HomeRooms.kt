@@ -178,7 +178,7 @@ private fun RoomCard(
                 com.smarthome.hume.core.ui.components.MarqueeText(
                     text = room.name,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (room.lightOn) cs.onPrimaryContainer
                     else cs.onSurface,
                 )
@@ -297,7 +297,7 @@ fun RoomSheet(
                     Text(
                         "Thiết bị",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = cs.onSurface,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -413,7 +413,7 @@ private fun ClimateCard(
                 Text(
                     "%.0f°".format(target),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                     maxLines = 1,
                     softWrap = false,
@@ -544,7 +544,7 @@ private fun ClimateModeGroup(
                 Text(
                     hvacLabels[m] ?: m,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (sel) cs.onPrimaryContainer else cs.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     maxLines = 1,
@@ -611,7 +611,7 @@ fun DeviceRow(
             Text(
                 d.label,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
             val powerW = d.powerW
@@ -647,7 +647,7 @@ fun DeviceRow(
                 Text(
                     if (contactOpen) "MỞ" else "ĐÓNG",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.5.sp,
                     color = if (contactOpen) cs.onErrorContainer
                     else cs.onSurfaceVariant,

@@ -95,9 +95,9 @@ fun EnergyScreen(
                         .riseOnce("hdr", 0, risePlayed),
                 ) {
                     Text(
-                        "Điện",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.Bold,
+                        "Năng lượng",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.3).sp,
                         ),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,

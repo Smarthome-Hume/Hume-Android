@@ -88,7 +88,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                 Text(
                     "Camera từ xa",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
                 Text(
@@ -168,7 +168,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                     Text(
                         "Lưu",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimary,
                     )
                 }
@@ -214,7 +214,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                     Text(
                         if (testing) "Đang kiểm tra…" else "Kiểm tra kết nối",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimaryContainer,
                     )
                 }

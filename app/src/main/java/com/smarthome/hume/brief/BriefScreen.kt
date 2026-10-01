@@ -88,7 +88,7 @@ fun BriefScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brief", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = cs.onSurface)
+                    Text("Brief", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, color = cs.onSurface)
                     Spacer(Modifier.width(8.dp))
                     AiPill()
                 }
@@ -145,7 +145,7 @@ private fun AiPill() {
     ) {
         MsIcon(Ms.auto_awesome, contentDescription = null, tint = cs.onPrimaryContainer, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(4.dp))
-        Text("AI", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = cs.onPrimaryContainer)
+        Text("AI", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = cs.onPrimaryContainer)
     }
 }
 
@@ -163,7 +163,7 @@ private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modif
     ) {
         Text(
             text, style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = if (selected) cs.onSurface else cs.onSurfaceVariant,
         )
     }
@@ -247,7 +247,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                         Text("PV dự kiến", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                         Text(
                             "≈ ${countUpText(d.weather.pvEstimateKwh, 1, tabKey)} kWh",
-                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cs.primary,
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = cs.primary,
                         )
                     }
                 }
@@ -489,14 +489,14 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                 val max = m.floors.maxOfOrNull { it.kwh } ?: 1.0
                 m.floors.forEachIndexed { i, f ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(f.name, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = cs.onSurface, modifier = Modifier.width(64.dp))
+                        Text(f.name, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = cs.onSurface, modifier = Modifier.width(64.dp))
                         AnimBar(
                             fraction = (f.kwh / max).toFloat(), tabKey = tabKey, height = 10.dp,
                             color = if (i == 0) Color(0xFFEF6C00) else cs.primary,
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
-                        Text("${countUpText(f.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant, modifier = Modifier.width(76.dp))
+                        Text("${countUpText(f.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant, modifier = Modifier.width(76.dp))
                     }
                     if (i < m.floors.lastIndex) Spacer(Modifier.height(10.dp))
                 }
@@ -562,7 +562,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
             MarqueeText(
                 text = big,
                 fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
                 color = cs.onSurface,
                 modifier = Modifier
@@ -595,7 +595,7 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
                 .clip(RoundedCornerShape(11.dp))
                 .background(cs.surfaceContainerHigh),
         ) {
-            Text("${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = cs.onSurfaceVariant)
+            Text("${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant)
         }
         Spacer(Modifier.width(10.dp))
         Box(

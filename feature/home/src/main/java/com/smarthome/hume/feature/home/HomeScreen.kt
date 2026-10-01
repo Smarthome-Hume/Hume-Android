@@ -494,7 +494,7 @@ private fun M3ESnackbar(data: SnackbarData) {
                 Text(
                     label,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.primary,
                     modifier = Modifier
                         .clickable(
@@ -624,7 +624,7 @@ private fun DialogButton(label: String, onClick: () -> Unit) {
         Text(
             label,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = cs.primary,
         )
     }

@@ -280,7 +280,7 @@ private fun NotifRow(n: HomeNotification, index: Int) {
                 Text(
                     n.title,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
                 Text(
@@ -477,7 +477,7 @@ fun DeviceSearchView(
                 Text(
                     "TÌM GẦN ĐÂY",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.6.sp,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 8.dp),
@@ -496,7 +496,7 @@ fun DeviceSearchView(
                 Text(
                     "THIẾT BỊ",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.6.sp,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 8.dp),
@@ -559,7 +559,7 @@ fun DeviceSearchView(
                                 Text(
                                     "ĐIỀU HÒA",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
@@ -578,7 +578,7 @@ fun DeviceSearchView(
                                 Text(
                                     "ĐÈN",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
@@ -597,7 +597,7 @@ fun DeviceSearchView(
                                 Text(
                                     "Ổ CẮM",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
@@ -616,7 +616,7 @@ fun DeviceSearchView(
                                 Text(
                                     "CÔNG TẮC",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     letterSpacing = 0.6.sp,
                                     color = cs.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),

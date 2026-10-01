@@ -79,7 +79,7 @@ fun FabMenuCard(
                 Text(
                     "FAB menu",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
             }
@@ -118,7 +118,7 @@ private fun FabMenuConfigSheet(
             Text(
                 "FAB menu",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
             Text(
@@ -150,7 +150,7 @@ private fun FabMenuConfigSheet(
                 Text(
                     "Xong",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onPrimary,
                 )
             }
@@ -188,7 +188,7 @@ private fun FabFunctionConfigRow(
         Text(
             func.label,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )
         // Entity ID
@@ -225,7 +225,7 @@ private fun FabFunctionConfigRow(
                 Text(
                     "Lưu",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (dirty) cs.onPrimary else cs.onSurfaceVariant,
                 )
             }

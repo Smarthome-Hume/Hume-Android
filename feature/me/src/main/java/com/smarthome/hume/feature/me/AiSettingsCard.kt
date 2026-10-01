@@ -106,7 +106,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                 Text(
                     "Trí tuệ nhân tạo",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
                 Text(
@@ -240,7 +240,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                         Text(
                             "Lưu",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = cs.onPrimary,
                         )
                     }
@@ -277,7 +277,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                         Text(
                             if (testing) "Đang kiểm tra…" else "Kiểm tra kết nối",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = cs.onPrimaryContainer,
                         )
                     }

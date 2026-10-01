@@ -255,7 +255,7 @@ private fun ChartCard(
             Text(
                 title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
             Text(
@@ -371,7 +371,7 @@ private fun AreaChart(
             Text(
                 "${"%.1f".format(maxV)}$unit",
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 modifier = Modifier
                     .align(Alignment.TopEnd)

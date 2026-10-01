@@ -263,7 +263,7 @@ private fun SecPill(
             Text(
                 "An ninh",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
             Text(
@@ -337,7 +337,7 @@ private fun BulbPill(
             Text(
                 if (count > 0) "$count bóng" else "Không có",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
             Text(
@@ -430,7 +430,7 @@ private fun SecModeCard(
                     SecurityMode.Off -> "Tắt"
                 },
                 style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = labelColor,
                 maxLines = 1,
                 softWrap = false,

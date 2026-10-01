@@ -217,8 +217,8 @@ fun MeScreen(
                 // demo .phdr h2: 26px/700 ls -.3px
                 Text(
                     "Thông tin",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
@@ -264,7 +264,7 @@ fun MeScreen(
             Text(
                 "MÀU CHỦ ĐẠO",
                 style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
             )
@@ -282,7 +282,7 @@ fun MeScreen(
             Text(
                 "MÀU TÙY CHỈNH",
                 style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
             )
@@ -357,7 +357,7 @@ fun MeScreen(
                     Text(
                         "Đăng xuất",
                         color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             },
@@ -405,7 +405,7 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
             Text(
                 "FONT CHỮ",
                 style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
             )
@@ -456,7 +456,7 @@ private fun FontPickerSheet(
             Text(
                 "Chọn font chữ",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(4.dp))
@@ -543,7 +543,7 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
                     Text(
                         "✓",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = cs.primary,
                     )
                 }
@@ -858,7 +858,7 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
                     Text(
                         labels[i],
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.SemiBold,
                         color = fg,
                         maxLines = 1,
                     )
@@ -1053,7 +1053,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                 Text(
                     "Áp dụng",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onPrimaryContainer,
                 )
             }

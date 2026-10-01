@@ -235,7 +235,7 @@ fun HomeHeader(
             Text(
                 text = "Hi, $name",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.2).sp,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -301,7 +301,7 @@ fun HomeHeader(
                         "$count",
                         style = MaterialTheme.typography.labelSmall,
                         lineHeight = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimary,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
@@ -764,7 +764,7 @@ private fun SuggestTipRow(
             MarqueeText(
                 text = tip.title,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onTertiaryContainer,
                 startPadding = 14.dp,
             )
@@ -795,7 +795,7 @@ private fun SuggestTipRow(
             Text(
                 if (done) tip.doneLabel else tip.action,
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.tertiaryContainer,
             )
         }
@@ -830,7 +830,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             Text(
                 "Điện mặt trời",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -839,7 +839,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             Text(
                 "%.1f".format(todayShown),
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.3).sp,
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
@@ -914,7 +914,7 @@ fun NotificationCard(
                 Text(
                     latest.title,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -945,7 +945,7 @@ fun NotificationCard(
                         Text(
                             "Xem tất cả (${notifications.size})",
                             style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                         )
                     }
                 }

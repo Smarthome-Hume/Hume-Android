@@ -146,7 +146,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 Text(
                     String.format("%.1f", state.loadTotalKw),
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontFeatureSettings = "tnum",
                     ),
                     modifier = Modifier.alignByBaseline(),
@@ -178,7 +178,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 Text(
                     "${String.format("%.1f", t.kw)} kW",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontFeatureSettings = "tnum",
                     ),
@@ -222,7 +222,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Text(
                 "SOC ${state.battery.soc.roundToInt()}%",
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = extra.success,
                 ),
             )
@@ -311,7 +311,7 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
         Text(
             value,
             style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
             ),
             modifier = Modifier.padding(top = 3.dp),
@@ -454,7 +454,7 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
         Text(
             "${value.roundToInt()}$unit",
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
             ),
             color = MaterialTheme.colorScheme.onSurface,

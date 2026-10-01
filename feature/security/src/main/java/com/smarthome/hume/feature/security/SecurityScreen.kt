@@ -132,8 +132,8 @@ fun SecurityScreen(
                     Text(
                         "An ninh",
                         color = cs.onPrimaryContainer,
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-0.3).sp,
                     )
                 }
@@ -297,7 +297,7 @@ private fun RecCard(
         Text(
             "${rec.timeLabel} · ${rec.dateLabel}",
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 7.dp),
         )
     }
@@ -411,7 +411,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                     MarqueeText(
                         text = s.name,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = nameColor,
                         modifier = Modifier.padding(start = 12.dp),
                     )
@@ -434,7 +434,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
             Text(
                 chipLabel,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.8.sp,
                 textAlign = TextAlign.Center,
                 color = pillText,
@@ -541,7 +541,7 @@ private fun ClipOverlay(
                 Text(
                     "${clip.timeLabel} · ${clip.dateLabel}",
                     color = Color.White,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
@@ -555,7 +555,7 @@ private fun ClipOverlay(
                             "Tải xuống",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
@@ -568,7 +568,7 @@ private fun ClipOverlay(
                             "Chia sẻ",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
@@ -580,7 +580,7 @@ private fun ClipOverlay(
                         "Đóng",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.14f))

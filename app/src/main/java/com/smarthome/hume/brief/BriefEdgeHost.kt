@@ -170,7 +170,7 @@ fun BriefEdgeHost(
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showLocSettings = false },
                 title = {
-                    Text("Cần quyền vị trí", fontWeight = FontWeight.Bold)
+                    Text("Cần quyền vị trí", fontWeight = FontWeight.SemiBold)
                 },
                 text = {
                     Text("Bạn đã từ chối quyền vị trí trước đó nên Android không hiện hộp xin phép nữa. Vào Cài đặt → Ứng dụng → Hume → Quyền → Vị trí để bật, thời tiết mới tải được.")
@@ -183,7 +183,7 @@ fun BriefEdgeHost(
                             Uri.fromParts("package", context.packageName, null),
                         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
-                    }) { Text("Mở Cài đặt", fontWeight = FontWeight.Bold) }
+                    }) { Text("Mở Cài đặt", fontWeight = FontWeight.SemiBold) }
                 },
                 dismissButton = {
                     TextButton(onClick = { showLocSettings = false }) { Text("Để sau") }

@@ -121,7 +121,7 @@ fun EnergyDonut(
                 else
                     String.format(Locale.US, "%.1f", total),
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontFeatureSettings = "tnum",
                 ),
             )
