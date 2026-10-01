@@ -30,3 +30,11 @@ private val NavbarBottomMargin = 20.dp
 fun Modifier.m3ePageBottomPadding(): Modifier =
     navigationBarsPadding()
         .padding(bottom = NavbarHeight + NavbarBottomMargin + M3ECardGap)
+
+/**
+ * Padding day cho trang full-screen KHONG co navbar (vd. Brief mo dang
+ * overlay phu ca navbar): the cuoi cach day man hinh dung M3ECardGap.
+ */
+fun Modifier.m3eScreenBottomPadding(): Modifier =
+    navigationBarsPadding()
+        .padding(bottom = M3ECardGap)
