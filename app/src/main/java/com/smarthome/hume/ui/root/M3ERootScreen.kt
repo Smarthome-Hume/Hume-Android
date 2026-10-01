@@ -30,7 +30,6 @@ import androidx.core.view.drawToBitmap
 import com.smarthome.hume.brief.BriefEdgeHost
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -57,7 +56,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.data.HumeGraph
@@ -187,20 +185,6 @@ fun M3ERootScreen(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface,
             ) {
             Box(Modifier.fillMaxSize()) {
-                // Clip content ngay tren mep navbar (2026-10-01, user: "giai
-                // quyet chu ko phai phu len", "ko them fade"): the cuon toi
-                // day thi dung, KHONG chui xuong duoi navbar. Khong dung
-                // navbar duc de che, khong dung fade.
-                // 116dp = 20dp margin navbar + 96dp chieu cao navbar (uoc
-                // luong cao hon 86dp thuc te de chac chan clip tren mep).
-                val contentBottomPad = WindowInsets.navigationBars.asPaddingValues()
-                    .calculateBottomPadding() + 116.dp
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(bottom = contentBottomPad)
-                        .clipToBounds(),
-                ) {
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen(
                         onOpenSecurity = { selected = 2 },
@@ -291,8 +275,7 @@ fun M3ERootScreen(
                     )
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
                 }
-            } // Box clipToBounds (content khong xuong duoi navbar)
-            } // Box(Modifier.fillMaxSize())
+            }
             } // CompositionLocalProvider(LocalContentColor)
             // Lop phu gradient mo dan sau status bar (2026-09-30, user yeu
             // cau theo kieu app Muse): dinh dac nhat (alpha 0.95, van nhin
@@ -439,7 +422,6 @@ private fun M3ENavBar(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = LocalHumeExtraColors.current
     val pill = RoundedCornerShape(34.dp)
     val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
@@ -478,13 +460,12 @@ private fun M3ENavBar(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat",
-                // lop bong o day navbar nhin nhu "lop phu".
+                // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
-                // Bo alpha duc (revert 2026-10-01): user muon "giai quyet chu ko
-                // phai phu len" — giu thiet ke navbar 82% + xu ly goc bang
-                // shadow (bo) va fadeBottom (them).
-                .background(extra.surfaceLowest.copy(alpha = 0.82f))
+                // Bo nen navbar (2026-10-01, user: "bo cai lop dang cat the",
+                // "giu nguyen thiet ke ban dau"): navbar khong con lop nen
+                // 82% — chi con 4 tab noi, tab dang chon co primaryContainer.
+                // The cuon duoi navbar hien day du, khong bi lop cat.
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->
