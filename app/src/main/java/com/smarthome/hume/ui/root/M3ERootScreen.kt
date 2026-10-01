@@ -51,13 +51,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.data.HumeGraph
@@ -187,6 +187,20 @@ fun M3ERootScreen(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface,
             ) {
             Box(Modifier.fillMaxSize()) {
+                // Clip content ngay tren mep navbar (2026-10-01, user: "giai
+                // quyet chu ko phai phu len", "ko them fade"): the cuon toi
+                // day thi dung, KHONG chui xuong duoi navbar. Khong dung
+                // navbar duc de che, khong dung fade.
+                // 116dp = 20dp margin navbar + 96dp chieu cao navbar (uoc
+                // luong cao hon 86dp thuc te de chac chan clip tren mep).
+                val contentBottomPad = WindowInsets.navigationBars.asPaddingValues()
+                    .calculateBottomPadding() + 116.dp
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(bottom = contentBottomPad)
+                        .clipToBounds(),
+                ) {
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen(
                         onOpenSecurity = { selected = 2 },
@@ -277,7 +291,8 @@ fun M3ERootScreen(
                     )
                     HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
                 }
-            }
+            } // Box clipToBounds (content khong xuong duoi navbar)
+            } // Box(Modifier.fillMaxSize())
             } // CompositionLocalProvider(LocalContentColor)
             // Lop phu gradient mo dan sau status bar (2026-09-30, user yeu
             // cau theo kieu app Muse): dinh dac nhat (alpha 0.95, van nhin
@@ -304,27 +319,7 @@ fun M3ERootScreen(
                         ),
                     ),
             )
-            // Fade mo dan phia TREN navbar (2026-10-01, user: "giai quyet chu
-            // ko phai phu len"): the cuon len mo dan roi mat han truoc khi
-            // chui xuong duoi navbar — khong con canh the hien dot ngot
-            // duoi navbar. Doi xung voi fadeTop sau status bar. Khong chan
-            // touch. Ve TRUOC navbar de navbar noi phia tren.
-            // Chieu cao navbar ~86dp (xem M3EPageSpacing); fade 48dp om tron.
-            val fadeBottomPad = WindowInsets.navigationBars.asPaddingValues()
-                .calculateBottomPadding() + 20.dp + 86.dp
-            Box(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = fadeBottomPad)
-                    .height(48.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            0.0f to scrim.copy(alpha = 0.0f),
-                            1.0f to scrim.copy(alpha = 1.0f),
-                        ),
-                    ),
-            )
+            // (2026-10-01) Bo fadeBottom theo user "ko them fade".
             M3ENavBar(
                 selected = selected,
                 onSelect = { selected = it },
