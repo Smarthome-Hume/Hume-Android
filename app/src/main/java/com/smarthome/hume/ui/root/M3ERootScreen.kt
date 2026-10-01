@@ -30,6 +30,7 @@ import androidx.core.view.drawToBitmap
 import com.smarthome.hume.brief.BriefEdgeHost
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -303,6 +304,27 @@ fun M3ERootScreen(
                         ),
                     ),
             )
+            // Fade mo dan phia TREN navbar (2026-10-01, user: "giai quyet chu
+            // ko phai phu len"): the cuon len mo dan roi mat han truoc khi
+            // chui xuong duoi navbar — khong con canh the hien dot ngot
+            // duoi navbar. Doi xung voi fadeTop sau status bar. Khong chan
+            // touch. Ve TRUOC navbar de navbar noi phia tren.
+            // Chieu cao navbar ~86dp (xem M3EPageSpacing); fade 48dp om tron.
+            val fadeBottomPad = WindowInsets.navigationBars.asPaddingValues()
+                .calculateBottomPadding() + 20.dp + 86.dp
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = fadeBottomPad)
+                    .height(48.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            0.0f to scrim.copy(alpha = 0.0f),
+                            1.0f to scrim.copy(alpha = 1.0f),
+                        ),
+                    ),
+            )
             M3ENavBar(
                 selected = selected,
                 onSelect = { selected = it },
@@ -461,12 +483,13 @@ private fun M3ENavBar(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .shadow(12.dp, pill)
+                // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat",
+                // lop bong o day navbar nhin nhu "lop phu".
                 .clip(pill)
-                // Duc hoan toan (2026-10-01, user feedback): bo alpha 82% vi noi
-                // dung (the trang) hien xuyen qua nhin nhu "lop phu" va "the thua"
-                // duoi navbar.
-                .background(extra.surfaceLowest)
+                // Bo alpha duc (revert 2026-10-01): user muon "giai quyet chu ko
+                // phai phu len" — giu thiet ke navbar 82% + xu ly goc bang
+                // shadow (bo) va fadeBottom (them).
+                .background(extra.surfaceLowest.copy(alpha = 0.82f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->
