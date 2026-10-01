@@ -96,10 +96,6 @@ data class HomeUiState(
     val solarWeek: List<SolarDay> = emptyList(),
     val solarTodayKwh: Double? = null,
     val solarNowKw: Double = 0.0,
-    /** Cong suat luoi hien tai (kW, duong = dang lay tu luoi). */
-    val gridNowKw: Double = 0.0,
-    /** Ca 2 nut sac (AC + theo thoi gian) dang BAT tren HA that. */
-    val chargeSwitchesOn: Boolean = false,
     val battery: BatteryUi = BatteryUi(),
     val alarm: AlarmUi? = null,
     val lightsOn: List<DeviceUi> = emptyList(),

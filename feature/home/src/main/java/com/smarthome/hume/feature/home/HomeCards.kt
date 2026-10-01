@@ -480,8 +480,6 @@ fun SuggestCard(
     aiTips: List<AiTip> = emptyList(),
     /** Danh sach camera tu tab An ninh (de map phong -> camera khi bam "Xem camera"). */
     cameras: List<SecurityCamera> = emptyList(),
-    /** Dang trong phien sac ep pin tu luoi. */
-    forceCharging: Boolean = false,
     onTipAction: (key: String) -> Unit = {},
     onBatteryDetail: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
@@ -493,27 +491,8 @@ fun SuggestCard(
     // Goi y phan ung truc tiep theo state (chuyen dong -> camera, cua mo, pin yeu)
     // + goi y AI phan tich sau.
     val ruleTips = buildSuggestTips(state).toMutableList()
-    // Pin duoi muc du tru -> goi y sac ep len DAU TIEN.
-    val batt = state.battery
-    if (batt.soc < batt.backupSoc && !forceCharging) {
-        ruleTips.add(0, SuggestTip(
-            key = "force_charge",
-            title = "Pin dưới mức dự trữ",
-            sub = "SOC ${batt.soc}% < dự trữ ${batt.backupSoc}% — sạc từ lưới lên mức an toàn?",
-            action = "Sạc pin",
-        ))
-    } else if (forceCharging) {
-        ruleTips.add(0, SuggestTip(
-            key = "force_charging",
-            title = "Đang sạc pin từ lưới",
-            sub = "Sẽ tự dừng khi đạt ${batt.backupSoc}%.",
-            action = "Dừng sạc",
-        ))
-    }
     // Chong trung: neu rule da co goi y pin, bo goi y AI ve pin (user bao bi double).
-    val hasBatteryTip = ruleTips.any {
-        it.key == "battery" || it.key == "force_charge" || it.key == "force_charging"
-    }
+    val hasBatteryTip = ruleTips.any { it.key == "battery" }
     val aiFiltered = aiTips.filterNot { tip ->
         hasBatteryTip && (tip.title.contains("pin", ignoreCase = true) ||
             tip.sub.contains("pin", ignoreCase = true))
@@ -644,8 +623,6 @@ fun SuggestCard(
                         haptic()
                         when {
                             tip.key == "battery" -> onBatteryDetail()
-                            tip.key == "force_charge" || tip.key == "force_charging" ->
-                                onTipAction(tip.key)
                             tip.key.startsWith("motion:") -> {
                                 // Mo popup camera ngay tren trang Nha (khong chuyen tab).
                                 val sensorId = tip.key.removePrefix("motion:")

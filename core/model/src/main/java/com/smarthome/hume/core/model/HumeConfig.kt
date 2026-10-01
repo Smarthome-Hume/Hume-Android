@@ -23,14 +23,6 @@ object HumeConfig {
     const val HOME_DAILY = "sensor.energy_home_daily"
     /** Trang thai luoi dien: on/off (template sensor cua user). */
     const val GRID_STATUS = "sensor.grid_status"
-    /** Cong suat luoi thuc te (W) — dung de tinh dong sac AC. */
-    const val GRID_POWER_NET = "sensor.solis_s6_eh1p_grid_power_net_2"
-    /** Nut Bat/Tat sac AC (cho phep luoi sac pin). */
-    const val SWITCH_AC_CHARGE = "switch.allow_grid_to_charge_the_battery_2"
-    /** Nut sac theo thoi gian (time-of-use slot 1). */
-    const val SWITCH_TIME_CHARGE = "switch.grid_time_of_use_charging_period_1_2"
-    /** Dong sac AC (A) — slot 1. */
-    const val NUMBER_CHARGE_CURRENT_AC = "number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2"
 
     // ---- Alarm (AlarmLights.swift) ----
     const val ALARM_PRIMARY = "alarm_control_panel.alarmo"
