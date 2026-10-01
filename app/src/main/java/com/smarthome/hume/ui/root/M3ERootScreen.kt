@@ -438,7 +438,9 @@ private fun M3ENavBar(
         modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, bottom = 20.dp)
+            // (2026-10-01, user: bo 20dp gap duoi navbar — "2 padding"
+            // o sat bottom): navbar sat xuong, chi giu inset he thong.
+            .padding(start = 16.dp, end = 16.dp)
             .pointerInput(Unit) {
                 var acc = 0f
                 detectHorizontalDragGestures(
