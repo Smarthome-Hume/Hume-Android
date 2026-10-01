@@ -136,8 +136,9 @@ fun PillsRow(
             SecPill(
                 mode = mode,
                 onClick = onToggleSecurity,
-                // Chieu cao co dinh = SecModeCard (80dp) de 3 the bang nhau khi mo rong
-                modifier = Modifier.widthIn(min = secW).height(80.dp),
+                // Chieu cao co dinh 72dp = chieu cao tu nhien cua pill
+                // (44dp circle + padding 14dp*2) de cac the bang nhau
+                modifier = Modifier.widthIn(min = secW).height(72.dp),
             )
         // .secmodes: chi hien khi expanded. Exit shrink layout width
         // (fadeOut + shrinkHorizontally) de cum mode thu dan 400->0dp;
@@ -184,8 +185,8 @@ fun PillsRow(
             BulbPill(
                 count = lightsOnCount,
                 onClick = onLights,
-                // Cao bang SecPill (80dp) de 2 the bang nhau
-                modifier = Modifier.widthIn(min = bulbW).height(80.dp),
+                // Cao 72dp bang SecPill va cac the che do mo rong
+                modifier = Modifier.widthIn(min = bulbW).height(72.dp),
             )
         }
     }
@@ -395,7 +396,7 @@ private fun SecModeCard(
             verticalArrangement = Arrangement.Center,
             modifier = modifier
                 .width(92.dp)
-                .height(80.dp)
+                .height(72.dp)
                 .clip(RoundedCornerShape(26.dp))
                 .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
                 .pressMorph(
