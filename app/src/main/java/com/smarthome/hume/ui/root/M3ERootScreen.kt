@@ -465,9 +465,8 @@ private fun M3ENavBar(
             modifier = Modifier
                 // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
-                // Navbar duc 100% (2026-10-01, user: "tang do duc ve ban
-                // dau"): khong con trong suot.
-                .background(extra.surfaceLowest)
+                // Navbar dac 0.98 (user 2026-10-02).
+                .background(extra.surfaceLowest.copy(alpha = 0.98f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->

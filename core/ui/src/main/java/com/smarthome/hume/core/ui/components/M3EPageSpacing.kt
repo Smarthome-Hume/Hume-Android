@@ -12,16 +12,20 @@ import androidx.compose.ui.unit.dp
 val M3ECardGap = 14.dp
 
 // Navbar floating (M3ERootScreen.M3ENavBar), do tu code:
-// (2026-10-01) NavbarHeight/NavbarBottomMargin khong con dung sau khi
-// bo 120dp khoi m3ePageBottomPadding (user: navbar trong suot, content
-// cuon tu do duoi navbar).
+// - Chieu cao navbar: 86dp
+// - Margin day navbar: 20dp
+// (2026-10-02, user): navbar dac 0.98, thu tu nen -> the -> navbar,
+// the cuoi cach navbar 20dp.
 
 /**
- * (2026-10-01, user: xoa sach padding day content): chi giu
- * navigationBarsPadding(). Khong con 120dp/100dp.
+ * Padding day chuan cho trang co navbar (user 2026-10-02):
+ * the cuoi cach navbar dung 20dp. Navbar dac 0.98 nen content
+ * khong chui dang sau — padding = navbar (86dp) + margin day (20dp)
+ * + gap (20dp), cong navigationBarsPadding cho system.
  */
 fun Modifier.m3ePageBottomPadding(): Modifier =
     navigationBarsPadding()
+        .padding(bottom = 86.dp + 20.dp + 20.dp)
 
 /**
  * Padding day cho trang full-screen KHONG co navbar (vd. Brief mo dang

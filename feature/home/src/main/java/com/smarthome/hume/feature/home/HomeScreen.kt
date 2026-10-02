@@ -224,7 +224,11 @@ fun HomeScreen(
                     // card->card 14; pills->sec 20; sec->card 12
                     // (Khong blur live o day: M3ERootScreen chup anh tinh 1 lan
                     //  roi blur san khi mo overlay -> het khựng.)
-                    modifier = Modifier.fillMaxSize(),
+                    // Day: m3ePageBottomPadding — the cuoi cach navbar 20dp
+                    // (user 2026-10-02, navbar dac 0.98).
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .m3ePageBottomPadding(),
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {

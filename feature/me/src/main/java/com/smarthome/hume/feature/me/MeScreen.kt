@@ -99,6 +99,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.M3ETextField
+import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
@@ -198,7 +199,8 @@ fun MeScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp),
+            .padding(horizontal = 18.dp)
+            .m3ePageBottomPadding(),
     ) {
     ) {
         Spacer(Modifier.height(statusBarTop + 8.dp))

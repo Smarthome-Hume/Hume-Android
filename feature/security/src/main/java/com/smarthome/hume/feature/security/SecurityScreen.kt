@@ -75,6 +75,7 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionHeader
+import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
@@ -116,7 +117,8 @@ fun SecurityScreen(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp),
+                .padding(horizontal = 18.dp)
+                .m3ePageBottomPadding(),
         ) {
             Spacer(Modifier.height(statusBarTop + 8.dp))
             // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
