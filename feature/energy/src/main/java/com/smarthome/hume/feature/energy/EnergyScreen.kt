@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
+import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,7 +95,8 @@ fun EnergyScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface),
+            .background(MaterialTheme.colorScheme.surface)
+            .m3ePageBottomPadding(),
         contentPadding = PaddingValues(
             top = statusBarTop + 8.dp, start = 18.dp, end = 18.dp,
         ),

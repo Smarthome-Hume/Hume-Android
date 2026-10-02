@@ -60,7 +60,6 @@ import com.smarthome.hume.core.ui.components.DeviceIcon
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.M3EMotion
-import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
@@ -86,10 +85,8 @@ fun RoomGrid(
                 row.forEachIndexed { ci, room ->
                     RoomCard(
                         room = room,
-                        
                         onOpen = { onRoom(room) },
                         onToggleLight = { room.lightEntityId?.let(onToggleLight) },
-                        riseDelayMs = 360 + (ri * 2 + ci) * 30,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -104,7 +101,6 @@ private fun RoomCard(
     room: RoomUi,
     onOpen: () -> Unit,
     onToggleLight: () -> Unit,
-    riseDelayMs: Int,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -115,7 +111,6 @@ private fun RoomCard(
     var lastLightTapMs by remember { mutableLongStateOf(0L) }
     Box(
         modifier = modifier
-            .riseIn(riseDelayMs)
             .pressMorphCard(
                 pressedScale = 0.95f,
                 corner = 28.dp,
