@@ -202,7 +202,6 @@ fun MeScreen(
             .padding(horizontal = 18.dp)
             .m3ePageBottomPadding(),
     ) {
-    ) {
         Spacer(Modifier.height(statusBarTop + 8.dp))
         // Title: chi title duoc boc nen
         Column(Modifier.fillMaxWidth()) {
