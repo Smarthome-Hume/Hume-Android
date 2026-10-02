@@ -73,7 +73,6 @@ import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.M3EMotion
-import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.avatar.AvatarStore
@@ -231,102 +230,94 @@ fun HomeScreen(
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
-                            RiseIn(20) {
-                                HomeHeader(
-                                    state = state,
-                                    avatarUrl = state.avatarUrl,
-                                    userAvatar = userAvatar,
-                                    onAvatarTap = {
-                                        // Mo viewer o tang root: mo + blur phu ca navbar
-                                        onOpenAvatarViewer(
-                                            AvatarViewerRequest(
-                                                name = state.userName.ifBlank { "Gia đình" },
-                                                avatar = userAvatar,
-                                                haAvatarUrl = state.avatarUrl,
-                                                targetRect = avatarRectRef.rect,
-                                            ),
-                                        )
-                                    },
-                                    onAvatarPositioned = {
-                                        avatarRectRef.rect = it
-                                        onAvatarPositioned(it)
-                                    },
-                                    onSearch = { viewModel.openSearch(true) },
-                                    onNotif = { viewModel.openNotif(true) },
-                                )
-                            }
+                            HomeHeader(
+                                state = state,
+                                avatarUrl = state.avatarUrl,
+                                userAvatar = userAvatar,
+                                onAvatarTap = {
+                                    // Mo viewer o tang root: mo + blur phu ca navbar
+                                    onOpenAvatarViewer(
+                                        AvatarViewerRequest(
+                                            name = state.userName.ifBlank { "Gia đình" },
+                                            avatar = userAvatar,
+                                            haAvatarUrl = state.avatarUrl,
+                                            targetRect = avatarRectRef.rect,
+                                        ),
+                                    )
+                                },
+                                onAvatarPositioned = {
+                                    avatarRectRef.rect = it
+                                    onAvatarPositioned(it)
+                                },
+                                onSearch = { viewModel.openSearch(true) },
+                                onNotif = { viewModel.openNotif(true) },
+                            )
                         }
                     }
                     item {
                         Column(Modifier.padding(bottom = 20.dp)) {
-                            RiseIn(140) {
-                                PillsRow(
-                                    alarm = state.alarm,
-                                    lightsOnCount = state.lightsOn.size,
-                                    securityExpanded = ui.securityExpanded,
-                                    onToggleSecurity = { viewModel.toggleSecurity() },
-                                    onAutoCollapse = { viewModel.collapseSecurity() },
-                                    onArm = { mode, label -> viewModel.armAlarm(mode, label) },
-                                    onDisarm = { viewModel.disarmAlarm() },
-                                    onLights = { viewModel.openLights(true) },
-                                )
-                            }
+                            PillsRow(
+                                alarm = state.alarm,
+                                lightsOnCount = state.lightsOn.size,
+                                securityExpanded = ui.securityExpanded,
+                                onToggleSecurity = { viewModel.toggleSecurity() },
+                                onAutoCollapse = { viewModel.collapseSecurity() },
+                                onArm = { mode, label -> viewModel.armAlarm(mode, label) },
+                                onDisarm = { viewModel.disarmAlarm() },
+                                onLights = { viewModel.openLights(true) },
+                            )
                         }
                     }
                     if (tips.isNotEmpty() || aiTips.isNotEmpty()) {
                         item {
                             Column(Modifier.padding(bottom = 12.dp)) {
-                                RiseIn(155) { M3ESectionTitle("Gợi ý cho bạn") }
+                                M3ESectionTitle("Gợi ý cho bạn")
                             }
                         }
                         item {
                             Column(Modifier.padding(bottom = 14.dp)) {
-                                RiseIn(165) {
-                                    SuggestCard(
-                                        state,
-                                        aiTips = aiTips,
-                                        onTipAction = { key ->
-                                            when {
-                                                key == "ac" -> viewModel.ac26()
-                                                key.startsWith("toggle_ac:") ->
-                                                    viewModel.toggleClimate(key.removePrefix("toggle_ac:"))
-                                                key == "lights_day" -> viewModel.turnOffAllLights()
-                                            }
-                                        },
-                                        onBatteryDetail = {
-                                            // "Xem pin" o the goi y -> link sang the pin
-                                            // o trang Nang luong (user 2026-10-01).
-                                            onOpenEnergyBattery()
-                                        },
-                                        onOpenSecurity = onOpenSecurity,
-                                        onOpenEnergy = onOpenEnergy,
-                                        cameras = secState.cameras,
-                                        onOpenCamera = { key, name -> onOpenCameraPopup(CameraPopupRequest(key, name)) },
-                                    )
-                                }
+                                SuggestCard(
+                                    state,
+                                    aiTips = aiTips,
+                                    onTipAction = { key ->
+                                        when {
+                                            key == "ac" -> viewModel.ac26()
+                                            key.startsWith("toggle_ac:") ->
+                                                viewModel.toggleClimate(key.removePrefix("toggle_ac:"))
+                                            key == "lights_day" -> viewModel.turnOffAllLights()
+                                        }
+                                    },
+                                    onBatteryDetail = {
+                                        // "Xem pin" o the goi y -> link sang the pin
+                                        // o trang Nang luong (user 2026-10-01).
+                                        onOpenEnergyBattery()
+                                    },
+                                    onOpenSecurity = onOpenSecurity,
+                                    onOpenEnergy = onOpenEnergy,
+                                    cameras = secState.cameras,
+                                    onOpenCamera = { key, name -> onOpenCameraPopup(CameraPopupRequest(key, name)) },
+                                )
                             }
                         }
                     }
                     // (The thong bao da xoa theo yeu cau user - khong co tac dung)
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {
-                            RiseIn(200) { SolarWeekCard(state) }
+                            SolarWeekCard(state)
                         }
                     }
                     // (The cong suat PV da xoa theo yeu cau user 2026-09-30)
                     item {
                         Column(Modifier.padding(bottom = 20.dp)) {
-                            RiseIn(240) {
-                                BatteryCard(
-                                    state.battery,
-                                    onClick = { chartDetail = ChartDetailType.Battery },
-                                )
-                            }
+                            BatteryCard(
+                                state.battery,
+                                onClick = { chartDetail = ChartDetailType.Battery },
+                            )
                         }
                     }
                     item {
                         Column(Modifier.padding(bottom = 12.dp)) {
-                            RiseIn(340) { M3ESectionTitle("Phòng") }
+                            M3ESectionTitle("Phòng")
                         }
                     }
                     item {
@@ -403,20 +394,6 @@ fun HomeScreen(
                 //  tren ca navbar — khong ve o day nua.)
             }
         }
-    }
-}
-
-
-
-/**
- * Hieu ung vao .rise cua demo: dung Modifier.riseIn (giua layout on dinh,
- * chi animate alpha + translationY), stagger theo delayMs rieng
- * (.02/.14/.155/.165/.2/.22/.24/.34s).
- */
-@Composable
-private fun RiseIn(delayMs: Int, content: @Composable () -> Unit) {
-    Box(Modifier.riseIn(delayMs)) {
-        content()
     }
 }
 
