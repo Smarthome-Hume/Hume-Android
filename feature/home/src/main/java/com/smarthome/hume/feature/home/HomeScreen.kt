@@ -219,16 +219,16 @@ fun HomeScreen(
                     contentPadding = PaddingValues(
                         start = 18.dp, end = 18.dp,
                         top = statusBarTop + 8.dp,
+                        bottom = 120.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 14; pills->sec 20; sec->card 12
                     // (Khong blur live o day: M3ERootScreen chup anh tinh 1 lan
                     //  roi blur san khi mo overlay -> het khựng.)
-                    // Day: m3ePageBottomPadding provides a uniform 120dp
-                    // scroll-end clearance, independent of navbar/system insets.
+                    // Keep the 120dp clearance in contentPadding so it scrolls
+                    // with the final cards; navbar/system insets stay independent.
                     modifier = Modifier
-                        .fillMaxSize()
-                        .m3ePageBottomPadding(),
+                        .fillMaxSize(),
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {

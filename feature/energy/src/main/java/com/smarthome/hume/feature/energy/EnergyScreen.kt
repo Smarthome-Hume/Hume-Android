@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
-import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -88,17 +87,17 @@ fun EnergyScreen(
         onDeepLinkConsumed()
     }
 
-    // Full-bleed viewport: status-bar spacing is applied to content, while the
-    // list itself extends behind the root navbar overlay to the screen bottom.
+    // Full-bleed viewport: status-bar spacing and trailing navbar clearance
+    // are scrollable content padding; the list still extends behind the overlay.
     val statusBarTop =
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-            .m3ePageBottomPadding(),
+            .background(MaterialTheme.colorScheme.surface),
         contentPadding = PaddingValues(
             top = statusBarTop + 8.dp, start = 18.dp, end = 18.dp,
+            bottom = 120.dp,
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
