@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -146,10 +145,9 @@ fun HomeScreen(
     }
 
     Scaffold(
-        // Loai status bar khoi insets mac dinh cua Scaffold de tu xu ly:
-        // full-bleed tran duoi status bar trong suot; inset status bar nam
-        // trong contentPadding cua LazyColumn (lien mach khi scroll).
-        contentWindowInsets = WindowInsets.navigationBars,
+        // Full-bleed: content cuon len dang sau navbar trong suot (0.82).
+        // Khong giu inset day lam chan viewport.
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         snackbarHost = {
             // .snack{left:16;right:16;bottom:104} theo demo: snackbar nam TREN
             // navbar (~100dp). Navbar la overlay noi o M3ERootScreen (khong
@@ -219,8 +217,6 @@ fun HomeScreen(
                     // Fling dam (0.6x van toc) -> cuon cham, do hon
                     flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
-                        // (2026-10-01, user: xoa sach padding day): chi
-                        // navigationBarsPadding o modifier, khong bottom.
                         start = 18.dp, end = 18.dp,
                         top = statusBarTop + 8.dp,
                     ),
@@ -228,9 +224,7 @@ fun HomeScreen(
                     // card->card 14; pills->sec 20; sec->card 12
                     // (Khong blur live o day: M3ERootScreen chup anh tinh 1 lan
                     //  roi blur san khi mo overlay -> het khựng.)
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding(),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     item {
                         Column(Modifier.padding(bottom = 14.dp)) {

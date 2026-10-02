@@ -34,7 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import com.smarthome.hume.core.ui.components.Ms
-import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -117,8 +116,7 @@ fun SecurityScreen(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp)
-                .m3ePageBottomPadding(),
+                .padding(horizontal = 18.dp),
         ) {
             Spacer(Modifier.height(statusBarTop + 8.dp))
             // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)

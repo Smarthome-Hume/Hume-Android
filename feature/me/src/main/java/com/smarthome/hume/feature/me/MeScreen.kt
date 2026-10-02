@@ -95,7 +95,6 @@ import com.smarthome.hume.core.ui.avatar.AvatarStore
 import com.smarthome.hume.core.ui.avatar.ProfileAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
-import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
@@ -199,9 +198,8 @@ fun MeScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            // Day: m3ePageBottomPadding — the cuoi cach navbar dung 14dp.
-            .m3ePageBottomPadding(),
+            .padding(horizontal = 18.dp),
+    ) {
     ) {
         Spacer(Modifier.height(statusBarTop + 8.dp))
         // Title: chi title duoc boc nen
