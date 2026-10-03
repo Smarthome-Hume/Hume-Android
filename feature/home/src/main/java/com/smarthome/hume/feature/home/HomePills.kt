@@ -216,7 +216,7 @@ private fun SecPill(
             M3EIcons.Bedtime, cs.secondaryContainer,
             cs.onSecondaryContainer, "Ban đêm · giám sát")
         SecurityMode.Off -> Quad(
-            M3EIcons.PowerSettingsNew, cs.surfaceContainer,
+            M3EIcons.Shield, cs.surfaceContainer,
             cs.onSurfaceVariant, "Đã tắt")
     }
     val interaction = remember { MutableInteractionSource() }
