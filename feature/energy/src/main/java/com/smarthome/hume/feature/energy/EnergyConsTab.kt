@@ -66,7 +66,6 @@ import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.random.Random
 import kotlinx.coroutines.delay
 
 /** Chu so nghin nho, giu so nguyen giong demo (18.450 VND). */
@@ -157,17 +156,6 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 
 @Composable
 private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
-    // Tick 9s nhu demo (cGrid=18450+rand(120), cHome=26880+rand(200)):
-    // chi nhich hien thi, khong doi du lieu HA goc.
-    var tick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(9000)
-            tick++
-        }
-    }
-    val gridJit = Random(tick * 71 + 3).nextInt(120)
-    val homeJit = Random(tick * 131 + 7).nextInt(200)
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
@@ -182,12 +170,12 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat2(
                 label = "Điện lưới",
-                vnd = state.cost.gridVnd + gridJit,
+                vnd = state.cost.gridVnd,
                 modifier = Modifier.weight(1f),
             )
             Stat2(
                 label = "Điện tiêu thụ",
-                vnd = state.cost.homeVnd + homeJit,
+                vnd = state.cost.homeVnd,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -504,14 +492,6 @@ private fun DevicesCard(
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
 ) {
-    // Live tick 2.8s (demo: jitter ±8% gia tri)
-    var tick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(2800)
-            tick++
-        }
-    }
     // Doi che do: rows fade/slide ra (180ms) roi vao lai voi stagger 45ms
     var rowsVisible by remember { mutableStateOf(true) }
     var firstMode by remember { mutableStateOf(true) }
@@ -524,12 +504,10 @@ private fun DevicesCard(
         delay(180)
         rowsVisible = true
     }
-    // Top 5 theo che do (demo: sort desc + slice 0,5)
-    val devs = remember(tick, ui.deviceMode, state.powerDevices, state.energyDevices) {
+    // Top 5 theo che do: gia tri that tu HA (bo jitter demo).
+    val devs = remember(ui.deviceMode, state.powerDevices, state.energyDevices) {
         val base = if (ui.deviceMode == DeviceMode.Power) state.powerDevices else state.energyDevices
-        base.sortedByDescending { it.value }.take(5).mapIndexed { i, d ->
-            d to (1.0 + (Random(tick * 131 + i * 17).nextDouble() - 0.5) * 0.16)
-        }
+        base.sortedByDescending { it.value }.take(5)
     }
     M3ECard(
         shape = RoundedCornerShape(32.dp),
@@ -598,8 +576,8 @@ private fun DevicesCard(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
-            devs.forEachIndexed { i, (d, f) ->
-                DeviceRow(d = d, mode = ui.deviceMode, factor = f,
+            devs.forEachIndexed { i, d ->
+                DeviceRow(d = d, mode = ui.deviceMode,
                     visible = rowsVisible, index = i)
             }
         }
@@ -610,7 +588,6 @@ private fun DevicesCard(
 private fun DeviceRow(
     d: EnergyDevice,
     mode: DeviceMode,
-    factor: Double,
     visible: Boolean,
     index: Int,
 ) {
@@ -638,7 +615,7 @@ private fun DeviceRow(
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        val v = d.value * factor
+        val v = d.value
         Column(horizontalAlignment = Alignment.End) {
             val (num, unit) = if (mode == DeviceMode.Power) {
                 v.toSmartPowerParts()
