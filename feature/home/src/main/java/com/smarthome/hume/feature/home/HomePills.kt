@@ -207,7 +207,7 @@ private fun SecPill(
     val haptic = rememberHaptic()
     val (icon, picBg, picFg, ps) = when (mode) {
         SecurityMode.Home -> Quad(
-            M3EIcons.Shield, extra.successContainer,
+            M3EIcons.ShieldCheck, extra.successContainer,
             extra.onSuccessContainer, "Đang bật")
         SecurityMode.Away -> Quad(
             M3EIcons.FlightTakeoff, cs.tertiaryContainer,
@@ -216,7 +216,7 @@ private fun SecPill(
             M3EIcons.Bedtime, cs.secondaryContainer,
             cs.onSecondaryContainer, "Ban đêm · giám sát")
         SecurityMode.Off -> Quad(
-            M3EIcons.Shield, cs.surfaceContainer,
+            M3EIcons.ShieldSlash, cs.surfaceContainer,
             cs.onSurfaceVariant, "Đã tắt")
     }
     val interaction = remember { MutableInteractionSource() }
@@ -417,7 +417,7 @@ private fun SecModeCard(
                     SecurityMode.Home -> Ms.home
                     SecurityMode.Away -> M3EIcons.FlightTakeoff
                     SecurityMode.Night -> M3EIcons.Bedtime
-                    SecurityMode.Off -> M3EIcons.Shield
+                    SecurityMode.Off -> M3EIcons.ShieldSlash
                 },
                 null,
                 tint = fg,
