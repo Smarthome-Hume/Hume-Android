@@ -69,6 +69,8 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.avatar.AvatarViewerOverlay
@@ -84,13 +86,13 @@ import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
 import kotlinx.coroutines.launch
 
-private data class NavItem(val tab: HumeTab, val icon: String)
+private data class NavItem(val tab: HumeTab, val icon: ImageVector)
 
 private val navItems = listOf(
-    NavItem(HumeTab.Home, Ms.home),
-    NavItem(HumeTab.Energy, Ms.bolt),
-    NavItem(HumeTab.Security, Ms.shield),
-    NavItem(HumeTab.Profile, Ms.person),
+    NavItem(HumeTab.Home, M3EIcons.HouseFa),
+    NavItem(HumeTab.Energy, M3EIcons.BoltFa),
+    NavItem(HumeTab.Security, M3EIcons.ShieldFa),
+    NavItem(HumeTab.Profile, M3EIcons.FamilyFa),
 )
 
 /**
@@ -540,11 +542,10 @@ private fun M3ENavBar(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
                         ) {
-                            MsIcon(
-                                item.icon, contentDescription = item.tab.label,
+                            Icon(
+                                imageVector = item.icon, contentDescription = item.tab.label,
                                 tint = if (isSel) cs.onPrimaryContainer
                                 else cs.onSurfaceVariant,
-                                filled = isSel,
                                 modifier = Modifier.size(iconSize),
                             )
                             Spacer(Modifier.height(4.dp))
