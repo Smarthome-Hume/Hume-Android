@@ -81,6 +81,7 @@ object M3EIcons {
         "washer" -> Ms.local_laundry_service
         "hallway" -> Ms.stairs
         else -> Ms.home
+    }
     // ---- Custom icons tu file SVG (Font Awesome fill) ----
 
     /** Den tran - dung cho tat ca icon den (Font Awesome, fill dac). */
@@ -899,25 +900,23 @@ object M3EIcons {
         }.build()
     }
 
-    }
-
     fun device(key: String): String = when (key) {
         "sun" -> Solar
-        "plug" -> Plug
+        "plug" -> Ms.power
         "house" -> Home
         "desk" -> Ms.desk
         "door" -> Ms.meeting_room
         "snowflake" -> Ms.snowflake
         "fire" -> Ms.whatshot
-        "bulb", "lightbulb", "light" -> Light
-        "switch" -> Power
+        "bulb", "lightbulb", "light" -> Ms.lightbulb
+        "switch" -> Ms.bolt
         // Thiet bi theo ten (2026-09-30): map key cau hinh sang glyph Ms co san.
         // Bep tu / noi chien / may rua bat: icon rieng, khong dung chung soup_kitchen.
         "washer", "dryer" -> Ms.local_laundry_service
         "cooking" -> Ms.cooking
         "dishwasher" -> Ms.dishwasher
         "stairs" -> Ms.stairs
-        else -> Power
+        else -> Ms.bolt
     }
 
     /**

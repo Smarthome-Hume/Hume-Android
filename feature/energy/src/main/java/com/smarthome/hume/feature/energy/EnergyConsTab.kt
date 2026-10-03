@@ -647,7 +647,7 @@ private fun DeviceRow(
                     .widthIn(min = 64.dp),
             ) {
                 Text(
-                    (cost * factor).toLong().toVnd(),
+                    cost.toVnd(),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = LocalHumeExtraColors.current.success,

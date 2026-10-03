@@ -167,7 +167,7 @@ fun EnergyFlowCard(
                 }
             }
             Spacer(Modifier.height(6.dp))
-            FlowArea(flow = flow, charging = charging, soc = soc, vm = vm)
+            FlowArea(flow = flow, charging = charging, soc = soc)
         }
     }
 }
@@ -177,7 +177,6 @@ private fun FlowArea(
     flow: EnergyFlowState,
     charging: Boolean,
     soc: Double,
-    vm: EnergyViewModel,
 ) {
     BoxWithConstraints(
         modifier = Modifier

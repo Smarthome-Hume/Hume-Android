@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import com.smarthome.hume.core.ui.R
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @OptIn(ExperimentalTextApi::class)
 private val MsFontFamily = FontFamily(
@@ -124,6 +126,26 @@ fun MsIcon(
                 ),
             ),
         )
+    }
+}
+
+@Composable
+fun MsIcon(
+    glyph: Any,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    filled: Boolean = false,
+) {
+    when (glyph) {
+        is String -> MsIcon(glyph, contentDescription, modifier, tint, filled)
+        is ImageVector -> Icon(
+            imageVector = glyph,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            tint = tint,
+        )
+        else -> error("Unsupported icon type: ${glyph::class.qualifiedName}")
     }
 }
 

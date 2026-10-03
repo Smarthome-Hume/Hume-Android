@@ -148,7 +148,7 @@ fun HomeFabMenu(
 @Composable
 private fun FabMenuItem(
     label: String,
-    icon: String,
+    icon: Any,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

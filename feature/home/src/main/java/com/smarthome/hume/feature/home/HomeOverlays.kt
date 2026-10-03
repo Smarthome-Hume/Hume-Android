@@ -180,7 +180,7 @@ private fun notifKind(n: HomeNotification): NotifKind {
 }
 
 /** Icon thong bao theo npool cua demo: door_front / door_open phan biet. */
-private fun notifIcon(n: HomeNotification): String {
+private fun notifIcon(n: HomeNotification): Any {
     val t = n.title.lowercase()
     return when (notifKind(n)) {
         NotifKind.Door -> if ("cửa sổ" in t) Ms.door_open else M3EIcons.Door
