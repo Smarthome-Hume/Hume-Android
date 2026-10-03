@@ -417,7 +417,7 @@ private fun SecModeCard(
                     SecurityMode.Home -> Ms.home
                     SecurityMode.Away -> M3EIcons.FlightTakeoff
                     SecurityMode.Night -> M3EIcons.Bedtime
-                    SecurityMode.Off -> M3EIcons.PowerSettingsNew
+                    SecurityMode.Off -> M3EIcons.Shield
                 },
                 null,
                 tint = fg,
