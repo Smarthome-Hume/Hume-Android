@@ -117,13 +117,11 @@ private fun hasPowerFlow(watts: Double): Boolean = watts.roundToInt() != 0
 @Composable
 fun EnergyFlowCard(
     flow: EnergyFlowState,
-    ui: EnergyScreenUi,
-    vm: EnergyViewModel,
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
 ) {
-    val charging = ui.battChargeOverride ?: flow.battCharging
-    val soc = (flow.soc + ui.socDrift).coerceIn(5.0, 100.0)
+    val charging = flow.battCharging
+    val soc = flow.soc
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
@@ -285,7 +283,6 @@ private fun FlowArea(
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - NODE_W), fy(VB_H - 6f - NODE_H)),
-            onClick = { vm.toggleBattFlow() },
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

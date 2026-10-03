@@ -120,7 +120,7 @@ fun EnergySolarTab(
         }
         // The nang luong (so do dong dien toan he thong): dich deep-link "Xem pin".
         EnergyFlowCard(
-            flow = state.flow, ui = ui, vm = vm, risePlayed = risePlayed,
+            flow = state.flow, risePlayed = risePlayed,
             modifier = Modifier.then(
                 if (energyBivr != null) Modifier.bringIntoViewRequester(energyBivr) else Modifier,
             ),

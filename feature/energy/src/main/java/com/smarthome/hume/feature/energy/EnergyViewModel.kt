@@ -23,10 +23,6 @@ data class EnergyScreenUi(
     val chargeOpen: Boolean = false,
     val dischargeOpen: Boolean = false,
     val snackbar: String? = null,
-    /** Ghi de che do Sac/Xa khi user bam node pin tren flow card (demo: toggle flNodeBatt). */
-    val battChargeOverride: Boolean? = null,
-    /** Do lech SOC tich luy tu tick 2.8s khi dang override (+0.4 sac / -0.3 xa). */
-    val socDrift: Double = 0.0,
 )
 
 class EnergyViewModel(
@@ -50,31 +46,6 @@ class EnergyViewModel(
     fun toggle(entityId: String) = repo.toggle(entityId)
     fun setNumber(entityId: String, value: Double) = repo.setNumber(entityId, value)
     fun setTime(entityId: String, time: String) = repo.setTime(entityId, time)
-
-    /** Bam node pin tren flow card: doi Sac/Xa (badge, icon, chieu sweep) — demo flNodeBatt. */
-    fun toggleBattFlow() {
-        val cur = _ui.value.battChargeOverride ?: state.value.flow.battCharging
-        _ui.update { it.copy(battChargeOverride = !cur, socDrift = 0.0) }
-        ensureSocTicker()
-    }
-
-    private var socJob: kotlinx.coroutines.Job? = null
-
-    /** Tick 2.8s: SOC +0.4%/tick khi sac, -0.3%/tick khi xa (chi khi user dang override). */
-    private fun ensureSocTicker() {
-        if (socJob != null) return
-        socJob = viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(2800)
-                _ui.update { u ->
-                    val ov = u.battChargeOverride ?: return@update u
-                    val next = (state.value.flow.soc + u.socDrift +
-                        if (ov) 0.4 else -0.3).coerceIn(5.0, 100.0)
-                    u.copy(socDrift = next - state.value.flow.soc)
-                }
-            }
-        }
-    }
 
     fun showSnack(msg: String) = _ui.update { it.copy(snackbar = msg) }
     fun clearSnack() = _ui.update { it.copy(snackbar = null) }
