@@ -133,7 +133,7 @@ fun SecurityScreen(
                     Text(
                         "An ninh",
                         color = cs.onPrimaryContainer,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-0.3).sp,
                     )

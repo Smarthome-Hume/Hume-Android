@@ -136,7 +136,7 @@ fun EnergyScreen(
                 ) {
                     Text(
                         "Năng lượng",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-0.3).sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,

@@ -215,7 +215,7 @@ fun MeScreen(
                 // demo .phdr h2: 26px/700 ls -.3px
                 Text(
                     "Thông tin",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
