@@ -165,10 +165,12 @@ fun PillsRow(
                 .fillMaxWidth()
                 .then(
                     // Khi mo rong (compact=false, ca trong luc exit dang chay):
-                    // giu horizontalScroll + width min de layout on dinh
+                    // giu horizontalScroll + width min de layout on dinh.
+                    // Port iOS aac77a2: padding am -18dp de noi dung tran ra
+                    // canh man hinh thay vi bi cat o le parent.
                     if (!compact) Modifier
                         .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 2.dp)
+                        .padding(horizontal = (-18).dp)
                     else Modifier,
                 ),
         ) {
