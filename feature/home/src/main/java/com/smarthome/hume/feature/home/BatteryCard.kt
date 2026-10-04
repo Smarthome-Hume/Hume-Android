@@ -25,8 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +50,9 @@ import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.OvershootNumber
+import kotlinx.coroutines.delay
+import kotlin.math.pow
 
 /**
  * The pin — LAYOUT theo anh mau user gui, MAU SAC + CHU + WAVY giu theo M3E:
@@ -162,7 +168,9 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         }
         Spacer(Modifier.height(10.dp))
         // Thanh wavy M3E (giu nguyen kieu flat/wavy hien tai)
-        AnimatedWavyBar(soc = soc, modifier = Modifier.fillMaxWidth())
+        // reserveLimit lay tu data that (backup_soc cua inverter), khong hardcode 20
+        // — port tu iOS WavyBatteryBar(soc:reserveLimit:) (HomeBatteryCard).
+        AnimatedWavyBar(soc = soc, reserveLimit = reserve, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(10.dp))
         // Legend (mau M3E, vi tri theo anh mau: trai/phai)
         Row(
@@ -184,10 +192,16 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
                 )
-                Text(
-                    "$reserve%",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
+                // So % animate overshoot 1.2s khi data ve — port tu iOS
+                // OvershootNumber(duration: 1.2) trong HomeBatteryCard.
+                OvershootNumber(
+                    value = reserve.toDouble(),
+                    format = { "${it.toInt()}%" },
+                    durationMs = 1200,
+                    chaosId = "batt-reserve",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
                 )
@@ -217,10 +231,14 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
                 )
-                Text(
-                    "$usage%",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
+                OvershootNumber(
+                    value = usage.toDouble(),
+                    format = { "${it.toInt()}%" },
+                    durationMs = 1200,
+                    chaosId = "batt-usage",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
                 )
@@ -290,6 +308,32 @@ private fun AnimatedWavyBar(
         prTarget, tween(800, easing = M3EMotion.emphasized), label = "bpr")
     val pu by animateFloatAsState(
         puTarget, tween(800, easing = M3EMotion.emphasized), label = "bpu")
+    // Overshoot entrance (port tu iOS WavyBatteryBar.startBarAnimation):
+    // fill chay 0 -> full 100% (18 x 35ms, ease-out bac 2) -> nay ve dung SOC
+    // (22 x 35ms, ease-out bac 3). Chi chay 1 lan khi data ve lan dau
+    // (soc 0 -> >0), nhu iOS; cac update sau dung animateFloatAsState o tren.
+    var barScale by remember { mutableStateOf(0f) }
+    var barPlayed by remember { mutableStateOf(false) }
+    LaunchedEffect(socC, reserveLimit) {
+        if (socC > 0 && !barPlayed) {
+            barPlayed = true
+            val pr0 = minOf(socC, reserveLimit) / 100f
+            val pu0 = maxOf(0, socC - reserveLimit) / 100f
+            // He so de fill dat full 100%: 1/(pr+pu) — nhu iOS fullScale
+            val full = if (pr0 + pu0 > 0f) 1f / (pr0 + pu0) else 1f
+            repeat(18) { k ->
+                val t = (k + 1) / 18f
+                barScale = full * (1f - (1f - t).pow(2))
+                delay(35)
+            }
+            repeat(22) { k ->
+                val t = (k + 1) / 22f
+                barScale = full + (1f - full) * (1f - (1f - t).pow(3))
+                delay(35)
+            }
+            barScale = 1f
+        }
+    }
     // Song truot: 0 -> 15px (1 buoc song) moi 1s, linear, vo han
     val waveT = rememberInfiniteTransition(label = "bwaveslide")
     val phase by waveT.animateFloat(
@@ -313,10 +357,11 @@ private fun AnimatedWavyBar(
             },
     ) {
         val w = maxWidth
-        val flatW = (w - 8.dp) * pr
-        val wavyL = (w - 8.dp) * pr + 4.dp
-        val wavyW = (w - 8.dp) * pu
-        val trackL = (w - 8.dp) * (pr + pu) + 8.dp
+        // Nhan barScale: overshoot 0 -> full -> dung SOC (port tu iOS)
+        val flatW = (w - 8.dp) * pr * barScale
+        val wavyL = (w - 8.dp) * pr * barScale + 4.dp
+        val wavyW = (w - 8.dp) * pu * barScale
+        val trackL = (w - 8.dp) * (pr + pu) * barScale + 8.dp
         val trackW = w - 4.dp - trackL
 
         if (flatW > 0.dp) {
