@@ -1,5 +1,7 @@
 package com.smarthome.hume.core.ui.components
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -88,14 +90,22 @@ fun WeekChartD(
             val today = i == vals.lastIndex
             val top = y(v)
             val h = (140.dp - top).coerceAtLeast(4.dp)
+            // Khi data doi, CHI cot bar animate chieu cao (emphasized 600ms) —
+            // the chua khong rung/scale (port tu iOS c5b64c6).
+            // Day cot giu yen o 140dp: offsetY = top + (h - animH).
+            val animH by animateDpAsState(
+                targetValue = h,
+                animationSpec = tween(600, easing = M3EMotion.emphasized),
+                label = "barH$i",
+            )
             // Dai mau dam->nhat theo gia tri: cao nhat = primary dam, thap nhat = primaryContainer nhat
             val t = ((v - minValue) / range).coerceIn(0f, 1f)
             val barColor = androidx.compose.ui.graphics.lerp(cs.primaryContainer, cs.primary, t)
             Box(
                 modifier = Modifier
-                    .offset(x = x(i) - bw / 2, y = top)
+                    .offset(x = x(i) - bw / 2, y = top + (h - animH))
                     .width(bw)
-                    .height(h)
+                    .height(animH)
                     .clip(RoundedCornerShape(50))
                     .background(barColor)
                     .pointerInput(i) {
