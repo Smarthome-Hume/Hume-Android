@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyDonutSlice
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.OvershootNumber
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.util.Locale
 import kotlin.math.atan2
@@ -139,13 +140,14 @@ fun EnergyDonut(
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Giua donut: slice duoc chon (gia tri + ten), mac dinh la TONG
+            // Giua donut: slice duoc chon (gia tri + ten), mac dinh la TONG.
+            // Overshoot khi data ve (port iOS 84dfe2c, donut-center).
             val selSlice = selected?.let { slices.getOrNull(it) }
-            Text(
-                if (selSlice != null)
-                    String.format(Locale.US, "%.1f", total * selSlice.fraction)
-                else
-                    String.format(Locale.US, "%.1f", total),
+            OvershootNumber(
+                value = if (selSlice != null) total * selSlice.fraction else total,
+                format = { String.format(Locale.US, "%.1f", it) },
+                durationMs = 1000,
+                chaosId = "donut-center",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontFeatureSettings = "tnum",

@@ -62,6 +62,7 @@ import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.components.OvershootNumber
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -154,8 +155,12 @@ fun EnergyFlowCard(
                             .blink(1600),
                     )
                     Spacer(Modifier.width(7.dp))
-                    Text(
-                        String.format(Locale.US, "%.1f", flow.todayKwh),
+                    // kWh hom nay: overshoot khi data ve (port iOS 84dfe2c, flow-today)
+                    OvershootNumber(
+                        value = flow.todayKwh,
+                        format = { String.format(Locale.US, "%.1f", it) },
+                        durationMs = 1000,
+                        chaosId = "flow-today",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum",
@@ -304,8 +309,12 @@ private fun FlowArea(
                     style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(
-                    "${soc.roundToInt()}%",
+                // SOC %: overshoot khi data ve (port iOS 84dfe2c, flow-soc)
+                OvershootNumber(
+                    value = soc,
+                    format = { "${it.roundToInt()}%" },
+                    durationMs = 800,
+                    chaosId = "flow-soc",
                     style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

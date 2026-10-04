@@ -147,14 +147,14 @@ fun PillsRow(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val halfPill = (maxWidth - 10.dp) / 2
         val secW by animateDpAsState(
-            targetValue = if (compact) halfPill else 150.dp,
+            targetValue = if (compact) halfPill else 130.dp,
             animationSpec = tween(300, easing = M3EMotion.emphasized),
             label = "secPillW",
         )
         // Port iOS (2026-10-04): ca 2 pill rong 150dp khi mo rong
         // (truoc day bulb 128dp); khi compact moi pill nua man hinh.
         val bulbW by animateDpAsState(
-            targetValue = if (compact) halfPill else 150.dp,
+            targetValue = if (compact) halfPill else 130.dp,
             animationSpec = tween(300, easing = M3EMotion.emphasized),
             label = "bulbPillW",
         )
@@ -170,7 +170,7 @@ fun PillsRow(
                     // canh man hinh thay vi bi cat o le parent.
                     if (!compact) Modifier
                         .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = (-18).dp)
+                        .padding(horizontal = 2.dp)
                     else Modifier,
                 ),
         ) {
@@ -179,7 +179,7 @@ fun PillsRow(
                 onClick = onToggleSecurity,
                 // Chieu cao co dinh 72dp = chieu cao tu nhien cua pill
                 // (44dp circle + padding 14dp*2) de cac the bang nhau
-                modifier = Modifier.widthIn(min = secW).height(72.dp),
+                modifier = Modifier.widthIn(min = secW).height(60.dp),
             )
         // .secmodes: chi hien khi expanded. Exit shrink layout width
         // (fadeOut + shrinkHorizontally) de cum mode thu dan 400->0dp;
@@ -229,7 +229,7 @@ fun PillsRow(
                 // He so squash tu chuoi va cham khi thu gon (port iOS bulbSquash)
                 squash = bulbSquashAnim.value,
                 // Cao 72dp bang SecPill va cac the che do mo rong
-                modifier = Modifier.widthIn(min = bulbW).height(72.dp),
+                modifier = Modifier.widthIn(min = bulbW).height(60.dp),
             )
         }
     }
@@ -281,7 +281,7 @@ private fun SecPill(
     )
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .clip(RoundedCornerShape(radius))
@@ -293,16 +293,16 @@ private fun SecPill(
                 haptic()
                 onClick()
             }
-            .padding(14.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(44.dp)
+                .size(36.dp)
                 .clip(CircleShape)
                 .background(picBg),
         ) {
-            MsIcon(icon, null, tint = picFg, modifier = Modifier.size(24.dp))
+            MsIcon(icon, null, tint = picFg, modifier = Modifier.size(20.dp))
         }
         Column {
             Text(
@@ -368,7 +368,7 @@ private fun BulbPill(
     val shapeSquash = if (pressed) 1f else squash
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         modifier = modifier
             .graphicsLayer(scaleX = scaleX, scaleY = scaleY)
             .clip(SquashPillShape(squash = shapeSquash, cornerRadius = radius))
@@ -380,19 +380,19 @@ private fun BulbPill(
                 haptic()
                 onClick()
             }
-            .padding(14.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(44.dp)
+                .size(36.dp)
                 .clip(CircleShape)
                 .background(cs.tertiaryContainer),
         ) {
             MsIcon(
                 M3EIcons.Light, null,
                 tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(20.dp),
             )
         }
         Column {
@@ -455,8 +455,8 @@ private fun SecModeCard(
             // Can giua doc de chu khong bi don xuong day
             verticalArrangement = Arrangement.Center,
             modifier = modifier
-                .width(92.dp)
-                .height(72.dp)
+                .width(80.dp)
+                .height(60.dp)
                 .clip(RoundedCornerShape(26.dp))
                 .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
                 .pressMorph(

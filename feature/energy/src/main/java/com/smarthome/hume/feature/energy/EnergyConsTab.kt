@@ -51,7 +51,7 @@ import com.smarthome.hume.core.model.EnergyPowerKind
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.model.EnergyWeekPoint
 import com.smarthome.hume.core.ui.components.M3ECard
-import com.smarthome.hume.core.ui.components.MarqueeText
+import com.smarthome.hume.core.ui.components.OvershootNumber
 import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3EMotion
@@ -126,11 +126,16 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            Text(
-                kwh1(todayVal),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-0.3).sp,
+            // Tong kWh hom nay: overshoot khi data ve (port iOS 84dfe2c, usage-total)
+            OvershootNumber(
+                value = todayVal,
+                format = { kwh1(it) },
+                durationMs = 1000,
+                chaosId = "usage-total",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
+                ),
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
             )
@@ -198,7 +203,7 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 
 @Composable
 private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
-    val (big, unit) = vnd.toSmartVndParts()
+    val unit = vnd.toSmartVndParts().second
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
@@ -212,14 +217,19 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
         )
         // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
         // Nguyen tac: baseline don vi = baseline gia tri (alignByBaseline, khong dung Alignment.Bottom).
+        // Overshoot khi data ve (port iOS 84dfe2c, cost-<label>); smartVnd giu ngan
+        // nen hiem khi tran — giong iOS dung lineLimit(1).
         Row(
             modifier = Modifier.padding(top = 4.dp),
         ) {
-            MarqueeText(
-                text = big,
-                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+            OvershootNumber(
+                value = vnd.toDouble(),
+                format = { it.toSmartVndParts().first },
+                durationMs = 1000,
+                chaosId = "cost-$label",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .weight(1f)
@@ -399,8 +409,12 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row {
-                    Text(
-                        kwh1(state.donutTotalKwh),
+                    // Tong donut: overshoot khi data ve (port iOS 84dfe2c, donut-total)
+                    OvershootNumber(
+                        value = state.donutTotalKwh,
+                        format = { kwh1(it) },
+                        durationMs = 1200,
+                        chaosId = "donut-total",
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.3).sp,
