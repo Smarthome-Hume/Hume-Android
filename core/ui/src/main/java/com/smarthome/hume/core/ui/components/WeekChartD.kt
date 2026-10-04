@@ -2,6 +2,10 @@ package com.smarthome.hume.core.ui.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import kotlin.random.Random
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -86,16 +90,33 @@ fun WeekChartD(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())),
             )
         }
+        // Hieu ung cot nhay loan khi xuat hien (port iOS c5b64c6 startChaos):
+        // 8 steps, moi step 120ms, bien do +-40% giam dan ve 0, roi on dinh.
+        var chaosFactors by remember { mutableStateOf(List(vals.size) { 1f }) }
+        // Chi chay 1 lan khi xuat hien (nhu iOS onAppear), khong restart khi data doi
+        LaunchedEffect(Unit) {
+            val steps = 8
+            repeat(steps) { s ->
+                val dampen = 1f - s.toFloat() / steps
+                chaosFactors = List(vals.size) {
+                    1f + (Random.nextFloat() * 0.8f - 0.4f) * dampen
+                }
+                delay(120)
+            }
+            chaosFactors = List(vals.size) { 1f }
+        }
         vals.forEachIndexed { i, v ->
             val today = i == vals.lastIndex
             val top = y(v)
-            val h = (140.dp - top).coerceAtLeast(4.dp)
+            val baseH = (140.dp - top).coerceAtLeast(4.dp)
+            val chaos = chaosFactors.getOrElse(i) { 1f }
+            val h = baseH * chaos
             // Khi data doi, CHI cot bar animate chieu cao (emphasized 600ms) —
             // the chua khong rung/scale (port tu iOS c5b64c6).
-            // Day cot giu yen o 140dp: offsetY = top + (h - animH).
+            // Day cot giu yen o 140dp: offsetY = top + (baseH - animH).
             val animH by animateDpAsState(
                 targetValue = h,
-                animationSpec = tween(600, easing = M3EMotion.emphasized),
+                animationSpec = tween(120, easing = FastOutSlowInEasing),
                 label = "barH$i",
             )
             // Dai mau dam->nhat theo gia tri: cao nhat = primary dam, thap nhat = primaryContainer nhat
@@ -103,7 +124,7 @@ fun WeekChartD(
             val barColor = androidx.compose.ui.graphics.lerp(cs.primaryContainer, cs.primary, t)
             Box(
                 modifier = Modifier
-                    .offset(x = x(i) - bw / 2, y = top + (h - animH))
+                    .offset(x = x(i) - bw / 2, y = top + (baseH - animH))
                     .width(bw)
                     .height(animH)
                     .clip(RoundedCornerShape(50))
