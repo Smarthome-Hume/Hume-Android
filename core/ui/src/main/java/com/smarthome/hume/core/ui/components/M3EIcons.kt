@@ -900,23 +900,23 @@ object M3EIcons {
         }.build()
     }
 
-    fun device(key: String): String = when (key) {
+    fun device(key: String): Any = when (key) {
         "sun" -> Solar
-        "plug" -> Ms.power
+        "plug" -> Plug
         "house" -> Home
         "desk" -> Ms.desk
         "door" -> Ms.meeting_room
         "snowflake" -> Ms.snowflake
         "fire" -> Ms.whatshot
-        "bulb", "lightbulb", "light" -> Ms.lightbulb
-        "switch" -> Ms.bolt
+        "bulb", "lightbulb", "light" -> Light
+        "switch" -> Power
         // Thiet bi theo ten (2026-09-30): map key cau hinh sang glyph Ms co san.
         // Bep tu / noi chien / may rua bat: icon rieng, khong dung chung soup_kitchen.
         "washer", "dryer" -> Ms.local_laundry_service
         "cooking" -> Ms.cooking
         "dishwasher" -> Ms.dishwasher
         "stairs" -> Ms.stairs
-        else -> Ms.bolt
+        else -> Power
     }
 
     /**
