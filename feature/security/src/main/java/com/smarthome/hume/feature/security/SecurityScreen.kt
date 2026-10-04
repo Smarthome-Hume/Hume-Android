@@ -430,7 +430,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                 }
             }
             // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px
-            // (2026-10-05, user: pill om sat text, bo width co dinh 120dp)
+            // (2026-10-05, user: width co dinh theo text dai nhat "Binh thuong" = 96dp)
             Text(
                 chipLabel,
                 style = MaterialTheme.typography.labelSmall,
@@ -442,9 +442,10 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                 softWrap = false,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
+                    .width(96.dp)
                     .clip(CircleShape)
                     .background(pillBg)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(vertical = 6.dp),
             )
         }
     }
