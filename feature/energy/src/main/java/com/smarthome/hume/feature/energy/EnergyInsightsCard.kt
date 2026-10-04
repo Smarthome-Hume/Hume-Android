@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.ui.components.M3ECard
+import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.pressMorph
@@ -163,12 +165,23 @@ private fun InsightRow(
                 .weight(1f)
                 .padding(start = 10.dp),
         ) {
+            // Chip nhóm: Cảnh báo / Tiết kiệm / Thông tin — rõ mục đích gợi ý.
             Text(
-                insight.title,
+                insight.categoryLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = sevColor,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(sevColor.copy(alpha = 0.12f))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+            Spacer(Modifier.height(4.dp))
+            // Tiêu đề = tên thiết bị cụ thể; chạy marquee khi tràn thay vì cắt "...".
+            MarqueeText(
+                text = insight.title,
                 style = MaterialTheme.typography.titleMedium,
                 color = cs.onTertiaryContainer,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             val detail = buildString {
                 append(insight.detail)
