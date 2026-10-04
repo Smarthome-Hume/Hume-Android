@@ -128,7 +128,11 @@ private fun RoomCard(
             .padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
             Column {
-                // Hang tren: icon phong + nhiet do lon (nhu Hume goc)
+                // Hang tren: icon phong + nhiet do sat icon.
+                // Khoang cach icon-nhiet do 25dp = padding RIENG tung element
+                // (icon end 15dp + nhiet do start 10dp — nhu iOS: HStack
+                // spacing 10 + icon trailing 15); KHONG dung
+                // Arrangement.spacedBy cua Row (muc 24).
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -146,7 +150,8 @@ private fun RoomCard(
                                 lastLightTapMs = SystemClock.uptimeMillis()
                                 haptic()
                                 onToggleLight()
-                            },
+                            }
+                            .padding(end = 15.dp),
                     ) {
                         MsIcon(
                             M3EIcons.room(room.iconKey), null,
@@ -155,8 +160,7 @@ private fun RoomCard(
                             modifier = Modifier.size(24.dp),
                         )
                     }
-                    Spacer(Modifier.weight(1f))
-                    // Nhiet do lon nhu Hume goc
+                    // Nhiet do sat icon (25dp tu icon), khong can phai nhu truoc
                     room.tempC?.let { temp ->
                         Text(
                             "%.1f°".format(temp),
@@ -166,10 +170,13 @@ private fun RoomCard(
                             else cs.onSurface,
                             maxLines = 1,
                             softWrap = false,
+                            modifier = Modifier.padding(start = 10.dp),
                         )
                     }
+                    Spacer(Modifier.weight(1f))
                 }
-                Spacer(Modifier.height(10.dp))
+                // Khoang cach icon-ten phong 25dp (iOS: Spacer().frame(height: 25))
+                Spacer(Modifier.height(25.dp))
                 com.smarthome.hume.core.ui.components.MarqueeText(
                     text = room.name,
                     style = MaterialTheme.typography.bodyMedium,

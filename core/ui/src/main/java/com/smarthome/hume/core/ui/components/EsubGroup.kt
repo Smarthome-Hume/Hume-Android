@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,8 +45,12 @@ fun EsubGroup(
         modifier = modifier
             .clip(pill)
             .background(MaterialTheme.colorScheme.surfaceContainer)
+            // Tong chieu cao chuan 46dp (muc 23): min 46dp — padding/text
+            // tieu chuan van du 46dp, noi dung lon hon thi tu gian (khong clip).
+            .heightIn(min = 46.dp)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEachIndexed { i, label ->
             val isSel = i == selectedIndex
