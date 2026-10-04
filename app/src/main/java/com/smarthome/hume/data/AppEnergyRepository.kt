@@ -15,6 +15,7 @@ import com.smarthome.hume.core.model.EnergyPowerRow
 import com.smarthome.hume.core.model.EnergyTier
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.model.EnergyWeekPoint
+import com.smarthome.hume.core.model.EntityToggleState
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.HomeEntity as LegacyEntity
 import com.smarthome.hume.core.model.LowBatteryDevice
@@ -157,6 +158,12 @@ class AppEnergyRepository(
             todayKwh = pvToday,
             selfUsePct = selfUse,
             gridOn = gridOn,
+            // Nang luong (kWh) tung node — port iOS commit 46c365f.
+            pvKwh = pvToday,
+            gridKwh = v("sensor.aptomat_tong_daily"),
+            homeKwh = homeDaily,
+            battChgKwh = battChargeKwh,
+            battDisKwh = v("sensor.solis_s6_eh1p_today_battery_discharge_energy_2"),
         )
 
         val tiers = listOf(
@@ -187,6 +194,27 @@ class AppEnergyRepository(
             }
             .sortedBy { it.pct }
 
+        // Trang thai cac entity dieu khien (cho Energy Insights + Insight popup).
+        // Chi lay domain dieu khien duoc de map nhe (khong map ~1600 entity).
+        val toggleStates = entities.values
+            .filter { e ->
+                val d = e.id.substringBefore('.')
+                d == "light" || d == "switch" || d == "fan" ||
+                    d == "climate" || d == "cover" || d == "lock"
+            }
+            .associate { e ->
+                val on = if (e.id.startsWith("climate.")) {
+                    // Climate: active khi khac off/unavailable/unknown (cool/heat/auto...)
+                    e.state !in setOf("off", "unavailable", "unknown", "")
+                } else e.state == "on"
+                e.id to EntityToggleState(
+                    entityId = e.id,
+                    label = e.friendly(),
+                    isOn = on,
+                    onMinutes = if (on) e.minutesAgo() else null,
+                )
+            }
+
         return _state.value.copy(
             todayKwh = homeDaily,
             cost = cost,
@@ -202,6 +230,7 @@ class AppEnergyRepository(
             donut = donut.first,
             donutTotalKwh = donut.second,
             lowBatteries = lowBatteries,
+            toggleStates = toggleStates,
         )
     }
 

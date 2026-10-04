@@ -42,6 +42,17 @@ data class EnergyFlowState(
     val selfUsePct: Double = 0.0,
     /** true = luoi co dien; false = mat dien (chay qua cong backup). */
     val gridOn: Boolean = true,
+    // Nang luong (kWh) tung node — port iOS commit 46c365f.
+    /** San luong PV hom nay (kWh). */
+    val pvKwh: Double = 0.0,
+    /** Dien luoi mua hom nay (kWh). */
+    val gridKwh: Double = 0.0,
+    /** Nha tieu thu hom nay (kWh). */
+    val homeKwh: Double = 0.0,
+    /** Pin sac vao hom nay (kWh). */
+    val battChgKwh: Double = 0.0,
+    /** Pin xa ra hom nay (kWh). */
+    val battDisKwh: Double = 0.0,
 )
 
 /** Mot dong trong the "Thiet bi tieu thu". */
@@ -92,6 +103,15 @@ data class BatteryControl(
     val isOn: Boolean = false,
 )
 
+/** Trang thai rut gon 1 entity dieu khien duoc (phuc vu Energy Insights + Insight popup). */
+data class EntityToggleState(
+    val entityId: String,
+    val label: String,
+    val isOn: Boolean,
+    /** So phut ke tu last_changed (null neu khong ro). */
+    val onMinutes: Int? = null,
+)
+
 data class EnergyUiState(
     val week: List<EnergyWeekPoint> = emptyList(),
     val todayKwh: Double = 0.0,
@@ -110,4 +130,6 @@ data class EnergyUiState(
     val donut: List<EnergyDonutSlice> = emptyList(),
     val donutTotalKwh: Double = 0.0,
     val lowBatteries: List<LowBatteryDevice> = emptyList(),
+    /** Trang thai cac entity dieu khien (light/switch/fan/climate/cover/lock) — cho Insights. */
+    val toggleStates: Map<String, EntityToggleState> = emptyMap(),
 )
