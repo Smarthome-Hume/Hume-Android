@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -83,9 +84,11 @@ fun CameraFeedCard(
     val context = LocalContext.current
     val haptic = rememberHaptic()
     var frame by remember(camKey) { mutableStateOf(0L) }
+    // RTSP that bai (go2rtc mat stream/timeout): fallback ve snapshot thay vi den man hinh.
+    var rtspFailed by remember(camKey) { mutableStateOf(false) }
 
     // Chi poll snapshot khi khong stream RTSP.
-    val streaming = unlocked && rtspUrl != null
+    val streaming = unlocked && rtspUrl != null && !rtspFailed
     LaunchedEffect(camKey, unlocked, streaming) {
         if (!unlocked || streaming) return@LaunchedEffect
         while (true) {
@@ -94,9 +97,15 @@ fun CameraFeedCard(
         }
     }
 
-    // Player RTSP: chi tao khi da mo khoa + co URL (local).
-    val player = remember(rtspUrl, unlocked) {
+    // Player RTSP: chi tao khi da mo khoa + co URL (local) + chua fail.
+    val player = remember(rtspUrl, unlocked, rtspFailed) {
         if (!streaming) null else ExoPlayer.Builder(context).build().apply {
+            addListener(object : Player.Listener {
+                override fun onPlayerError(error: PlaybackException) {
+                    // Khong de man hinh den vinh vien: chuyen sang snapshot 3s.
+                    rtspFailed = true
+                }
+            })
             setMediaItem(MediaItem.fromUri(rtspUrl!!))
             repeatMode = Player.REPEAT_MODE_OFF
             volume = 0f
@@ -104,7 +113,7 @@ fun CameraFeedCard(
             prepare()
         }
     }
-    DisposableEffect(rtspUrl, unlocked) { onDispose { player?.release() } }
+    DisposableEffect(rtspUrl, unlocked, rtspFailed) { onDispose { player?.release() } }
 
     // demo .scfeed.locked .scview: blur(16px) brightness(.8), transition .5s
     val blurDp by animateDpAsState(
