@@ -65,6 +65,8 @@ fun EnergySolarTab(
     modifier: Modifier = Modifier,
     /** Deep-link "Xem pin": dinh vi the nang luong de cuon toi. */
     energyBivr: BringIntoViewRequester? = null,
+    /** Bam node pin tren flow card -> mo popup pin tai cho (muc 14). */
+    onBatteryClick: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -121,6 +123,7 @@ fun EnergySolarTab(
         // The nang luong (so do dong dien toan he thong): dich deep-link "Xem pin".
         EnergyFlowCard(
             flow = state.flow, risePlayed = risePlayed,
+            onBatteryClick = onBatteryClick,
             modifier = Modifier.then(
                 if (energyBivr != null) Modifier.bringIntoViewRequester(energyBivr) else Modifier,
             ),

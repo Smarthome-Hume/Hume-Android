@@ -29,7 +29,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,6 +72,9 @@ fun EnergyScreen(
         }
     }
 
+    // Popup tai cho tu goi y nang luong / node pin flow card (muc 14)
+    var insightPopup by remember { mutableStateOf<InsightPopup?>(null) }
+
     // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the nang luong.
     LaunchedEffect(deepLink) {
         if (deepLink != "battery") return@LaunchedEffect
@@ -91,6 +93,21 @@ fun EnergyScreen(
     // are scrollable content padding; the list still extends behind the overlay.
     val statusBarTop =
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+    // Action tu the goi y nang luong: popup tai cho hoac chuyen sub-tab
+    // (khong dieu huong ra ngoai trang Nang luong).
+    fun handleInsightAction(act: InsightAction) {
+        when (val t = act.target) {
+            is InsightActionTarget.DevicePopup ->
+                insightPopup = InsightPopup.Device(t.entityId, t.label)
+            InsightActionTarget.BatteryPopup ->
+                insightPopup = InsightPopup.Battery
+            is InsightActionTarget.GoTab ->
+                selectTab(t.tab.ordinal)
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -118,8 +135,8 @@ fun EnergyScreen(
                 ) {
                     Text(
                         "Năng lượng",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
+                        // Tieu de tab 20sp semibold (muc 20; iOS doi 24->20pt)
+                        style = MaterialTheme.typography.headlineSmall.copy(
                             letterSpacing = (-0.3).sp,
                         ),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -142,14 +159,25 @@ fun EnergyScreen(
                 when (ui.tab) {
                     EnergySubTab.Cons -> EnergyConsTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
+                        onInsightAction = ::handleInsightAction,
                     )
                     EnergySubTab.Solar -> EnergySolarTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
                         energyBivr = energyBivr,
+                        onBatteryClick = { insightPopup = InsightPopup.Battery },
                     )
                 }
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
+    }
+        // Popup tai cho (muc 14): phu len noi dung tab, khong dieu huong
+        InsightPopupOverlay(
+            popup = insightPopup,
+            battery = state.battery,
+            toggleStates = state.toggleStates,
+            onToggle = vm::toggle,
+            onDismiss = { insightPopup = null },
+        )
     }
 }
