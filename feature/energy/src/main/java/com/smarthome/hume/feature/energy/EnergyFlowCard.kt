@@ -119,6 +119,8 @@ fun EnergyFlowCard(
     flow: EnergyFlowState,
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
+    /** Bam node pin -> mo popup pin tai cho (muc 14). */
+    onBatteryClick: () -> Unit = {},
 ) {
     val charging = flow.battCharging
     val soc = flow.soc
@@ -177,6 +179,7 @@ private fun FlowArea(
     flow: EnergyFlowState,
     charging: Boolean,
     soc: Double,
+
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -197,6 +200,8 @@ private fun FlowArea(
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
             tintFg = Color(0xFFD97706),
             label = "Sản xuất", valueKw = flow.prodKw,
+            // Nang luong (kWh) tung node — port iOS commit 46c365f (muc 25)
+            energyKwh = flow.pvKwh,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(6f), fy(6f)),
@@ -219,6 +224,7 @@ private fun FlowArea(
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
+            energyKwh = flow.gridKwh,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
@@ -249,6 +255,7 @@ private fun FlowArea(
             // Mat dien: tai chay qua cong backup -> doi ten node (2026-09-30, user).
             label = if (flow.gridOn) "Tiêu thụ" else "Cổng phụ",
             valueKw = flow.consKw,
+            energyKwh = flow.homeKwh,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(6f), fy(VB_H - 6f - NODE_H)),
@@ -276,9 +283,14 @@ private fun FlowArea(
             tintBg = battFg.copy(alpha = 0.16f),
             tintFg = battFg,
             label = "Pin", valueKw = flow.battKw,
+            // Pin: 2 dong kWh rieng sac/xa (port iOS commit 46c365f, muc 25)
+            energyKwh = flow.battChgKwh, energyLabel = "Sạc",
+            energyKwh2 = flow.battDisKwh, energyLabel2 = "Xả",
             badge = if (charging) "Đang sạc" else "Đang xả",
             badgeBg = battFg.copy(alpha = 0.16f),
             badgeFg = battFg,
+            // Bam node pin -> popup pin tai cho (muc 14; iOS de onTap rong)
+            onClick = onBatteryClick,
             modifier = Modifier
                 .size(nw, nh)
                 .offset(fx(VB_W - 6f - NODE_W), fy(VB_H - 6f - NODE_H)),
@@ -476,6 +488,12 @@ private fun FlowNode(
     iconBadge: String? = null,
     iconBadgeBg: Color = Color.Transparent,
     iconBadgeFg: Color = Color.Transparent,
+    // Nang luong (kWh) hien duoi cong suat — port iOS commit 46c365f (muc 25).
+    // Pin co 2 gia tri rieng: sac (energyKwh) / xa (energyKwh2).
+    energyKwh: Double? = null,
+    energyLabel: String? = null,
+    energyKwh2: Double? = null,
+    energyLabel2: String? = null,
     onClick: (() -> Unit)? = null,
     bottom: @Composable () -> Unit = {},
 ) {
@@ -484,7 +502,8 @@ private fun FlowNode(
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .pressMorph(pressedScale = 0.93f, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            // iOS: .padding(.vertical, 10) — gon hon de chua them dong kWh
+            .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -570,8 +589,73 @@ private fun FlowNode(
                 modifier = Modifier.alignByBaseline(),
             )
         }
+        // Nang luong (kWh) — pin co 2 dong sac/xa rieng (port iOS 46c365f).
+        // Nguyen tac baseline: don vi "kWh" can baseline voi gia tri (alignByBaseline).
+        if (energyKwh != null) {
+            FlowNodeKwhRow(kwh = energyKwh, label = energyLabel, topPadding = 2.dp)
+        }
+        if (energyKwh2 != null && energyLabel2 != null) {
+            FlowNodeKwhRow(kwh = energyKwh2, label = energyLabel2, topPadding = 1.dp)
+        }
         Spacer(Modifier.weight(1f))
         bottom()
+    }
+}
+
+/**
+ * Mot dong kWh trong node flow (port iOS FlowNodeView energyKwh):
+ * [nhan] gia-tri kWh — nhan co dinh 24dp de 2 dong sac/xa thang hang.
+ */
+@Composable
+private fun FlowNodeKwhRow(
+    kwh: Double,
+    label: String?,
+    topPadding: Dp,
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier.padding(top = topPadding),
+    ) {
+        if (label != null) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    // lineHeight gon de vua node 175 (iOS SwiftUI text mac dinh chat hon)
+                    lineHeight = 15.sp,
+                ),
+                color = cs.onSurfaceVariant.copy(alpha = 0.7f),
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier
+                    .width(24.dp)
+                    .alignByBaseline(),
+            )
+            Spacer(Modifier.width(4.dp))
+        }
+        Text(
+            String.format(Locale.US, "%.1f", kwh),
+            // lineHeight 16sp (thay vi 20sp cua bodyMedium) de vua node 175 —
+            // render van giong iOS (SwiftUI khong cong them line spacing).
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Medium,
+                lineHeight = 16.sp,
+                fontFeatureSettings = "tnum",
+            ),
+            color = cs.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.alignByBaseline(),
+        )
+        Text(
+            "kWh",
+            style = MaterialTheme.typography.labelSmall.copy(lineHeight = 15.sp),
+            color = cs.onSurfaceVariant.copy(alpha = 0.7f),
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .alignByBaseline(),
+        )
     }
 }
 
