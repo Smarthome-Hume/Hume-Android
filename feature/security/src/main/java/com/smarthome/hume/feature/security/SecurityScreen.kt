@@ -133,9 +133,10 @@ fun SecurityScreen(
                     Text(
                         "An ninh",
                         color = cs.onPrimaryContainer,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.3).sp,
+                        // Tieu de tab 20sp semibold (muc 20; iOS doi 24->20pt)
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            letterSpacing = (-0.3).sp,
+                        ),
                     )
                 }
             }
