@@ -124,7 +124,8 @@ fun EnergyDonut(
                 val wobble = if (rawLocal < 1f) {
                     (sin(rawLocal * 12f + i) * 0.15 * (1f - rawLocal)).toFloat()
                 } else 0f
-                val local = (rawLocal + wobble).coerceIn(0f, 1.15f)
+                // Clamp [0,1] nhu iOS — khong de overshoot lam slice lan vao khe gap
+                val local = (rawLocal + wobble).coerceIn(0f, 1f)
                 val drawStart = start + gapDeg / 2f
                 val drawSweep = maxOf(0f, fullSweep - gapDeg)
                 val animSweep = drawSweep * local
