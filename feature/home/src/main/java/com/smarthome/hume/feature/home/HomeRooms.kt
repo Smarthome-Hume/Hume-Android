@@ -177,8 +177,14 @@ private fun RoomCard(
                     color = if (room.lightOn) cs.onPrimaryContainer
                     else cs.onSurface,
                 )
-                // Subtitle chi con thiet bi (bo nhiet do ra) -> nhieu khong gian hon
-                val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
+                // Subtitle chi con thiet bi (bo nhiet do ra) -> nhieu khong gian hon;
+                // them tong cong suat phong khi > 0 (port iOS roomPowerText).
+                val powerSuffix = if (room.roomPowerW > 0) {
+                    val w = room.roomPowerW
+                    " · " + if (w >= 1000) "%.1f kW".format(w / 1000)
+                    else "%.0f W".format(w)
+                } else ""
+                val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật$powerSuffix"
                 Text(
                     sub,
                     style = MaterialTheme.typography.bodySmall,

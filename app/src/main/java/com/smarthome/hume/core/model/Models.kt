@@ -84,7 +84,8 @@ data class DeviceConfig(
             entity: String,
             label: String = "\u0110i\u1ec1u h\u00f2a",
             sub: String = "\u0110i\u1ec1u h\u00f2a nhi\u1ec1u ch\u1ebf \u0111\u1ed9",
-        ) = DeviceConfig("climate", entity, label, sub, "snowflake", null)
+            powerEntity: String? = null,
+        ) = DeviceConfig("climate", entity, label, sub, "snowflake", powerEntity)
     }
 }
 
@@ -106,7 +107,10 @@ data class RoomBubbleConfig(
                 tempEntity = "sensor.cam_bien_moi_truong_phong_ngu_lon_temperature",
                 humidityEntity = "sensor.cam_bien_moi_truong_phong_ngu_lon_humidity",
                 devices = listOf(
-                    DeviceConfig.climate("climate.air_condition"),
+                    DeviceConfig.climate(
+                        "climate.air_condition",
+                        powerEntity = "sensor.air_condition_current_extrapolated_power",
+                    ),
                     DeviceConfig.toggle("light.cong_tac_phong_ngu_l2", "Ban c\u00f4ng", "\u0110\u00e8n tr\u1eafng ban c\u00f4ng t\u1ea7ng 2", "sun"),
                     DeviceConfig.toggle("light.cong_tac_phong_ngu_l1", "\u0110\u00e8n tr\u1ea7n", "\u0110\u00e8n tr\u1eafng tr\u00ean tr\u1ea7n", "bulb"),
                     DeviceConfig.toggle("light.smartlight", "\u0110\u00e8n th\u00f4ng minh", "\u0110\u00e8n \u1ed1p tr\u1ea7n th\u00f4ng minh \u0111\u1ed5i m\u00e0u", "bulb"),
@@ -121,7 +125,10 @@ data class RoomBubbleConfig(
                 tempEntity = "sensor.cam_bien_moi_truong_phong_ngu_be_temperature",
                 humidityEntity = "sensor.cam_bien_moi_truong_phong_ngu_be_humidity",
                 devices = listOf(
-                    DeviceConfig.climate("climate.dieu_hoa_2"),
+                    DeviceConfig.climate(
+                        "climate.dieu_hoa_2",
+                        powerEntity = "sensor.dieu_hoa_spare_room_power",
+                    ),
                     DeviceConfig.toggle("light.cong_tac_phong_ngu_nho_left", "D\u1ea3i \u0111\u00e8n", "D\u1ea3i \u0111\u00e8n ph\u00f2ng tr\u1ebb em", "bulb"),
                     DeviceConfig.toggle("light.cong_tac_phong_ngu_nho_right", "\u0110\u00e8n tr\u1ea7n", "\u0110\u00e8n tr\u1ea7n ph\u00f2ng tr\u1ebb em", "bulb"),
                 ),
@@ -133,7 +140,10 @@ data class RoomBubbleConfig(
                 tempEntity = "sensor.cam_bien_moi_truong_t3_temperature",
                 humidityEntity = "sensor.cam_bien_moi_truong_t3_humidity",
                 devices = listOf(
-                    DeviceConfig.climate("climate.dieu_hoa"),
+                    DeviceConfig.climate(
+                        "climate.dieu_hoa",
+                        powerEntity = "sensor.dieu_hoa_power",
+                    ),
                     DeviceConfig.toggle("light.den_phong_tho_l1", "Ph\u00f2ng th\u1edd", "\u0110\u00e8n ph\u00f2ng th\u1edd", "bulb"),
                     DeviceConfig.toggle("light.cong_tac_phong_du_tru", "D\u1ef1 tr\u1eef", "C\u00f4ng t\u1eafc d\u1ef1 tr\u1eef", "switch"),
                     DeviceConfig.toggle("light.den_phong_tho_l2", "Ban c\u00f4ng", "\u0110\u00e8n ban c\u00f4ng t\u1ea7ng 3", "sun"),

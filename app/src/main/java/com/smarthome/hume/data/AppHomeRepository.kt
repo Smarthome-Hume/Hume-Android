@@ -488,6 +488,12 @@ class AppHomeRepository(
                 ?.mapNotNull { it.jsonPrimitive.contentOrNull }
                 ?.filter { it != "off" }
                 .orEmpty()
+            // Dieu hoa active khi state khac "off"/"unavailable" (cool/heat/auto/...)
+            // — port tu iOS 7289baa (fix cong suat dieu hoa).
+            val climateActive = e.state != "off" && e.state != "unavailable" &&
+                e.state != "unknown" && e.state.isNotEmpty()
+            val climatePowerEntity =
+                bubble?.devices?.firstOrNull { it.type == "climate" }?.powerEntity
             ClimateUi(
                 entityId = e.id,
                 currentTemp = e.attributes["current_temperature"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
@@ -495,8 +501,16 @@ class AppHomeRepository(
                 hvacMode = e.state,
                 isOn = e.state != "off",
                 modes = modes,
+                powerW = if (climateActive)
+                    climatePowerEntity?.let { entities[it]?.numericState }
+                else null,
             )
         }
+        // Tong cong suat phong = thiet bi dang bat + dieu hoa dang chay (iOS roomPowerW).
+        val roomPowerW = devices
+            .filter { it.isOn }
+            .mapNotNull { it.powerW }
+            .sum() + (climate?.powerW ?: 0.0)
         return RoomUi(
             key = room.rawKey,
             name = room.name,
@@ -509,6 +523,7 @@ class AppHomeRepository(
             deviceCount = devices.size,
             climate = climate,
             devices = devices,
+            roomPowerW = roomPowerW,
         )
     }
 

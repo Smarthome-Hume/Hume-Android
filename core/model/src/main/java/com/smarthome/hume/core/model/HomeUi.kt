@@ -66,6 +66,8 @@ data class ClimateUi(
     val hvacMode: String = "off", // off/cool/heat/auto/fan_only/dry
     val isOn: Boolean = false,
     val modes: List<String> = emptyList(), // hvac_modes HA ho tro
+    /** Cong suat W hien tai cua dieu hoa (tu powerEntity, chi khi dang chay). */
+    val powerW: Double? = null,
 )
 
 data class RoomUi(
@@ -80,6 +82,8 @@ data class RoomUi(
     val deviceCount: Int = 0,
     val climate: ClimateUi? = null,
     val devices: List<DeviceUi> = emptyList(),
+    /** Tong cong suat W cac thiet bi dang chay trong phong (gom dieu hoa). */
+    val roomPowerW: Double = 0.0,
 )
 
 /** Trang thai ket noi HA cho den neon avatar. */
