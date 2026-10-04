@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -135,10 +136,9 @@ fun EnergyScreen(
                 ) {
                     Text(
                         "Năng lượng",
-                        // Tieu de tab 20sp semibold (muc 20; iOS doi 24->20pt)
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            letterSpacing = (-0.3).sp,
-                        ),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.3).sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }

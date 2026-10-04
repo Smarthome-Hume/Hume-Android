@@ -215,10 +215,9 @@ fun MeScreen(
                 // demo .phdr h2: 26px/700 ls -.3px
                 Text(
                     "Thông tin",
-                    // Tieu de tab 20sp semibold (muc 20; iOS doi 24->20pt)
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        letterSpacing = (-0.3).sp,
-                    ),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
