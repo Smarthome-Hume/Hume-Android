@@ -21,19 +21,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -66,8 +59,8 @@ import kotlinx.coroutines.delay
 
 /**
  * The camera Frigate dung chung: tab An ninh + popup tren trang Nha.
- * Dual-path (2026-10-01): local (WireGuard) thi stream RTSP lien tuc bang
- * ExoPlayer; remote (Cloudflare Tunnel khong cho RTSP) hoac rtspUrl null
+ * Dual-path (2026-10-05, port iOS MjpegLiveView): stream MJPEG lien tuc
+ * (multipart/x-mixed-replace) qua [MjpegView]; MJPEG loi hoac mjpegUrl null
  * thi fallback ve snapshot refresh moi 3s. Khoa thi blur + overlay
  * "Cham de mo khoa" (khong stream khi khoa).
  */
@@ -79,16 +72,16 @@ fun CameraFeedCard(
     unlocked: Boolean,
     onUnlock: () -> Unit,
     modifier: Modifier = Modifier,
-    rtspUrl: String? = null,
+    mjpegUrl: String? = null,
 ) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
     var frame by remember(camKey) { mutableStateOf(0L) }
-    // RTSP that bai (go2rtc mat stream/timeout): fallback ve snapshot thay vi den man hinh.
-    var rtspFailed by remember(camKey) { mutableStateOf(false) }
+    // MJPEG that bai: fallback ve snapshot thay vi den man hinh.
+    var mjpegFailed by remember(camKey) { mutableStateOf(false) }
 
-    // Chi poll snapshot khi khong stream RTSP.
-    val streaming = unlocked && rtspUrl != null && !rtspFailed
+    // Chi poll snapshot khi khong stream MJPEG.
+    val streaming = unlocked && mjpegUrl != null && !mjpegFailed
     LaunchedEffect(camKey, unlocked, streaming) {
         if (!unlocked || streaming) return@LaunchedEffect
         while (true) {
@@ -96,24 +89,6 @@ fun CameraFeedCard(
             delay(3000)
         }
     }
-
-    // Player RTSP: chi tao khi da mo khoa + co URL (local) + chua fail.
-    val player = remember(rtspUrl, unlocked, rtspFailed) {
-        if (!streaming) null else ExoPlayer.Builder(context).build().apply {
-            addListener(object : Player.Listener {
-                override fun onPlayerError(error: PlaybackException) {
-                    // Khong de man hinh den vinh vien: chuyen sang snapshot 3s.
-                    rtspFailed = true
-                }
-            })
-            setMediaItem(MediaItem.fromUri(rtspUrl!!))
-            repeatMode = Player.REPEAT_MODE_OFF
-            volume = 0f
-            playWhenReady = true
-            prepare()
-        }
-    }
-    DisposableEffect(rtspUrl, unlocked, rtspFailed) { onDispose { player?.release() } }
 
     // demo .scfeed.locked .scview: blur(16px) brightness(.8), transition .5s
     val blurDp by animateDpAsState(
@@ -185,17 +160,18 @@ fun CameraFeedCard(
                     modifier = Modifier.size(64.dp),
                 )
             }
-            if (player != null) {
-                // Local: stream RTSP lien tuc.
+            if (streaming) {
+                // Live that: MJPEG multipart stream (port iOS MjpegLiveView).
+                // Loi → mjpegFailed=true → tu roi ve snapshot 3s.
                 AndroidView(
                     factory = { ctx ->
-                        PlayerView(ctx).apply {
-                            this.player = player
-                            useController = false
-                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        MjpegView(ctx).apply {
+                            setOnErrorListener { mjpegFailed = true }
+                            start(mjpegUrl!!)
                         }
                     },
-                    update = { it.player = player },
+                    update = { it.start(mjpegUrl!!) },
+                    onRelease = { it.stop() },
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {

@@ -717,7 +717,7 @@ fun CameraPopupOverlay(
             snapshotUrl = secRepo.snapshotUrl(camKey),
             unlocked = unlocked,
             onUnlock = { unlocked = true },
-            rtspUrl = secRepo.rtspUrl(camKey),
+            mjpegUrl = secRepo.mjpegUrl(camKey),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp)

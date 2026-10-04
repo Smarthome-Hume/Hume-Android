@@ -100,6 +100,9 @@ class AppSecurityRepository(
         return "rtsp://$host:8554/$cameraKey"
     }
 
+    override fun mjpegUrl(cameraKey: String): String =
+        frigate.baseUrl(useRemoteFrigate()) + "/api/$cameraKey"
+
     private fun rebuild(entities: Map<String, LegacyEntity>) {
         _state.value = _state.value.copy(
             doorSensors = DOOR_SENSORS.map { it.toUi(entities) },

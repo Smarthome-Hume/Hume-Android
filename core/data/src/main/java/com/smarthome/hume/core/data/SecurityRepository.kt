@@ -22,4 +22,11 @@ interface SecurityRepository {
      * Tunnel khong cho RTSP) — UI tu fallback ve snapshot polling.
      */
     fun rtspUrl(cameraKey: String): String?
+
+    /**
+     * URL MJPEG live stream cho camera (multipart/x-mixed-replace) —
+     * port tu iOS FrigateStore.liveStreamURL. Live that, nhe hon RTSP,
+     * chay duoc ca local lan remote (HTTP qua Cloudflare Tunnel).
+     */
+    fun mjpegUrl(cameraKey: String): String
 }

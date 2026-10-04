@@ -43,6 +43,9 @@ class SecurityViewModel : ViewModel() {
     /** null khi remote — UI fallback ve snapshot polling. */
     fun rtspUrl(cameraKey: String): String? = repo.rtspUrl(cameraKey)
 
+    /** MJPEG live stream (port iOS liveStreamURL) — chay ca local lan remote. */
+    fun mjpegUrl(cameraKey: String): String = repo.mjpegUrl(cameraKey)
+
     fun openClip(clip: RecordingUi) {
         _clip.value = clip
     }

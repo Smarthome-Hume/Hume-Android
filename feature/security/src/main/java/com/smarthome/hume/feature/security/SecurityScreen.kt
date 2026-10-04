@@ -236,7 +236,7 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
         unlocked = unlocked,
         onUnlock = { vm.unlock() },
         modifier = Modifier.riseIn(440),
-        rtspUrl = vm.rtspUrl(camKey),
+        mjpegUrl = vm.mjpegUrl(camKey),
     )
 }
 
