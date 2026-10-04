@@ -2,6 +2,8 @@ package com.smarthome.hume.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -42,11 +44,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.AlarmUi
@@ -68,7 +77,8 @@ import kotlinx.coroutines.launch
  *   .pic 44px tron; .pl 14px/700; .ps 12px/500.
  * - SecPill doi theo mode (chi .pic + icon + ps): CFG nhu demo.
  * - Expanded (.pills.secon): ca hang scroll-x; secpill min-width 150px,
- *   bulbPill min-width 128px; .secmodes{gap:10px}.
+ *   bulbPill min-width 150px (port iOS 2026-10-04, truoc day 128px);
+ *   .secmodes{gap:10px}.
  * - .smode: card DOC 92px, bo 26px, padding 14px 10px, gap 12px;
  *   icon 24px + nhan 12px/700; chon = primaryContainer;
  *   vao: smIn (translateX 18px + scale .9, .45s spring), stagger 0/.06/.12/.18s;
@@ -93,19 +103,46 @@ fun PillsRow(
         "armed_night" -> SecurityMode.Night
         else -> SecurityMode.Off
     }
-    // Two-phase collapse (2026-09-30, fix nhay + khung khi tu thu gon).
-    // Video frame-by-frame (t=8.44->8.47, 1 frame): khi securityExpanded=false,
-    // cung 1 frame Row mat horizontalScroll + 2 pill widthIn->weight(1f) trong
-    // khi cum mode exit van chiem ~400dp layout -> 2 pill bi don ve ~6dp
-    // (bien mat), cum mode nhay trai ~150dp = "nhay"; roi treo fade 300ms =
-    // "khung". -> compact chi bat SAU khi exit xong (370ms); width 2 pill
-    // animate muot 150/128 <-> nua man hinh bang animateDpAsState, khong
-    // snap frame nao. Chieu MO cung het snap (truoc day mo la weight->min-width
-    // ngay lap tuc).
+    // Chuoi va cham khi thu gon (port iOS HomePills.swift compactTask, 2026-10-04).
+    // Phase 1 (0-300ms): cum secmodes exit (fadeOut 300 + shrink 350) -> bulb
+    //   pill truot ve sat pill an ninh nho layout tu dich chuyen.
+    // Tai diem sat nhat (t=300ms): NEN bulbSquash 1.0 -> 0.82 trong 120ms
+    //   easeIn, nhu dap vao tuong (fire-and-forget de Phase 2 bat dau dung
+    //   t=700ms nhu iOS).
+    // Phase 2 (t=700ms): compact=true DONG THOI dan squash ve 1.0 bang
+    //   spring 1.2s (tween 1200 + M3EMotion.spring, co overshoot = nay) ->
+    //   pill bay ve phai vua dan vua nay, ve toi noi la vua het nay.
+    // Mo rong: compact=false ngay + squash ve 1.0; doi lai giua chung thi
+    //   LaunchedEffect restart se huy chuoi dang chay (nhu iOS cancel task).
     var compact by remember { mutableStateOf(!securityExpanded) }
+    var wasExpanded by remember { mutableStateOf(securityExpanded) }
+    val bulbSquashAnim = remember { Animatable(1f) }
     LaunchedEffect(securityExpanded) {
-        if (securityExpanded) compact = false
-        else { delay(370); compact = true }
+        val collapsing = wasExpanded && !securityExpanded
+        wasExpanded = securityExpanded
+        if (securityExpanded) {
+            compact = false
+            launch {
+                bulbSquashAnim.animateTo(
+                    1f, tween(300, easing = M3EMotion.spring),
+                )
+            }
+        } else if (collapsing) {
+            delay(300)
+            launch {
+                bulbSquashAnim.animateTo(
+                    0.82f, tween(120, easing = FastOutLinearInEasing),
+                )
+            }
+            delay(400)
+            compact = true
+            bulbSquashAnim.animateTo(
+                1f, tween(1200, easing = M3EMotion.spring),
+            )
+        } else {
+            // Lan dau composition da o trang thai dong: khong chay chuoi
+            compact = true
+        }
     }
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val halfPill = (maxWidth - 10.dp) / 2
@@ -114,8 +151,10 @@ fun PillsRow(
             animationSpec = tween(300, easing = M3EMotion.emphasized),
             label = "secPillW",
         )
+        // Port iOS (2026-10-04): ca 2 pill rong 150dp khi mo rong
+        // (truoc day bulb 128dp); khi compact moi pill nua man hinh.
         val bulbW by animateDpAsState(
-            targetValue = if (compact) halfPill else 128.dp,
+            targetValue = if (compact) halfPill else 150.dp,
             animationSpec = tween(300, easing = M3EMotion.emphasized),
             label = "bulbPillW",
         )
@@ -185,6 +224,8 @@ fun PillsRow(
             BulbPill(
                 count = lightsOnCount,
                 onClick = onLights,
+                // He so squash tu chuoi va cham khi thu gon (port iOS bulbSquash)
+                squash = bulbSquashAnim.value,
                 // Cao 72dp bang SecPill va cac the che do mo rong
                 modifier = Modifier.widthIn(min = bulbW).height(72.dp),
             )
@@ -279,22 +320,37 @@ private fun SecPill(
     }
 }
 
-/** .pill#bulbPill: khong co chevron trong HTML; :active giong secpill. */
+/** .pill#bulbPill: khong co chevron trong HTML; :active giong secpill.
+ *
+ * Port iOS PillPressStyle + bulbSquash (2026-10-04):
+ * - Nhan: scaleX = scaleY = 0.93 (ghi de squash, nhu iOS p ? 0.93).
+ * - Khong nhan: scaleX theo [squash], scaleY bu Poisson
+ *   1 + (1 - squash) * 0.5 (nen ngang -> phinh doc).
+ * - Nen pill ve bang [SquashPillShape]: khi squash < 1.0, canh tren/duoi
+ *   cong loi bang bezier (hieu ung cao su).
+ * - Noi dung can giua pill (iOS: frame maxWidth .infinity, center).
+ */
 @Composable
 private fun BulbPill(
     count: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    squash: Float = 1f,
 ) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
     val haptic = rememberHaptic()
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.93f else 1f,
+    val scaleX by animateFloatAsState(
+        targetValue = if (pressed) 0.93f else squash,
         animationSpec = tween(300, easing = M3EMotion.spring),
-        label = "bulbScale",
+        label = "bulbScaleX",
+    )
+    val scaleY by animateFloatAsState(
+        targetValue = if (pressed) 0.93f else 1f + (1f - squash) * 0.5f,
+        animationSpec = tween(450, easing = M3EMotion.spring),
+        label = "bulbScaleY",
     )
     val radius by animateDpAsState(
         targetValue = if (pressed) 18.dp else 28.dp,
@@ -306,12 +362,14 @@ private fun BulbPill(
         animationSpec = tween(300),
         label = "bulbBg",
     )
+    // iOS: khi nhan thi shape squash reset ve 1.0 (p ? 1.0 : squash)
+    val shapeSquash = if (pressed) 1f else squash
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
+        horizontalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterHorizontally),
         modifier = modifier
-            .graphicsLayer(scaleX = scale, scaleY = scale)
-            .clip(RoundedCornerShape(radius))
+            .graphicsLayer(scaleX = scaleX, scaleY = scaleY)
+            .clip(SquashPillShape(squash = shapeSquash, cornerRadius = radius))
             .background(bg)
             .clickable(
                 interactionSource = interaction,
@@ -443,3 +501,53 @@ private fun SecModeCard(
 }
 
 private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
+
+/**
+ * Shape pill bien dang theo he so squash (port iOS SquashPillShape,
+ * 2026-10-04) — mo phong cao su:
+ * - squash = 1.0: pill binh thuong, bo goc = [cornerRadius].
+ * - squash < 1.0: nen ngang + phinh doc (Poisson): canh tren/duoi cong loi
+ *   bang bezier, ban kinh goc giam nhe de khong bi tu.
+ */
+private class SquashPillShape(
+    private val squash: Float,
+    private val cornerRadius: Dp,
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density,
+    ): Outline {
+        val w = size.width
+        val h = size.height
+        val k = squash.coerceIn(0f, 1f)
+        // Do phinh doc (Poisson): cang nen cang phinh
+        val bulge = (1f - k) * h * 0.25f
+        // Ban kinh goc: giu nguyen khi binh thuong, giam nhe khi nen
+        val cr = with(density) { cornerRadius.toPx() } * (0.7f + 0.3f * k)
+        val midX = w / 2f
+        // Ve pill: bat dau giua canh trai, di theo chieu kim dong ho
+        val path = Path().apply {
+            // Goc trai-tren
+            moveTo(cr, 0f)
+            // Canh tren: cong loi len khi bi nen
+            quadraticBezierTo(midX, -bulge * 2f, w - cr, 0f)
+            // Goc phai-tren
+            quadraticBezierTo(w, 0f, w, cr)
+            // Canh phai: thang dung
+            lineTo(w, h - cr)
+            // Goc phai-duoi
+            quadraticBezierTo(w, h, w - cr, h)
+            // Canh duoi: cong loi xuong khi bi nen
+            quadraticBezierTo(midX, h + bulge * 2f, cr, h)
+            // Goc trai-duoi
+            quadraticBezierTo(0f, h, 0f, h - cr)
+            // Canh trai: thang dung
+            lineTo(0f, cr)
+            // Goc trai-tren (dong)
+            quadraticBezierTo(0f, 0f, cr, 0f)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
