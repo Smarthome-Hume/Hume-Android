@@ -144,6 +144,7 @@ fun OvershootNumber(
     format: (Double) -> String = { "%.0f".format(it) },
     durationMs: Long = 1000,
     chaosId: String? = null,
+    fontFamily: FontFamily? = FontFamily.Monospace,
 ) {
     var displayed by remember { mutableDoubleStateOf(0.0) }
     var hasPlayed by remember { mutableStateOf(false) }
@@ -179,7 +180,7 @@ fun OvershootNumber(
         modifier = modifier,
         style = style,
         color = color,
-        fontFamily = FontFamily.Monospace,
+        fontFamily = fontFamily,
     )
 }
 

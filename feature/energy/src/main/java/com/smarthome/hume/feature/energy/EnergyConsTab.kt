@@ -222,8 +222,9 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
                 chaosId = "cost-$label",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                ),
+                ).tnum(),
                 color = MaterialTheme.colorScheme.onSurface,
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 modifier = Modifier
                     .weight(1f)
                     .alignByBaseline(),

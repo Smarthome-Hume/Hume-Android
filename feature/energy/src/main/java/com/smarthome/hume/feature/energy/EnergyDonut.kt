@@ -35,9 +35,7 @@ import kotlin.math.sin
 
 /**
  * Donut: track surfaceHigh + slice (primary/tertiary/info),
- * stroke 16dp butt cap (de khe 3dp sach, khong bi round cap lan vao).
- * Khe giua cac slice: DO DAI CUNG CO DINH 3dp, ve truc tiep bang cach tru
- * gap khoi sweep moi slice (khong dung overlay) — port tu iOS d06e533.
+ * stroke 16dp butt cap; cac slice ke tiep nhau khong co khe.
  * Giua donut: mac dinh hien TONG kWh; khi user an vao slice nao thi hien
  * gia tri + ten cua slice do (an lai de ve tong).
  * Entrance / data update: ve tung slice stagger (draw 1.46s emphasized,
@@ -106,15 +104,10 @@ fun EnergyDonut(
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val stroke = 16.dp.toPx()
-            val r = minOf(size.width, size.height) / 2f - 8.dp.toPx()
             drawArc(
                 color = track, startAngle = 0f, sweepAngle = 360f,
                 useCenter = false, style = Stroke(stroke, cap = StrokeCap.Round),
             )
-            // Khe co DO DAI CUNG CO DINH 3dp, khong phu thuoc so segment:
-            // gapDeg = arcLength / r -> doi ra do. Tru deu 2 dau moi slice,
-            // ve TRUC TIEP (khong dung overlay de len) — port tu iOS d06e533.
-            val gapDeg = if (r > 0f) (3.dp.toPx() / r) * (180f / Math.PI.toFloat()) else 0f
             var start = -90f
             normFractions.forEachIndexed { i, f ->
                 val fullSweep = (f * 360).toFloat()
@@ -124,16 +117,16 @@ fun EnergyDonut(
                 val wobble = if (rawLocal < 1f) {
                     (sin(rawLocal * 12f + i) * 0.15 * (1f - rawLocal)).toFloat()
                 } else 0f
-                // Clamp [0,1] nhu iOS — khong de overshoot lam slice lan vao khe gap
+                // Clamp [0,1] nhu iOS — khong de overshoot lam slice vuot full sweep
                 val local = (rawLocal + wobble).coerceIn(0f, 1f)
-                val drawStart = start + gapDeg / 2f
-                val drawSweep = maxOf(0f, fullSweep - gapDeg)
+                val drawStart = start
+                val drawSweep = fullSweep
                 val animSweep = drawSweep * local
                 if (animSweep > 0.5f) {
                     drawArc(
                         color = sliceColors[i % sliceColors.size],
                         startAngle = drawStart, sweepAngle = animSweep,
-                        // Butt cap: khe 3dp sach, khong bi round cap lan vao — nhu iOS
+                        // Butt cap keeps neighboring slices contiguous.
                         useCenter = false, style = Stroke(stroke, cap = StrokeCap.Butt),
                     )
                 }

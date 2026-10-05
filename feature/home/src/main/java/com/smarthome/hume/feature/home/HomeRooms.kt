@@ -193,7 +193,11 @@ private fun RoomCard(
                     " · " + if (w >= 100) "%.1f kW".format(w / 1000)
                     else "%.0f W".format(w)
                 } else ""
-                val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật$powerSuffix"
+                val sub = if (room.roomPowerW > 0) {
+                    powerSuffix.removePrefix(" · ")
+                } else {
+                    "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
+                }
                 Text(
                     sub,
                     style = MaterialTheme.typography.bodySmall,

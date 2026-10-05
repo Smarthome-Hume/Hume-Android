@@ -415,7 +415,7 @@ private fun BulbPill(
 }
 
 /**
- * .smode: card doc 92px; chon = primaryContainer; :active scale(.92);
+ * .smode: card doc 72dp; chon = primaryContainer; :active scale(.92);
  * vao smIn .45s spring + stagger; chon xong tu thu gon sau 1000ms.
  */
 @Composable
@@ -457,7 +457,7 @@ private fun SecModeCard(
             verticalArrangement = Arrangement.Center,
             modifier = modifier
                 .width(88.dp)
-                .height(60.dp)
+                .height(72.dp)
                 .clip(RoundedCornerShape(26.dp))
                 .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
                 .pressMorph(
