@@ -168,7 +168,7 @@ fun OvershootNumber(
             }
         } else if (hasPlayed) {
             // Data update sau do → muot thuong
-            animateSmooth(from = displayed, to = value) { displayed = it }
+            animateSmooth(from = displayed, to = value, onFrame = { displayed = it })
         } else {
             displayed = value
         }
