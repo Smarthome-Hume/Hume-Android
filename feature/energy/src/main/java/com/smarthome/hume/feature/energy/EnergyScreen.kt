@@ -159,7 +159,6 @@ fun EnergyScreen(
                 when (ui.tab) {
                     EnergySubTab.Cons -> EnergyConsTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
-                        onInsightAction = ::handleInsightAction,
                     )
                     EnergySubTab.Solar -> EnergySolarTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,

@@ -188,7 +188,8 @@ private fun RoomCard(
                 // them tong cong suat phong khi > 0 (port iOS roomPowerText).
                 val powerSuffix = if (room.roomPowerW > 0) {
                     val w = room.roomPowerW
-                    " · " + if (w >= 1000) "%.1f kW".format(w / 1000)
+                    // (2026-10-05, user: tu 100W doi sang kW de text ngan, khong tran)
+                    " · " + if (w >= 100) "%.1f kW".format(w / 1000)
                     else "%.0f W".format(w)
                 } else ""
                 val sub = "${room.deviceCount} thiết bị · ${room.devicesOn} bật$powerSuffix"

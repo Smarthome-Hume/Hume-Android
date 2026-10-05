@@ -78,19 +78,12 @@ fun EnergyConsTab(
     vm: EnergyViewModel,
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
-    /** Action tu the goi y nang luong (popup tai cho / chuyen sub-tab). */
-    onInsightAction: (InsightAction) -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // The goi y tiet kiem dien — port iOS InsightsCard (muc 16/17)
-        EnergyInsightsCard(
-            state = state,
-            onInsightAction = onInsightAction,
-            risePlayed = risePlayed,
-        )
+        // (2026-10-05, user: xoa the goi y nang luong)
         WeekCard(state, risePlayed)
         CostCard(state, risePlayed)
         PowerCard(state, risePlayed)

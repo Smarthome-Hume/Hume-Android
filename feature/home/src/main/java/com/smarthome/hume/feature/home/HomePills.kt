@@ -250,7 +250,7 @@ private fun SecPill(
     val haptic = rememberHaptic()
     val (icon, picBg, picFg, ps) = when (mode) {
         SecurityMode.Home -> Quad(
-            M3EIcons.ShieldCheck, extra.successContainer,
+            M3EIcons.Shield, extra.successContainer,
             extra.onSuccessContainer, "Đang bật")
         SecurityMode.Away -> Quad(
             M3EIcons.FlightTakeoff, cs.tertiaryContainer,
@@ -259,7 +259,7 @@ private fun SecPill(
             M3EIcons.Bedtime, cs.secondaryContainer,
             cs.onSecondaryContainer, "Ban đêm · giám sát")
         SecurityMode.Off -> Quad(
-            M3EIcons.ShieldSlash, cs.surfaceContainer,
+            M3EIcons.Shield, cs.surfaceContainer,
             cs.onSurfaceVariant, "Đã tắt")
     }
     val interaction = remember { MutableInteractionSource() }
@@ -390,7 +390,7 @@ private fun BulbPill(
                 .background(cs.tertiaryContainer),
         ) {
             MsIcon(
-                M3EIcons.Light, null,
+                Ms.lightbulb, null,
                 tint = cs.onTertiaryContainer,
                 modifier = Modifier.size(20.dp),
             )
@@ -455,7 +455,7 @@ private fun SecModeCard(
             // Can giua doc de chu khong bi don xuong day
             verticalArrangement = Arrangement.Center,
             modifier = modifier
-                .width(80.dp)
+                .width(88.dp)
                 .height(60.dp)
                 .clip(RoundedCornerShape(26.dp))
                 .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
@@ -469,15 +469,15 @@ private fun SecModeCard(
                         }
                     },
                 )
-                // Padding can doi 2 dau + gap nho: 10+24+6+16+10=66 < 80, chu khong bi cat
-                .padding(horizontal = 10.dp, vertical = 10.dp),
+                // Padding 8dp 2 ben: 8+text+8 <= 88, chu khong bi che
+                .padding(horizontal = 8.dp, vertical = 10.dp),
         ) {
             MsIcon(
                 when (mode) {
                     SecurityMode.Home -> Ms.home
                     SecurityMode.Away -> M3EIcons.FlightTakeoff
                     SecurityMode.Night -> M3EIcons.Bedtime
-                    SecurityMode.Off -> M3EIcons.ShieldSlash
+                    SecurityMode.Off -> M3EIcons.Shield
                 },
                 null,
                 tint = fg,
