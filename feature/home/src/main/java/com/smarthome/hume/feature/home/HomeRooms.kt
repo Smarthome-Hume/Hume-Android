@@ -194,7 +194,7 @@ private fun RoomCard(
                     else "%.0f W".format(w)
                 } else ""
                 val sub = if (room.roomPowerW > 0) {
-                    powerSuffix.removePrefix(" · ")
+                    "${room.devicesOn} bật$powerSuffix"
                 } else {
                     "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
                 }
