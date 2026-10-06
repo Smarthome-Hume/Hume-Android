@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -162,16 +163,16 @@ fun PillsRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
-                .fillMaxWidth()
                 .then(
                     // Khi mo rong (compact=false, ca trong luc exit dang chay):
                     // giu horizontalScroll + width min de layout on dinh.
-                    // Port iOS aac77a2: padding am -18dp de noi dung tran ra
-                    // canh man hinh thay vi bi cat o le parent.
+                    // Port iOS aac77a2: tran ra 2 canh man hinh.
+                    // Compose cam padding am -> dung offset(-18dp) + tang width 36dp.
                     if (!compact) Modifier
+                        .offset(x = (-18).dp)
+                        .width(maxWidth + 36.dp)
                         .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 2.dp)
-                    else Modifier,
+                    else Modifier.fillMaxWidth(),
                 ),
         ) {
             SecPill(
