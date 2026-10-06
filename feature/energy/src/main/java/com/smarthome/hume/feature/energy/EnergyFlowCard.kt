@@ -145,6 +145,27 @@ fun EnergyFlowCard(
                         style = MaterialTheme.typography.titleLarge.copy(),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
+                    // Dong trang thai inverter (port iOS 007d8ce): cham do = mat dien luoi.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        Box(
+                            Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (!flow.gridOn) Color(0xFFEF4444)
+                                    else Color(0xFF22C55E)
+                                ),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            if (!flow.gridOn) "Mất điện lưới" else "Hoạt động bình thường",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(

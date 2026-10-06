@@ -54,6 +54,11 @@ fun EnergyScreen(
     val ui by vm.ui.collectAsState()
     val haptic = rememberHaptic()
     val scope = rememberCoroutineScope()
+    // Thong bao trang thai he thong dien khi state thay doi
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(state) {
+        EnergyNotifier.onStateChanged(ctx, state)
+    }
     var paneVisible by remember { mutableStateOf(true) }
     val risePlayed = remember { mutableSetOf<String>() }
     // Dinh vi the nang luong de deep-link "Xem pin" cuon toi
