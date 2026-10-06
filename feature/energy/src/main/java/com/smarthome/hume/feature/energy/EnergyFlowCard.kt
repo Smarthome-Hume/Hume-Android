@@ -295,7 +295,14 @@ private fun FlowArea(
             }
         }
         FlowNode(
-            icon = { MsIcon(M3EIcons.Home, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) },
+            icon = {
+                MsIcon(
+                    if (flow.gridOn) M3EIcons.Home else M3EIcons.Plug,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+            },
             tintBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
             tintFg = MaterialTheme.colorScheme.primary,
             // Mat dien: tai chay qua cong backup -> doi ten node (2026-09-30, user).
