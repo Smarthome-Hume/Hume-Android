@@ -42,6 +42,8 @@ data class EnergyFlowState(
     val selfUsePct: Double = 0.0,
     /** true = luoi co dien; false = mat dien (chay qua cong backup). */
     val gridOn: Boolean = true,
+    /** Trang thai inverter tu sensor.solis_s6_eh1p_status_string_3 (port iOS 007d8ce). */
+    val inverterStatus: String = "",
     // Nang luong (kWh) tung node — port iOS commit 46c365f.
     /** San luong PV hom nay (kWh). */
     val pvKwh: Double = 0.0,

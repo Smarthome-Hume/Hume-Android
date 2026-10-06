@@ -115,6 +115,22 @@ private fun hasPowerFlow(watts: Double): Boolean = watts.roundToInt() != 0
  * Flow card M3E: 4 node + hub bolt o giua, sweep tren elbow track.
  * Port tu demo v4 rev12 (.flx).
  */
+
+/** Dich trang thai inverter Solis sang tieng Viet (port iOS solisStatusVN). */
+private fun solisStatusVn(raw: String): Pair<String, Color> {
+    return when (raw.lowercase().trim()) {
+        "generating" -> "Đang phát điện" to Color(0xFFF5B80B)
+        "no grid" -> "Mất điện lưới" to Color(0xFF8B5CF6)
+        "waiting" -> "Đang chờ" to Color(0xFF2DD4BF)
+        "normal operation" -> "Hoạt động bình thường" to Color(0xFFEF4444)
+        "bypass / inverting / running" -> "Đang chạy bypass" to Color(0xFFEC72A8)
+        "bypass / inverting / synchronize" -> "Đang đồng bộ" to Color(0xFFA16207)
+        "fault" -> "Lỗi" to Color(0xFFEF4444)
+        "standby" -> "Chờ sẵn" to Color(0xFF22C55E)
+        else -> (if (raw.isEmpty()) "—" else raw) to Color(0xFF22C55E)
+    }
+}
+
 @Composable
 fun EnergyFlowCard(
     flow: EnergyFlowState,
@@ -145,7 +161,9 @@ fun EnergyFlowCard(
                         style = MaterialTheme.typography.titleLarge.copy(),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
-                    // Dong trang thai inverter (port iOS 007d8ce): cham do = mat dien luoi.
+                    // Dong trang thai inverter (port iOS 007d8ce): doc tu sensor moi.
+                    val invStatus = flow.inverterStatus
+                    val (statusText, statusColor) = solisStatusVn(invStatus)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 4.dp),
@@ -154,14 +172,11 @@ fun EnergyFlowCard(
                             Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    if (!flow.gridOn) Color(0xFFEF4444)
-                                    else Color(0xFF22C55E)
-                                ),
+                                .background(statusColor),
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            if (!flow.gridOn) "Mất điện lưới" else "Hoạt động bình thường",
+                            statusText,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

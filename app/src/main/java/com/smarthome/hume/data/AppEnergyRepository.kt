@@ -158,6 +158,8 @@ class AppEnergyRepository(
             todayKwh = pvToday,
             selfUsePct = selfUse,
             gridOn = gridOn,
+            // Trang thai inverter tu sensor moi (port iOS 007d8ce)
+            inverterStatus = entities["sensor.solis_s6_eh1p_status_string_3"]?.state ?: "",
             // Nang luong (kWh) tung node — port iOS commit 46c365f.
             pvKwh = pvToday,
             gridKwh = v("sensor.aptomat_tong_daily"),
