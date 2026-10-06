@@ -64,6 +64,7 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
+import java.util.Locale
 
 /**
  * Luoi the phong theo demo rev12 (.roomc): layout DOC — nut den 48px tren,
@@ -163,7 +164,7 @@ private fun RoomCard(
                     // Nhiet do sat icon (25dp tu icon), khong can phai nhu truoc
                     room.tempC?.let { temp ->
                         Text(
-                            "%.1f°".format(temp),
+                            "%.1f°".format(Locale.US, temp),
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Light,
                             color = if (room.lightOn) cs.onPrimaryContainer
@@ -282,7 +283,7 @@ fun RoomSheet(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     EnvTile(
                         icon = Icons.Outlined.Thermostat, label = "Nhiệt độ",
-                        value = room.tempC?.let { "%.1f°".format(it) } ?: "—",
+                        value = room.tempC?.let { "%.1f°".format(Locale.US, it) } ?: "—",
                         container = cs.primaryContainer,
                         onContainer = cs.onPrimaryContainer,
                         modifier = Modifier.weight(1f),

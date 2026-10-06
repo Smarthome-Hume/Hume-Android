@@ -369,7 +369,7 @@ private fun AreaChart(
             }
             // Max value label
             Text(
-                "${"%.1f".format(maxV)}$unit",
+                "${"%.1f".format(Locale.US, maxV)}$unit",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,

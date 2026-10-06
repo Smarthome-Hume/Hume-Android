@@ -4,6 +4,7 @@ import com.smarthome.hume.core.model.EnergyPowerKind
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.ui.components.Ms
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * Energy Insights — gợi ý năng lượng có mục đích rõ ràng.
@@ -235,7 +236,7 @@ object EnergyInsightsManager {
         val (t, kwh, vnd) = best
         val dur = fmtDuration(t.onMinutes ?: 0)
         val detail = if (kwh != null && kwh >= 0.05) {
-            "Đã bật $dur • Ước tốn ${"%.1f".format(kwh)} kWh (~${fmtVnd(vnd)})"
+            "Đã bật $dur • Ước tốn ${"%.1f".format(Locale.US, kwh)} kWh (~${fmtVnd(vnd)})"
         } else {
             "Đã bật $dur — kiểm tra xem có cần thiết không?"
         }
@@ -530,12 +531,12 @@ object EnergyInsightsManager {
         val pvKwh = state.flow.pvKwh
         if (pvKwh < 0.5) return emptyList()
         val gridKwh = state.flow.gridKwh
-        val extra = if (gridKwh > 0.5) " • Mua lưới ${"%.1f".format(gridKwh)} kWh" else ""
+        val extra = if (gridKwh > 0.5) " • Mua lưới ${"%.1f".format(Locale.US, gridKwh)} kWh" else ""
         return listOf(
             EnergyInsight(
                 glyph = Ms.wb_sunny,
                 title = "Solar hôm nay",
-                detail = "Đã tạo ${"%.1f".format(pvKwh)} kWh$extra",
+                detail = "Đã tạo ${"%.1f".format(Locale.US, pvKwh)} kWh$extra",
                 category = InsightCategory.Info,
                 dedupKey = "info:solar",
                 actions = listOf(

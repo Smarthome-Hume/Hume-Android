@@ -93,6 +93,7 @@ import java.time.LocalTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.min
+import java.util.Locale
 
 fun greeting(): String = when (LocalTime.now().hour) {
     in 5..10 -> "Chào buổi sáng"
@@ -421,7 +422,7 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
     if (state.battery.soc >= 95 && state.solarNowKw >= 2.0) add(SuggestTip(
         "sun",
         "Đang dư điện mặt trời",
-        "Pin đã ${state.battery.soc}%, đang phát ${"%.1f".format(state.solarNowKw)} kW — chạy máy nặng lúc này.",
+        "Pin đã ${state.battery.soc}%, đang phát ${"%.1f".format(Locale.US, state.solarNowKw)} kW — chạy máy nặng lúc này.",
         "Xem điện",
     ))
     // Phong nong theo tung phong (khong goi y do am: nha khong co he thong thong gio)
@@ -838,7 +839,7 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "%.1f".format(todayShown),
+                "%.1f".format(Locale.US, todayShown),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.3).sp,
