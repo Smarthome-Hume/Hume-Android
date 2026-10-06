@@ -22,8 +22,9 @@ import kotlin.random.Random
  * ChaoticLoading.swift (ChaoticNumber).
  *
  * Cac composable so dong — dung cho con so chinh: kWh, VND, %, W...
- * Tat ca dung [FontFamily.Monospace] (tuong duong iOS `.monospacedDigit()`),
- * khong hardcode mau/size — lay qua [style]/[color].
+ * Dung font trong [style] (font app dang chon), bat tabular digits de so
+ * khong nhay ngang ma dau cham/dau phay van giu do rong tu nhien.
+ * Khong hardcode mau/size — lay qua [style]/[color].
  */
 
 /**
@@ -108,9 +109,8 @@ fun CountUpText(
     Text(
         text = format(displayed),
         modifier = modifier,
-        style = style,
+        style = style.tnum(),
         color = color,
-        fontFamily = FontFamily.Monospace,
     )
 }
 
@@ -144,7 +144,7 @@ fun OvershootNumber(
     format: (Double) -> String = { "%.0f".format(it) },
     durationMs: Long = 1000,
     chaosId: String? = null,
-    fontFamily: FontFamily? = FontFamily.Monospace,
+    fontFamily: FontFamily? = null,
 ) {
     var displayed by remember { mutableDoubleStateOf(0.0) }
     var hasPlayed by remember { mutableStateOf(false) }
@@ -178,7 +178,7 @@ fun OvershootNumber(
     Text(
         text = format(displayed),
         modifier = modifier,
-        style = style,
+        style = style.tnum(),
         color = color,
         fontFamily = fontFamily,
     )
@@ -230,9 +230,8 @@ fun ChaoticNumber(
     Text(
         text = format(displayed),
         modifier = modifier,
-        style = style,
+        style = style.tnum(),
         color = color,
-        fontFamily = FontFamily.Monospace,
     )
 }
 

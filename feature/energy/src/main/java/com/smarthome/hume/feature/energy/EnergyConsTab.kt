@@ -127,7 +127,6 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 chaosId = "usage-total",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.SemiBold,
-                    letterSpacing = (-0.3).sp,
                 ),
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
@@ -411,7 +410,6 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         chaosId = "donut-total",
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.3).sp,
                         ).tnum(),
                         modifier = Modifier.alignByBaseline(),
                     )
@@ -704,6 +702,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                     "Tất cả thiết bị đều đủ pin",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 11.dp),
                 )
             }
             state.lowBatteries.forEachIndexed { i, b ->

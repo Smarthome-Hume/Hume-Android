@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +50,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.ClimateUi
@@ -130,10 +135,7 @@ private fun RoomCard(
     ) {
             Column {
                 // Hang tren: icon phong + nhiet do sat icon.
-                // Khoang cach icon-nhiet do 25dp = padding RIENG tung element
-                // (icon end 15dp + nhiet do start 10dp — nhu iOS: HStack
-                // spacing 10 + icon trailing 15); KHONG dung
-                // Arrangement.spacedBy cua Row (muc 24).
+                // Icon luon can giua nen tron 48dp; nhiet do co inset rieng 10dp.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -151,8 +153,7 @@ private fun RoomCard(
                                 lastLightTapMs = SystemClock.uptimeMillis()
                                 haptic()
                                 onToggleLight()
-                            }
-                            .padding(end = 15.dp),
+                            },
                     ) {
                         MsIcon(
                             M3EIcons.room(room.iconKey), null,
@@ -161,20 +162,59 @@ private fun RoomCard(
                             modifier = Modifier.size(24.dp),
                         )
                     }
-                    // Nhiet do sat icon (25dp tu icon), khong can phai nhu truoc
-                    room.tempC?.let { temp ->
-                        Text(
-                            "%.1f°".format(Locale.US, temp),
-                            style = MaterialTheme.typography.headlineLarge,
+                    // Nhiet do sat icon; do chinh xac chuoi de chon co chu lon nhat
+                    // vua phan rong, tranh tran o ca nhiet do am tren the hep.
+                    val temp = room.tempC
+                    if (temp != null) {
+                        val temperatureText = "%.1f°".format(Locale.US, temp)
+                        val textMeasurer = rememberTextMeasurer()
+                        val baseTemperatureStyle = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Light,
-                            color = if (room.lightOn) cs.onPrimaryContainer
-                            else cs.onSurface,
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(start = 10.dp),
                         )
+                        BoxWithConstraints(
+                            contentAlignment = Alignment.CenterStart,
+                            // Cung slot cao 48dp voi icon; spacer 25dp phia duoi
+                            // tao cung khoang cach den tieu de cho ca icon va gia tri.
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 10.dp)
+                                .height(48.dp),
+                        ) {
+                            val maxTextWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+                                maxWidth.roundToPx()
+                            }
+                            val temperatureFontSize = listOf(30, 28, 26, 24, 22, 20, 18, 16, 14, 12)
+                                .firstOrNull { fontSize ->
+                                    val candidateStyle = baseTemperatureStyle.copy(
+                                        fontSize = fontSize.sp,
+                                        lineHeight = (fontSize + 6).sp,
+                                    )
+                                    !textMeasurer.measure(
+                                        text = AnnotatedString(temperatureText),
+                                        style = candidateStyle,
+                                        overflow = TextOverflow.Clip,
+                                        softWrap = false,
+                                        maxLines = 1,
+                                        constraints = Constraints(maxWidth = maxTextWidthPx),
+                                    ).hasVisualOverflow
+                                }?.sp ?: 12.sp
+                            Text(
+                                temperatureText,
+                                style = baseTemperatureStyle.copy(
+                                    fontSize = temperatureFontSize,
+                                    lineHeight = (temperatureFontSize.value + 6f).sp,
+                                ),
+                                fontWeight = FontWeight.Light,
+                                color = if (room.lightOn) cs.onPrimaryContainer
+                                else cs.onSurface,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Clip,
+                            )
+                        }
+                    } else {
+                        Spacer(Modifier.weight(1f))
                     }
-                    Spacer(Modifier.weight(1f))
                 }
                 // Khoang cach icon-ten phong 25dp (iOS: Spacer().frame(height: 25))
                 Spacer(Modifier.height(25.dp))

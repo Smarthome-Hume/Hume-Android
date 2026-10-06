@@ -14,6 +14,8 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -23,13 +25,12 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,8 +39,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,8 +54,10 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -71,19 +76,28 @@ import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private val CompactPillHorizontalInset = 12.dp
+private val CompactPillVerticalInset = 10.dp
+private val CompactPillIconSlot = 36.dp
+private val CompactPillContentGap = 8.dp
+private val ExpandedPillInset = 6.dp
+private val ExpandedPillIconSlot = 20.dp
+private val ExpandedPillContentGap = 4.dp
+
 /**
  * Hang pills trang Nha theo demo rev12 (.pills/.pill/.secmodes/.smode):
  * - .pills{gap:10px;mb:14px}: [secPill .pill][secmodes][bulbPill .pill].
  * - .pill: flex:1, surfaceHighest, bo 28px, padding 14px, gap 11px;
  *   .pic 44px tron; .pl 14px/700; .ps 12px/500.
  * - SecPill doi theo mode (chi .pic + icon + ps): CFG nhu demo.
- * - Expanded (.pills.secon): ca hang scroll-x; secpill min-width 150px,
- *   bulbPill min-width 150px (port iOS 2026-10-04, truoc day 128px);
- *   .secmodes{gap:10px}.
- * - .smode: card DOC 92px, bo 26px, padding 14px 10px, gap 12px;
- *   icon 24px + nhan 12px/700; chon = primaryContainer;
- *   vao: smIn (translateX 18px + scale .9, .45s spring), stagger 0/.06/.12/.18s;
- *   :active scale(.92). Chon xong tu thu gon sau 1000ms.
+ * - Expanded (.pills.secon): ca hang scroll-x; secpill 100dp, bulb 84dp,
+ *   cung inset 6dp/icon slot 20dp/text gap 4dp/vertical padding 6dp.
+ * - Compact: hai pill toi da 136dp, neo vao hai mep trong; label dai ellipsis.
+ *   Cac card mode giu 88x60dp; .secmodes{gap:10px}.
+ * - .smode: card 88x60dp, bo 26px, padding deu 8dp, gap 4dp;
+ *   icon 20dp + nhan 11sp; chon = primaryContainer;
+ *   vao smIn + stagger, :active scale(.92),
+ *   chon xong tu thu gon sau 1000ms.
  */
 @Composable
 fun PillsRow(
@@ -97,6 +111,27 @@ fun PillsRow(
     onLights: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var idleActivityRevision by remember { mutableIntStateOf(0) }
+    var securityInteractionActive by remember { mutableStateOf(false) }
+    var modeSelectionPending by remember { mutableStateOf(false) }
+    val latestOnAutoCollapse by rememberUpdatedState(onAutoCollapse)
+    LaunchedEffect(securityExpanded) {
+        if (!securityExpanded) modeSelectionPending = false
+    }
+    // The effect is cancelled when collapsed or removed from composition.
+    // Pointer activity pauses the timeout until release, then starts a fresh 2s.
+    LaunchedEffect(
+        securityExpanded,
+        idleActivityRevision,
+        securityInteractionActive,
+        modeSelectionPending,
+    ) {
+        if (!securityExpanded || securityInteractionActive || modeSelectionPending) {
+            return@LaunchedEffect
+        }
+        delay(2_000)
+        latestOnAutoCollapse()
+    }
     val haptic = rememberHaptic()
     val mode = when (alarm?.state) {
         "armed_home" -> SecurityMode.Home
@@ -147,27 +182,29 @@ fun PillsRow(
     }
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val halfPill = (maxWidth - 10.dp) / 2
+        val compactPillWidth = minOf(halfPill, 136.dp)
         val secW by animateDpAsState(
-            targetValue = if (compact) halfPill else 130.dp,
+            targetValue = if (compact) compactPillWidth else 100.dp,
             animationSpec = tween(300, easing = M3EMotion.emphasized),
             label = "secPillW",
         )
-        // Port iOS (2026-10-04): ca 2 pill rong 150dp khi mo rong
-        // (truoc day bulb 128dp); khi compact moi pill nua man hinh.
+        // Expanded gon theo noi dung; compact dung cung mot be rong toi da 136dp.
         val bulbW by animateDpAsState(
-            targetValue = if (compact) halfPill else 130.dp,
+            targetValue = if (compact) compactPillWidth else 84.dp,
             animationSpec = tween(300, easing = M3EMotion.emphasized),
             label = "bulbPillW",
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = if (compact) {
+                Arrangement.SpaceBetween
+            } else {
+                Arrangement.spacedBy(10.dp)
+            },
             modifier = Modifier
                 .then(
-                    // Khi mo rong (compact=false, ca trong luc exit dang chay):
-                    // giu horizontalScroll + width min de layout on dinh.
-                    // Port iOS aac77a2: tran ra 2 canh man hinh.
-                    // Compose cam padding am -> dung offset(-18dp) + tang width 36dp.
+                    // Preserve bdfd18c full-bleed Security row while keeping the
+                    // redesigned compact/expanded pill grouping intact.
                     if (!compact) Modifier
                         .offset(x = (-18).dp)
                         .width(maxWidth + 36.dp)
@@ -175,62 +212,94 @@ fun PillsRow(
                     else Modifier.fillMaxWidth(),
                 ),
         ) {
-            SecPill(
-                mode = mode,
-                onClick = onToggleSecurity,
-                // Chieu cao co dinh 72dp = chieu cao tu nhien cua pill
-                // (44dp circle + padding 14dp*2) de cac the bang nhau
-                modifier = Modifier.widthIn(min = secW).height(60.dp),
-            )
-        // .secmodes: chi hien khi expanded. Exit shrink layout width
-        // (fadeOut + shrinkHorizontally) de cum mode thu dan 400->0dp;
-        // nho two-phase o tren, Row van giu layout expanded trong luc exit
-        // nen 2 pill khong bi don width.
-        AnimatedVisibility(
-            visible = securityExpanded,
-            enter = fadeIn(tween(450, easing = M3EMotion.emphasized)),
-            exit = fadeOut(tween(300)) + shrinkHorizontally(
-                animationSpec = tween(350, easing = M3EMotion.emphasizedAcc),
-                shrinkTowards = Alignment.Start,
-            ),
-        ) {
+            // This wrapper deliberately excludes the adjacent Light pill.
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (compact) Arrangement.Start
+                else Arrangement.spacedBy(10.dp),
+                modifier = Modifier.pointerInput(securityExpanded) {
+                    if (securityExpanded) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            if (!securityInteractionActive) {
+                                securityInteractionActive = true
+                                idleActivityRevision++
+                            }
+                            try {
+                                var pointerPressed: Boolean
+                                do {
+                                    val event = awaitPointerEvent()
+                                    pointerPressed = event.changes.any { it.pressed }
+                                } while (pointerPressed)
+                            } finally {
+                                securityInteractionActive = false
+                                idleActivityRevision++
+                            }
+                        }
+                    }
+                },
             ) {
-                SecurityMode.entries.forEachIndexed { i, m ->
-                    SecModeCard(
-                        mode = m,
-                        selected = m == mode,
-                        entranceDelay = i * 60,
-                        onClick = {
-                            haptic()
-                            if (m == SecurityMode.Off) onDisarm()
-                            else onArm(
-                                when (m) {
-                                    SecurityMode.Home -> "home"
-                                    SecurityMode.Away -> "away"
-                                    else -> "night"
+                SecPill(
+                    mode = mode,
+                    onClick = onToggleSecurity,
+                    expanded = !compact,
+                    // Chieu cao co dinh 60dp de pill thu gon canh card expanded.
+                    modifier = Modifier.width(secW).height(60.dp),
+                )
+                // .secmodes: chi hien khi expanded. Exit shrink layout width
+                // (fadeOut + shrinkHorizontally) de cum mode thu dan 400->0dp;
+                // nho two-phase o tren, Row van giu layout expanded trong luc exit
+                // nen 2 pill khong bi don width.
+                AnimatedVisibility(
+                    visible = securityExpanded,
+                    enter = fadeIn(tween(450, easing = M3EMotion.emphasized)),
+                    exit = fadeOut(tween(300)) + shrinkHorizontally(
+                        animationSpec = tween(350, easing = M3EMotion.emphasizedAcc),
+                        shrinkTowards = Alignment.Start,
+                    ),
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SecurityMode.entries.forEachIndexed { i, m ->
+                            SecModeCard(
+                                mode = m,
+                                selected = m == mode,
+                                entranceDelay = i * 60,
+                                onClick = {
+                                    // Keep the existing 1s mode-selection collapse;
+                                    // cancel the idle timer so the two cannot race.
+                                    modeSelectionPending = true
+                                    idleActivityRevision++
+                                    haptic()
+                                    if (m == SecurityMode.Off) onDisarm()
+                                    else onArm(
+                                        when (m) {
+                                            SecurityMode.Home -> "home"
+                                            SecurityMode.Away -> "away"
+                                            else -> "night"
+                                        },
+                                        when (m) {
+                                            SecurityMode.Home -> "Ở nhà"
+                                            SecurityMode.Away -> "Vắng nhà"
+                                            else -> "Ban đêm"
+                                        },
+                                    )
                                 },
-                                when (m) {
-                                    SecurityMode.Home -> "Ở nhà"
-                                    SecurityMode.Away -> "Vắng nhà"
-                                    else -> "Ban đêm"
-                                },
+                                onAutoCollapse = onAutoCollapse,
                             )
-                        },
-                        onAutoCollapse = onAutoCollapse,
-                    )
+                        }
+                    }
                 }
-            }
         }
             BulbPill(
                 count = lightsOnCount,
                 onClick = onLights,
                 // He so squash tu chuoi va cham khi thu gon (port iOS bulbSquash)
                 squash = bulbSquashAnim.value,
-                // Cao 72dp bang SecPill va cac the che do mo rong
-                modifier = Modifier.widthIn(min = bulbW).height(60.dp),
+                expanded = !compact,
+                modifier = Modifier.width(bulbW).height(60.dp),
             )
         }
     }
@@ -244,6 +313,7 @@ fun PillsRow(
 private fun SecPill(
     mode: SecurityMode,
     onClick: () -> Unit,
+    expanded: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -280,44 +350,114 @@ private fun SecPill(
         animationSpec = tween(300),
         label = "pillBg",
     )
+    val pillModifier = modifier
+        .graphicsLayer(scaleX = scale, scaleY = scale)
+        .clip(RoundedCornerShape(radius))
+        .background(bg)
+        .clickable(
+            interactionSource = interaction,
+            indication = null,
+        ) {
+            haptic()
+            onClick()
+        }
+
+    if (expanded) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ExpandedPillContentGap),
+            modifier = pillModifier.padding(ExpandedPillInset),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(ExpandedPillIconSlot)
+                    .clip(CircleShape)
+                    .background(picBg),
+            ) {
+                MsIcon(icon, null, tint = picFg, modifier = Modifier.size(16.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "An ninh",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurface,
+                )
+                Text(
+                    ps,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 13.sp,
+                        letterSpacing = 0.sp,
+                    ),
+                    fontWeight = FontWeight.Medium,
+                    color = cs.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            }
+        }
+    } else {
+        CompactPillContent(
+            title = "An ninh",
+            status = ps,
+            icon = icon,
+            iconBackground = picBg,
+            iconTint = picFg,
+            modifier = pillModifier,
+        )
+    }
+}
+
+@Composable
+private fun CompactPillContent(
+    title: String,
+    status: String,
+    icon: Any,
+    iconBackground: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(CompactPillContentGap),
         modifier = modifier
-            .graphicsLayer(scaleX = scale, scaleY = scale)
-            .clip(RoundedCornerShape(radius))
-            .background(bg)
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-            ) {
-                haptic()
-                onClick()
-            }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .fillMaxWidth()
+            .padding(
+                horizontal = CompactPillHorizontalInset,
+                vertical = CompactPillVerticalInset,
+            ),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(36.dp)
+                .size(CompactPillIconSlot)
                 .clip(CircleShape)
-                .background(picBg),
+                .background(iconBackground),
         ) {
-            MsIcon(icon, null, tint = picFg, modifier = Modifier.size(20.dp))
+            MsIcon(icon, null, tint = iconTint, modifier = Modifier.size(20.dp))
         }
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(
-                "An ninh",
+                title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = cs.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                ps,
+                status,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
-                color = cs.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 1.dp),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -339,6 +479,7 @@ private fun BulbPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     squash: Float = 1f,
+    expanded: Boolean = false,
 ) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
@@ -367,55 +508,64 @@ private fun BulbPill(
     )
     // iOS: khi nhan thi shape squash reset ve 1.0 (p ? 1.0 : squash)
     val shapeSquash = if (pressed) 1f else squash
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        modifier = modifier
-            .graphicsLayer(scaleX = scaleX, scaleY = scaleY)
-            .clip(SquashPillShape(squash = shapeSquash, cornerRadius = radius))
-            .background(bg)
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-            ) {
-                haptic()
-                onClick()
-            }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(cs.tertiaryContainer),
+    val cardModifier = modifier
+        .graphicsLayer(scaleX = scaleX, scaleY = scaleY)
+        .clip(SquashPillShape(squash = shapeSquash, cornerRadius = radius))
+        .background(bg)
+        .clickable(
+            interactionSource = interaction,
+            indication = null,
         ) {
-            MsIcon(
-                Ms.lightbulb, null,
-                tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(20.dp),
-            )
+            haptic()
+            onClick()
         }
-        Column {
+
+    if (expanded) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ExpandedPillContentGap),
+            modifier = cardModifier.padding(ExpandedPillInset),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(ExpandedPillIconSlot),
+            ) {
+                MsIcon(
+                    Ms.lightbulb,
+                    null,
+                    tint = if (count > 0) cs.onSurface else cs.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
             Text(
-                if (count > 0) "$count bóng" else "Không có",
-                style = MaterialTheme.typography.bodyMedium,
+                if (count > 0) "$count bóng bật" else "Đèn tắt",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    letterSpacing = 0.sp,
+                ),
                 fontWeight = FontWeight.SemiBold,
-                color = cs.onSurface,
-            )
-            Text(
-                if (count > 0) "Đang sáng" else "Đèn tắt",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = cs.onSurfaceVariant,
-                modifier = Modifier.padding(top = 1.dp),
+                color = if (count > 0) cs.onSurface else cs.onSurfaceVariant,
+                textAlign = TextAlign.Start,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
         }
+    } else {
+        CompactPillContent(
+            title = if (count > 0) "$count bóng" else "Không có",
+            status = if (count > 0) "Đang sáng" else "Đèn tắt",
+            icon = Ms.lightbulb,
+            iconBackground = cs.tertiaryContainer,
+            iconTint = cs.onTertiaryContainer,
+            modifier = cardModifier,
+        )
     }
 }
 
 /**
- * .smode: card doc 72dp; chon = primaryContainer; :active scale(.92);
+ * .smode: card 88x60dp; chon = primaryContainer; :active scale(.92);
  * vao smIn .45s spring + stagger; chon xong tu thu gon sau 1000ms.
  */
 @Composable
@@ -457,7 +607,7 @@ private fun SecModeCard(
             verticalArrangement = Arrangement.Center,
             modifier = modifier
                 .width(88.dp)
-                .height(72.dp)
+                .height(60.dp)
                 .clip(RoundedCornerShape(26.dp))
                 .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
                 .pressMorph(
@@ -470,8 +620,8 @@ private fun SecModeCard(
                         }
                     },
                 )
-                // Padding 8dp 2 ben: 8+text+8 <= 88, chu khong bi che
-                .padding(horizontal = 8.dp, vertical = 10.dp),
+                // Dem deu 8dp ca bon mep de noi dung khop light-detail tile.
+                .padding(8.dp),
         ) {
             MsIcon(
                 when (mode) {
@@ -482,9 +632,9 @@ private fun SecModeCard(
                 },
                 null,
                 tint = fg,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(20.dp),
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 when (mode) {
                     SecurityMode.Home -> "Ở nhà"
@@ -492,7 +642,11 @@ private fun SecModeCard(
                     SecurityMode.Night -> "Ban đêm"
                     SecurityMode.Off -> "Tắt"
                 },
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    letterSpacing = 0.sp,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = labelColor,
                 maxLines = 1,

@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.AttributeSet
-import androidx.appcompat.widget.AppCompatImageView
+import android.widget.ImageView
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -40,7 +40,7 @@ class MjpegView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : AppCompatImageView(context, attrs, defStyleAttr) {
+) : ImageView(context, attrs, defStyleAttr) {
 
     private var streamThread: Thread? = null
     private var decodeExecutor = Executors.newSingleThreadExecutor()
