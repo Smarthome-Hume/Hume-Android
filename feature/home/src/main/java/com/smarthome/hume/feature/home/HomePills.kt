@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -55,12 +54,17 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +79,7 @@ import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private val CompactPillHorizontalInset = 12.dp
 private val CompactPillVerticalInset = 10.dp
@@ -152,6 +157,8 @@ fun PillsRow(
     //   LaunchedEffect restart se huy chuoi dang chay (nhu iOS cancel task).
     var compact by remember { mutableStateOf(!securityExpanded) }
     var wasExpanded by remember { mutableStateOf(securityExpanded) }
+    val rootView = LocalView.current.rootView
+    var expandedViewportWidthPx by remember { mutableIntStateOf(0) }
     val bulbSquashAnim = remember { Animatable(1f) }
     LaunchedEffect(securityExpanded) {
         val collapsing = wasExpanded && !securityExpanded
@@ -180,7 +187,17 @@ fun PillsRow(
             compact = true
         }
     }
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+    BoxWithConstraints(
+        modifier = modifier.fillMaxWidth().onGloballyPositioned { coordinates ->
+            val leftPx = coordinates.positionInWindow().x.roundToInt()
+            // Preserve this row's normal left edge; use only the remaining
+            // window width to extend the expanded viewport to the right edge.
+            val remainingWindowWidthPx = (rootView.width - leftPx).coerceAtLeast(0)
+            if (expandedViewportWidthPx != remainingWindowWidthPx) {
+                expandedViewportWidthPx = remainingWindowWidthPx
+            }
+        },
+    ) {
         val halfPill = (maxWidth - 10.dp) / 2
         val compactPillWidth = minOf(halfPill, 136.dp)
         val secW by animateDpAsState(
@@ -206,8 +223,31 @@ fun PillsRow(
                     // Preserve bdfd18c full-bleed Security row while keeping the
                     // redesigned compact/expanded pill grouping intact.
                     if (!compact) Modifier
-                        .offset(x = (-18).dp)
-                        .width(maxWidth + 36.dp)
+                        // LazyColumn contentPadding (and any future parent inset)
+                        // moves this item inward. Preserve its original start
+                        // and extend the expanded scroll viewport only through
+                        // the remaining window width to the right edge.
+                        .layout { measurable, constraints ->
+                            val viewportWidthPx = expandedViewportWidthPx
+                            if (viewportWidthPx <= 0) {
+                                val placeable = measurable.measure(constraints)
+                                layout(placeable.width, placeable.height) {
+                                    placeable.place(0, 0)
+                                }
+                            } else {
+                                val viewportConstraints = constraints.copy(
+                                    minWidth = viewportWidthPx,
+                                    maxWidth = viewportWidthPx,
+                                )
+                                val placeable = measurable.measure(viewportConstraints)
+                                layout(
+                                    width = constraints.maxWidth,
+                                    height = placeable.height,
+                                ) {
+                                    placeable.place(0, 0)
+                                }
+                            }
+                        }
                         .horizontalScroll(rememberScrollState())
                     else Modifier.fillMaxWidth(),
                 ),
