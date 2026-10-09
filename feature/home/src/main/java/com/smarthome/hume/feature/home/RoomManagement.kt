@@ -59,6 +59,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ETextField
+import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -168,6 +169,7 @@ class StubRoomStore : RoomStore {
 fun RoomManagementScreen(
     store: RoomStore,
     onBack: () -> Unit = {},
+    pickerEntities: StateFlow<Map<String, PickerEntity>>? = null,
 ) {
     val cs = MaterialTheme.colorScheme
     val rooms by store.roomsFlow.collectAsState()
@@ -517,6 +519,85 @@ private fun deviceGlyph(device: DynDevice): Any = when (device.type) {
     else -> M3EIcons.Plug
 }
 
+
+/**
+ * Field chon sensor/entity: bam mo EntityPickerScreen (port iOS SensorField).
+ */
+@Composable
+private fun SensorPickerField(
+    label: String,
+    entityId: String,
+    onEntityChange: (String) -> Unit,
+    pickerEntities: StateFlow<Map<String, PickerEntity>>?,
+    exclude: Set<String> = emptySet(),
+    domains: List<String> = listOf("sensor"),
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    val cs = MaterialTheme.colorScheme
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(cs.surfaceContainer)
+            .clickable { showPicker = true }
+            .padding(16.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = cs.onSurfaceVariant,
+                )
+                Text(
+                    entityId.ifBlank { "Chạm để chọn" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (entityId.isBlank()) cs.onSurfaceVariant else cs.onSurface,
+                    maxLines = 1,
+                )
+            }
+            MsIcon(
+                Ms.chevron_right,
+                contentDescription = null,
+                tint = cs.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+
+    if (showPicker && pickerEntities != null) {
+        Dialog(
+            onDismissRequest = { showPicker = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(cs.background)
+            ) {
+                EntityPickerScreen(
+                    title = label,
+                    domains = domains,
+                    entities = pickerEntities,
+                    exclude = exclude,
+                    initialSelection = entityId,
+                    onSelect = {
+                        onEntityChange(it)
+                        showPicker = false
+                    },
+                    onDismiss = { showPicker = false },
+                )
+            }
+        }
+    }
+}
+
+// =====================================================================
+// RoomEditScreen
 // =====================================================================
 // RoomEditScreen — them/sua phong (port iOS RoomEditView)
 // =====================================================================
@@ -609,27 +690,32 @@ fun RoomEditScreen(
                 )
             }
             item {
-                M3ETextField(
-                    value = icon,
-                    onValueChange = { icon = it },
-                    label = "Icon",
-                    placeholder = "Tạm dùng TextField — sẽ thay bằng IconPicker",
+                Text(
+                    "Icon",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                IconPicker(
+                    selection = icon,
+                    onSelectionChange = { icon = it },
                 )
             }
             item {
-                M3ETextField(
-                    value = tempEntity,
-                    onValueChange = { tempEntity = it },
+                SensorPickerField(
                     label = "Sensor nhiệt độ",
-                    placeholder = "Tạm dùng TextField — sẽ thay bằng EntityPickerScreen",
+                    entityId = tempEntity,
+                    onEntityChange = { tempEntity = it },
+                    pickerEntities = pickerEntities,
+                    exclude = usedSensorEntities,
                 )
             }
             item {
-                M3ETextField(
-                    value = humidityEntity,
-                    onValueChange = { humidityEntity = it },
+                SensorPickerField(
                     label = "Sensor độ ẩm",
-                    placeholder = "Tạm dùng TextField — sẽ thay bằng EntityPickerScreen",
+                    entityId = humidityEntity,
+                    onEntityChange = { humidityEntity = it },
+                    pickerEntities = pickerEntities,
+                    exclude = usedSensorEntities,
                 )
             }
         }
@@ -754,11 +840,14 @@ fun DeviceEditScreen(
                 )
             }
             item {
-                M3ETextField(
-                    value = icon,
-                    onValueChange = { icon = it },
-                    label = "Icon",
-                    placeholder = "Tạm dùng TextField — sẽ thay bằng IconPicker",
+                Text(
+                    "Icon",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                IconPicker(
+                    selection = icon,
+                    onSelectionChange = { icon = it },
                 )
             }
             item {

@@ -139,6 +139,8 @@ private fun Modifier.riseEntrance(delayMs: Int): Modifier = composed {
 fun MeScreen(
     vm: MeViewModel = viewModel(),
     onViewCamera: () -> Unit = {},
+    roomStore: com.smarthome.hume.feature.home.RoomStore? = null,
+    pickerEntities: kotlinx.coroutines.flow.StateFlow<Map<String, com.smarthome.hume.feature.home.PickerEntity>>? = null,
 ) {
     val seed by vm.seed.collectAsState()
     val darkMode by vm.darkMode.collectAsState()
@@ -157,6 +159,7 @@ fun MeScreen(
     var showChooser by remember { mutableStateOf(false) }
     var showLogoutConfirm by remember { mutableStateOf(false) }
     var showFontSheet by remember { mutableStateOf(false) }
+    var showRoomManagement by remember { mutableStateOf(false) }
 
     fun onPicked(uri: Uri, isVideo: Boolean) {
         val key = userKey
@@ -236,6 +239,14 @@ fun MeScreen(
             )
         }
 
+        // Quan ly phong & thiet bi (port iOS RoomManagementView)
+        if (roomStore != null) {
+            Box(Modifier.riseEntrance(600)) { M3ESectionTitle("Phòng & thiết bị", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
+            Box(Modifier.riseEntrance(610)) {
+                RoomManagementCard(onOpen = { showRoomManagement = true })
+            }
+        }
+
         Box(Modifier.riseEntrance(620)) { M3ESectionTitle("Trí tuệ nhân tạo", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
         Box(Modifier.riseEntrance(640)) { AiSettingsCard(vm = vm) }
 
@@ -297,6 +308,26 @@ fun MeScreen(
     }
 
     // Chon anh / video lam avatar
+    // Full-screen dialog cho Quan ly phong
+    if (showRoomManagement && roomStore != null) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showRoomManagement = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = androidx.compose.ui.Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                com.smarthome.hume.feature.home.RoomManagementScreen(
+                    store = roomStore,
+                    onBack = { showRoomManagement = false },
+                    pickerEntities = pickerEntities,
+                )
+            }
+        }
+    }
+
     if (showChooser) {
         AlertDialog(
             onDismissRequest = { showChooser = false },
@@ -1187,4 +1218,61 @@ private fun SeedDot(
             )
         }
     }
+
+/**
+ * Card mo Quan ly phong & thiet bi (port iOS RoomManagementView).
+ */
+@Composable
+private fun RoomManagementCard(onOpen: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(cs.surfaceContainerHighest)
+            .clickable(onClick = onOpen)
+            .padding(20.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(cs.primaryContainer),
+            ) {
+                MsIcon(
+                    com.smarthome.hume.core.ui.components.Ms.home,
+                    contentDescription = null,
+                    tint = cs.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Quản lý phòng & thiết bị",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurface,
+                )
+                Text(
+                    "Thêm/sửa/xoá phòng và thiết bị",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                )
+            }
+            MsIcon(
+                com.smarthome.hume.core.ui.components.Ms.chevron_right,
+                contentDescription = null,
+                tint = cs.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
 }

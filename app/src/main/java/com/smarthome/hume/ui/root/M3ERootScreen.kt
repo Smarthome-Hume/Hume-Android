@@ -107,6 +107,27 @@ fun M3ERootScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    // RoomStore cho Quan ly phong (port iOS RoomManagementView)
+    val roomStoreAdapter = remember(context) {
+        com.smarthome.hume.data.RoomStoreAdapter(
+            com.smarthome.hume.data.RoomStore(context)
+        )
+    }
+    // Entities cho EntityPicker (port iOS SensorPickerView)
+    val pickerEntities = remember(ha) {
+        ha.entities.map { map ->
+            map.mapValues { (id, e) ->
+                val friendly = e.attributes["friendly_name"]
+                    ?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
+                    ?: id
+                com.smarthome.hume.feature.home.PickerEntity(id, friendly)
+            }
+        }.stateIn(
+            coroutineScope,
+            kotlinx.coroutines.flow.SharingStarted.Eagerly,
+            emptyMap(),
+        )
+    }
     val themeSettings by HumeGraph.get().themeStore.settings.collectAsState(
         initial = com.smarthome.hume.core.datastore.ThemeSettings(),
     )
@@ -274,7 +295,11 @@ fun M3ERootScreen(
                             }
                         },
                     )
-                    HumeTab.Profile -> MeScreen(onViewCamera = { selected = 2 })
+                    HumeTab.Profile -> MeScreen(
+                        onViewCamera = { selected = 2 },
+                        roomStore = roomStoreAdapter,
+                        pickerEntities = pickerEntities,
+                    )
                 }
             }
             } // CompositionLocalProvider(LocalContentColor)
