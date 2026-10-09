@@ -99,7 +99,6 @@ class AppEnergyRepository(
         fun v(id: String): Double = entities[id]?.numericState ?: 0.0
 
         val pvToday = v(HumeConfig.PV_TODAY)
-        val homeDaily = v("sensor.energy_home_daily")
         val gridCost = v("sensor.grid_cost")
         val homeCost = v("sensor.home_cost")
         val evn = v("sensor.evn_current_unit_price").let { if (it > 0) it else 2167.0 }
@@ -115,32 +114,42 @@ class AppEnergyRepository(
         )
 
         val battW = v(HumeConfig.BATTERY_POWER)
-        val powerRows = listOf(
-            EnergyPowerRow(EnergyPowerKind.Battery, battW),
-            EnergyPowerRow(EnergyPowerKind.Solar, v(HumeConfig.PV_POWER)),
-            EnergyPowerRow(EnergyPowerKind.Grid, v("sensor.aptomat_tong_power")),
-            EnergyPowerRow(EnergyPowerKind.Home, v("sensor.cong_suat_nha")),
-        )
 
         val soc = v(HumeConfig.BATTERY_SOC)
         // Hume goc: charging khi battery_power_flow > 0. User yeu cau dung sensor.battery_current_flow:
         // > 0 = dang sac, < 0 = dang xa (cung dau voi power vi P = V * I, V luon duong)
         val battCurrent = v("sensor.battery_current_flow")
         val charging = battCurrent > 0
-        // Trang thai luoi dien (2026-09-30, user): nhan on/off/1/0/text tieng Viet;
-        // khong doc duoc -> mac dinh co dien (mat dien la trang thai ngoai le).
-        // (2026-09-30) verify that: sensor that tra "On Grid"/"Off Grid"
-        // (Solis, co dau cach) -> normalize dau gach ve space truoc khi so.
-        val gridStatusRaw = entities[HumeConfig.GRID_STATUS]?.state?.lowercase()
+        // Trang thai luoi dien — port iOS d8df5d3: doc TRUC TIEP tu
+        // sensor.solis_s6_eh1p_status_string_3 (bo sensor.grid_status cu).
+        // "No Grid" -> mat dien; con lai -> co dien.
+        val gridStatusRaw = entities["sensor.solis_s6_eh1p_status_string_3"]?.state?.lowercase()
             ?.replace('-', ' ')?.replace('_', ' ') ?: ""
         val gridOn = !(gridStatusRaw == "off" || gridStatusRaw == "0" ||
             gridStatusRaw == "false" || gridStatusRaw == "no" ||
-            "off grid" in gridStatusRaw || "outage" in gridStatusRaw ||
+            "off grid" in gridStatusRaw || "no grid" in gridStatusRaw ||
+            "outage" in gridStatusRaw ||
             "mất" in gridStatusRaw || "mat dien" in gridStatusRaw)
+        // Nang luong tieu thu theo trang thai luoi — port iOS 6f32222:
+        // co dien: household_load_today_energy_2; mat dien: backup_load_today_energy_2.
+        // (sensor.energy_home_daily cu dong bang khi CB mat dien)
+        val homeDaily = if (gridOn) v("sensor.solis_s6_eh1p_household_load_today_energy_2")
+            else v("sensor.solis_s6_eh1p_backup_load_today_energy_2")
+        // PowerRow "Tieu thu" dung consKw da switch theo gridOn (port iOS 6f32222)
+        val powerRows = listOf(
+            EnergyPowerRow(EnergyPowerKind.Battery, battW),
+            EnergyPowerRow(EnergyPowerKind.Solar, v(HumeConfig.PV_POWER)),
+            EnergyPowerRow(EnergyPowerKind.Grid, v("sensor.aptomat_tong_power")),
+            EnergyPowerRow(EnergyPowerKind.Home, consKw * 1000.0),
+        )
         val cb1 = v("sensor.aptomat_t1_power") / 1000.0
         val cb2 = v("sensor.aptomat_t2_power") / 1000.0
         val cb3 = v("sensor.aptomat_t3_power") / 1000.0
-        val consKw = v("sensor.cong_suat_nha") / 1000.0
+        // Cong suat nha theo trang thai luoi — port iOS 6f32222:
+        // co dien: household_load_power_2; mat dien: backup_load_power_2.
+        // (sensor.cong_suat_nha cu dong bang khi CB mat dien)
+        val consKw = (if (gridOn) v("sensor.solis_s6_eh1p_household_load_power_2")
+            else v("sensor.solis_s6_eh1p_backup_load_power_2")) / 1000.0
         val battChargeKwh = v("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
         val selfUse = if (pvToday > 0.01) {
             ((homeDaily + battChargeKwh) / pvToday).coerceIn(0.0, 1.0) * 100.0
