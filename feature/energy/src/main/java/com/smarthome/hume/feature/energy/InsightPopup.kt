@@ -75,6 +75,7 @@ fun InsightPopupOverlay(
      * (port iOS 58a3542). Null = phong tu diem giua.
      */
     sourceRectDp: androidx.compose.ui.geometry.Rect? = null,
+    cost: com.smarthome.hume.core.model.EnergyCost? = null,
 ) {
     // Giữ popup trong composition suốt exit animation rồi mới null (cleanup state,
     // không phải animation từng frame nên delay ngắn ở đây là chấp nhận được).
@@ -123,6 +124,12 @@ fun InsightPopupOverlay(
                     battery = battery,
                     onClose = ::dismiss,
                 )
+                InsightPopup.CostDetail -> cost?.let {
+                    InsightCostCard(
+                        cost = it,
+                        onClose = ::dismiss,
+                    )
+                }
                 null -> {}
             }
         }
@@ -339,6 +346,86 @@ private fun InsightPopupButton(
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             color = if (primary) cs.onPrimary else cs.onSurface,
+        )
+    }
+}
+
+/**
+ * Card chi tiet tiet kiem (port iOS 5f176f9 InsightCostCard):
+ * so tiet kiem lon + chi phi thuc te + tien dien EVN.
+ */
+@Composable
+private fun InsightCostCard(
+    cost: EnergyCost,
+    onClose: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    val saving = cost.homeVnd - cost.gridVnd
+
+    fun fmtVnd(v: Long): String {
+        return v.toString().reversed().chunked(3).joinToString(".").reversed() + "đ"
+    }
+
+    Column(Modifier.padding(20.dp)) {
+        // Header + nut dong
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Chi tiết tiết kiệm",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            MsIcon(
+                Ms.close, null,
+                tint = cs.onSurfaceVariant,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClose,
+                    ),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        // So tiet kiem lon
+        Text(
+            fmtVnd(saving),
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2E7D32),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        Text(
+            "tháng này",
+            style = MaterialTheme.typography.bodyMedium,
+            color = cs.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        Spacer(Modifier.height(16.dp))
+        // Chi tiet
+        CostRow("Chi phí thực tế", fmtVnd(cost.homeVnd))
+        Spacer(Modifier.height(12.dp))
+        CostRow("Tiền điện phải trả EVN", fmtVnd(cost.gridVnd))
+    }
+}
+
+@Composable
+private fun CostRow(label: String, value: String) {
+    val cs = MaterialTheme.colorScheme
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = cs.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = cs.onSurface,
         )
     }
 }

@@ -60,6 +60,22 @@ fun solisStatusVN(raw: String): String {
 }
 
 /**
+ * Mau dot theo trang thai inverter (giong HA, port iOS f4a786b).
+ */
+fun solisStatusColor(raw: String): androidx.compose.ui.graphics.Color {
+    return when (raw.lowercase().trim()) {
+        "generating" -> androidx.compose.ui.graphics.Color(0xFFF5B80B) // vang
+        "no grid" -> androidx.compose.ui.graphics.Color(0xFF8B5CF6) // tim
+        "waiting" -> androidx.compose.ui.graphics.Color(0xFF2DD4BF) // teal
+        "normal operation" -> androidx.compose.ui.graphics.Color(0xFFEF4444) // do
+        "bypass / inverting / running" -> androidx.compose.ui.graphics.Color(0xFFEC72A8) // hong
+        "bypass / inverting / synchronize" -> androidx.compose.ui.graphics.Color(0xFFA16207) // nau
+        "fault" -> androidx.compose.ui.graphics.Color(0xFFEF4444) // do
+        else -> androidx.compose.ui.graphics.Color(0xFF22C55E) // xanh la mac dinh
+    }
+}
+
+/**
  * Tab Dien: header + esub (Tieu thu / Dien mat troi) + noi dung theo demo v4 rev12.
  * (Khong boc HumeM3ETheme o day — root M3ERootScreen da boc.)
  */
@@ -129,6 +145,8 @@ fun EnergyScreen(
                 insightPopup = InsightPopup.Device(t.entityId, t.label)
             InsightActionTarget.BatteryPopup ->
                 insightPopup = InsightPopup.Battery
+            InsightActionTarget.CostDetailPopup ->
+                insightPopup = InsightPopup.CostDetail
             is InsightActionTarget.GoTab ->
                 selectTab(t.tab.ordinal)
         }
@@ -168,10 +186,9 @@ fun EnergyScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
-                // Dong trang thai inverter duoi title (port iOS f44001d):
-                // dot do (mat dien) / xanh (co dien) + text tieng Viet.
+                // Dong trang thai inverter duoi title (port iOS f44001d, f4a786b):
+                // dot mau theo trang thai HA + text tieng Viet.
                 val invStatus = state.flow.inverterStatus
-                val isNoGrid = invStatus.lowercase().contains("no grid")
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(start = 20.dp, top = 2.dp, bottom = 4.dp),
@@ -180,10 +197,7 @@ fun EnergyScreen(
                         modifier = Modifier
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(
-                                if (isNoGrid) androidx.compose.ui.graphics.Color(0xFFBA1A1A)
-                                else com.smarthome.hume.core.ui.theme.LocalHumeExtraColors.current.success
-                            ),
+                            .background(solisStatusColor(invStatus)),
                     )
                     Spacer(Modifier.size(6.dp))
                     Text(
@@ -227,6 +241,7 @@ fun EnergyScreen(
             toggleStates = state.toggleStates,
             onToggle = vm::toggle,
             onDismiss = { insightPopup = null },
+            cost = state.cost,
         )
     }
 }

@@ -9,6 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -41,6 +43,10 @@ object EnergyNotifier {
     private var lastLowBattery: Boolean = false
     private var lastProducing: Boolean? = null
     private var lastFullBattery: Boolean = false
+    /** Debounce chong spam khi sensor chap chon (port iOS 47aec64). */
+    private val debounceHandler = Handler(Looper.getMainLooper())
+    private var debounceRunnable: Runnable? = null
+    private const val DEBOUNCE_MS = 3_000L
 
     fun ensureChannel(ctx: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -78,20 +84,37 @@ object EnergyNotifier {
         val lowBattery = soc < 20
         val fullBattery = soc >= 98
 
-        // 1. Mat / co dien luoi tro lai (port iOS 3cbc087, f69835a)
-        if (lastGridOn != null && lastGridOn != gridOn) {
-            if (!gridOn) notifyGridAlert(
-                ctx,
-                "⚠️ Mất điện lưới",
-                "Hệ thống đang chạy bằng pin mặt trời. SOC ${soc.toInt()}%.",
-            )
-            else notifyGridAlert(
-                ctx,
-                "✅ Có điện lưới trở lại",
-                "Lưới điện đã khôi phục.",
-            )
+        // 1. Mat / co dien luoi tro lai (port iOS 3cbc087, f69835a; 47aec64: debounce 3s)
+        // Bo qua state invalid (port iOS 47aec64: EntityReader tra "unavailable" luc khoi tao)
+        val inverterStatus = flow.inverterStatus
+        if (!isValidGridStatus(inverterStatus)) {
+            // State khong hop le — huy debounce dang cho, khong cap nhat lastGridOn
+            debounceRunnable?.let { debounceHandler.removeCallbacks(it) }
+            debounceRunnable = null
+        } else if (lastGridOn != null && lastGridOn != gridOn) {
+            // Trang thai doi — debounce 3s truoc khi bao (chong chap chon)
+            debounceRunnable?.let { debounceHandler.removeCallbacks(it) }
+            val newGridOn = gridOn
+            val newSoc = soc
+            debounceRunnable = Runnable {
+                debounceRunnable = null
+                if (lastGridOn != newGridOn) {
+                    if (!newGridOn) notifyGridAlert(
+                        ctx,
+                        "⚠️ Mất điện lưới",
+                        "Hệ thống đang chạy bằng pin mặt trời. SOC ${newSoc.toInt()}%.",
+                    )
+                    else notifyGridAlert(
+                        ctx,
+                        "✅ Có điện lưới trở lại",
+                        "Lưới điện đã khôi phục.",
+                    )
+                    lastGridOn = newGridOn
+                }
+            }.also { debounceHandler.postDelayed(it, DEBOUNCE_MS) }
+        } else {
+            lastGridOn = gridOn
         }
-        lastGridOn = gridOn
 
         // 2. Pin yeu
         if (lowBattery && !lastLowBattery) {
@@ -182,6 +205,22 @@ object EnergyNotifier {
             .setAutoCancel(true)
             .build()
         NotificationManagerCompat.from(ctx).notify(id, n)
+    }
+
+    /** State khong hop le — bo qua, khong tinh la chuyen doi (port iOS 47aec64). */
+    private fun isValidGridStatus(raw: String?): Boolean {
+        val s = raw?.trim()?.lowercase() ?: return false
+        return s.isNotEmpty() && s != "unavailable" && s != "unknown" && s != "none"
+    }
+
+    /**
+     * Dong bo trang thai ma KHONG bao dong — dung khi view tao lai (port iOS 47aec64 sync).
+     */
+    fun syncGridState(gridOn: Boolean, inverterStatus: String?) {
+        if (!isValidGridStatus(inverterStatus)) return
+        debounceRunnable?.let { debounceHandler.removeCallbacks(it) }
+        debounceRunnable = null
+        lastGridOn = gridOn
     }
 
     /**
