@@ -46,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,89 +62,98 @@ import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 // =====================================================================
 // PLACEHOLDER — data models + RoomStore interface.
-// TODO(agent RoomStore): thay bang implementation that (DataStore/UserDefaults),
-// giu nguyen ten ham de RoomManagement.kt khong phai sua.
+//
+// RoomStore THAT da co o app module: `com.smarthome.hume.data.RoomStore`
+// (commit b11eea6) nhung feature/home KHONG phu thuoc app module nen
+// khong import duoc. Interface duoi day MIRROR chinh xac API cua store
+// that (suspend CRUD, cung ten ham/thu tu param) de parent agent chi can
+// doi `store: RoomStore` thanh store that + map DynRoom/DynDevice ->
+// ManagedRoom/ManagedDevice (field giong nhau tung cai).
+// TODO(agent RoomStore): dua RoomStore xuong core:data (hoac viet adapter)
+// roi xoa placeholder nay.
 // =====================================================================
 
-/** Thiet bi trong 1 phong (port iOS DeviceConfig + id). */
+/** Thiet bi trong 1 phong — mirror `ManagedDevice` (app module). */
 data class DynDevice(
     val id: String = UUID.randomUUID().toString(),
+    val name: String = "",
+    val entityId: String = "",
     val type: String = "toggle", // toggle | fan | climate | cover | lock
-    val entity: String = "",
-    val label: String = "",
-    val sub: String = "",
     val icon: String = "",
+    val sub: String = "",
     val powerEntity: String? = null,
 )
 
-/** Phong (port iOS RoomBubbleConfig + id). */
+/** Phong — mirror `ManagedRoom` (app module). */
 data class DynRoom(
     val id: String = UUID.randomUUID().toString(),
-    val key: String = "",
-    val label: String = "",
+    val name: String = "",
     val icon: String = "home",
     val tempEntity: String = "",
     val humidityEntity: String = "",
     val devices: List<DynDevice> = emptyList(),
+    val sortOrder: Int = 0,
 )
 
-/** Interface RoomStore — agent khac se implement that. */
+/** Mirror API `com.smarthome.hume.data.RoomStore` (suspend CRUD). */
 interface RoomStore {
     val roomsFlow: StateFlow<List<DynRoom>>
-    fun addRoom(room: DynRoom)
-    fun updateRoom(room: DynRoom)
-    fun deleteRoom(id: String)
-    fun moveRoom(from: Int, to: Int)
-    fun resetToDefaults()
-    fun addDevice(device: DynDevice, toRoomId: String)
-    fun updateDevice(device: DynDevice, inRoomId: String)
-    fun deleteDevice(deviceId: String, fromRoomId: String)
+    suspend fun addRoom(room: DynRoom)
+    suspend fun updateRoom(room: DynRoom)
+    suspend fun deleteRoom(roomId: String)
+    suspend fun moveRoom(from: Int, to: Int)
+    suspend fun resetToDefaults()
+    suspend fun addDevice(roomId: String, device: DynDevice)
+    suspend fun updateDevice(roomId: String, device: DynDevice)
+    suspend fun deleteDevice(roomId: String, deviceId: String)
 }
 
-/** Stub in-memory de UI chay duoc truoc khi RoomStore that co. */
+/** Stub in-memory de UI chay duoc truoc khi wire store that. */
 class StubRoomStore : RoomStore {
     private val _rooms = MutableStateFlow(
         listOf(
-            DynRoom(label = "Phòng khách", key = "Phòng<br>khách", icon = "sofa"),
-            DynRoom(label = "Phòng ngủ", key = "Phòng<br>ngủ", icon = "bed"),
+            DynRoom(name = "Phòng khách", icon = "sofa", sortOrder = 0),
+            DynRoom(name = "Phòng ngủ", icon = "bed", sortOrder = 1),
         )
     )
     override val roomsFlow: StateFlow<List<DynRoom>> = _rooms
 
     private fun mutate(f: (List<DynRoom>) -> List<DynRoom>) {
-        _rooms.value = f(_rooms.value)
+        _rooms.value = f(_rooms.value.sortedBy { it.sortOrder })
+            .mapIndexed { i, r -> r.copy(sortOrder = i) }
     }
 
-    override fun addRoom(room: DynRoom) = mutate { it + room }
-    override fun updateRoom(room: DynRoom) =
+    override suspend fun addRoom(room: DynRoom) = mutate { it + room }
+    override suspend fun updateRoom(room: DynRoom) =
         mutate { list -> list.map { if (it.id == room.id) room else it } }
-    override fun deleteRoom(id: String) = mutate { list -> list.filterNot { it.id == id } }
-    override fun moveRoom(from: Int, to: Int) = mutate { list ->
+    override suspend fun deleteRoom(roomId: String) = mutate { list -> list.filterNot { it.id == roomId } }
+    override suspend fun moveRoom(from: Int, to: Int) = mutate { list ->
         if (from !in list.indices || to !in list.indices || from == to) return@mutate list
         list.toMutableList().also { it.add(to, it.removeAt(from)) }
     }
-    override fun resetToDefaults() = mutate {
+    override suspend fun resetToDefaults() = mutate {
         listOf(
-            DynRoom(label = "Phòng khách", key = "Phòng<br>khách", icon = "sofa"),
-            DynRoom(label = "Phòng ngủ", key = "Phòng<br>ngủ", icon = "bed"),
+            DynRoom(name = "Phòng khách", icon = "sofa"),
+            DynRoom(name = "Phòng ngủ", icon = "bed"),
         )
     }
-    override fun addDevice(device: DynDevice, toRoomId: String) = mutate { list ->
-        list.map { if (it.id == toRoomId) it.copy(devices = it.devices + device) else it }
+    override suspend fun addDevice(roomId: String, device: DynDevice) = mutate { list ->
+        list.map { if (it.id == roomId) it.copy(devices = it.devices + device) else it }
     }
-    override fun updateDevice(device: DynDevice, inRoomId: String) = mutate { list ->
+    override suspend fun updateDevice(roomId: String, device: DynDevice) = mutate { list ->
         list.map { room ->
-            if (room.id == inRoomId) room.copy(devices = room.devices.map { if (it.id == device.id) device else it })
+            if (room.id == roomId) room.copy(devices = room.devices.map { if (it.id == device.id) device else it })
             else room
         }
     }
-    override fun deleteDevice(deviceId: String, fromRoomId: String) = mutate { list ->
+    override suspend fun deleteDevice(roomId: String, deviceId: String) = mutate { list ->
         list.map { room ->
-            if (room.id == fromRoomId) room.copy(devices = room.devices.filterNot { it.id == deviceId })
+            if (room.id == roomId) room.copy(devices = room.devices.filterNot { it.id == deviceId })
             else room
         }
     }
@@ -161,6 +171,7 @@ fun RoomManagementScreen(
 ) {
     val cs = MaterialTheme.colorScheme
     val rooms by store.roomsFlow.collectAsState()
+    val scope = rememberCoroutineScope()
 
     var showAddRoom by remember { mutableStateOf(false) }
     var editingRoom by remember { mutableStateOf<DynRoom?>(null) }
@@ -211,7 +222,7 @@ fun RoomManagementScreen(
                 val dismissState = rememberSwipeToDismissBoxState()
                 LaunchedEffect(dismissState.currentValue) {
                     if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                        store.deleteRoom(room.id)
+                        scope.launch { store.deleteRoom(room.id) }
                     }
                 }
                 SwipeToDismissBox(
@@ -234,8 +245,8 @@ fun RoomManagementScreen(
                         room = room,
                         canMoveUp = index > 0,
                         canMoveDown = index < rooms.size - 1,
-                        onMoveUp = { store.moveRoom(index, index - 1) },
-                        onMoveDown = { store.moveRoom(index, index + 1) },
+                        onMoveUp = { scope.launch { store.moveRoom(index, index - 1) } },
+                        onMoveDown = { scope.launch { store.moveRoom(index, index + 1) } },
                         onEdit = { editingRoom = room },
                         onClick = { detailRoomId = room.id },
                     )
@@ -276,7 +287,10 @@ fun RoomManagementScreen(
             text = { Text("Mọi thay đổi sẽ mất. Tiếp tục?") },
             confirmButton = {
                 TextButton(
-                    onClick = { showResetConfirm = false; store.resetToDefaults() },
+                    onClick = {
+                        showResetConfirm = false
+                        scope.launch { store.resetToDefaults() }
+                    },
                 ) {
                     Text("Khôi phục", color = cs.error, fontWeight = FontWeight.SemiBold)
                 }
@@ -317,7 +331,7 @@ private fun RoomRow(
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                room.label,
+                room.name,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -358,6 +372,8 @@ fun RoomDetailScreen(
 ) {
     val cs = MaterialTheme.colorScheme
     val rooms by store.roomsFlow.collectAsState()
+    val scope = rememberCoroutineScope()
+    // Port iOS liveRoom: doc lai tu store moi lan render.
     val room = rooms.firstOrNull { it.id == roomId }
 
     var showAddDevice by remember { mutableStateOf(false) }
@@ -368,7 +384,7 @@ fun RoomDetailScreen(
             TopAppBar(
                 title = {
                     Text(
-                        room?.label ?: "Phòng",
+                        room?.name ?: "Phòng",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
@@ -408,7 +424,7 @@ fun RoomDetailScreen(
                 val dismissState = rememberSwipeToDismissBoxState()
                 LaunchedEffect(dismissState.currentValue) {
                     if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                        store.deleteDevice(device.id, roomId)
+                        scope.launch { store.deleteDevice(roomId, device.id) }
                     }
                 }
                 SwipeToDismissBox(
@@ -473,13 +489,13 @@ private fun DeviceRow(
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                device.label,
+                device.name,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                device.entity,
+                device.entityId,
                 style = MaterialTheme.typography.bodySmall,
                 color = cs.onSurfaceVariant,
                 maxLines = 1,
@@ -512,10 +528,10 @@ fun RoomEditScreen(
     room: DynRoom?,
     onDismiss: () -> Unit,
 ) {
-    val cs = MaterialTheme.colorScheme
     val rooms by store.roomsFlow.collectAsState()
+    val scope = rememberCoroutineScope()
 
-    var label by remember(room?.id) { mutableStateOf(room?.label ?: "") }
+    var name by remember(room?.id) { mutableStateOf(room?.name ?: "") }
     // TODO(agent IconPicker): thay TextField bang IconPicker that.
     var icon by remember(room?.id) { mutableStateOf(room?.icon ?: "home") }
     // TODO(agent EntityPickerScreen): thay TextField bang EntityPickerScreen that.
@@ -533,21 +549,23 @@ fun RoomEditScreen(
             }
         }
     }
-    // (tam thoi: chi dung de khoi warning unused khi chua co picker that)
-    @Suppress("UNUSED_VARIABLE") val unusedSensorsForPicker = usedSensorEntities
+    // Tam giu bien de khong unused cho den khi EntityPickerScreen that co.
+    @Suppress("UNUSED_VARIABLE")
+    val sensorsExcludedFromPicker = usedSensorEntities
 
     fun save() {
         val newRoom = DynRoom(
             id = room?.id ?: UUID.randomUUID().toString(),
-            // Port iOS: key = label thay space bang <br>
-            key = label.replace(" ", "<br>"),
-            label = label.trim(),
+            name = name.trim(),
             icon = icon.trim().ifBlank { "home" },
             tempEntity = tempEntity.trim(),
             humidityEntity = humidityEntity.trim(),
             devices = room?.devices.orEmpty(),
+            sortOrder = room?.sortOrder ?: Int.MAX_VALUE,
         )
-        if (room == null) store.addRoom(newRoom) else store.updateRoom(newRoom)
+        scope.launch {
+            if (room == null) store.addRoom(newRoom) else store.updateRoom(newRoom)
+        }
         onDismiss()
     }
 
@@ -567,7 +585,7 @@ fun RoomEditScreen(
                 actions = {
                     TextButton(
                         onClick = { save() },
-                        enabled = label.isNotBlank(),
+                        enabled = name.isNotBlank(),
                     ) {
                         Text("Lưu", fontWeight = FontWeight.SemiBold)
                     }
@@ -584,8 +602,8 @@ fun RoomEditScreen(
         ) {
             item {
                 M3ETextField(
-                    value = label,
-                    onValueChange = { label = it },
+                    value = name,
+                    onValueChange = { name = it },
                     label = "Tên phòng",
                     placeholder = "Ví dụ: Phòng khách",
                 )
@@ -631,7 +649,7 @@ private val DeviceTypes = listOf(
 )
 
 /** Tu dong chon loai theo domain cua entity (port iOS onSelect). */
-private fun deviceTypeForEntity(entity: String): String = when (entity.substringBefore(".").trim().lowercase()) {
+private fun deviceTypeForEntity(entityId: String): String = when (entityId.substringBefore(".").trim().lowercase()) {
     "climate" -> "climate"
     "cover" -> "cover"
     "lock" -> "lock"
@@ -647,8 +665,10 @@ fun DeviceEditScreen(
     device: DynDevice?,
     onDismiss: () -> Unit,
 ) {
-    var entity by remember(device?.id) { mutableStateOf(device?.entity ?: "") }
-    var label by remember(device?.id) { mutableStateOf(device?.label ?: "") }
+    val scope = rememberCoroutineScope()
+
+    var entityId by remember(device?.id) { mutableStateOf(device?.entityId ?: "") }
+    var name by remember(device?.id) { mutableStateOf(device?.name ?: "") }
     var sub by remember(device?.id) { mutableStateOf(device?.sub ?: "") }
     // TODO(agent IconPicker): thay TextField bang IconPicker that.
     var icon by remember(device?.id) { mutableStateOf(device?.icon ?: "") }
@@ -661,17 +681,18 @@ fun DeviceEditScreen(
     var typeMenuOpen by remember { mutableStateOf(false) }
 
     fun save() {
-        val power = powerEntity.trim().ifBlank { null }
         val newDevice = DynDevice(
             id = device?.id ?: UUID.randomUUID().toString(),
+            name = name.trim(),
+            entityId = entityId.trim(),
             type = type,
-            entity = entity.trim(),
-            label = label.trim(),
-            sub = sub.trim(),
             icon = icon.trim(),
-            powerEntity = power,
+            sub = sub.trim(),
+            powerEntity = powerEntity.trim().ifBlank { null },
         )
-        if (device == null) store.addDevice(newDevice, roomId) else store.updateDevice(newDevice, roomId)
+        scope.launch {
+            if (device == null) store.addDevice(roomId, newDevice) else store.updateDevice(roomId, newDevice)
+        }
         onDismiss()
     }
 
@@ -691,7 +712,7 @@ fun DeviceEditScreen(
                 actions = {
                     TextButton(
                         onClick = { save() },
-                        enabled = entity.isNotBlank() && label.isNotBlank(),
+                        enabled = entityId.isNotBlank() && name.isNotBlank(),
                     ) {
                         Text("Lưu", fontWeight = FontWeight.SemiBold)
                     }
@@ -708,9 +729,9 @@ fun DeviceEditScreen(
         ) {
             item {
                 M3ETextField(
-                    value = entity,
+                    value = entityId,
                     onValueChange = {
-                        entity = it
+                        entityId = it
                         // Tu dong chon loai theo domain (neu user chua chon tay)
                         if (!typeTouched) type = deviceTypeForEntity(it)
                     },
@@ -720,8 +741,8 @@ fun DeviceEditScreen(
             }
             item {
                 M3ETextField(
-                    value = label,
-                    onValueChange = { label = it },
+                    value = name,
+                    onValueChange = { name = it },
                     label = "Tên hiển thị",
                 )
             }
