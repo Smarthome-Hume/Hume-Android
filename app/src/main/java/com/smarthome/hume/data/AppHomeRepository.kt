@@ -55,6 +55,21 @@ class AppHomeRepository(
     private val _homeState = MutableStateFlow(HomeUiState())
     override val homeState: StateFlow<HomeUiState> = _homeState.asStateFlow()
 
+    /**
+     * Room configs dong (port iOS RoomStore).
+     * Mac dinh: RoomBubbleConfig.all (hardcode). Khi RoomStore co data,
+     * goi setRoomConfigs() de cap nhat.
+     */
+    private val _roomConfigs = MutableStateFlow<List<com.smarthome.hume.core.model.RoomBubbleConfig>>(
+        com.smarthome.hume.core.model.RoomBubbleConfig.all
+    )
+    val roomConfigs: StateFlow<List<com.smarthome.hume.core.model.RoomBubbleConfig>> = _roomConfigs.asStateFlow()
+
+    /** Cap nhat room configs tu RoomStore (goi khi roomsFlow thay doi). */
+    fun setRoomConfigs(configs: List<com.smarthome.hume.core.model.RoomBubbleConfig>) {
+        _roomConfigs.value = configs.ifEmpty { com.smarthome.hume.core.model.RoomBubbleConfig.all }
+    }
+
     private val weekCache = mutableMapOf<Long, Double>()
     private val snapshots = com.smarthome.hume.core.storage.DailySnapshotStore.get(appContext)
 
@@ -107,7 +122,7 @@ class AppHomeRepository(
      * (vd: light.all_light, group phong ngu) de khong dem trung.
      */
     private val configuredLightIds: Set<String> by lazy {
-        com.smarthome.hume.core.model.RoomBubbleConfig.all
+        _roomConfigs.value
             .flatMap { it.devices }
             .map { it.entity }
             .filter { it.startsWith("light.") }
@@ -130,7 +145,7 @@ class AppHomeRepository(
         // Sensor cong suat cua o cam/cong tac co do cong suat: UI hien "· X W"
         // khi bat. Khong watch -> roi bucket ONE_DAY, WS giam toi 24h -> powerW
         // null/stale mai (bug 2026-09-30: cong tac nong lanh khong hien cong suat).
-        com.smarthome.hume.core.model.RoomBubbleConfig.all
+        _roomConfigs.value
             .flatMap { it.devices }
             .mapNotNull { it.powerEntity }
             .forEach { ids.add(it) }
@@ -503,7 +518,7 @@ class AppHomeRepository(
     }
 
     private fun buildRoom(room: RoomConfig, entities: Map<String, LegacyEntity>): RoomUi {
-        val bubble = RoomBubbleConfig.all.firstOrNull { matches(room, it) }
+        val bubble = _roomConfigs.value.firstOrNull { matches(room, it) }
         val lightOn = room.lightEntity.let { entities[it]?.isOn } ?: false
         val devices = bubble?.devices.orEmpty()
             .filter { it.type == "toggle" }
@@ -627,7 +642,7 @@ class AppHomeRepository(
             r.humidityEntity?.let { ids.add(it) }
             r.contactEntity?.let { ids.add(it) }
         }
-        com.smarthome.hume.core.model.RoomBubbleConfig.all.forEach { b ->
+        _roomConfigs.value.forEach { b ->
             b.tempEntity?.let { ids.add(it) }
             b.humidityEntity?.let { ids.add(it) }
         }

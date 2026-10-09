@@ -77,7 +77,17 @@ class HumeApplication : Application(), ImageLoaderFactory {
             }
         }
         // Dang ky HomeRepository that (adapter tren HomeAssistantRepository cu).
-        HumeGraph.get().registerHomeRepository(AppHomeRepository(haRepository, appScope, this))
+        val homeRepo = AppHomeRepository(haRepository, appScope, this)
+        HumeGraph.get().registerHomeRepository(homeRepo)
+        // Wire RoomStore -> AppHomeRepository (port iOS RoomStore).
+        // Phong dong tu DataStore, fallback ve hardcode neu chua co.
+        val roomStore = com.smarthome.hume.data.RoomStore(this)
+        appScope.launch {
+            roomStore.roomsFlow.collect { rooms ->
+                val configs = rooms.sortedBy { it.sortOrder }.map { it.toRoomBubbleConfig() }
+                homeRepo.setRoomConfigs(configs)
+            }
+        }
         // Dang ky EnergyRepository that (adapter tren HomeAssistantRepository cu).
         HumeGraph.get().registerEnergyRepository(AppEnergyRepository(haRepository, appScope))
         settingsStore = SettingsStore(this)
