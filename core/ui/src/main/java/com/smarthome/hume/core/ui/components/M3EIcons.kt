@@ -1246,19 +1246,34 @@ fun DeviceIcon(
     modifier: Modifier = Modifier,
     tint: Color = androidx.compose.material3.LocalContentColor.current,
 ) {
-    val vector = M3EIcons.deviceVector(iconKey)
-    if (vector != null) {
-        androidx.compose.material3.Icon(
-            imageVector = vector,
-            contentDescription = contentDescription,
-            modifier = modifier,
+    // (2026-10-09, port iOS 09f754a): uu tien render iconKey truc tiep
+    // (icon user chon tu picker), khong qua map cung.
+    // Chi fallback ve mapping cu cho config hardcode khong co icon cu the.
+    val directGlyph = try {
+        // Kiem tra iconKey co phai glyph Ms hop le khong
+        Ms::class.java.getField(iconKey).get(null) as? String
+    } catch (_: Exception) { null }
+    if (directGlyph != null) {
+        MsIcon(
+            directGlyph, contentDescription,
             tint = tint,
+            modifier = modifier,
         )
     } else {
-        MsIcon(
-            M3EIcons.device(iconKey), contentDescription,
-            tint = tint,
-            modifier = modifier,
-        )
+        val vector = M3EIcons.deviceVector(iconKey)
+        if (vector != null) {
+            androidx.compose.material3.Icon(
+                imageVector = vector,
+                contentDescription = contentDescription,
+                modifier = modifier,
+                tint = tint,
+            )
+        } else {
+            MsIcon(
+                M3EIcons.device(iconKey), contentDescription,
+                tint = tint,
+                modifier = modifier,
+            )
+        }
     }
 }
