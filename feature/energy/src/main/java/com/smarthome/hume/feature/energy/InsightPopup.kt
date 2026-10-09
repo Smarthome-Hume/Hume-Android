@@ -1,12 +1,5 @@
 package com.smarthome.hume.feature.energy
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.BatteryInfo
+import com.smarthome.hume.core.model.EnergyCost
 import com.smarthome.hume.core.model.EntityToggleState
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.Ms
@@ -59,6 +53,15 @@ import kotlin.math.roundToInt
  * Hiệu năng 120Hz: dùng AnimatedVisibility (đồng bộ vsync, transform trên
  * graphicsLayer — không recompose mỗi frame). Không dùng delay cho animation.
  */
+/**
+ * Popup TẠI CHỖ cho action của gợi ý năng lượng (mục 14).
+ * Port từ iOS `InsightPopup.swift` (pattern overlay giống CameraOverlayView):
+ * - Nền: fullscreen dim, tap để đóng
+ * - Card: giữa màn hình, PHONG RA TỪ VỊ TRÍ NÚT BẤM (port iOS 58a3542,
+ *   không dùng scaleEffect)
+ *
+ * Hiệu năng 120Hz: dùng Animatable (đồng bộ vsync, không recompose mỗi frame).
+ */
 @Composable
 fun InsightPopupOverlay(
     popup: InsightPopup?,
@@ -67,6 +70,11 @@ fun InsightPopupOverlay(
     onToggle: (entityId: String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Rect (dp, toa do root) cua nut bam de popup phong ra tu do
+     * (port iOS 58a3542). Null = phong tu diem giua.
+     */
+    sourceRectDp: androidx.compose.ui.geometry.Rect? = null,
 ) {
     // Giữ popup trong composition suốt exit animation rồi mới null (cleanup state,
     // không phải animation từng frame nên delay ngắn ở đây là chấp nhận được).
@@ -81,58 +89,41 @@ fun InsightPopupOverlay(
         visible = false
     }
 
-    AnimatedVisibility(
+    com.smarthome.hume.core.ui.components.M3EPopupOverlay(
         visible = visible,
+        onDismissRequest = ::dismiss,
         modifier = modifier,
-        enter = fadeIn(tween(220)) +
-            scaleIn(
-                // iOS: .spring(response: 0.35, dampingFraction: 0.8)
-                // ω = 2π/0.35 ≈ 18 → stiffness ≈ 320
-                animationSpec = spring(dampingRatio = 0.8f, stiffness = 320f),
-                initialScale = 0.3f,
-            ),
-        exit = fadeOut(tween(220)) + scaleOut(tween(220), targetScale = 0.85f),
+        scrimAlpha = 0.55f,
+        sourceRectDp = sourceRectDp,
+        contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                // Dim fullscreen như CameraPopupOverlay (tap ngoài để đóng)
-                .background(Color.Black.copy(alpha = 0.55f))
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                // Viền kính mờ như iOS (.stroke white 50%)
+                .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                // Chặn tap xuyên qua thẻ làm đóng popup
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = ::dismiss,
+                    onClick = {},
                 ),
-            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    // Viền kính mờ như iOS (.stroke white 50%)
-                    .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
-                    // Chặn tap xuyên qua thẻ làm đóng popup
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                    ),
-            ) {
-                when (popup) {
-                    is InsightPopup.Device -> InsightDeviceCard(
-                        popup = popup,
-                        toggleStates = toggleStates,
-                        onToggle = onToggle,
-                        onClose = ::dismiss,
-                    )
-                    InsightPopup.Battery -> InsightBatteryCard(
-                        battery = battery,
-                        onClose = ::dismiss,
-                    )
-                    null -> {}
-                }
+            when (popup) {
+                is InsightPopup.Device -> InsightDeviceCard(
+                    popup = popup,
+                    toggleStates = toggleStates,
+                    onToggle = onToggle,
+                    onClose = ::dismiss,
+                )
+                InsightPopup.Battery -> InsightBatteryCard(
+                    battery = battery,
+                    onClose = ::dismiss,
+                )
+                null -> {}
             }
         }
     }

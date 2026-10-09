@@ -40,6 +40,8 @@ sealed interface InsightPopup {
     data class Device(val entityId: String, val label: String) : InsightPopup
     /** Popup pin: % pin + nút sạc nhanh. */
     data object Battery : InsightPopup
+    /** Popup chi tiet tiet kiem: home/grid cost + so tiet kiem (port iOS 5f176f9). */
+    data object CostDetail : InsightPopup
 }
 
 /** Đích đến của nút action trong thẻ gợi ý. */
@@ -48,6 +50,8 @@ sealed interface InsightActionTarget {
     data class DevicePopup(val entityId: String, val label: String) : InsightActionTarget
     /** Mở popup pin NGAY TẠI CHỖ (không điều hướng). */
     data object BatteryPopup : InsightActionTarget
+    /** Mở popup chi tiết tiết kiệm NGAY TẠI CHỖ (port iOS 5f176f9). */
+    data object CostDetailPopup : InsightActionTarget
     /** Chuyển sub-tab năng lượng (Tiêu thụ / Điện mặt trời). */
     data class GoTab(val tab: EnergySubTab) : InsightActionTarget
 }
@@ -519,7 +523,7 @@ object EnergyInsightsManager {
                     InsightAction(
                         label = "Xem chi tiết",
                         glyph = Ms.donut_large,
-                        target = InsightActionTarget.GoTab(EnergySubTab.Cons),
+                        target = InsightActionTarget.CostDetailPopup,
                     ),
                 ),
             ),

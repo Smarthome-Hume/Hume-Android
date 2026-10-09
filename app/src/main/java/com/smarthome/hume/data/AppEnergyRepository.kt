@@ -158,7 +158,9 @@ class AppEnergyRepository(
             prodKw = v(HumeConfig.PV_POWER) / 1000.0,
             pv1Kw = v("sensor.solis_s6_eh1p_pv_power_1_3") / 1000.0,
             pv2Kw = v("sensor.solis_s6_eh1p_pv_power_2_3") / 1000.0,
-            gridKw = v("sensor.aptomat_tong_power") / 1000.0,
+            // Cong suat luoi tu sensor Solis meter, dao dau: am = dang mua dien
+            // (port iOS 04825b2; sensor.aptomat_tong_power cu khong chinh xac).
+            gridKw = -v("sensor.solis_s6_eh1p_meter_active_power") / 1000.0,
             consKw = consKw,
             cb1Kw = cb1, cb2Kw = cb2, cb3Kw = cb3,
             battKw = kotlin.math.abs(battW) / 1000.0,
@@ -253,11 +255,15 @@ class AppEnergyRepository(
         val days = (6 downTo 1).map { ago ->
             val date = today.minusDays(ago.toLong())
             val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
-            val v = weekCache.getOrPut(start) {
-                runCatching {
+            // Khong cache gia tri 0 (co the do fetch loi) — port iOS 77475ea:
+            // neu toan 0 thi lan sau fetch lai thay vi dung cache cu.
+            val v = weekCache[start] ?: run {
+                val fetched = runCatching {
                     HistoryFetcher.fetchRange("sensor.energy_home_daily", start, start + dayMs)
                         .maxOfOrNull { it.value } ?: 0.0
                 }.getOrDefault(0.0)
+                if (fetched > 0) weekCache[start] = fetched
+                fetched
             }
             EnergyWeekPoint(labels[date.dayOfWeek.value - 1], v)
         } + EnergyWeekPoint(

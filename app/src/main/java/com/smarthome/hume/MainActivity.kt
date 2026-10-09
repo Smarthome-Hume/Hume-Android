@@ -14,6 +14,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.data.HumeGraph
@@ -27,6 +28,12 @@ import com.smarthome.hume.feature.auth.LoginScreen
 import com.smarthome.hume.ui.root.M3ERootScreen
 
 class MainActivity : ComponentActivity() {
+    override fun onResume() {
+        super.onResume()
+        // Port iOS 5ce8e65: xoa notification moi lan app len foreground.
+        NotificationManagerCompat.from(this).cancelAll()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Android 15 always draws edge to edge. SystemBarStyle.auto flips the
         // bar icons with the system appearance, which is what the SwiftUI app
@@ -37,6 +44,9 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        // Port iOS 5ce8e65: xoa badge/notification khi mo app.
+        // Android khong co badge he thong (tuy launcher) — xoa notification la tuong duong.
+        NotificationManagerCompat.from(this).cancelAll()
         val app = application as HumeApplication
         val graph = HumeGraph.get()
 

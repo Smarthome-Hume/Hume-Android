@@ -149,10 +149,15 @@ class AppHomeRepository(
         ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
         ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
         ids.add(HumeConfig.GRID_STATUS)
+        // Trang thai inverter Solis — bao mat dien phai realtime (port iOS 65fe551).
+        ids.add("sensor.solis_s6_eh1p_status_string_3")
         // Thoi gian pin + backup SOC: the pin doc nhung truoc day quen watch ->
         // gia tri stale tu luc mo app (nguyen nhan the pin mat cum thoi gian).
         ids.add(HumeConfig.BATTERY_TIME_LEFT); ids.add(HumeConfig.BATTERY_TIME_TO_FULL)
         ids.add(HumeConfig.BACKUP_SOC)
+        // Nguong ep xa khi mat dien (port iOS f251d8e) + sensor trang thai inverter
+        ids.add("sensor.solis_s6_eh1p_overdischarge_soc_2")
+        ids.add("sensor.solis_s6_eh1p_status_string_3")
         // Nang luong pin (SoH/DoD): tu tinh gio sac thay cho sensor Solis bao ao.
         ids.add(HumeConfig.BATTERY_EFF_CAPACITY); ids.add(HumeConfig.BATTERY_REMAINING_ENERGY)
         // An ninh: sensor cua/chuyen dong/khoi/nuoc.
@@ -243,6 +248,16 @@ class AppHomeRepository(
         val battPowerKw = battPowerW / 1000.0
         // Cong thuc Hume goc: backupSoc tu number.solis_s6_eh1p_backup_soc_2, mac dinh 20
         val backupSoc = (entities[HumeConfig.BACKUP_SOC]?.numericState ?: 20.0).toInt()
+        // Nguong ep xa khi mat dien (port iOS f251d8e, user 2026-10-09)
+        val overdischargeSoc =
+            (entities["sensor.solis_s6_eh1p_overdischarge_soc_2"]?.numericState ?: 5.0).toInt()
+        // Trang thai luoi tu sensor inverter (port iOS d8df5d3)
+        val gridStatusRaw = entities["sensor.solis_s6_eh1p_status_string_3"]?.state
+            ?.lowercase()?.replace('-', ' ')?.replace('_', ' ') ?: ""
+        val gridOn = !("off grid" in gridStatusRaw || "no grid" in gridStatusRaw ||
+            "outage" in gridStatusRaw || "mất" in gridStatusRaw || "mat dien" in gridStatusRaw)
+        // Limit hieu dung: co dien -> backupSoc; mat dien -> overdischarge_soc
+        val effectiveLimit = if (gridOn) backupSoc else overdischargeSoc
         // Hume goc: resting = power 0..5W -> khong hien thoi gian
         val resting = battPowerW in 0.0..5.0
         val discharging = battPowerW < 0.0
@@ -258,6 +273,19 @@ class AppHomeRepository(
                 ((effCapKwh - remainKwh).coerceAtLeast(0.0) / (battPowerW / 1000.0) * 60)
                     .toInt().takeIf { it > 0 }
             } else null
+        // Thoi gian XA 2 phase (port iOS 76a3e65, user 2026-10-09):
+        // - Phase 1 (soc > limit): thoi gian con lai o muc su dung (toi khi cham limit)
+        // - Phase 2 (soc <= limit): thoi gian con lai o muc du tru (toi khi can)
+        // Tinh local, uu tien hon sensor HA.
+        val dischargeMins: Int? =
+            if (discharging && effCapKwh != null && effCapKwh > 0) {
+                val dischargeKw = kotlin.math.abs(battPowerW) / 1000.0
+                if (dischargeKw > 0.02) {
+                    val pct = if (soc > effectiveLimit) (soc - effectiveLimit).toDouble()
+                    else soc.toDouble()
+                    ((pct / 100.0 * effCapKwh) / dischargeKw * 60).toInt().takeIf { it > 0 }
+                } else null
+            } else null
         // Sensor runtime theo huong: xa -> TIME_LEFT (template user, dang dung
         // tot -> giu nguyen), sac -> tu tinh o tren, fallback sensor Solis.
         val runtimeEntity = if (discharging)
@@ -271,15 +299,21 @@ class AppHomeRepository(
             runtimeEntity?.attributes?.get("friendly_time")?.jsonPrimitive?.contentOrNull
                 ?.replace("\"", "")?.trim()?.takeIf { it.isNotBlank() }
                 ?: runtimeEntity?.state?.takeIf { it.isNotBlank() && it != "unknown" }
-        // Luc sac: "H:MM" tu so phut tu tinh de parser hien tai hieu ngay.
+        // Luc sac/xa: "H:MM" tu so phut tu tinh (uu tien local, fallback sensor).
         val runtimeText = if (resting) null else when {
             chargeMins != null -> "${chargeMins / 60}:${(chargeMins % 60).toString().padStart(2, '0')}"
+            dischargeMins != null -> "${dischargeMins / 60}:${(dischargeMins % 60).toString().padStart(2, '0')}"
             else -> sensorText
         }
         val endTime = if (resting) null else when {
             chargeMins != null -> {
                 val end = java.time.LocalTime.now().plusMinutes(chargeMins.toLong())
-                String.format("%02d:%02d", end.hour, end.minute)
+                // 24h co dinh (port iOS 05827af, en_US_POSIX)
+                String.format(java.util.Locale.US, "%02d:%02d", end.hour, end.minute)
+            }
+            dischargeMins != null -> {
+                val end = java.time.LocalTime.now().plusMinutes(dischargeMins.toLong())
+                String.format(java.util.Locale.US, "%02d:%02d", end.hour, end.minute)
             }
             // Uu tien friendly_time (cong thuc Hume goc), fallback raw state —
             // truoc day chi parse state nen lech voi bigTime (an oan khi
@@ -327,6 +361,8 @@ class AppHomeRepository(
                 backupSoc = backupSoc,
                 timeText = runtimeText,
                 endTime = endTime,
+                effectiveLimit = effectiveLimit,
+                overdischargeSoc = overdischargeSoc,
             ),
             alarm = alarm,
             lightsOn = lightsOn,
@@ -848,7 +884,8 @@ private fun parseDurationToEndTime(duration: String): String? {
     val totalMinutes = durationToMinutes(duration) ?: return null
     val now = java.time.LocalTime.now()
     val end = now.plusMinutes(totalMinutes.toLong())
-    return String.format("%02d:%02d", end.hour, end.minute)
+    // 24h co dinh (port iOS 05827af)
+    return String.format(java.util.Locale.US, "%02d:%02d", end.hour, end.minute)
 }
 
 private fun durationToMinutes(duration: String): Int? {

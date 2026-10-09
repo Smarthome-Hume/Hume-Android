@@ -14,6 +14,14 @@ data class BatteryUi(
     val backupSoc: Int = 20, // number.solis_s6_eh1p_backup_soc_2, mac dinh 20
     val timeText: String? = null, // friendly_time cua sensor runtime
     val endTime: String? = null, // "14:30" - gio ket thuc sac/xa
+    /**
+     * Limit hieu dung cho thanh pin (port iOS f251d8e):
+     * - Co dien: backupSoc
+     * - Mat dien: overdischarge_soc (nguong ep xa, thuong 5%)
+     */
+    val effectiveLimit: Int = 20,
+    /** Nguong ep xa khi mat dien (sensor.solis_s6_eh1p_overdischarge_soc_2). */
+    val overdischargeSoc: Int = 5,
 ) {
     // Hume goc: resting = power 0..5W, discharging = power < 0, charging = power > 5W
     val isResting: Boolean get() = powerW in 0.0..5.0
@@ -25,8 +33,8 @@ data class BatteryUi(
             isDischarging -> "ĐANG XẢ"
             else -> "ĐANG SẠC"
         }
-    val reservePct: Int get() = minOf(soc, backupSoc)
-    val usagePct: Int get() = maxOf(0, soc - backupSoc)
+    val reservePct: Int get() = minOf(soc, effectiveLimit)
+    val usagePct: Int get() = maxOf(0, soc - effectiveLimit)
 }
 
 /** Trang thai bao dong. */

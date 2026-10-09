@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +41,23 @@ import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/**
+ * Map trang thai inverter Solis sang tieng Viet co dau (port iOS f44001d).
+ */
+fun solisStatusVN(raw: String): String {
+    return when (raw.lowercase().trim()) {
+        "generating" -> "Đang phát điện"
+        "no grid" -> "Mất điện lưới"
+        "waiting" -> "Đang chờ"
+        "normal operation" -> "Hoạt động bình thường"
+        "bypass / inverting / running" -> "Đang chạy bypass"
+        "bypass / inverting / synchronize" -> "Đang đồng bộ"
+        "fault" -> "Lỗi"
+        "standby" -> "Chờ sẵn"
+        else -> if (raw.isEmpty()) "—" else raw
+    }
+}
 
 /**
  * Tab Dien: header + esub (Tieu thu / Dien mat troi) + noi dung theo demo v4 rev12.
@@ -145,6 +166,30 @@ fun EnergyScreen(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-0.3).sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                // Dong trang thai inverter duoi title (port iOS f44001d):
+                // dot do (mat dien) / xanh (co dien) + text tieng Viet.
+                val invStatus = state.flow.inverterStatus
+                val isNoGrid = invStatus.lowercase().contains("no grid")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 20.dp, top = 2.dp, bottom = 4.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isNoGrid) androidx.compose.ui.graphics.Color(0xFFBA1A1A)
+                                else com.smarthome.hume.core.ui.theme.LocalHumeExtraColors.current.success
+                            ),
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        solisStatusVN(invStatus),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

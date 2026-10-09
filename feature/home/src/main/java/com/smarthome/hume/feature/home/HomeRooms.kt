@@ -3,6 +3,7 @@ package com.smarthome.hume.feature.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -282,6 +284,8 @@ fun RoomSheet(
     onToggleClimate: (String) -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
+    // Thiet bi switch dang cho xac nhan tat (bao ve Zigbee mesh, port iOS 0e855dd).
+    var confirmOffDevice by remember { mutableStateOf<DeviceUi?>(null) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -361,10 +365,92 @@ fun RoomSheet(
                         d,
                         contactOpen = contactOpenForDevice(d.iconKey, d.label, notifications),
                         onToggle = { onToggle(d.entityId) },
+                        onConfirmOffRequest = { confirmOffDevice = it },
                     )
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }
+        }
+    }
+    // Popup xac nhan tat cong tac Zigbee (port iOS 0e855dd).
+    confirmOffDevice?.let { d ->
+        ZigbeeOffConfirmDialog(
+            deviceLabel = d.label,
+            onDismiss = { confirmOffDevice = null },
+            onConfirm = {
+                confirmOffDevice = null
+                onToggle(d.entityId)
+            },
+        )
+    }
+}
+
+/**
+ * Popup xac nhan tat cong tac Zigbee (bao ve mesh).
+ * Chu nhat nho 300dp, giua man hinh, 2 nut Xac nhan/Huy (port iOS 0e855dd).
+ */
+@Composable
+private fun ZigbeeOffConfirmDialog(
+    deviceLabel: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .width(300.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(cs.surfaceContainer)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                "Tắt công tắc?",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = cs.onSurface,
+            )
+            Text(
+                "Công tắc \"$deviceLabel\" là router trong mạng Zigbee mesh. " +
+                    "Tắt nó có thể làm sập mạng, gây mất tín hiệu toàn bộ thiết bị Zigbee.",
+                style = MaterialTheme.typography.bodySmall,
+                color = cs.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cs.surfaceContainerHighest)
+                        .clickable(onClick = onDismiss)
+                        .padding(vertical = 12.dp),
+                ) {
+                    Text(
+                        "Hủy",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = cs.onSurface,
+                    )
+                }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.Red)
+                        .clickable(onClick = onConfirm)
+                        .padding(vertical = 12.dp),
+                ) {
+                    Text(
+                        "Xác nhận",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+                }
+            }
         }
     }
 }

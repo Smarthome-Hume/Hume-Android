@@ -46,5 +46,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"/>
         </provider>
+        <!-- Nut "Tat bao dong" tren notification mat dien (port iOS c885ea9). -->
+        <receiver
+            android:name="com.smarthome.hume.feature.energy.DismissAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.smarthome.hume.DISMISS_GRID_ALARM"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
