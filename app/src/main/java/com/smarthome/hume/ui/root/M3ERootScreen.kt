@@ -108,9 +108,10 @@ fun M3ERootScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     // RoomStore cho Quan ly phong (port iOS RoomManagementView)
-    val roomStoreAdapter = remember(context) {
+    val roomStoreAdapter = remember(context, coroutineScope) {
         com.smarthome.hume.data.RoomStoreAdapter(
-            com.smarthome.hume.data.RoomStore(context)
+            real = com.smarthome.hume.data.RoomStore(context),
+            scope = coroutineScope,
         )
     }
     // Entities cho EntityPicker (port iOS SensorPickerView)

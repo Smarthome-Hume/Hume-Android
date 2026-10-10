@@ -6,8 +6,6 @@ import com.smarthome.hume.feature.home.DynDevice
 import com.smarthome.hume.feature.home.DynRoom
 import com.smarthome.hume.feature.home.RoomStore as RoomStoreUi
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -19,13 +17,13 @@ import kotlinx.coroutines.flow.stateIn
  */
 class RoomStoreAdapter(
     private val real: RoomStore,
-    scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+    scope: CoroutineScope,
 ) : RoomStoreUi {
 
     override val roomsFlow: StateFlow<List<DynRoom>> =
         real.roomsFlow
             .map { rooms -> rooms.sortedBy { it.sortOrder }.map { it.toDyn() } }
-            .stateIn(scope, SharingStarted.Eagerly, emptyList())
+            .stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     override suspend fun addRoom(room: DynRoom) {
         real.addRoom(room.toManaged())
