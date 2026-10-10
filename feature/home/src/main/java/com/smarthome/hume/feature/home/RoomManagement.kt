@@ -185,6 +185,7 @@ fun RoomManagementScreen(
         RoomDetailScreen(
             store = store,
             roomId = detailId,
+            pickerEntities = pickerEntities,
             onBack = { detailRoomId = null },
         )
         return
@@ -273,13 +274,13 @@ fun RoomManagementScreen(
 
     if (showAddRoom) {
         FullScreenDialog(onDismiss = { showAddRoom = false }) {
-            RoomEditScreen(store = store, room = null, onDismiss = { showAddRoom = false })
+            RoomEditScreen(store = store, room = null, pickerEntities = pickerEntities, onDismiss = { showAddRoom = false })
         }
     }
     val roomToEdit = editingRoom
     if (roomToEdit != null) {
         FullScreenDialog(onDismiss = { editingRoom = null }) {
-            RoomEditScreen(store = store, room = roomToEdit, onDismiss = { editingRoom = null })
+            RoomEditScreen(store = store, room = roomToEdit, pickerEntities = pickerEntities, onDismiss = { editingRoom = null })
         }
     }
     if (showResetConfirm) {
@@ -370,6 +371,7 @@ private fun RoomRow(
 fun RoomDetailScreen(
     store: RoomStore,
     roomId: String,
+    pickerEntities: StateFlow<Map<String, PickerEntity>>? = null,
     onBack: () -> Unit = {},
 ) {
     val cs = MaterialTheme.colorScheme
@@ -456,13 +458,13 @@ fun RoomDetailScreen(
 
     if (showAddDevice) {
         FullScreenDialog(onDismiss = { showAddDevice = false }) {
-            DeviceEditScreen(store = store, roomId = roomId, device = null, onDismiss = { showAddDevice = false })
+            DeviceEditScreen(store = store, roomId = roomId, device = null, pickerEntities = pickerEntities, onDismiss = { showAddDevice = false })
         }
     }
     val deviceToEdit = editingDevice
     if (deviceToEdit != null) {
         FullScreenDialog(onDismiss = { editingDevice = null }) {
-            DeviceEditScreen(store = store, roomId = roomId, device = deviceToEdit, onDismiss = { editingDevice = null })
+            DeviceEditScreen(store = store, roomId = roomId, device = deviceToEdit, pickerEntities = pickerEntities, onDismiss = { editingDevice = null })
         }
     }
 }
@@ -607,6 +609,7 @@ private fun SensorPickerField(
 fun RoomEditScreen(
     store: RoomStore,
     room: DynRoom?,
+    pickerEntities: StateFlow<Map<String, PickerEntity>>? = null,
     onDismiss: () -> Unit,
 ) {
     val rooms by store.roomsFlow.collectAsState()
@@ -749,6 +752,7 @@ fun DeviceEditScreen(
     store: RoomStore,
     roomId: String,
     device: DynDevice?,
+    pickerEntities: StateFlow<Map<String, PickerEntity>>? = null,
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()

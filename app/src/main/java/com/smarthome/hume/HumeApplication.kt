@@ -83,6 +83,8 @@ class HumeApplication : Application(), ImageLoaderFactory {
         // Phong dong tu DataStore, fallback ve hardcode neu chua co.
         val roomStore = com.smarthome.hume.data.RoomStore(this)
         appScope.launch {
+            // Seed chi khi DataStore chua co key; giu nguyen danh sach rong hop le.
+            roomStore.loadRooms()
             roomStore.roomsFlow.collect { rooms ->
                 val configs = rooms.sortedBy { it.sortOrder }.map { it.toRoomBubbleConfig() }
                 homeRepo.setRoomConfigs(configs)
