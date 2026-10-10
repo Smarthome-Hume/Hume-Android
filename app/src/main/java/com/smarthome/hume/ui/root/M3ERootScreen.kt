@@ -83,6 +83,9 @@ import com.smarthome.hume.feature.home.ChartHistorySeries
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
 import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.coroutines.launch
 
 private data class NavItem(val tab: HumeTab, val icon: String)
@@ -110,7 +113,7 @@ fun M3ERootScreen(
     // RoomStore cho Quan ly phong (port iOS RoomManagementView)
     val roomStoreAdapter = remember(context, coroutineScope) {
         com.smarthome.hume.data.RoomStoreAdapter(
-            real = com.smarthome.hume.data.RoomStore(context),
+            real = (context.applicationContext as com.smarthome.hume.HumeApplication).roomStore,
             scope = coroutineScope,
         )
     }

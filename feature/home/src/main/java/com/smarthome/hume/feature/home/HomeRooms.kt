@@ -94,7 +94,11 @@ fun RoomGrid(
                     RoomCard(
                         room = room,
                         onOpen = { onRoom(room) },
-                        onToggleLight = { room.lightEntityId?.let(onToggleLight) },
+                        onToggleLight = {
+                            room.devices.filter {
+                                it.entityId.startsWith("light.") && it.isOn == room.lightOn
+                            }.forEach { onToggleLight(it.entityId) }
+                        },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -712,6 +716,7 @@ fun DeviceRow(
     modifier: Modifier = Modifier,
     // Ten phong hien tren dong trang thai (search, 2026-09-30): null = khong hien.
     roomLabel: String? = null,
+    onConfirmOffRequest: ((DeviceUi) -> Unit)? = null,
 ) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
@@ -798,7 +803,11 @@ fun DeviceRow(
                 checked = d.isOn,
                 onCheckedChange = {
                     haptic()
-                    onToggle()
+                    if (d.entityId.startsWith("switch.") && d.isOn && onConfirmOffRequest != null) {
+                        onConfirmOffRequest(d)
+                    } else {
+                        onToggle()
+                    }
                 },
             )
         }

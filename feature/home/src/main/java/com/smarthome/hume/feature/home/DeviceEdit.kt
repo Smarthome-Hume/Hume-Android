@@ -34,12 +34,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.ui.components.M3ETextField
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 
 // ---------------------------------------------------------------------------
@@ -119,9 +122,12 @@ fun DeviceEditScreen(
     entities: StateFlow<Map<String, PickerEntity>>,
     usedDeviceEntities: Set<String> = emptySet(),
     usedPowerEntities: Set<String> = emptySet(),
-    onSave: (DynDevice) -> Unit,
+    onSave: suspend (DynDevice) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    var saving by remember(initial) { mutableStateOf(false) }
+    var saveError by remember(initial) { mutableStateOf<String?>(null) }
     var entityId by remember(initial) { mutableStateOf(initial?.entityId ?: "") }
     var name by remember(initial) { mutableStateOf(initial?.name ?: "") }
     var sub by remember(initial) { mutableStateOf(initial?.sub ?: "") }
@@ -140,25 +146,35 @@ fun DeviceEditScreen(
                 TopAppBar(
                     title = { Text(if (initial == null) "Thêm thiết bị" else "Sửa thiết bị") },
                     navigationIcon = {
-                        TextButton(onClick = onDismiss) { Text("Huỷ") }
+                        TextButton(onClick = onDismiss, enabled = !saving) { Text("Huỷ") }
                     },
                     actions = {
                         TextButton(
                             onClick = {
-                                val base = initial ?: DynDevice(icon = "lightbulb")
-                                onSave(
-                                    base.copy(
-                                        type = type,
-                                        entityId = entityId,
-                                        name = name,
-                                        sub = sub,
-                                        icon = icon,
-                                        powerEntity = powerEntity.takeIf { it.isNotBlank() },
+                                if (!saving) {
+                                    saving = true
+                                    saveError = null
+                                    val base = initial ?: DynDevice(icon = "lightbulb")
+                                    val updated = base.copy(
+                                        type = type, entityId = entityId.trim(),
+                                        name = name.trim(), sub = sub.trim(), icon = icon,
+                                        powerEntity = powerEntity.trim().takeIf { it.isNotBlank() },
                                     )
-                                )
-                                onDismiss()
+                                    scope.launch {
+                                        try {
+                                            onSave(updated)
+                                            onDismiss()
+                                        } catch (cancelled: CancellationException) {
+                                            throw cancelled
+                                        } catch (_: Exception) {
+                                            saveError = "Không lưu được thiết bị. Vui lòng thử lại."
+                                        } finally {
+                                            saving = false
+                                        }
+                                    }
+                                }
                             },
-                            enabled = canSave,
+                            enabled = canSave && !saving,
                         ) { Text("Lưu") }
                     },
                 )
@@ -172,6 +188,7 @@ fun DeviceEditScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                saveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 SectionTitle("Thiết bị")
                 EntityField(
                     label = "Thiết bị",
@@ -188,12 +205,7 @@ fun DeviceEditScreen(
                     onValueChange = { sub = it },
                     label = "Mô tả",
                 )
-                // Icon picker tạm dùng TextField (agent khác làm component riêng).
-                M3ETextField(
-                    value = icon,
-                    onValueChange = { icon = it },
-                    label = "Icon",
-                )
+                IconPicker(selection = icon, onSelectionChange = { icon = it })
                 ExposedDropdownMenuBox(
                     expanded = typeMenuOpen,
                     onExpandedChange = { typeMenuOpen = it },

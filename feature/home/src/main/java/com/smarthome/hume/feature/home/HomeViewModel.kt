@@ -173,9 +173,9 @@ class HomeViewModel(
 
     /** FAB "Bat den": bat den cac phong dang tat + snackbar demo "Da bat den". */
     fun turnOnAllLights() {
-        val ids = state.value.rooms.mapNotNull { r ->
-            r.lightEntityId?.takeIf { !r.lightOn }
-        }.distinct()
+        val ids = state.value.rooms.flatMap { it.devices }
+            .filter { it.entityId.startsWith("light.") && !it.isOn }
+            .map { it.entityId }.distinct()
         ids.forEach { repo.toggle(it) }
         showSnack("Đã bật đèn", "Hoàn tác") {
             ids.forEach { repo.toggle(it) }

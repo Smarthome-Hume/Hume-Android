@@ -68,7 +68,7 @@ data class ManagedRoom(
 ) {
     /** Convert sang model cu dung cho Home UI hien tai. */
     fun toRoomBubbleConfig(): RoomBubbleConfig = RoomBubbleConfig(
-        key = name,
+        key = id, // Stable identity; renaming must not detach Home or search.
         label = name,
         icon = icon,
         tempEntity = tempEntity.ifBlank { null },

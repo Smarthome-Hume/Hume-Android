@@ -8,7 +8,6 @@ import com.smarthome.hume.core.model.AlarmUi
 import com.smarthome.hume.core.model.BatteryUi
 import com.smarthome.hume.core.model.ClimateUi
 import com.smarthome.hume.core.model.ConnectionState
-import com.smarthome.hume.core.model.DefaultRooms
 import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeEntity as LegacyEntity
@@ -16,7 +15,6 @@ import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.HumeConfig
 import com.smarthome.hume.core.model.RoomBubbleConfig
-import com.smarthome.hume.core.model.RoomConfig
 import com.smarthome.hume.core.model.RoomUi
 import com.smarthome.hume.core.model.SolarDay
 import com.smarthome.hume.core.model.cameraKeyForSensor
@@ -57,11 +55,11 @@ class AppHomeRepository(
 
     /**
      * Room configs dong (port iOS RoomStore).
-     * Mac dinh: RoomBubbleConfig.all (hardcode). Khi RoomStore co data,
+     * Cho RoomStore seed/load persisted data; Home does not invent fallback rooms.
      * goi setRoomConfigs() de cap nhat.
      */
     private val _roomConfigs = MutableStateFlow<List<com.smarthome.hume.core.model.RoomBubbleConfig>>(
-        com.smarthome.hume.core.model.RoomBubbleConfig.all
+        emptyList()
     )
     val roomConfigs: StateFlow<List<com.smarthome.hume.core.model.RoomBubbleConfig>> = _roomConfigs.asStateFlow()
 
@@ -87,7 +85,7 @@ class AppHomeRepository(
 
     init {
         scope.launch {
-            combine(ha.entities, ha.connected) { e, c -> e to c }
+            combine(ha.entities, ha.connected, _roomConfigs) { e, c, _ -> e to c }
                 .collect { (entities, connected) ->
                     val connState = when {
                         connected -> ConnectionState.Connected
@@ -117,17 +115,16 @@ class AppHomeRepository(
     // ---------- actions ----------
 
     /**
-     * 24 den trong config (RoomBubbleConfig) — dem bong den CHI dung danh sach
+     * Den trong config phong dong — dem bong den CHI dung danh sach
      * nay, khong dung light.* (2026-09-30, user yeu cau). Loai group entity
      * (vd: light.all_light, group phong ngu) de khong dem trung.
      */
-    private val configuredLightIds: Set<String> by lazy {
+    private val configuredLightIds: Set<String> get() =
         _roomConfigs.value
             .flatMap { it.devices }
             .map { it.entity }
             .filter { it.startsWith("light.") }
             .toSet()
-    }
 
     /** True neu entity la group (co attribute entity_id chua list member). */
     private fun isGroup(e: LegacyEntity): Boolean {
@@ -142,6 +139,11 @@ class AppHomeRepository(
         // Tat ca thiet bi tren UI (config phong + climate) — bao gom sensor dien.
         s.searchDevices.forEach { ids.add(it.entityId) }
         s.lightsOn.forEach { ids.add(it.entityId) }
+        _roomConfigs.value.forEach { room ->
+            room.tempEntity?.takeIf { it.isNotBlank() }?.let(ids::add)
+            room.humidityEntity?.takeIf { it.isNotBlank() }?.let(ids::add)
+            room.devices.forEach { ids.add(it.entity) }
+        }
         // Sensor cong suat cua o cam/cong tac co do cong suat: UI hien "· X W"
         // khi bat. Khong watch -> roi bucket ONE_DAY, WS giam toi 24h -> powerW
         // null/stale mai (bug 2026-09-30: cong tac nong lanh khong hien cong suat).
@@ -381,7 +383,7 @@ class AppHomeRepository(
             ),
             alarm = alarm,
             lightsOn = lightsOn,
-            rooms = DefaultRooms.all.map { buildRoom(it, entities) },
+            rooms = _roomConfigs.value.map { buildRoom(it, entities) },
             notifications = buildNotifications(entities),
         ).let { st ->
             st.copy(searchDevices = buildSearchDevices(entities, st.rooms))
@@ -517,10 +519,10 @@ class AppHomeRepository(
         ) n else "Điều hoà"
     }
 
-    private fun buildRoom(room: RoomConfig, entities: Map<String, LegacyEntity>): RoomUi {
-        val bubble = _roomConfigs.value.firstOrNull { matches(room, it) }
-        val lightOn = room.lightEntity.let { entities[it]?.isOn } ?: false
-        val devices = bubble?.devices.orEmpty()
+    private fun buildRoom(room: RoomBubbleConfig, entities: Map<String, LegacyEntity>): RoomUi {
+        val lights = room.devices.filter { it.entity.startsWith("light.") }
+        val lightOn = lights.any { entities[it.entity]?.isOn == true }
+        val devices = room.devices
             .filter { it.type == "toggle" }
             .map { d ->
                 val e = entities[d.entity]
@@ -533,7 +535,8 @@ class AppHomeRepository(
                     powerW = d.powerEntity?.let { entities[it]?.numericState },
                 )
             }
-        val climateEntity = room.climateEntity?.let { entities[it] }
+        val climateDevice = room.devices.firstOrNull { it.type == "climate" }
+        val climateEntity = climateDevice?.let { entities[it.entity] }
         val climate = climateEntity?.let { e ->
             val modes = e.attributes["hvac_modes"]?.jsonArray
                 ?.mapNotNull { it.jsonPrimitive.contentOrNull }
@@ -543,8 +546,7 @@ class AppHomeRepository(
             // — port tu iOS 7289baa (fix cong suat dieu hoa).
             val climateActive = e.state != "off" && e.state != "unavailable" &&
                 e.state != "unknown" && e.state.isNotEmpty()
-            val climatePowerEntity =
-                bubble?.devices?.firstOrNull { it.type == "climate" }?.powerEntity
+            val climatePowerEntity = climateDevice?.powerEntity
             ClimateUi(
                 entityId = e.id,
                 currentTemp = e.attributes["current_temperature"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
@@ -563,12 +565,12 @@ class AppHomeRepository(
             .mapNotNull { it.powerW }
             .sum() + (climate?.powerW ?: 0.0)
         return RoomUi(
-            key = room.rawKey,
-            name = room.name,
+            key = room.key,
+            name = room.label,
             iconKey = room.icon,
             tempC = entities[room.tempEntity]?.numericState,
             humidityPct = entities[room.humidityEntity]?.numericState,
-            lightEntityId = room.lightEntity,
+            lightEntityId = lights.firstOrNull()?.entity,
             lightOn = lightOn,
             devicesOn = devices.count { it.isOn },
             deviceCount = devices.size,
@@ -576,21 +578,6 @@ class AppHomeRepository(
             devices = devices,
             roomPowerW = roomPowerW,
         )
-    }
-
-    private fun matches(room: RoomConfig, bubble: RoomBubbleConfig): Boolean {
-        val l = bubble.label.lowercase()
-        return when (room.name) {
-            "Phòng Ngủ" -> "ngủ chính" in l
-            "Phòng Trẻ Em" -> "trẻ em" in l
-            "Phòng Thờ" -> "thờ" in l
-            "Phòng Khách" -> "khách" in l
-            "Phòng Tắm" -> "tắm" in l
-            "Phòng Bếp" -> "bếp" in l
-            "Phòng Giặt" -> "giặt" in l
-            "Hành Lang" -> "hành lang" in l
-            else -> false
-        }
     }
 
     private fun friendlyName(e: LegacyEntity): String {
@@ -625,28 +612,16 @@ class AppHomeRepository(
      * Tat ca sensor co mat tren giao dien (an ninh + the phong).
      * Thong bao CHI dung sensor trong danh sach nay (2026-09-30, user yeu cau).
      */
-    private val uiSensorIds: Set<String> by lazy {
-        val ids = mutableSetOf<String>()
-        // An ninh: cua/chuyen dong/khoi/nuoc.
+    private val uiSensorIds: Set<String> get() = buildSet {
         runCatching {
-            ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
+            addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
         }
-        // The phong: nhiet do/do am/cua.
-        com.smarthome.hume.core.model.DefaultRooms.climateRooms.forEach { r ->
-            r.tempEntity?.let { ids.add(it) }
-            r.humidityEntity?.let { ids.add(it) }
-            r.contactEntity?.let { ids.add(it) }
+        _roomConfigs.value.forEach { room ->
+            room.tempEntity?.let { add(it) }
+            room.humidityEntity?.let { add(it) }
+            room.devices.filter { it.entity.startsWith("binary_sensor.") }
+                .forEach { add(it.entity) }
         }
-        com.smarthome.hume.core.model.DefaultRooms.basicRooms.forEach { r ->
-            r.tempEntity?.let { ids.add(it) }
-            r.humidityEntity?.let { ids.add(it) }
-            r.contactEntity?.let { ids.add(it) }
-        }
-        _roomConfigs.value.forEach { b ->
-            b.tempEntity?.let { ids.add(it) }
-            b.humidityEntity?.let { ids.add(it) }
-        }
-        ids
     }
 
     private fun buildNotifications(entities: Map<String, LegacyEntity>): List<HomeNotification> {

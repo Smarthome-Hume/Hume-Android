@@ -8,10 +8,7 @@ import com.smarthome.hume.core.model.ManagedDevice
 import com.smarthome.hume.core.model.ManagedRoom
 import com.smarthome.hume.core.model.defaultRooms
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 /**
@@ -29,7 +26,6 @@ class RoomStore(private val context: Context) {
     }
 
     private val json = Json { ignoreUnknownKeys = true }
-    private val mutationMutex = Mutex()
 
     private fun decode(raw: String?): List<ManagedRoom> {
         if (raw.isNullOrBlank()) return emptyList()
@@ -44,99 +40,75 @@ class RoomStore(private val context: Context) {
     val roomsFlow: Flow<List<ManagedRoom>> =
         context.humeDataStore.data.map { prefs -> decode(prefs[Keys.ManagedRooms]) }
 
-    private suspend fun writeRooms(rooms: List<ManagedRoom>) {
+    /** All mutations read the latest value INSIDE edit, including across instances. */
+    private suspend fun mutateRooms(transform: (List<ManagedRoom>) -> List<ManagedRoom>) {
         context.humeDataStore.edit { prefs ->
-            prefs[Keys.ManagedRooms] = encode(rooms)
+            val raw = prefs[Keys.ManagedRooms]
+            val current = if (raw == null) defaultRooms() else decode(raw)
+            prefs[Keys.ManagedRooms] = encode(transform(current))
         }
     }
 
-    suspend fun saveRooms(rooms: List<ManagedRoom>) = mutationMutex.withLock {
-        writeRooms(rooms)
+    suspend fun saveRooms(rooms: List<ManagedRoom>) {
+        context.humeDataStore.edit { it[Keys.ManagedRooms] = encode(rooms) }
     }
 
-    /**
-     * Doc danh sach phong. Neu DataStore chua co gi thi tra ve [defaultRooms]
-     * va luu ngay (seed lan dau, giong iOS).
-     */
-    suspend fun loadRooms(): List<ManagedRoom> = mutationMutex.withLock {
-        val prefs = context.humeDataStore.data.first()
-        val raw = prefs[Keys.ManagedRooms]
-        if (raw != null) return@withLock decode(raw).sortedBy { it.sortOrder }
-        val defaults = defaultRooms()
-        writeRooms(defaults)
-        defaults
+    /** Seed only a missing key. A persisted empty list is a valid configuration. */
+    suspend fun loadRooms(): List<ManagedRoom> {
+        var loaded: List<ManagedRoom> = emptyList()
+        context.humeDataStore.edit { prefs ->
+            val raw = prefs[Keys.ManagedRooms]
+            loaded = if (raw == null) defaultRooms() else decode(raw)
+            if (raw == null) prefs[Keys.ManagedRooms] = encode(loaded)
+        }
+        return loaded.sortedBy { it.sortOrder }
     }
 
-    // MARK: - CRUD phong
-
-    /** Them phong moi; `sortOrder` tu gan = max hien tai + 1. */
-    suspend fun addRoom(room: ManagedRoom) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().toMutableList()
+    suspend fun addRoom(room: ManagedRoom) = mutateRooms { rooms ->
         val nextOrder = (rooms.maxOfOrNull { it.sortOrder } ?: -1) + 1
-        rooms.add(room.copy(sortOrder = nextOrder))
-        writeRooms(rooms)
+        rooms + room.copy(sortOrder = nextOrder)
     }
 
-    suspend fun updateRoom(room: ManagedRoom) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().toMutableList()
-        val index = rooms.indexOfFirst { it.id == room.id }
-        if (index >= 0) {
-            rooms[index] = room
-            writeRooms(rooms)
+    suspend fun updateRoom(room: ManagedRoom) = mutateRooms { rooms ->
+        rooms.map { if (it.id == room.id) room else it }
+    }
+
+    suspend fun deleteRoom(roomId: String) = mutateRooms { rooms ->
+        rooms.filterNot { it.id == roomId }
+    }
+
+    suspend fun moveRoom(from: Int, to: Int) = mutateRooms { current ->
+        val rooms = current.sortedBy { it.sortOrder }.toMutableList()
+        if (from !in rooms.indices || to !in rooms.indices || from == to) {
+            current
+        } else {
+            val item = rooms.removeAt(from)
+            rooms.add(to, item)
+            rooms.mapIndexed { index, room -> room.copy(sortOrder = index) }
         }
     }
 
-    suspend fun deleteRoom(roomId: String) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().filterNot { it.id == roomId }
-        writeRooms(rooms)
-    }
-
-    /** Di chuyen phong tu vi tri [from] sang [to]; danh lai sortOrder 0..n-1. */
-    suspend fun moveRoom(from: Int, to: Int) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().sortedBy { it.sortOrder }.toMutableList()
-        if (from !in rooms.indices || to !in rooms.indices || from == to) return@withLock
-        val item = rooms.removeAt(from)
-        rooms.add(to, item)
-        writeRooms(rooms.mapIndexed { index, room -> room.copy(sortOrder = index) })
-    }
-
-    // MARK: - CRUD thiet bi trong phong
-
-    suspend fun addDevice(roomId: String, device: ManagedDevice) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().toMutableList()
-        val index = rooms.indexOfFirst { it.id == roomId }
-        if (index >= 0) {
-            val room = rooms[index]
-            rooms[index] = room.copy(devices = room.devices + device)
-            writeRooms(rooms)
+    suspend fun addDevice(roomId: String, device: ManagedDevice) = mutateRooms { rooms ->
+        rooms.map { room ->
+            if (room.id == roomId) room.copy(devices = room.devices + device) else room
         }
     }
 
-    suspend fun updateDevice(roomId: String, device: ManagedDevice) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().toMutableList()
-        val roomIndex = rooms.indexOfFirst { it.id == roomId }
-        if (roomIndex < 0) return@withLock
-        val devices = rooms[roomIndex].devices.toMutableList()
-        val deviceIndex = devices.indexOfFirst { it.id == device.id }
-        if (deviceIndex >= 0) {
-            devices[deviceIndex] = device
-            rooms[roomIndex] = rooms[roomIndex].copy(devices = devices)
-            writeRooms(rooms)
+    suspend fun updateDevice(roomId: String, device: ManagedDevice) = mutateRooms { rooms ->
+        rooms.map { room ->
+            if (room.id == roomId) room.copy(
+                devices = room.devices.map { if (it.id == device.id) device else it },
+            ) else room
         }
     }
 
-    suspend fun deleteDevice(roomId: String, deviceId: String) = mutationMutex.withLock {
-        val rooms = roomsFlow.first().toMutableList()
-        val index = rooms.indexOfFirst { it.id == roomId }
-        if (index >= 0) {
-            val room = rooms[index]
-            rooms[index] = room.copy(devices = room.devices.filterNot { it.id == deviceId })
-            writeRooms(rooms)
+    suspend fun deleteDevice(roomId: String, deviceId: String) = mutateRooms { rooms ->
+        rooms.map { room ->
+            if (room.id == roomId) room.copy(
+                devices = room.devices.filterNot { it.id == deviceId },
+            ) else room
         }
     }
 
-    /** Reset ve danh sach mac dinh (convert tu RoomBubbleConfig.all). */
-    suspend fun resetToDefaults() = mutationMutex.withLock {
-        writeRooms(defaultRooms())
-    }
+    suspend fun resetToDefaults() = mutateRooms { defaultRooms() }
 }

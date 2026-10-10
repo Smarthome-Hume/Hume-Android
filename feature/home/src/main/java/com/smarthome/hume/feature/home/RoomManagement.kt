@@ -63,6 +63,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -458,13 +459,13 @@ fun RoomDetailScreen(
 
     if (showAddDevice) {
         FullScreenDialog(onDismiss = { showAddDevice = false }) {
-            DeviceEditScreen(store = store, roomId = roomId, device = null, pickerEntities = pickerEntities, onDismiss = { showAddDevice = false })
+            RoomDeviceEditScreen(store = store, roomId = roomId, device = null, pickerEntities = pickerEntities, onDismiss = { showAddDevice = false })
         }
     }
     val deviceToEdit = editingDevice
     if (deviceToEdit != null) {
         FullScreenDialog(onDismiss = { editingDevice = null }) {
-            DeviceEditScreen(store = store, roomId = roomId, device = deviceToEdit, pickerEntities = pickerEntities, onDismiss = { editingDevice = null })
+            RoomDeviceEditScreen(store = store, roomId = roomId, device = deviceToEdit, pickerEntities = pickerEntities, onDismiss = { editingDevice = null })
         }
     }
 }
@@ -615,6 +616,8 @@ fun RoomEditScreen(
     val rooms by store.roomsFlow.collectAsState()
     val scope = rememberCoroutineScope()
 
+    var saving by remember(room?.id) { mutableStateOf(false) }
+    var saveError by remember(room?.id) { mutableStateOf<String?>(null) }
     var name by remember(room?.id) { mutableStateOf(room?.name ?: "") }
     // TODO(agent IconPicker): thay TextField bang IconPicker that.
     var icon by remember(room?.id) { mutableStateOf(room?.icon ?: "home") }
@@ -633,11 +636,11 @@ fun RoomEditScreen(
             }
         }
     }
-    // Tam giu bien de khong unused cho den khi EntityPickerScreen that co.
-    @Suppress("UNUSED_VARIABLE")
-    val sensorsExcludedFromPicker = usedSensorEntities
 
     fun save() {
+        if (saving) return
+        saving = true
+        saveError = null
         val newRoom = DynRoom(
             id = room?.id ?: UUID.randomUUID().toString(),
             name = name.trim(),
@@ -648,9 +651,17 @@ fun RoomEditScreen(
             sortOrder = room?.sortOrder ?: Int.MAX_VALUE,
         )
         scope.launch {
-            if (room == null) store.addRoom(newRoom) else store.updateRoom(newRoom)
+            try {
+                if (room == null) store.addRoom(newRoom) else store.updateRoom(newRoom)
+                onDismiss()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                saveError = "Không lưu được phòng. Vui lòng thử lại."
+            } finally {
+                saving = false
+            }
         }
-        onDismiss()
     }
 
     Scaffold(
@@ -664,12 +675,12 @@ fun RoomEditScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = onDismiss) { Text("Huỷ") }
+                    TextButton(onClick = onDismiss, enabled = !saving) { Text("Huỷ") }
                 },
                 actions = {
                     TextButton(
                         onClick = { save() },
-                        enabled = name.isNotBlank(),
+                        enabled = name.isNotBlank() && !saving,
                     ) {
                         Text("Lưu", fontWeight = FontWeight.SemiBold)
                     }
@@ -684,6 +695,9 @@ fun RoomEditScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            saveError?.let { message ->
+                item { Text(message, color = MaterialTheme.colorScheme.error) }
+            }
             item {
                 M3ETextField(
                     value = name,
@@ -729,174 +743,28 @@ fun RoomEditScreen(
 // DeviceEditScreen — them/sua thiet bi (port iOS DeviceEditView)
 // =====================================================================
 
-private val DeviceTypes = listOf(
-    "toggle" to "Công tắc/Đèn",
-    "fan" to "Quạt",
-    "climate" to "Điều hoà",
-    "cover" to "Rèm/Mành",
-    "lock" to "Khoá",
-)
-
-/** Tu dong chon loai theo domain cua entity (port iOS onSelect). */
-private fun deviceTypeForEntity(entityId: String): String = when (entityId.substringBefore(".").trim().lowercase()) {
-    "climate" -> "climate"
-    "cover" -> "cover"
-    "lock" -> "lock"
-    "fan" -> "fan"
-    else -> "toggle"
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceEditScreen(
+private fun RoomDeviceEditScreen(
     store: RoomStore,
     roomId: String,
     device: DynDevice?,
-    pickerEntities: StateFlow<Map<String, PickerEntity>>? = null,
+    pickerEntities: StateFlow<Map<String, PickerEntity>>?,
     onDismiss: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-
-    var entityId by remember(device?.id) { mutableStateOf(device?.entityId ?: "") }
-    var name by remember(device?.id) { mutableStateOf(device?.name ?: "") }
-    var sub by remember(device?.id) { mutableStateOf(device?.sub ?: "") }
-    // TODO(agent IconPicker): thay TextField bang IconPicker that.
-    var icon by remember(device?.id) { mutableStateOf(device?.icon ?: "") }
-    var type by remember(device?.id) { mutableStateOf(device?.type ?: "toggle") }
-    // TODO(agent EntityPickerScreen): thay TextField bang EntityPickerScreen that.
-    var powerEntity by remember(device?.id) { mutableStateOf(device?.powerEntity ?: "") }
-    var typeTouched by remember(device?.id) { mutableStateOf(false) }
-
-    val typeLabel = DeviceTypes.firstOrNull { it.first == type }?.second ?: type
-    var typeMenuOpen by remember { mutableStateOf(false) }
-
-    fun save() {
-        val newDevice = DynDevice(
-            id = device?.id ?: UUID.randomUUID().toString(),
-            name = name.trim(),
-            entityId = entityId.trim(),
-            type = type,
-            icon = icon.trim(),
-            sub = sub.trim(),
-            powerEntity = powerEntity.trim().ifBlank { null },
-        )
-        scope.launch {
-            if (device == null) store.addDevice(roomId, newDevice) else store.updateDevice(roomId, newDevice)
-        }
-        onDismiss()
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (device == null) "Thêm thiết bị" else "Sửa thiết bị",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                navigationIcon = {
-                    TextButton(onClick = onDismiss) { Text("Huỷ") }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { save() },
-                        enabled = entityId.isNotBlank() && name.isNotBlank(),
-                    ) {
-                        Text("Lưu", fontWeight = FontWeight.SemiBold)
-                    }
-                },
-            )
+    val rooms by store.roomsFlow.collectAsState()
+    val fallback = remember { MutableStateFlow<Map<String, PickerEntity>>(emptyMap()) }
+    val otherDevices = rooms.flatMap { it.devices }.filter { it.id != device?.id }
+    DeviceEditScreen(
+        initial = device,
+        entities = pickerEntities ?: fallback,
+        usedDeviceEntities = otherDevices.map { it.entityId }.toSet(),
+        usedPowerEntities = otherDevices.mapNotNull { it.powerEntity }.toSet(),
+        onSave = { updated ->
+            if (device == null) store.addDevice(roomId, updated)
+            else store.updateDevice(roomId, updated)
         },
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                M3ETextField(
-                    value = entityId,
-                    onValueChange = {
-                        entityId = it
-                        // Tu dong chon loai theo domain (neu user chua chon tay)
-                        if (!typeTouched) type = deviceTypeForEntity(it)
-                    },
-                    label = "Thiết bị (entity)",
-                    placeholder = "vd: light.phong_khach — sẽ thay bằng EntityPickerScreen",
-                )
-            }
-            item {
-                M3ETextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Tên hiển thị",
-                )
-            }
-            item {
-                M3ETextField(
-                    value = sub,
-                    onValueChange = { sub = it },
-                    label = "Mô tả",
-                )
-            }
-            item {
-                Text(
-                    "Icon",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                IconPicker(
-                    selection = icon,
-                    onSelectionChange = { icon = it },
-                )
-            }
-            item {
-                ExposedDropdownMenuBox(
-                    expanded = typeMenuOpen,
-                    onExpandedChange = { typeMenuOpen = it },
-                ) {
-                    M3ETextField(
-                        value = typeLabel,
-                        onValueChange = {},
-                        label = "Loại",
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuOpen) },
-                        modifier = Modifier.menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = typeMenuOpen,
-                        onDismissRequest = { typeMenuOpen = false },
-                    ) {
-                        for ((value, typeName) in DeviceTypes) {
-                            DropdownMenuItem(
-                                text = { Text(typeName) },
-                                onClick = {
-                                    type = value
-                                    typeTouched = true
-                                    typeMenuOpen = false
-                                },
-                                trailingIcon = if (value == type) {
-                                    { MsIcon(M3EIcons.Check, null, modifier = Modifier.size(20.dp)) }
-                                } else null,
-                            )
-                        }
-                    }
-                }
-            }
-            item {
-                M3ETextField(
-                    value = powerEntity,
-                    onValueChange = { powerEntity = it },
-                    label = "Sensor công suất (tuỳ chọn)",
-                    placeholder = "Tạm dùng TextField — sẽ thay bằng EntityPickerScreen",
-                )
-            }
-        }
-    }
+        onDismiss = onDismiss,
+    )
 }
 
 /** Dialog full-screen dung cho cac man hinh edit (port iOS .sheet). */

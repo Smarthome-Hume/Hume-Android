@@ -26,6 +26,8 @@ class HumeApplication : Application(), ImageLoaderFactory {
         private set
     lateinit var sensorDatabase: SensorDatabase
         private set
+    lateinit var roomStore: com.smarthome.hume.data.RoomStore
+        private set
     val haRepository = HomeAssistantRepository()
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -80,8 +82,8 @@ class HumeApplication : Application(), ImageLoaderFactory {
         val homeRepo = AppHomeRepository(haRepository, appScope, this)
         HumeGraph.get().registerHomeRepository(homeRepo)
         // Wire RoomStore -> AppHomeRepository (port iOS RoomStore).
-        // Phong dong tu DataStore, fallback ve hardcode neu chua co.
-        val roomStore = com.smarthome.hume.data.RoomStore(this)
+        // Shared store: persisted rooms; seed only when the DataStore key is absent.
+        roomStore = com.smarthome.hume.data.RoomStore(this)
         appScope.launch {
             // Seed chi khi DataStore chua co key; giu nguyen danh sach rong hop le.
             roomStore.loadRooms()
