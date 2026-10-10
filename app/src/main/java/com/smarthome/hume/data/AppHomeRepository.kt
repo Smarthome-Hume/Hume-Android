@@ -67,7 +67,7 @@ class AppHomeRepository(
 
     /** Cap nhat room configs tu RoomStore (goi khi roomsFlow thay doi). */
     fun setRoomConfigs(configs: List<com.smarthome.hume.core.model.RoomBubbleConfig>) {
-        _roomConfigs.value = configs.ifEmpty { com.smarthome.hume.core.model.RoomBubbleConfig.all }
+        _roomConfigs.value = configs
     }
 
     private val weekCache = mutableMapOf<Long, Double>()
