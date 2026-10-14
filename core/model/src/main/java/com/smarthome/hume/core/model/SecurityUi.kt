@@ -28,6 +28,8 @@ data class RecordingUi(
     val dateLabel: String,
     /** Duong dan file mp4 da tai ve local (FrigateStore) — null neu chua tai xong. */
     val clipPath: String? = null,
+    /** Duong dan thumbnail jpg local — null neu chua co (port iOS M3ERecCard thumb). */
+    val thumbPath: String? = null,
 )
 
 data class SecurityUiState(

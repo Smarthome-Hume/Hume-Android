@@ -183,6 +183,32 @@ fun MeScreen(
     val getVideo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onPicked(it, true) }
     }
+    // Hinh nen app (port iOS MeWallpaperCard)
+    val wallpaperStore = remember { com.smarthome.hume.core.ui.wallpaper.WallpaperStore(context) }
+    val wallpaperFile by wallpaperStore.wallpaper.collectAsState()
+    LaunchedEffect(Unit) { wallpaperStore.load() }
+    val pickWallpaper = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let {
+            scope.launch {
+                wallpaperStore.setWallpaper(it).onFailure { e ->
+                    Toast.makeText(context, e.message ?: "Không lưu được hình nền", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    val getWallpaper = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            scope.launch {
+                wallpaperStore.setWallpaper(it).onFailure { e ->
+                    Toast.makeText(context, e.message ?: "Không lưu được hình nền", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    fun launchWallpaperPicker() {
+        if (pickerAvailable) pickWallpaper.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        else getWallpaper.launch("image/*")
+    }
     val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
     fun launchImagePicker() {
         if (pickerAvailable) pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -227,6 +253,15 @@ fun MeScreen(
         }
 
         Box(Modifier.riseEntrance(400)) { M3ESectionTitle("Ảnh đại diện", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
+        Box(Modifier.riseEntrance(430)) { M3ESectionTitle("Hình nền", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
+        Box(Modifier.riseEntrance(440)) {
+            WallpaperCard(
+                hasWallpaper = wallpaperFile != null,
+                onPick = { launchWallpaperPicker() },
+                onRemove = { wallpaperStore.reset() },
+            )
+        }
+
         Box(Modifier.riseEntrance(420)) {
             MeAvatarCard(
                 userKey = userKey,

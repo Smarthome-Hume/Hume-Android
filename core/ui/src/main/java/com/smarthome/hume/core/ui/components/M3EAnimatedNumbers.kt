@@ -205,26 +205,31 @@ fun ChaoticNumber(
     format: (Double) -> String = { "%.0f".format(it) },
     durationMs: Long = 1000,
 ) {
-    var displayed by remember { mutableDoubleStateOf(0.0) }
+    // (2026-10-14, Bug 5: phase 2 dung Animatable de muot 120Hz)
+    var chaosDisplayed by remember { mutableDoubleStateOf(0.0) }
+    val settleAnim = remember { Animatable(0f) }
+    var settleFrom by remember { mutableDoubleStateOf(0.0) }
+    var inSettle by remember { mutableStateOf(false) }
 
     LaunchedEffect(value) {
-        // Phase 1: nhay loan (40% thoi gian)
+        inSettle = false
+        // Phase 1: nhay loan (40% thoi gian) — giu step vi la hieu ung chu y
         val chaosSteps = 6
         repeat(chaosSteps) {
             val randomOffset = Random.nextDouble(-0.3, 0.3) * value
-            displayed = maxOf(0.0, value + randomOffset)
+            chaosDisplayed = maxOf(0.0, value + randomOffset)
             delay((durationMs * 0.4 / chaosSteps).toLong())
         }
-        // Phase 2: dem ve dung so (60% thoi gian)
-        val from = displayed
-        val steps = 18
-        for (i in 1..steps) {
-            val t = i.toDouble() / steps
-            val eased = 1.0 - (1.0 - t).pow(3.0)
-            displayed = from + (value - from) * eased
-            delay((durationMs * 0.6 / steps).toLong())
-        }
-        displayed = value
+        // Phase 2: dem ve dung so (60% thoi gian) — Animatable vsync
+        settleFrom = chaosDisplayed
+        inSettle = true
+        settleAnim.snapTo(0f)
+        settleAnim.animateTo(1f, tween((durationMs * 0.6).toInt(), easing = M3EMotion.emphasized))
+    }
+    val displayed = if (inSettle) {
+        settleFrom + (value - settleFrom) * settleAnim.value.toDouble()
+    } else {
+        chaosDisplayed
     }
 
     Text(

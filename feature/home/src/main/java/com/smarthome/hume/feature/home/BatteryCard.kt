@@ -4,7 +4,9 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import com.smarthome.hume.core.ui.components.M3EMotion
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +52,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.OvershootNumber
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.pow
 
 /**
