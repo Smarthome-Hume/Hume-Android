@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,6 +74,9 @@ fun CameraFeedCard(
     onUnlock: () -> Unit,
     modifier: Modifier = Modifier,
     mjpegUrl: String? = null,
+    /** HLS URL cho fullscreen native player (port iOS LiveNativePlayer, #13); null = an nut. */
+    hlsUrl: String? = null,
+    onFullscreen: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
@@ -225,19 +229,43 @@ fun CameraFeedCard(
                     color = Color.White,
                 )
             }
-            // name badge (demo .scname: radius 999px, padding 6px 12px; blur: gioi han sandbox)
-            Text(
-                camName,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier
+            // name badge (demo .scname: radius 999px, padding 6px 12px)
+            // + nut fullscreen HLS ben duoi khi unlock va co HLS (port iOS, #13).
+            Column(
+                Modifier
                     .align(Alignment.TopEnd)
-                    .padding(10.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Text(
+                    camName,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+                if (unlocked && hlsUrl != null && onFullscreen != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .clickable(onClick = { haptic(); onFullscreen() }),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        MsIcon(
+                            M3EIcons.Fullscreen,
+                            contentDescription = "Xem toàn màn hình",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
 
             if (!unlocked) {
                 // unlock overlay (demo .scunlock: 13px/600, icon 34px, gap 8px)

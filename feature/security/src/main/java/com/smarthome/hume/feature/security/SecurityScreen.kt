@@ -101,6 +101,7 @@ fun SecurityScreen(
     val state by vm.state.collectAsState()
     val selectedCam by vm.selectedCam.collectAsState()
     val clip by vm.clip.collectAsState()
+    val livePlayer by vm.livePlayer.collectAsState()
     val haptic = rememberHaptic()
     val cs = MaterialTheme.colorScheme
 
@@ -182,6 +183,16 @@ fun SecurityScreen(
                     },
                     actionLoading = state.downloadingCams.contains(cam.key),
                 )
+                // Loi tai recordings (port iOS lastError, #17)
+                val recErr = state.recordingErrors[cam.key]
+                if (recErr != null && recs(state, selectedCam).isEmpty()) {
+                    Text(
+                        recErr,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = cs.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                    )
+                }
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     // demo .reclist: padding 2px 2px 6px
@@ -193,8 +204,12 @@ fun SecurityScreen(
                     items(recs(state, selectedCam), key = { it.id }) { rec ->
                         RecCard(
                             rec = rec,
-                            onClick = { vm.openClip(rec) },
+                            // #15: co file → phat ngay; chua co → tai roi tu phat
+                            onClick = { vm.onRecCardClick(rec); haptic() },
+                            downloading = state.downloadingClips.contains(rec.id),
                             onDownload = onDownloadClip?.let { { it(rec) } },
+                            // #16: nut share tren thumbnail (port iOS)
+                            onShare = onShareClip?.let { { it(rec) } },
                         )
                     }
                 }
@@ -219,6 +234,17 @@ fun SecurityScreen(
                 onShare = onShareClip?.let { { it(c) } },
             )
         }
+
+        // Fullscreen HLS live player — port iOS LiveNativePlayer (#13).
+        livePlayer?.let { (camKey, camName) ->
+            vm.hlsUrl(camKey)?.let { hls ->
+                LivePlayerOverlay(
+                    hlsUrl = hls,
+                    camName = camName,
+                    onClose = vm::closeLivePlayer,
+                )
+            }
+        }
     }
 }
 
@@ -238,6 +264,8 @@ private fun CameraCard(vm: SecurityViewModel, camKey: String, camName: String) {
         onUnlock = { vm.unlock() },
         modifier = Modifier.riseIn(440),
         mjpegUrl = vm.mjpegUrl(camKey),
+        hlsUrl = vm.hlsUrl(camKey),
+        onFullscreen = { vm.openLivePlayer(camKey, camName) },
     )
 }
 
@@ -248,6 +276,10 @@ private fun RecCard(
     rec: RecordingUi,
     onClick: () -> Unit,
     onDownload: (() -> Unit)? = null,
+    /** Dang tai don le — hien spinner tren thumbnail (port iOS downloadingClips, #15). */
+    downloading: Boolean = false,
+    /** Nut share tren thumbnail (port iOS shareClip, #16). */
+    onShare: (() -> Unit)? = null,
 ) {
     Column(
         Modifier
@@ -287,8 +319,18 @@ private fun RecCard(
                     modifier = Modifier.size(34.dp),
                 )
             }
-            // Nut download goc phai tren thumbnail
-            if (onDownload != null && rec.clipPath != null) {
+            // Dang tai don le: spinner tren thumbnail (port iOS, #15)
+            if (downloading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+            // Nut goc phai tren thumbnail (port iOS, #16):
+            // co clip → nut share; chua co → badge download (bam the de tai).
+            val clipReady = rec.clipPath?.let { File(it) }?.takeIf { it.exists() } != null
+            if (onShare != null && clipReady && !downloading) {
                 Box(
                     Modifier
                         .align(Alignment.TopEnd)
@@ -296,13 +338,30 @@ private fun RecCard(
                         .size(28.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable(onClick = onDownload),
+                        .clickable(onClick = onShare),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = M3EIcons.Download,
-                        contentDescription = "Tải xuống",
+                    MsIcon(
+                        M3EIcons.Share,
+                        contentDescription = "Chia sẻ",
                         tint = Color.White,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            } else if (!clipReady && !downloading) {
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MsIcon(
+                        M3EIcons.Download,
+                        contentDescription = "Bấm để tải",
+                        tint = Color.White.copy(alpha = 0.6f),
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -599,6 +658,111 @@ private fun ClipOverlay(
                             .background(Color.White.copy(alpha = 0.14f))
                             .clickable(onClick = onClose)
                             .padding(horizontal = 28.dp, vertical = 12.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ---------- fullscreen HLS live player ----------
+
+/**
+ * Fullscreen native player cho live HLS — port iOS LiveNativePlayer
+ * (NativeVideoPlayer.swift, #13): ExoPlayer stream HLS go2rtc + LIVE badge +
+ * ten camera overlay + nut dong.
+ */
+@Composable
+private fun LivePlayerOverlay(
+    hlsUrl: String,
+    camName: String,
+    onClose: () -> Unit,
+) {
+    val context = LocalContext.current
+    val player = remember(hlsUrl) {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(hlsUrl))
+            prepare()
+            playWhenReady = true
+        }
+    }
+    DisposableEffect(player) {
+        onDispose { player.release() }
+    }
+
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+        ) {
+            AndroidView(
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        this.player = player
+                        useController = true
+                        setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    }
+                },
+                update = { it.player = player },
+                modifier = Modifier.fillMaxSize(),
+            )
+            // Overlay: LIVE badge + ten camera + nut dong (port iOS).
+            Row(
+                Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFE53935))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(Color.White),
+                    )
+                    Text(
+                        "LIVE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        color = Color.White,
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    camName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.weight(1f))
+                Box(
+                    Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .clickable(onClick = onClose),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MsIcon(
+                        M3EIcons.Close,
+                        contentDescription = "Đóng",
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             }
