@@ -65,6 +65,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import coil.compose.AsyncImage
 import com.smarthome.hume.core.model.RecordingUi
 import com.smarthome.hume.core.model.SecurityUiState
 import com.smarthome.hume.core.model.SensorKind
@@ -268,12 +269,24 @@ private fun RecCard(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            MsIcon(
-                M3EIcons.PlayCircle,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.75f),
-                modifier = Modifier.size(34.dp),
-            )
+            // Thumbnail that tu file local (port iOS M3ERecCard thumb);
+            // chua co thi giu gradient + icon play.
+            val thumbFile = rec.thumbPath?.let { File(it) }?.takeIf { it.exists() }
+            if (thumbFile != null) {
+                AsyncImage(
+                    model = thumbFile,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                MsIcon(
+                    M3EIcons.PlayCircle,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.75f),
+                    modifier = Modifier.size(34.dp),
+                )
+            }
             // Nut download goc phai tren thumbnail
             if (onDownload != null && rec.clipPath != null) {
                 Box(
