@@ -29,4 +29,11 @@ interface SecurityRepository {
      * chay duoc ca local lan remote (HTTP qua Cloudflare Tunnel).
      */
     fun mjpegUrl(cameraKey: String): String
+
+    /**
+     * URL HLS live stream qua go2rtc (port 1984) — port tu iOS
+     * FrigateStore.hlsStreamURL, dung cho native fullscreen player.
+     * Tra ve null khi remote (iOS cung chi cho local).
+     */
+    fun hlsUrl(cameraKey: String): String?
 }

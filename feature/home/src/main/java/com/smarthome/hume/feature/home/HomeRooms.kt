@@ -289,7 +289,6 @@ fun RoomSheet(
 ) {
     val cs = MaterialTheme.colorScheme
     // Thiet bi switch dang cho xac nhan tat (bao ve Zigbee mesh, port iOS 0e855dd).
-    var confirmOffDevice by remember { mutableStateOf<DeviceUi?>(null) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -382,8 +381,6 @@ fun RoomSheet(
  * Chu nhat nho 300dp, giua man hinh, 2 nut Xac nhan/Huy (port iOS 0e855dd).
  */
 @Composable
-private fun ZigbeeOffConfirmDialog(
-    deviceLabel: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {

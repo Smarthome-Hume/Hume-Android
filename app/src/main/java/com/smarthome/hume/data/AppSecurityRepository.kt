@@ -103,6 +103,17 @@ class AppSecurityRepository(
     override fun mjpegUrl(cameraKey: String): String =
         frigate.baseUrl(useRemoteFrigate()) + "/api/$cameraKey"
 
+    override fun hlsUrl(cameraKey: String): String? {
+        // Port iOS FrigateStore.hlsStreamURL: chi local (WiFi nha),
+        // go2rtc mo HLS o port 1984 cung host Frigate.
+        if (useRemoteFrigate()) return null
+        val host = frigate.baseUrl(false)
+            .removePrefix("http://").removePrefix("https://")
+            .substringBefore(":").substringBefore("/")
+            .ifBlank { return null }
+        return "http://$host:1984/api/stream.m3u8?src=$cameraKey"
+    }
+
     private fun rebuild(entities: Map<String, LegacyEntity>) {
         _state.value = _state.value.copy(
             doorSensors = DOOR_SENSORS.map { it.toUi(entities) },

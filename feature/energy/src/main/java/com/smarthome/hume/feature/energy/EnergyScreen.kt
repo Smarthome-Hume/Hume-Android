@@ -1,6 +1,7 @@
 package com.smarthome.hume.feature.energy
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -265,5 +269,68 @@ fun EnergyScreen(
             onDismiss = { insightPopup = null },
             cost = state.cost,
         )
+    }
+}
+
+/**
+ * Banner bao doi trang thai luoi hien ngay trong tab Nang luong
+ * (port iOS M3EEnergyView:56-100).
+ * - alertOn=true: xanh "Da co dien luoi tro lai" + nut "Da biet"
+ * - alertOn=false: do "MAT DIEN LUOI!" + nut "Tat bao dong"
+ */
+@Composable
+private fun GridAlertBanner(
+    alertOn: Boolean,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cs = MaterialTheme.colorScheme
+    val extra = LocalHumeExtraColors.current
+    val bg = if (alertOn) extra.success else cs.error
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(bg)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        MsIcon(
+            if (alertOn) Ms.bolt else Ms.error,
+            contentDescription = null,
+            tint = androidx.compose.ui.graphics.Color.White,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.size(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                if (alertOn) "Đã có điện lưới trở lại" else "MẤT ĐIỆN LƯỚI!",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = androidx.compose.ui.graphics.Color.White,
+            )
+            if (!alertOn) {
+                Text(
+                    "Đang chạy bằng pin • Chạm để tắt báo động",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
+                )
+            }
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(androidx.compose.ui.graphics.Color.White)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text(
+                if (alertOn) "Đã biết" else "Tắt báo động",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = bg,
+                modifier = Modifier.clickable(onClick = onDismiss),
+            )
+        }
     }
 }
