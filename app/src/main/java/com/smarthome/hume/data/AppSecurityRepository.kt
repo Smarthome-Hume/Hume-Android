@@ -70,6 +70,8 @@ class AppSecurityRepository(
                             // Giai quyet duong dan file that tu FrigateStore ngay khi build UI:
                             // feature module khong thay duoc FrigateStore (nam o :app).
                             clipPath = frigate.clipFile(r).absolutePath,
+                            // Thumbnail that (port iOS M3ERecCard thumb) — null neu chua tai.
+                            thumbPath = frigate.thumbFile(r).takeIf { it.exists() }?.absolutePath,
                         )
                     }
                 }
