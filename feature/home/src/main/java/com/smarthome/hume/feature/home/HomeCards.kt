@@ -614,13 +614,7 @@ fun SuggestCard(
                             }
                             tip.key == "door" -> doneMap[tip.key] = true
                             tip.key == "door_balcony" -> doneMap[tip.key] = true
-                            tip.key == "sun" -> onOpenEnergy()
                             tip.key == "night" -> onOpenSecurity()
-                            tip.key == "lights_day" -> {
-                                onTipAction(tip.key)
-                                doneMap[tip.key] = true
-                            }
-                            tip.key == "evening_battery" -> onBatteryDetail()
                             tip.key.startsWith("toggle_ac:") -> {
                                 onTipAction(tip.key)
                                 doneMap[tip.key] = true
