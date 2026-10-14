@@ -519,6 +519,20 @@ class AppHomeRepository(
         ) n else "Điều hoà"
     }
 
+    /**
+     * (2026-10-14, audit #9): Map trang thai dung cho tung loai thiet bi.
+     * Cover: isOpen -> on; Lock: isLocked -> on; con lai: isOn.
+     */
+    private fun LegacyEntity.isActive(): Boolean = when (this) {
+        is LegacyEntity.Light -> isOn
+        is LegacyEntity.Switch -> isOn
+        is LegacyEntity.Fan -> isOn
+        is LegacyEntity.BinarySensor -> isOn
+        is LegacyEntity.Cover -> isOpen
+        is LegacyEntity.Lock -> isLocked
+        else -> false
+    }
+
     private fun buildRoom(room: RoomBubbleConfig, entities: Map<String, LegacyEntity>): RoomUi {
         val lights = room.devices.filter { it.entity.startsWith("light.") }
         val lightOn = lights.any { entities[it.entity]?.isOn == true }
@@ -532,7 +546,7 @@ class AppHomeRepository(
                     label = d.label,
                     sub = d.sub,
                     iconKey = d.icon,
-                    isOn = e?.isOn == true,
+                    isOn = e?.isActive() == true,
                     powerW = d.powerEntity?.let { entities[it]?.numericState },
                 )
             }
