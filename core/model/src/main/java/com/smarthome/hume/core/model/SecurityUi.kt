@@ -41,4 +41,8 @@ data class SecurityUiState(
     val recordings: Map<String, List<RecordingUi>> = emptyMap(),
     /** Camera dang tai clip (key = camera.key) — hien spinner o nut 'Tai 10 clip'. */
     val downloadingCams: Set<String> = emptySet(),
+    /** ID cac clip dang tai don le — hien spinner tren thumbnail (port iOS downloadingClips). */
+    val downloadingClips: Set<String> = emptySet(),
+    /** Loi tai recordings theo camera (key = camera.key) — port iOS lastError. */
+    val recordingErrors: Map<String, String> = emptyMap(),
 )

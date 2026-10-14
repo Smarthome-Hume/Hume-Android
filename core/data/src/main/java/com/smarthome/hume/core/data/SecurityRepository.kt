@@ -13,6 +13,12 @@ interface SecurityRepository {
     /** Tai lai danh sach clip Frigate cho camera. */
     fun refreshRecordings(cameraKey: String)
 
+    /** ID cac clip dang tai don le — UI hien spinner tren thumbnail (port iOS downloadingClips). */
+    val downloadingClips: StateFlow<Set<String>>
+
+    /** Tai 1 clip don le theo ID (port iOS downloadClip). */
+    fun downloadClip(cameraKey: String, recId: String)
+
     /** URL snapshot Frigate cho camera (de UI tu load anh). */
     fun snapshotUrl(cameraKey: String): String
 

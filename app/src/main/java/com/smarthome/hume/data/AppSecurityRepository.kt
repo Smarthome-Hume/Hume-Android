@@ -59,6 +59,16 @@ class AppSecurityRepository(
             }
         }
         scope.launch {
+            frigate.downloadingClips.collect { downloadingClips ->
+                _state.value = _state.value.copy(downloadingClips = downloadingClips)
+            }
+        }
+        scope.launch {
+            frigate.lastError.collect { lastError ->
+                _state.value = _state.value.copy(recordingErrors = lastError)
+            }
+        }
+        scope.launch {
             frigate.byCamera.collect { byCamera ->
                 val recs = byCamera.mapValues { (_, list) ->
                     list.take(10).map { r ->
@@ -85,6 +95,16 @@ class AppSecurityRepository(
             val settings = settingsStore.settings.first()
             runCatching { frigate.refresh(cameraKey, ha.getBaseUrl(), settings.haToken, useRemoteFrigate()) }
             refreshed += cameraKey
+        }
+    }
+
+    override val downloadingClips: StateFlow<Set<String>> = frigate.downloadingClips
+
+    override fun downloadClip(cameraKey: String, recId: String) {
+        scope.launch {
+            val rec = frigate.recordings(cameraKey).find { it.id == recId } ?: return@launch
+            val settings = settingsStore.settings.first()
+            runCatching { frigate.downloadClip(rec, ha.getBaseUrl(), settings.haToken, useRemoteFrigate()) }
         }
     }
 

@@ -187,6 +187,45 @@ class FrigateStore private constructor(context: Context) {
         save()
     }
 
+    /**
+     * Tai 1 clip don le theo ID — port iOS store.downloadClip(rec).
+     * Tra ve true neu tai xong (hoac file da co). Cap nhat
+     * [downloadingClips] de UI hien spinner tren thumbnail.
+     */
+    suspend fun downloadClip(
+        recording: FrigateRecording,
+        haUrl: String,
+        token: String,
+        useRemote: Boolean = false,
+    ): Boolean = withContext(Dispatchers.IO) {
+        val clip = clipFile(recording)
+        if (clip.exists()) return@withContext true
+        if (_downloadingClips.value.contains(recording.id)) return@withContext false
+        _downloadingClips.value = _downloadingClips.value + recording.id
+        try {
+            val proxy = haUrl.trimEnd('/') + "/frigate"
+            val candidates: (String) -> List<Pair<String, String?>> = { path ->
+                if (useRemote) listOf(baseUrl(true) + path to null)
+                else listOf(
+                    proxy + path to token,
+                    FRIGATE + path to null,
+                )
+            }
+            val bytes = fetchFirst(candidates("/api/events/" + recording.id + "/clip.mp4"), useRemote)
+            if (bytes != null) {
+                clip.writeBytes(bytes)
+                // Phat lai byCamera de AppSecurityRepository rebuild UI (clipPath).
+                _byCamera.value = _byCamera.value.toMap()
+                save()
+                true
+            } else {
+                false
+            }
+        } finally {
+            _downloadingClips.value = _downloadingClips.value - recording.id
+        }
+    }
+
     private fun fetchFirst(candidates: List<Pair<String, String?>>, useRemote: Boolean = false): ByteArray? {
         for ((url, token) in candidates) {
             val bytes = fetch(url, token, useRemote)
