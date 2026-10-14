@@ -110,5 +110,20 @@ class RoomStore(private val context: Context) {
         }
     }
 
+    suspend fun moveDevice(roomId: String, from: Int, to: Int) = mutateRooms { rooms ->
+        rooms.map { room ->
+            if (room.id != roomId) room
+            else {
+                val devices = room.devices.toMutableList()
+                if (from !in devices.indices || to !in devices.indices || from == to) room
+                else {
+                    val item = devices.removeAt(from)
+                    devices.add(to, item)
+                    room.copy(devices = devices)
+                }
+            }
+        }
+    }
+
     suspend fun resetToDefaults() = mutateRooms { defaultRooms() }
 }

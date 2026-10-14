@@ -57,6 +57,10 @@ class RoomStoreAdapter(
         real.deleteDevice(roomId, deviceId)
     }
 
+    override suspend fun moveDevice(roomId: String, from: Int, to: Int) {
+        real.moveDevice(roomId, from, to)
+    }
+
     private fun ManagedRoom.toDyn() = DynRoom(
         id = id,
         name = name,

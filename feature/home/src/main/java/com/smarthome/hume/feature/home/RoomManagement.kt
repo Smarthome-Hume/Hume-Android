@@ -113,6 +113,8 @@ interface RoomStore {
     suspend fun addDevice(roomId: String, device: DynDevice)
     suspend fun updateDevice(roomId: String, device: DynDevice)
     suspend fun deleteDevice(roomId: String, deviceId: String)
+    // (2026-10-14, audit #8): doi thu tu thiet bi trong phong
+    suspend fun moveDevice(roomId: String, from: Int, to: Int)
 }
 
 /** Stub in-memory de UI chay duoc truoc khi wire store that. */
@@ -157,6 +159,20 @@ class StubRoomStore : RoomStore {
         list.map { room ->
             if (room.id == roomId) room.copy(devices = room.devices.filterNot { it.id == deviceId })
             else room
+        }
+    }
+    override suspend fun moveDevice(roomId: String, from: Int, to: Int) = mutate { list ->
+        list.map { room ->
+            if (room.id != roomId) room
+            else {
+                val devices = room.devices.toMutableList()
+                if (from !in devices.indices || to !in devices.indices || from == to) room
+                else {
+                    val item = devices.removeAt(from)
+                    devices.add(to, item)
+                    room.copy(devices = devices)
+                }
+            }
         }
     }
 }
@@ -425,33 +441,56 @@ fun RoomDetailScreen(
                     color = cs.onSurfaceVariant,
                 )
             }
-            itemsIndexed(devices, key = { _, d -> d.id }) { _, device ->
+            itemsIndexed(devices, key = { _, d -> d.id }) { index, device ->
                 val dismissState = rememberSwipeToDismissBoxState()
                 LaunchedEffect(dismissState.currentValue) {
                     if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
                         scope.launch { store.deleteDevice(roomId, device.id) }
                     }
                 }
-                SwipeToDismissBox(
-                    state = dismissState,
-                    enableDismissFromStartToEnd = false,
-                    backgroundContent = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(28.dp))
-                                .background(cs.errorContainer)
-                                .padding(horizontal = 24.dp),
-                            contentAlignment = Alignment.CenterEnd,
-                        ) {
-                            Icon(Icons.Outlined.Delete, "Xoá", tint = cs.error)
-                        }
-                    },
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    DeviceRow(
-                        device = device,
-                        onEdit = { editingDevice = device },
-                    )
+                    // (2026-10-14, audit #8): nut len/xuong de doi thu tu thiet bi
+                    Column {
+                        IconButton(
+                            onClick = { scope.launch { store.moveDevice(roomId, index, index - 1) } },
+                            enabled = index > 0,
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(Icons.Outlined.KeyboardArrowUp, "Lên", tint = cs.onSurfaceVariant)
+                        }
+                        IconButton(
+                            onClick = { scope.launch { store.moveDevice(roomId, index, index + 1) } },
+                            enabled = index < devices.size - 1,
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(Icons.Outlined.KeyboardArrowDown, "Xuống", tint = cs.onSurfaceVariant)
+                        }
+                    }
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(28.dp))
+                                    .background(cs.errorContainer)
+                                    .padding(horizontal = 24.dp),
+                                contentAlignment = Alignment.CenterEnd,
+                            ) {
+                                Icon(Icons.Outlined.Delete, "Xoá", tint = cs.error)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        DeviceRow(
+                            device = device,
+                            onEdit = { editingDevice = device },
+                        )
+                    }
                 }
             }
         }
