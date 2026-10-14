@@ -369,23 +369,11 @@ fun RoomSheet(
                         d,
                         contactOpen = contactOpenForDevice(d.iconKey, d.label, notifications),
                         onToggle = { onToggle(d.entityId) },
-                        onConfirmOffRequest = { confirmOffDevice = it },
                     )
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
-    }
-    // Popup xac nhan tat cong tac Zigbee (port iOS 0e855dd).
-    confirmOffDevice?.let { d ->
-        ZigbeeOffConfirmDialog(
-            deviceLabel = d.label,
-            onDismiss = { confirmOffDevice = null },
-            onConfirm = {
-                confirmOffDevice = null
-                onToggle(d.entityId)
-            },
-        )
     }
 }
 
@@ -701,6 +689,15 @@ private fun ClimateModeGroup(
 }
 
 /**
+ * Kiem tra thiet bi co phai o cam khong (de hien xac nhan inline khi tat).
+ * Chi ap dung cho o cam, khong phai moi switch (user 2026-10-14).
+ */
+private fun isOutlet(d: DeviceUi): Boolean {
+    val id = d.entityId.lowercase()
+    return "plug" in id || "o_cam" in id || "socket" in id || "outlet" in id
+}
+
+/**
  * 1 hang thiet bi theo demo rev12 (.dev): gap 13px, surfaceHighest,
  * bo 28px -> 18px khi nhan, padding 14px 16px;
  * icon 48px: tat = surfaceHigh, bat = primaryContainer;
@@ -716,11 +713,13 @@ fun DeviceRow(
     modifier: Modifier = Modifier,
     // Ten phong hien tren dong trang thai (search, 2026-09-30): null = khong hien.
     roomLabel: String? = null,
-    onConfirmOffRequest: ((DeviceUi) -> Unit)? = null,
 ) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
     val haptic = rememberHaptic()
+    // Xac nhan tat o cam inline (port iOS HomeDeviceRow, user 2026-10-14):
+    // chi o cam can xac nhan, hien 2 nut ngay trong the thay vi popup.
+    var isConfirming by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -798,13 +797,55 @@ fun DeviceRow(
                     else cs.onSurfaceVariant,
                 )
             }
+        } else if (isConfirming) {
+            // 2 nut xac nhan inline (thay popup, user 2026-10-14)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Nut Huy
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(cs.surfaceContainerHigh)
+                        .clickable { isConfirming = false }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    Text(
+                        "Hủy",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = cs.onSurface,
+                        maxLines = 1,
+                    )
+                }
+                // Nut Xac nhan (do)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(cs.error)
+                        .clickable {
+                            isConfirming = false
+                            onToggle()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    Text(
+                        "Xác nhận",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = cs.onError,
+                        maxLines = 1,
+                    )
+                }
+            }
         } else {
             M3ESwitch(
                 checked = d.isOn,
                 onCheckedChange = {
                     haptic()
-                    if (d.entityId.startsWith("switch.") && d.isOn && onConfirmOffRequest != null) {
-                        onConfirmOffRequest(d)
+                    // Chi o cam can xac nhan khi tat (user 2026-10-14)
+                    if (isOutlet(d) && d.isOn) {
+                        isConfirming = true
                     } else {
                         onToggle()
                     }

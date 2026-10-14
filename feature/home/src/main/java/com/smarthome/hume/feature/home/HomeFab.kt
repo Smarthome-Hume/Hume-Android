@@ -65,7 +65,7 @@ fun HomeFabMenu(
     val haptic = rememberHaptic()
     val density = LocalDensity.current
     val items = listOf(
-        Triple("Bật đèn", M3EIcons.Light, onTurnOnLights),
+        Triple("Bật đèn", Ms.lightbulb, onTurnOnLights),
         Triple("Điều hoà 26°", M3EIcons.Climate, onAc26),
         Triple("Bật an ninh", M3EIcons.Shield, onArmAway),
         Triple("Tiết kiệm điện", M3EIcons.Power, onEco),

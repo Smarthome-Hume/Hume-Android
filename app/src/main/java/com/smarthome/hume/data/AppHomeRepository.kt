@@ -522,8 +522,9 @@ class AppHomeRepository(
     private fun buildRoom(room: RoomBubbleConfig, entities: Map<String, LegacyEntity>): RoomUi {
         val lights = room.devices.filter { it.entity.startsWith("light.") }
         val lightOn = lights.any { entities[it.entity]?.isOn == true }
+        // (2026-10-14, audit #3): bo filter type=="toggle" — hien tat ca loai
+        // thiet bi nhu iOS (toggle/fan/cover/lock/media_player/vacuum/humidifier)
         val devices = room.devices
-            .filter { it.type == "toggle" }
             .map { d ->
                 val e = entities[d.entity]
                 DeviceUi(

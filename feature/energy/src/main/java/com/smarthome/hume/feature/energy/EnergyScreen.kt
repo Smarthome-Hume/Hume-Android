@@ -118,6 +118,19 @@ fun EnergyScreen(
     // Popup tai cho tu goi y nang luong / node pin flow card (muc 14)
     var insightPopup by remember { mutableStateOf<InsightPopup?>(null) }
 
+    // Banner bao doi trang thai luoi (port iOS M3EEnergyView gridAlert):
+    // nil = an; true = co dien tro lai (xanh); false = mat dien (do).
+    var gridAlert by remember { mutableStateOf<Boolean?>(null) }
+    // Theo doi gridOn doi -> hien banner (bo qua lan dau tien).
+    var lastGridOnSeen by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(state.flow.gridOn) {
+        val g = state.flow.gridOn
+        if (lastGridOnSeen != null && lastGridOnSeen != g) {
+            gridAlert = g
+        }
+        lastGridOnSeen = g
+    }
+
     // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the nang luong.
     LaunchedEffect(deepLink) {
         if (deepLink != "battery") return@LaunchedEffect
@@ -217,6 +230,15 @@ fun EnergyScreen(
                     .fillMaxWidth()
                     .riseOnce("esub", 400, risePlayed),
             )
+        }
+        // Banner bao doi trang thai luoi (port iOS M3EEnergyView:56-100)
+        gridAlert?.let { alertOn ->
+            item {
+                GridAlertBanner(
+                    alertOn = alertOn,
+                    onDismiss = { gridAlert = null },
+                )
+            }
         }
         item {
             Box(Modifier.paneFade(paneVisible)) {

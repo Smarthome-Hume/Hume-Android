@@ -330,7 +330,7 @@ fun LightsSheet(
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     MsIcon(
-                        M3EIcons.Light, null,
+                        Ms.lightbulb, null,
                         tint = cs.primary,
                         modifier = Modifier.size(28.dp),
                     )
