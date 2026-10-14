@@ -117,6 +117,12 @@ fun M3ERootScreen(
             scope = coroutineScope,
         )
     }
+    // Hinh nen app (port iOS WallpaperManager/MeWallpaperCard)
+    val wallpaperStore = remember(context) {
+        com.smarthome.hume.core.ui.wallpaper.WallpaperStore(context)
+    }
+    val wallpaperFile by wallpaperStore.wallpaper.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(Unit) { wallpaperStore.load() }
     // Entities cho EntityPicker (port iOS SensorPickerView)
     val pickerEntities = remember(ha) {
         ha.entities.map { map ->
@@ -204,6 +210,15 @@ fun M3ERootScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface),
         ) {
+            // Hinh nen app (port iOS): anh nam duoi cung, phu full man hinh
+            wallpaperFile?.let { file ->
+                coil.compose.AsyncImage(
+                    model = file,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
             // Text() khong truyen color mac dinh lay LocalContentColor (den) vi
             // content khong nam trong Surface; cung cap onSurface (dark-aware)
             // cho ca 4 tab de chu khong bi chim trong che do toi.

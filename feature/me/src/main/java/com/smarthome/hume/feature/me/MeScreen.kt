@@ -1311,3 +1311,68 @@ private fun RoomManagementCard(onOpen: () -> Unit) {
 }
 
 }
+
+/**
+ * Card "Hinh nen" — port iOS MeWallpaperCard.
+ * Chon anh tu thu vien lam hinh nen ca app (ca sang/toi). Nut "Go" xoa ve mac dinh.
+ */
+@Composable
+private fun WallpaperCard(
+    hasWallpaper: Boolean,
+    onPick: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cs = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(cs.surfaceContainerHighest)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Text(
+            "Hình nền",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = cs.onSurface,
+        )
+        Text(
+            "Chọn ảnh từ thư viện làm hình nền cho app.",
+            style = MaterialTheme.typography.bodySmall,
+            color = cs.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 12.dp),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(cs.primaryContainer)
+                    .clickable(onClick = onPick)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                Text(
+                    "Chọn từ thư viện ảnh",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onPrimaryContainer,
+                )
+            }
+            if (hasWallpaper) {
+                Text(
+                    "Gỡ",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.error,
+                    modifier = Modifier
+                        .clickable(onClick = onRemove)
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                )
+            }
+        }
+    }
+}

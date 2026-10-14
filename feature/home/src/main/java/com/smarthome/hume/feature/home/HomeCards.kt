@@ -418,13 +418,7 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
             doneLabel = "Đã tắt",
         ))
     }
-    // Pin day + nang to -> goi y dung dien du
-    if (state.battery.soc >= 95 && state.solarNowKw >= 2.0) add(SuggestTip(
-        "sun",
-        "Đang dư điện mặt trời",
-        "Pin đã ${state.battery.soc}%, đang phát ${"%.1f".format(Locale.US, state.solarNowKw)} kW — chạy máy nặng lúc này.",
-        "Xem điện",
-    ))
+    // (2026-10-14, audit #10): da xoa rule nay — chuyen sang Energy Insights (theo iOS)
     // Phong nong theo tung phong (khong goi y do am: nha khong co he thong thong gio)
     state.rooms.forEach { r ->
         val t = r.tempC
@@ -452,21 +446,8 @@ internal fun buildSuggestTips(state: HomeUiState): List<SuggestTip> {
         "Đã ${hour}h — bật chế độ đêm cho an tâm.",
         "Xem an ninh",
     ))
-    // 9-11h: nhieu den dang bat -> nhac tat (troi sang roi)
-    if (hour in 9..11 && state.lightsOn.size >= 3) add(SuggestTip(
-        key = "lights_day",
-        title = "Đang bật ${state.lightsOn.size} đèn",
-        sub = "Trời sáng rồi — tắt bớt đèn tiết kiệm điện?",
-        action = "Tắt hết đèn",
-        doneLabel = "Đã tắt",
-    ))
-    // 17-20h: toi dan, pin thap -> han che tai nang
-    if (hour in 17..20 && state.battery.soc in 1..49 && state.solarNowKw < 0.5) add(SuggestTip(
-        key = "evening_battery",
-        title = "Tối rồi, pin còn ${state.battery.soc}%",
-        sub = "Hạn chế dùng thiết bị nặng để dành pin qua đêm.",
-        action = "Xem pin",
-    ))
+    // (2026-10-14, audit #10): da xoa rule nay — chuyen sang Energy Insights (theo iOS)
+    // (2026-10-14, audit #10): da xoa rule nay — chuyen sang Energy Insights (theo iOS)
     // Goi y ve chuyen dong/hieu nang cua dien thoai: bo qua,
     // khong dua vao danh sach goi y.
     // Chong trung tieu de giua cac loai goi y: giu goi y dau tien (moi nhat).
