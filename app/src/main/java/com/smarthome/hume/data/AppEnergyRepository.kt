@@ -84,6 +84,13 @@ class AppEnergyRepository(
         )
     }
 
+    /** Rebuild state tu entities hien tai de bat thiet bi moi (port iOS 15s rediscovery). */
+    override fun refreshDevices() {
+        _state.value = buildState(
+            ha.entities.value, ha.registry.value, ha.labels.value, ha.deviceLabels.value,
+        )
+    }
+
     override fun refreshHistory() {
         scope.launch { loadWeek() }
     }

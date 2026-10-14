@@ -203,26 +203,6 @@ fun EnergyScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
-                // Dong trang thai inverter duoi title (port iOS f44001d, f4a786b):
-                // dot mau theo trang thai HA + text tieng Viet.
-                val invStatus = state.flow.inverterStatus
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 20.dp, top = 2.dp, bottom = 4.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(solisStatusColor(invStatus)),
-                    )
-                    Spacer(Modifier.size(6.dp))
-                    Text(
-                        solisStatusVN(invStatus),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
         item {

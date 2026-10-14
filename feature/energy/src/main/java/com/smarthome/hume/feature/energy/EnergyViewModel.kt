@@ -44,6 +44,8 @@ class EnergyViewModel(
     fun toggleDischarge() = _ui.update { it.copy(dischargeOpen = !it.dischargeOpen) }
 
     fun toggle(entityId: String) = repo.toggle(entityId)
+    /** Quet lai thiet bi moi 15s (port iOS DevicesCard.task). */
+    fun refreshDevices() = repo.refreshDevices()
     fun setNumber(entityId: String, value: Double) = repo.setNumber(entityId, value)
     fun setTime(entityId: String, time: String) = repo.setTime(entityId, time)
 

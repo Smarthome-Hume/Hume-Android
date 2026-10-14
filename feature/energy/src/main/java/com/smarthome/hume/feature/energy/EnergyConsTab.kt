@@ -506,6 +506,13 @@ private fun DevicesCard(
     risePlayed: MutableSet<String>,
     modifier: Modifier = Modifier,
 ) {
+    // Tu quet lai thiet bi moi 15s khi card active (port iOS DevicesCard.task).
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(15_000)
+            vm.refreshDevices()
+        }
+    }
     // Doi che do: rows fade/slide ra (180ms) roi vao lai voi stagger 45ms
     var rowsVisible by remember { mutableStateOf(true) }
     var firstMode by remember { mutableStateOf(true) }

@@ -10,4 +10,6 @@ interface EnergyRepository {
     fun setNumber(entityId: String, value: Double)
     fun setTime(entityId: String, time: String)
     fun refreshHistory()
+    /** Buoc lai danh sach thiet bi tu entities hien tai (port iOS DevicesCard 15s task). */
+    fun refreshDevices()
 }

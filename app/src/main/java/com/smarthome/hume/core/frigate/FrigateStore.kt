@@ -74,6 +74,10 @@ class FrigateStore private constructor(context: Context) {
     private val _downloading = MutableStateFlow<Set<String>>(emptySet())
     val downloading: StateFlow<Set<String>> = _downloading.asStateFlow()
 
+    /** ID cac clip dang tai don le (port iOS downloadingClips). */
+    private val _downloadingClips = MutableStateFlow<Set<String>>(emptySet())
+    val downloadingClips: StateFlow<Set<String>> = _downloadingClips.asStateFlow()
+
     private val _lastError = MutableStateFlow<Map<String, String>>(emptyMap())
     val lastError: StateFlow<Map<String, String>> = _lastError.asStateFlow()
 
