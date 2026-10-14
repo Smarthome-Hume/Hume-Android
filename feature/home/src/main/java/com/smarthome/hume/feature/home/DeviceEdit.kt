@@ -91,6 +91,10 @@ fun detectDeviceType(entityId: String): String =
         "cover" -> "cover"
         "lock" -> "lock"
         "fan" -> "fan"
+        // (2026-10-14, audit #5): them 3 loai
+        "media_player" -> "media_player"
+        "vacuum" -> "vacuum"
+        "humidifier" -> "humidifier"
         else -> "toggle" // light, switch, ...
     }
 
@@ -101,6 +105,10 @@ val DEVICE_TYPE_LABELS: Map<String, String> = mapOf(
     "climate" to "Điều hoà",
     "cover" to "Rèm/Mành",
     "lock" to "Khoá",
+    // (2026-10-14, audit #5): them 3 loai nhu iOS
+    "media_player" to "TV/Loa",
+    "vacuum" to "Robot hút bụi",
+    "humidifier" to "Máy tạo ẩm",
 )
 
 // ---------------------------------------------------------------------------
