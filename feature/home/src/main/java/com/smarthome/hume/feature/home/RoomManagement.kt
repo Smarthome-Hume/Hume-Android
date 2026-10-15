@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smarthome.hume.core.ui.components.M3EIcons
+import com.smarthome.hume.core.ui.components.riseIn
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -269,6 +270,7 @@ fun RoomManagementScreen(
                         onMoveDown = { scope.launch { store.moveRoom(index, index + 1) } },
                         onEdit = { editingRoom = room },
                         onClick = { detailRoomId = room.id },
+                        entranceDelay = index * 60,
                     )
                 }
             }
@@ -322,6 +324,12 @@ fun RoomManagementScreen(
     }
 }
 
+/**
+ * RoomRow theo nguyen tac M3E Hume:
+ * - Icon nam giua icon-background (primaryContainer, bo 16dp)
+ * - Card 28dp, surfaceContainerHighest, khong shadow
+ * - Entrance animation staggered
+ */
 @Composable
 private fun RoomRow(
     room: DynRoom,
@@ -331,50 +339,87 @@ private fun RoomRow(
     onMoveDown: () -> Unit,
     onEdit: () -> Unit,
     onClick: () -> Unit,
+    entranceDelay: Int = 0,
 ) {
     val cs = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .riseIn(entranceDelay)
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MsIcon(
-            M3EIcons.room(room.icon),
-            null,
-            modifier = Modifier.size(28.dp),
-            tint = cs.primary,
-        )
-        Spacer(Modifier.width(12.dp))
+        // Icon trong container tinted (M3E: icon chinh giua icon-background)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(cs.primaryContainer),
+        ) {
+            MsIcon(
+                M3EIcons.room(room.icon),
+                null,
+                modifier = Modifier.size(26.dp),
+                tint = cs.onPrimaryContainer,
+            )
+        }
+        Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 room.name,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                color = cs.onSurface,
             )
             Text(
                 "${room.devices.size} thiết bị",
                 style = MaterialTheme.typography.bodySmall,
                 color = cs.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
-        if (canMoveUp) {
-            IconButton(onClick = onMoveUp, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Outlined.KeyboardArrowUp, "Lên", modifier = Modifier.size(20.dp))
+        // Cum reorder gon hon: chi hien khi can
+        if (canMoveUp || canMoveDown) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                IconButton(
+                    onClick = onMoveUp,
+                    enabled = canMoveUp,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.KeyboardArrowUp,
+                        "Lên",
+                        modifier = Modifier.size(20.dp),
+                        tint = if (canMoveUp) cs.onSurfaceVariant else cs.onSurfaceVariant.copy(alpha = 0.3f),
+                    )
+                }
+                IconButton(
+                    onClick = onMoveDown,
+                    enabled = canMoveDown,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.KeyboardArrowDown,
+                        "Xuống",
+                        modifier = Modifier.size(20.dp),
+                        tint = if (canMoveDown) cs.onSurfaceVariant else cs.onSurfaceVariant.copy(alpha = 0.3f),
+                    )
+                }
             }
         }
-        if (canMoveDown) {
-            IconButton(onClick = onMoveDown, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Outlined.KeyboardArrowDown, "Xuống", modifier = Modifier.size(20.dp))
-            }
-        }
-        IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
-            Icon(Icons.Outlined.Edit, "Sửa", modifier = Modifier.size(20.dp))
+        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
+            Icon(
+                Icons.Outlined.Edit,
+                "Sửa",
+                modifier = Modifier.size(20.dp),
+                tint = cs.primary,
+            )
         }
     }
 }
@@ -489,6 +534,7 @@ fun RoomDetailScreen(
                         DeviceRow(
                             device = device,
                             onEdit = { editingDevice = device },
+                            entranceDelay = index * 50,
                         )
                     }
                 }
@@ -509,45 +555,69 @@ fun RoomDetailScreen(
     }
 }
 
+/**
+ * DeviceRow theo M3E: icon trong container tinted, typography phan cap ro.
+ */
 @Composable
 private fun DeviceRow(
     device: DynDevice,
     onEdit: () -> Unit,
+    entranceDelay: Int = 0,
 ) {
     val cs = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .riseIn(entranceDelay)
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
             .clickable(onClick = onEdit)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MsIcon(
-            deviceGlyph(device),
-            null,
-            modifier = Modifier.size(28.dp),
-            tint = cs.onSurfaceVariant,
-        )
+        // Icon trong container tinted nho hon room (40dp)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(cs.surfaceContainerHigh),
+        ) {
+            MsIcon(
+                deviceGlyph(device),
+                null,
+                modifier = Modifier.size(22.dp),
+                tint = cs.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                device.name,
-                style = MaterialTheme.typography.bodyMedium,
+                device.name.ifBlank { device.entityId },
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                color = cs.onSurface,
             )
-            Text(
-                device.entityId,
-                style = MaterialTheme.typography.bodySmall,
-                color = cs.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (device.entityId.isNotBlank()) {
+                Text(
+                    device.entityId,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
         }
         IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
-            Icon(Icons.Outlined.Edit, "Sửa", modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Outlined.Edit,
+                "Sửa",
+                modifier = Modifier.size(20.dp),
+                tint = cs.primary,
+            )
         }
     }
 }

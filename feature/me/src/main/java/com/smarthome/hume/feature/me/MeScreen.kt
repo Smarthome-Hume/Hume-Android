@@ -183,32 +183,6 @@ fun MeScreen(
     val getVideo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onPicked(it, true) }
     }
-    // Hinh nen app (port iOS MeWallpaperCard)
-    val wallpaperStore = remember { com.smarthome.hume.core.ui.wallpaper.WallpaperStore(context) }
-    val wallpaperFile by wallpaperStore.wallpaper.collectAsState()
-    LaunchedEffect(Unit) { wallpaperStore.load() }
-    val pickWallpaper = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let {
-            scope.launch {
-                wallpaperStore.setWallpaper(it).onFailure { e ->
-                    Toast.makeText(context, e.message ?: "Không lưu được hình nền", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-    val getWallpaper = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            scope.launch {
-                wallpaperStore.setWallpaper(it).onFailure { e ->
-                    Toast.makeText(context, e.message ?: "Không lưu được hình nền", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-    fun launchWallpaperPicker() {
-        if (pickerAvailable) pickWallpaper.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        else getWallpaper.launch("image/*")
-    }
     val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
     fun launchImagePicker() {
         if (pickerAvailable) pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -253,14 +227,6 @@ fun MeScreen(
         }
 
         Box(Modifier.riseEntrance(400)) { M3ESectionTitle("Ảnh đại diện", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
-        Box(Modifier.riseEntrance(430)) { M3ESectionTitle("Hình nền", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
-        Box(Modifier.riseEntrance(440)) {
-            WallpaperCard(
-                hasWallpaper = wallpaperFile != null,
-                onPick = { launchWallpaperPicker() },
-                onRemove = { wallpaperStore.reset() },
-            )
-        }
 
         Box(Modifier.riseEntrance(420)) {
             MeAvatarCard(
@@ -1310,69 +1276,4 @@ private fun RoomManagementCard(onOpen: () -> Unit) {
     }
 }
 
-}
-
-/**
- * Card "Hinh nen" — port iOS MeWallpaperCard.
- * Chon anh tu thu vien lam hinh nen ca app (ca sang/toi). Nut "Go" xoa ve mac dinh.
- */
-@Composable
-private fun WallpaperCard(
-    hasWallpaper: Boolean,
-    onPick: () -> Unit,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val cs = MaterialTheme.colorScheme
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(cs.surfaceContainerHighest)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        Text(
-            "Hình nền",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = cs.onSurface,
-        )
-        Text(
-            "Chọn ảnh từ thư viện làm hình nền cho app.",
-            style = MaterialTheme.typography.bodySmall,
-            color = cs.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 12.dp),
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(cs.primaryContainer)
-                    .clickable(onClick = onPick)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                Text(
-                    "Chọn từ thư viện ảnh",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onPrimaryContainer,
-                )
-            }
-            if (hasWallpaper) {
-                Text(
-                    "Gỡ",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.error,
-                    modifier = Modifier
-                        .clickable(onClick = onRemove)
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                )
-            }
-        }
-    }
 }
