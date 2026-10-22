@@ -646,7 +646,16 @@ private fun FlowNode(
                 modifier = Modifier.alignByBaseline(),
             )
         }
-        // (2026-10-05, user: bo hien kWh trong node vi tran thong tin)
+        // Nang luong (kWh) — pin co 2 dong sac/xa rieng (port iOS 46c365f).
+        // Nguyen tac baseline: don vi "kWh" can baseline voi gia tri (alignByBaseline).
+        // (Lich su: user xoa 2026-10-05 vi tran thong tin; 2026-10-22 user
+        // chot KHOI PHUC theo iOS moi nhat — FlowNodeView van hien kWh.)
+        if (energyKwh != null) {
+            FlowNodeKwhRow(kwh = energyKwh, label = energyLabel, topPadding = 2.dp)
+        }
+        if (energyKwh2 != null && energyLabel2 != null) {
+            FlowNodeKwhRow(kwh = energyKwh2, label = energyLabel2, topPadding = 1.dp)
+        }
         Spacer(Modifier.weight(1f))
         bottom()
     }
