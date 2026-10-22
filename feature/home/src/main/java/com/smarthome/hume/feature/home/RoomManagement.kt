@@ -1,7 +1,6 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,33 +16,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,16 +43,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.smarthome.hume.core.ui.components.M3ECardGap
 import com.smarthome.hume.core.ui.components.M3EIcons
-import com.smarthome.hume.core.ui.components.riseIn
+import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.pressMorph
+import com.smarthome.hume.core.ui.components.riseIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+// =====================================================================
+// Glyph bo sung cho Ms: font subset trong MsIcon.kt chua co edit/delete/
+// mui ten len-xuong. Dinh nghia bang extension property voi codepoint
+// Material Symbols Rounded chuan (cung font, cung cach render qua MsIcon)
+// de khong phai dung icon Material mac dinh nua.
+// =====================================================================
+
+/** Material Symbols "edit" U+E3C9. */
+val Ms.edit: String get() = "\uE3C9"
+
+/** Material Symbols "delete" U+E872. */
+val Ms.delete: String get() = "\uE872"
+
+/** Material Symbols "keyboard_arrow_up" U+E316. */
+val Ms.keyboard_arrow_up: String get() = "\uE316"
+
+/** Material Symbols "keyboard_arrow_down" U+E313. */
+val Ms.keyboard_arrow_down: String get() = "\uE313"
 
 // =====================================================================
 // PLACEHOLDER — data models + RoomStore interface.
@@ -179,6 +187,312 @@ class StubRoomStore : RoomStore {
 }
 
 // =====================================================================
+// Khung M3E dung chung cho toan bo luong Quan ly phong:
+// - Header: nut Back Box 40dp bo 14dp + pill tieu de primaryContainer
+//   bo 28dp + pill "Them" (khi co).
+// - Thanh Luu/Huy can day cho cac man edit.
+// - Sheet xac nhan (khoi phuc / xoa) dang ModalBottomSheet bo tren 44dp.
+// =====================================================================
+
+/**
+ * Header chuan M3E (thay khung Material3 mac dinh): Back 40dp bo 14dp
+ * surfaceContainerHighest pressMorph(0.88); tieu de trong pill
+ * primaryContainer bo 28dp, chu 18sp SemiBold onPrimaryContainer;
+ * action Them (neu co) la pill primaryContainer bo 16dp + icon add.
+ */
+@Composable
+fun RoomMgmtHeader(
+    title: String,
+    onBack: () -> Unit,
+    onAdd: (() -> Unit)? = null,
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(cs.surfaceContainerHighest)
+                .pressMorph(pressedScale = 0.88f, onClick = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            MsIcon(
+                Ms.arrow_back,
+                contentDescription = "Quay lại",
+                modifier = Modifier.size(20.dp),
+                tint = cs.onSurface,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(28.dp))
+                .background(cs.primaryContainer)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+        ) {
+            Text(
+                title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (onAdd != null) {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(cs.primaryContainer)
+                    .pressMorph(pressedScale = 0.88f, onClick = onAdd)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MsIcon(
+                    Ms.add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = cs.onPrimaryContainer,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "Thêm",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onPrimaryContainer,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Thanh Luu/Huy can day cho man edit: Huy (weight 1) + Luu (weight 2),
+ * cao 52dp bo 20dp, chu bodyLarge SemiBold, pressMorph.
+ */
+@Composable
+fun RoomMgmtSaveBar(
+    saveEnabled: Boolean,
+    saving: Boolean,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(cs.surfaceContainerHighest)
+                .pressMorph(pressedScale = 0.97f) { if (!saving) onCancel() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "Huỷ",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurface,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .weight(2f)
+                .height(52.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(if (saveEnabled) cs.primary else cs.surfaceContainerHigh)
+                .pressMorph(pressedScale = 0.97f) { if (saveEnabled && !saving) onSave() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "Lưu",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = if (saveEnabled) cs.onPrimary else cs.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * Sheet xac nhan chuan M3E (thay dialog mac dinh): ModalBottomSheet
+ * surfaceContainerHighest, bo tren 44dp, nut dang pill nhu thanh Luu;
+ * hanh dong pha huy dung mau error.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RoomMgmtConfirmSheet(
+    title: String,
+    message: String,
+    confirmText: String,
+    destructive: Boolean = true,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
+        containerColor = cs.surfaceContainerHighest,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurface,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = cs.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(20.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(cs.surfaceContainer)
+                        .pressMorph(pressedScale = 0.97f, onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Huỷ",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = cs.onSurface,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(2f)
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(if (destructive) cs.error else cs.primary)
+                        .pressMorph(pressedScale = 0.97f, onClick = onConfirm),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        confirmText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (destructive) cs.onError else cs.onPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Nut Sua nho trong the: Box 40dp bo 14dp surfaceContainer + icon edit 20dp. */
+@Composable
+private fun EditButton(onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(cs.surfaceContainer)
+            .pressMorph(pressedScale = 0.88f, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        MsIcon(
+            Ms.edit,
+            contentDescription = "Sửa",
+            modifier = Modifier.size(20.dp),
+            tint = cs.onSurfaceVariant,
+        )
+    }
+}
+
+/** Cum nut len/xuong gon trong the: icon 18dp trong container nho 28dp. */
+@Composable
+private fun ReorderButtons(
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(cs.surfaceContainer)
+                .pressMorph(pressedScale = 0.88f) { if (canMoveUp) onMoveUp() },
+            contentAlignment = Alignment.Center,
+        ) {
+            MsIcon(
+                Ms.keyboard_arrow_up,
+                contentDescription = "Lên",
+                modifier = Modifier.size(18.dp),
+                tint = if (canMoveUp) cs.onSurfaceVariant
+                else cs.onSurfaceVariant.copy(alpha = 0.3f),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(cs.surfaceContainer)
+                .pressMorph(pressedScale = 0.88f) { if (canMoveDown) onMoveDown() },
+            contentAlignment = Alignment.Center,
+        ) {
+            MsIcon(
+                Ms.keyboard_arrow_down,
+                contentDescription = "Xuống",
+                modifier = Modifier.size(18.dp),
+                tint = if (canMoveDown) cs.onSurfaceVariant
+                else cs.onSurfaceVariant.copy(alpha = 0.3f),
+            )
+        }
+    }
+}
+
+/** Nen khi vuot xoa: the bo 28dp errorContainer + icon delete. */
+@Composable
+private fun SwipeDeleteBackground() {
+    val cs = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(28.dp))
+            .background(cs.errorContainer)
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.CenterEnd,
+    ) {
+        MsIcon(
+            Ms.delete,
+            contentDescription = "Xoá",
+            modifier = Modifier.size(24.dp),
+            tint = cs.error,
+        )
+    }
+}
+
+// =====================================================================
 // RoomManagementScreen — danh sach phong (port iOS RoomManagementView)
 // =====================================================================
 
@@ -197,6 +511,9 @@ fun RoomManagementScreen(
     var editingRoom by remember { mutableStateOf<DynRoom?>(null) }
     var showResetConfirm by remember { mutableStateOf(false) }
     var detailRoomId by remember { mutableStateOf<String?>(null) }
+    var pendingDeleteRoom by remember { mutableStateOf<DynRoom?>(null) }
+    // Tang key de tao lai swipe state sau khi huy xoa (hang tro ve cho nghi).
+    var swipeResetKey by remember { mutableStateOf(0) }
 
     val detailId = detailRoomId
     if (detailId != null) {
@@ -209,82 +526,66 @@ fun RoomManagementScreen(
         return
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Quản lý phòng",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showAddRoom = true }) {
-                        Icon(Icons.Outlined.Add, "Thêm phòng")
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(cs.background),
+    ) {
+        RoomMgmtHeader(
+            title = "Quản lý phòng",
+            onBack = onBack,
+            onAdd = { showAddRoom = true },
+        )
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 18.dp, end = 18.dp, top = 6.dp, bottom = 24.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(M3ECardGap),
         ) {
             itemsIndexed(rooms, key = { _, room -> room.id }) { index, room ->
-                val dismissState = rememberSwipeToDismissBoxState()
-                LaunchedEffect(dismissState.currentValue) {
-                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                        scope.launch { store.deleteRoom(room.id) }
-                    }
-                }
-                SwipeToDismissBox(
-                    state = dismissState,
-                    enableDismissFromStartToEnd = false,
-                    backgroundContent = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(28.dp))
-                                .background(cs.errorContainer)
-                                .padding(horizontal = 24.dp),
-                            contentAlignment = Alignment.CenterEnd,
-                        ) {
-                            Icon(Icons.Outlined.Delete, "Xoá", tint = cs.error)
+                key(swipeResetKey) {
+                    val dismissState = rememberSwipeToDismissBoxState()
+                    LaunchedEffect(dismissState.currentValue) {
+                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                            pendingDeleteRoom = room
                         }
-                    },
-                ) {
-                    RoomRow(
-                        room = room,
-                        canMoveUp = index > 0,
-                        canMoveDown = index < rooms.size - 1,
-                        onMoveUp = { scope.launch { store.moveRoom(index, index - 1) } },
-                        onMoveDown = { scope.launch { store.moveRoom(index, index + 1) } },
-                        onEdit = { editingRoom = room },
-                        onClick = { detailRoomId = room.id },
-                        entranceDelay = index * 60,
-                    )
+                    }
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = { SwipeDeleteBackground() },
+                    ) {
+                        RoomRow(
+                            room = room,
+                            canMoveUp = index > 0,
+                            canMoveDown = index < rooms.size - 1,
+                            onMoveUp = { scope.launch { store.moveRoom(index, index - 1) } },
+                            onMoveDown = { scope.launch { store.moveRoom(index, index + 1) } },
+                            onEdit = { editingRoom = room },
+                            onClick = { detailRoomId = room.id },
+                            entranceDelay = index * 60,
+                        )
+                    }
                 }
             }
 
             item {
-                Spacer(Modifier.height(4.dp))
-                TextButton(
-                    onClick = { showResetConfirm = true },
-                    modifier = Modifier.fillMaxWidth(),
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .riseIn(rooms.size * 60)
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(cs.errorContainer)
+                        .pressMorph(pressedScale = 0.97f) { showResetConfirm = true }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "Khôi phục mặc định",
-                        color = cs.error,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
+                        color = cs.onErrorContainer,
                     )
                 }
             }
@@ -303,22 +604,31 @@ fun RoomManagementScreen(
         }
     }
     if (showResetConfirm) {
-        AlertDialog(
-            onDismissRequest = { showResetConfirm = false },
-            title = { Text("Khôi phục?") },
-            text = { Text("Mọi thay đổi sẽ mất. Tiếp tục?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showResetConfirm = false
-                        scope.launch { store.resetToDefaults() }
-                    },
-                ) {
-                    Text("Khôi phục", color = cs.error, fontWeight = FontWeight.SemiBold)
-                }
+        RoomMgmtConfirmSheet(
+            title = "Khôi phục mặc định?",
+            message = "Mọi thay đổi về phòng và thiết bị sẽ mất. Tiếp tục?",
+            confirmText = "Khôi phục",
+            onConfirm = {
+                showResetConfirm = false
+                scope.launch { store.resetToDefaults() }
             },
-            dismissButton = {
-                TextButton(onClick = { showResetConfirm = false }) { Text("Huỷ") }
+            onDismiss = { showResetConfirm = false },
+        )
+    }
+    val roomToDelete = pendingDeleteRoom
+    if (roomToDelete != null) {
+        RoomMgmtConfirmSheet(
+            title = "Xoá phòng?",
+            message = "Xoá phòng “${roomToDelete.name}” và toàn bộ thiết bị trong phòng?",
+            confirmText = "Xoá",
+            onConfirm = {
+                pendingDeleteRoom = null
+                swipeResetKey++
+                scope.launch { store.deleteRoom(roomToDelete.id) }
+            },
+            onDismiss = {
+                pendingDeleteRoom = null
+                swipeResetKey++
             },
         )
     }
@@ -326,9 +636,10 @@ fun RoomManagementScreen(
 
 /**
  * RoomRow theo nguyen tac M3E Hume:
- * - Icon nam giua icon-background (primaryContainer, bo 16dp)
- * - Card 28dp, surfaceContainerHighest, khong shadow
- * - Entrance animation staggered
+ * - The 28dp surfaceContainerHighest, padding 16x14dp, khong shadow
+ * - Icon 48dp bo 16dp primaryContainer, nam giua icon-background
+ * - Reorder gom trong the, nut Sua dang Box 40dp
+ * - Entrance animation staggered (riseIn)
  */
 @Composable
 private fun RoomRow(
@@ -348,11 +659,10 @@ private fun RoomRow(
             .riseIn(entranceDelay)
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
-            .clickable(onClick = onClick)
+            .pressMorph(pressedScale = 0.97f, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Icon trong container tinted (M3E: icon chinh giua icon-background)
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -384,43 +694,16 @@ private fun RoomRow(
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        // Cum reorder gon hon: chi hien khi can
         if (canMoveUp || canMoveDown) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(
-                    onClick = onMoveUp,
-                    enabled = canMoveUp,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        Icons.Outlined.KeyboardArrowUp,
-                        "Lên",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (canMoveUp) cs.onSurfaceVariant else cs.onSurfaceVariant.copy(alpha = 0.3f),
-                    )
-                }
-                IconButton(
-                    onClick = onMoveDown,
-                    enabled = canMoveDown,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        Icons.Outlined.KeyboardArrowDown,
-                        "Xuống",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (canMoveDown) cs.onSurfaceVariant else cs.onSurfaceVariant.copy(alpha = 0.3f),
-                    )
-                }
-            }
-        }
-        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
-            Icon(
-                Icons.Outlined.Edit,
-                "Sửa",
-                modifier = Modifier.size(20.dp),
-                tint = cs.primary,
+            ReorderButtons(
+                canMoveUp = canMoveUp,
+                canMoveDown = canMoveDown,
+                onMoveUp = onMoveUp,
+                onMoveDown = onMoveDown,
             )
+            Spacer(Modifier.width(8.dp))
         }
+        EditButton(onClick = onEdit)
     }
 }
 
@@ -444,95 +727,54 @@ fun RoomDetailScreen(
 
     var showAddDevice by remember { mutableStateOf(false) }
     var editingDevice by remember { mutableStateOf<DynDevice?>(null) }
+    var pendingDeleteDevice by remember { mutableStateOf<DynDevice?>(null) }
+    var swipeResetKey by remember { mutableStateOf(0) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        room?.name ?: "Phòng",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showAddDevice = true }) {
-                        Icon(Icons.Outlined.Add, "Thêm thiết bị")
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(cs.background),
+    ) {
+        RoomMgmtHeader(
+            title = room?.name ?: "Phòng",
+            onBack = onBack,
+            onAdd = { showAddDevice = true },
+        )
         val devices = room?.devices.orEmpty()
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 18.dp, end = 18.dp, top = 6.dp, bottom = 24.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(M3ECardGap),
         ) {
             item {
-                Text(
-                    "Thiết bị (${devices.size})",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onSurfaceVariant,
-                )
+                M3ESectionTitle("Thiết bị (${devices.size})")
             }
             itemsIndexed(devices, key = { _, d -> d.id }) { index, device ->
-                val dismissState = rememberSwipeToDismissBoxState()
-                LaunchedEffect(dismissState.currentValue) {
-                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                        scope.launch { store.deleteDevice(roomId, device.id) }
-                    }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    // (2026-10-14, audit #8): nut len/xuong de doi thu tu thiet bi
-                    Column {
-                        IconButton(
-                            onClick = { scope.launch { store.moveDevice(roomId, index, index - 1) } },
-                            enabled = index > 0,
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(Icons.Outlined.KeyboardArrowUp, "Lên", tint = cs.onSurfaceVariant)
-                        }
-                        IconButton(
-                            onClick = { scope.launch { store.moveDevice(roomId, index, index + 1) } },
-                            enabled = index < devices.size - 1,
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(Icons.Outlined.KeyboardArrowDown, "Xuống", tint = cs.onSurfaceVariant)
+                key(swipeResetKey) {
+                    val dismissState = rememberSwipeToDismissBoxState()
+                    LaunchedEffect(dismissState.currentValue) {
+                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                            pendingDeleteDevice = device
                         }
                     }
                     SwipeToDismissBox(
                         state = dismissState,
                         enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(28.dp))
-                                    .background(cs.errorContainer)
-                                    .padding(horizontal = 24.dp),
-                                contentAlignment = Alignment.CenterEnd,
-                            ) {
-                                Icon(Icons.Outlined.Delete, "Xoá", tint = cs.error)
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
+                        backgroundContent = { SwipeDeleteBackground() },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         DeviceRow(
                             device = device,
+                            canMoveUp = index > 0,
+                            canMoveDown = index < devices.size - 1,
+                            onMoveUp = {
+                                scope.launch { store.moveDevice(roomId, index, index - 1) }
+                            },
+                            onMoveDown = {
+                                scope.launch { store.moveDevice(roomId, index, index + 1) }
+                            },
                             onEdit = { editingDevice = device },
                             entranceDelay = index * 50,
                         )
@@ -553,14 +795,36 @@ fun RoomDetailScreen(
             RoomDeviceEditScreen(store = store, roomId = roomId, device = deviceToEdit, pickerEntities = pickerEntities, onDismiss = { editingDevice = null })
         }
     }
+    val deviceToDelete = pendingDeleteDevice
+    if (deviceToDelete != null) {
+        RoomMgmtConfirmSheet(
+            title = "Xoá thiết bị?",
+            message = "Xoá thiết bị “${deviceToDelete.name.ifBlank { deviceToDelete.entityId }}” khỏi phòng?",
+            confirmText = "Xoá",
+            onConfirm = {
+                pendingDeleteDevice = null
+                swipeResetKey++
+                scope.launch { store.deleteDevice(roomId, deviceToDelete.id) }
+            },
+            onDismiss = {
+                pendingDeleteDevice = null
+                swipeResetKey++
+            },
+        )
+    }
 }
 
 /**
- * DeviceRow theo M3E: icon trong container tinted, typography phan cap ro.
+ * DeviceRow theo M3E: the 28dp surfaceContainerHighest, icon 48dp bo 16dp
+ * surfaceContainer/onSurfaceVariant, reorder gom trong the, nut Sua Box 40dp.
  */
 @Composable
 private fun DeviceRow(
     device: DynDevice,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onEdit: () -> Unit,
     entranceDelay: Int = 0,
 ) {
@@ -571,31 +835,30 @@ private fun DeviceRow(
             .riseIn(entranceDelay)
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
-            .clickable(onClick = onEdit)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .pressMorph(pressedScale = 0.97f, onClick = onEdit)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Icon trong container tinted nho hon room (40dp)
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(cs.surfaceContainerHigh),
+                .size(48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(cs.surfaceContainer),
         ) {
             MsIcon(
                 deviceGlyph(device),
                 null,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(24.dp),
                 tint = cs.onSurfaceVariant,
             )
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 device.name.ifBlank { device.entityId },
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 color = cs.onSurface,
@@ -611,19 +874,22 @@ private fun DeviceRow(
                 )
             }
         }
-        IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
-            Icon(
-                Icons.Outlined.Edit,
-                "Sửa",
-                modifier = Modifier.size(20.dp),
-                tint = cs.primary,
+        if (canMoveUp || canMoveDown) {
+            ReorderButtons(
+                canMoveUp = canMoveUp,
+                canMoveDown = canMoveDown,
+                onMoveUp = onMoveUp,
+                onMoveDown = onMoveDown,
             )
+            Spacer(Modifier.width(8.dp))
         }
+        EditButton(onClick = onEdit)
     }
 }
 
 /** Icon hien thi theo loai thiet bi (cho den khi IconPicker that co). */
 private fun deviceGlyph(device: DynDevice): Any = when (device.type) {
+    "light" -> Ms.lightbulb
     "climate" -> M3EIcons.Climate
     "fan" -> M3EIcons.FanFa
     "cover" -> M3EIcons.Door
@@ -631,9 +897,9 @@ private fun deviceGlyph(device: DynDevice): Any = when (device.type) {
     else -> M3EIcons.Plug
 }
 
-
 /**
- * Field chon sensor/entity: bam mo EntityPickerScreen (port iOS SensorField).
+ * Field chon sensor/entity: UI dung [PickerField] chuan, bam mo
+ * EntityPickerScreen (port iOS SensorField).
  */
 @Composable
 private fun SensorPickerField(
@@ -647,39 +913,11 @@ private fun SensorPickerField(
     var showPicker by remember { mutableStateOf(false) }
     val cs = MaterialTheme.colorScheme
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(cs.surfaceContainer)
-            .clickable { showPicker = true }
-            .padding(16.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = cs.onSurfaceVariant,
-                )
-                Text(
-                    entityId.ifBlank { "Chạm để chọn" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (entityId.isBlank()) cs.onSurfaceVariant else cs.onSurface,
-                    maxLines = 1,
-                )
-            }
-            MsIcon(
-                Ms.chevron_right,
-                contentDescription = null,
-                tint = cs.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
+    PickerField(
+        label = label,
+        value = entityId,
+        onClick = { showPicker = true },
+    )
 
     if (showPicker && pickerEntities != null) {
         Dialog(
@@ -709,12 +947,9 @@ private fun SensorPickerField(
 }
 
 // =====================================================================
-// RoomEditScreen
-// =====================================================================
 // RoomEditScreen — them/sua phong (port iOS RoomEditView)
 // =====================================================================
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoomEditScreen(
     store: RoomStore,
@@ -722,20 +957,18 @@ fun RoomEditScreen(
     pickerEntities: StateFlow<Map<String, PickerEntity>>? = null,
     onDismiss: () -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     val rooms by store.roomsFlow.collectAsState()
     val scope = rememberCoroutineScope()
 
     var saving by remember(room?.id) { mutableStateOf(false) }
     var saveError by remember(room?.id) { mutableStateOf<String?>(null) }
     var name by remember(room?.id) { mutableStateOf(room?.name ?: "") }
-    // TODO(agent IconPicker): thay TextField bang IconPicker that.
     var icon by remember(room?.id) { mutableStateOf(room?.icon ?: "home") }
-    // TODO(agent EntityPickerScreen): thay TextField bang EntityPickerScreen that.
     var tempEntity by remember(room?.id) { mutableStateOf(room?.tempEntity ?: "") }
     var humidityEntity by remember(room?.id) { mutableStateOf(room?.humidityEntity ?: "") }
 
     // Sensor nhiet/am da dung o phong khac → an khoi picker (port iOS usedSensorEntities).
-    // TODO(agent EntityPickerScreen): truyen vao EntityPickerScreen qua param exclude.
     val usedSensorEntities: Set<String> = remember(rooms, room?.id) {
         buildSet {
             for (r in rooms) {
@@ -773,39 +1006,24 @@ fun RoomEditScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (room == null) "Thêm phòng" else "Sửa phòng",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                navigationIcon = {
-                    TextButton(onClick = onDismiss, enabled = !saving) { Text("Huỷ") }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { save() },
-                        enabled = name.isNotBlank() && !saving,
-                    ) {
-                        Text("Lưu", fontWeight = FontWeight.SemiBold)
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(cs.background),
+    ) {
+        RoomMgmtHeader(
+            title = if (room == null) "Thêm phòng" else "Sửa phòng",
+            onBack = onDismiss,
+        )
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(
+                start = 18.dp, end = 18.dp, top = 6.dp, bottom = 24.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(M3ECardGap),
         ) {
             saveError?.let { message ->
-                item { Text(message, color = MaterialTheme.colorScheme.error) }
+                item { Text(message, color = cs.error) }
             }
             item {
                 M3ETextField(
@@ -816,15 +1034,14 @@ fun RoomEditScreen(
                 )
             }
             item {
-                Text(
-                    "Icon",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                IconPicker(
-                    selection = icon,
-                    onSelectionChange = { icon = it },
-                )
+                Column {
+                    M3ESectionTitle("Icon")
+                    Spacer(Modifier.height(10.dp))
+                    IconPicker(
+                        selection = icon,
+                        onSelectionChange = { icon = it },
+                    )
+                }
             }
             item {
                 SensorPickerField(
@@ -845,6 +1062,12 @@ fun RoomEditScreen(
                 )
             }
         }
+        RoomMgmtSaveBar(
+            saveEnabled = name.isNotBlank(),
+            saving = saving,
+            onCancel = onDismiss,
+            onSave = { save() },
+        )
     }
 }
 

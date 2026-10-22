@@ -1,35 +1,40 @@
 package com.smarthome.hume.feature.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.pressMorph
 
 /**
  * Chon icon 2 che do (port iOS IconPickerGrid, RoomManagementView.swift — user 2026-10-09):
  * - Mode 1: go ten Material Symbol bat ky + preview truc tiep.
  * - Mode 2: bam chon nhanh tu luoi phan nhom.
  *
- * [selection] la TEN icon (vd "lightbulb"), khong phai glyph — TextField va luoi
+ * [selection] la TEN icon (vd "lightbulb"), khong phai glyph — M3ETextField va luoi
  * dung chung mot nguon su that; glyph giai quyet qua [msGlyphByName].
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -43,53 +48,61 @@ fun IconPicker(
     val trimmed = selection.trim()
     val previewGlyph = msGlyphByName[trimmed]
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Mode 1: o go ten + preview truc tiep
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Mode 1: o go ten (M3ETextField) + preview 48dp bo 16dp primaryContainer
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
-            TextField(
+            M3ETextField(
                 value = selection,
                 onValueChange = onSelectionChange,
+                label = "Tên icon",
+                placeholder = "vd: lightbulb",
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Tên icon (vd: lightbulb)") },
-                singleLine = true,
-                shape = RoundedCornerShape(20.dp),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     autoCorrect = false,
                 ),
             )
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(cs.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                MsIcon(
-                    glyph = previewGlyph ?: Ms.error,
-                    contentDescription = selection,
-                    modifier = Modifier.size(24.dp),
-                    tint = if (previewGlyph != null) cs.primary else cs.onSurfaceVariant,
-                )
+            Column {
+                // Can preview ngang voi o nhap (bo qua phan nhan phia tren).
+                Spacer(Modifier.height(27.dp))
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cs.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MsIcon(
+                        glyph = previewGlyph ?: Ms.error,
+                        contentDescription = selection,
+                        modifier = Modifier.size(24.dp),
+                        tint = if (previewGlyph != null) cs.onPrimaryContainer
+                        else cs.onSurfaceVariant,
+                    )
+                }
             }
         }
 
-        // Mode 2: luoi phan nhom
+        // Mode 2: luoi phan nhom — o 52dp bo 16dp, gap 12dp;
+        // dang chon = primaryContainer, chua chon = surfaceContainerHighest.
         iconSections.forEach { (title, names) ->
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
+                    text = title.uppercase(),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
+                    letterSpacing = 0.4.sp,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     names.forEach { name ->
                         // Ten khong co trong Ms thi bo qua (khong hardcode).
@@ -98,12 +111,12 @@ fun IconPicker(
                         Box(
                             modifier = Modifier
                                 .size(52.dp)
-                                .clip(RoundedCornerShape(14.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(
                                     if (isSelected) cs.primaryContainer
                                     else cs.surfaceContainerHighest,
                                 )
-                                .clickable { onSelectionChange(name) },
+                                .pressMorph(pressedScale = 0.9f) { onSelectionChange(name) },
                             contentAlignment = Alignment.Center,
                         ) {
                             MsIcon(

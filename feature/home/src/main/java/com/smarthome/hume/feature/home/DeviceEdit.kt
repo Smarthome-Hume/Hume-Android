@@ -1,9 +1,12 @@
 package com.smarthome.hume.feature.home
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,24 +14,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,9 +33,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.components.M3ECardGap
 import com.smarthome.hume.core.ui.components.M3ETextField
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.pressMorph
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
@@ -98,7 +101,7 @@ fun detectDeviceType(entityId: String): String =
         else -> "toggle" // light, switch, ...
     }
 
-/** Nhãn tiếng Việt cho dropdown chọn loại (user chọn lại được nếu auto-detect sai). */
+/** Nhãn tiếng Việt cho chip chọn loại (user chọn lại được nếu auto-detect sai). */
 val DEVICE_TYPE_LABELS: Map<String, String> = mapOf(
     "toggle" to "Công tắc/Đèn",
     "fan" to "Quạt",
@@ -110,6 +113,95 @@ val DEVICE_TYPE_LABELS: Map<String, String> = mapOf(
     "vacuum" to "Robot hút bụi",
     "humidifier" to "Máy tạo ẩm",
 )
+
+/** Domain mo trong picker thiet bi: du 9 domain khop iOS. */
+private val DEVICE_PICKER_DOMAINS: List<String> = listOf(
+    "light", "switch", "fan", "climate", "cover", "lock",
+    "media_player", "vacuum", "humidifier",
+)
+
+// ---------------------------------------------------------------------------
+// PickerField — o chon entity/sensor chuan M3E (gop SensorPickerField +
+// EntityField cu): nhan Bold bodySmall ngoai-tren nhu M3ETextField, hop
+// bo 20dp surfaceContainer vien outlineVariant 1dp, value bodyMedium,
+// cuoi co Box 28dp bo 10dp + chevron_right 18dp.
+// ---------------------------------------------------------------------------
+
+/**
+ * Ô chọn entity/sensor: bấm để mở picker thay vì gõ tay entity ID.
+ * Port iOS `SensorField`.
+ */
+@Composable
+fun PickerField(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Chạm để chọn",
+) {
+    val cs = MaterialTheme.colorScheme
+    Column(modifier = modifier) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = cs.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(cs.surfaceContainer)
+                .border(
+                    width = 1.dp,
+                    color = cs.outlineVariant.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(20.dp),
+                )
+                .pressMorph(pressedScale = 0.98f, onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                value.ifBlank { placeholder },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = if (value.isBlank()) cs.onSurfaceVariant else cs.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(cs.surfaceContainerHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                MsIcon(
+                    Ms.chevron_right,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = cs.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Header muc dang viet hoa: bodySmall SemiBold onSurfaceVariant, ls 0.4sp. */
+@Composable
+private fun MgmtSectionHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 0.4.sp,
+        modifier = Modifier.padding(start = 4.dp),
+    )
+}
 
 // ---------------------------------------------------------------------------
 // DeviceEditScreen — port iOS DeviceEditView
@@ -123,7 +215,7 @@ val DEVICE_TYPE_LABELS: Map<String, String> = mapOf(
  * @param usedDeviceEntities entity đã dùng ở thiết bị khác -> ẩn khỏi picker thiết bị.
  * @param usedPowerEntities sensor công suất đã dùng ở thiết bị khác -> ẩn khỏi picker sensor.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceEditScreen(
     initial: DynDevice?,
@@ -133,6 +225,7 @@ fun DeviceEditScreen(
     onSave: suspend (DynDevice) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
     var saving by remember(initial) { mutableStateOf(false) }
     var saveError by remember(initial) { mutableStateOf<String?>(null) }
@@ -143,65 +236,57 @@ fun DeviceEditScreen(
     var type by remember(initial) { mutableStateOf(initial?.type ?: "toggle") }
     var powerEntity by remember(initial) { mutableStateOf(initial?.powerEntity ?: "") }
     var pickerFor by remember { mutableStateOf<String?>(null) } // null | "device" | "power"
-    var typeMenuOpen by remember { mutableStateOf(false) }
     val entityMap by entities.collectAsState()
 
     val canSave = entityId.isNotBlank() && name.isNotBlank()
 
-    Box(Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(if (initial == null) "Thêm thiết bị" else "Sửa thiết bị") },
-                    navigationIcon = {
-                        TextButton(onClick = onDismiss, enabled = !saving) { Text("Huỷ") }
-                    },
-                    actions = {
-                        TextButton(
-                            onClick = {
-                                if (!saving) {
-                                    saving = true
-                                    saveError = null
-                                    val base = initial ?: DynDevice(icon = "lightbulb")
-                                    val updated = base.copy(
-                                        type = type, entityId = entityId.trim(),
-                                        name = name.trim(), sub = sub.trim(), icon = icon,
-                                        powerEntity = powerEntity.trim().takeIf { it.isNotBlank() },
-                                    )
-                                    scope.launch {
-                                        try {
-                                            onSave(updated)
-                                            onDismiss()
-                                        } catch (cancelled: CancellationException) {
-                                            throw cancelled
-                                        } catch (_: Exception) {
-                                            saveError = "Không lưu được thiết bị. Vui lòng thử lại."
-                                        } finally {
-                                            saving = false
-                                        }
-                                    }
-                                }
-                            },
-                            enabled = canSave && !saving,
-                        ) { Text("Lưu") }
-                    },
-                )
+    fun save() {
+        if (saving || !canSave) return
+        saving = true
+        saveError = null
+        val base = initial ?: DynDevice(icon = "lightbulb")
+        val updated = base.copy(
+            type = type, entityId = entityId.trim(),
+            name = name.trim(), sub = sub.trim(), icon = icon,
+            powerEntity = powerEntity.trim().takeIf { it.isNotBlank() },
+        )
+        scope.launch {
+            try {
+                onSave(updated)
+                onDismiss()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                saveError = "Không lưu được thiết bị. Vui lòng thử lại."
+            } finally {
+                saving = false
             }
-        ) { padding ->
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(cs.background),
+        ) {
+            RoomMgmtHeader(
+                title = if (initial == null) "Thêm thiết bị" else "Sửa thiết bị",
+                onBack = onDismiss,
+            )
             Column(
                 modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(horizontal = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(M3ECardGap),
             ) {
-                saveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                SectionTitle("Thiết bị")
-                EntityField(
+                saveError?.let { Text(it, color = cs.error) }
+                MgmtSectionHeader("THIẾT BỊ")
+                PickerField(
                     label = "Thiết bị",
                     value = entityId,
-                    onOpen = { pickerFor = "device" },
+                    onClick = { pickerFor = "device" },
                 )
                 M3ETextField(
                     value = name,
@@ -214,49 +299,74 @@ fun DeviceEditScreen(
                     label = "Mô tả",
                 )
                 IconPicker(selection = icon, onSelectionChange = { icon = it })
-                ExposedDropdownMenuBox(
-                    expanded = typeMenuOpen,
-                    onExpandedChange = { typeMenuOpen = it },
-                ) {
-                    M3ETextField(
-                        value = DEVICE_TYPE_LABELS[type] ?: type,
-                        onValueChange = {},
-                        label = "Loại",
-                        readOnly = true,
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuOpen)
-                        },
-                        modifier = Modifier.menuAnchor(),
+                // Loai thiet bi: chips FlowRow thay dropdown (M3E).
+                Column {
+                    Text(
+                        "Loại",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                     )
-                    ExposedDropdownMenu(
-                        expanded = typeMenuOpen,
-                        onDismissRequest = { typeMenuOpen = false },
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        DEVICE_TYPE_LABELS.forEach { (key, text) ->
-                            DropdownMenuItem(
-                                text = { Text(text) },
-                                onClick = {
-                                    type = key
-                                    typeMenuOpen = false
-                                },
-                            )
+                        DEVICE_TYPE_LABELS.forEach { (key, label) ->
+                            val selected = type == key
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(
+                                        if (selected) cs.secondaryContainer
+                                        else cs.surfaceContainer,
+                                    )
+                                    .pressMorph(pressedScale = 0.94f) { type = key }
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (selected) {
+                                    MsIcon(
+                                        Ms.check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = cs.onSecondaryContainer,
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                }
+                                Text(
+                                    label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (selected) cs.onSecondaryContainer
+                                    else cs.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
-                Spacer(Modifier.height(12.dp))
-                SectionTitle("Công suất")
-                EntityField(
+                MgmtSectionHeader("CÔNG SUẤT")
+                PickerField(
                     label = "Sensor công suất (tuỳ chọn)",
                     value = powerEntity,
-                    onOpen = { pickerFor = "power" },
+                    onClick = { pickerFor = "power" },
                 )
+                Spacer(Modifier.height(10.dp))
             }
+            RoomMgmtSaveBar(
+                saveEnabled = canSave,
+                saving = saving,
+                onCancel = onDismiss,
+                onSave = { save() },
+            )
         }
         // Picker hiện dạng overlay full-screen (tương đương NavigationStack push bên iOS).
         when (pickerFor) {
             "device" -> EntityPickerScreen(
                 title = "Chọn thiết bị",
-                domains = listOf("light", "switch", "fan", "climate", "cover", "lock"),
+                domains = DEVICE_PICKER_DOMAINS,
                 entities = entities,
                 exclude = usedDeviceEntities,
                 initialSelection = entityId,
@@ -292,57 +402,6 @@ fun DeviceEditScreen(
     }
 }
 
-@Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-    )
-}
-
-// ---------------------------------------------------------------------------
-// EntityField — port iOS SensorField
-// ---------------------------------------------------------------------------
-
-/**
- * Ô chọn entity/sensor: bấm để mở picker thay vì gõ tay entity ID.
- * Port iOS `SensorField` (picker được hoist lên DeviceEditScreen qua [onOpen]).
- */
-@Composable
-fun EntityField(
-    label: String,
-    value: String,
-    onOpen: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpen)
-            .padding(vertical = 8.dp),
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            if (value.isEmpty()) "Chạm để chọn" else value,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (value.isEmpty()) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            maxLines = 1,
-        )
-    }
-}
-
 // ---------------------------------------------------------------------------
 // EntityPickerScreen — port iOS SensorPickerView
 // ---------------------------------------------------------------------------
@@ -355,7 +414,6 @@ fun EntityField(
  * @param initialSelection entity đang chọn ("" = chưa chọn) — hiện nút "Xoá lựa chọn".
  * @param onSelect callback khi bấm chọn (kể cả xoá -> "") — caller tự đóng đã xử lý ở đây.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EntityPickerScreen(
     title: String,
@@ -367,6 +425,7 @@ fun EntityPickerScreen(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val cs = MaterialTheme.colorScheme
     val all by entities.collectAsState()
     var searchText by remember { mutableStateOf("") }
     val shown = remember(all, domains, exclude, initialSelection, searchText) {
@@ -382,87 +441,140 @@ fun EntityPickerScreen(
             .sortedBy { it.friendlyName.lowercase() }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = {
-                    TextButton(onClick = onDismiss) { Text("Đóng") }
-                },
-            )
-        }
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(cs.background),
+    ) {
+        RoomMgmtHeader(title = title, onBack = onDismiss)
         Column(
             modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
         ) {
             M3ETextField(
                 value = searchText,
                 onValueChange = { searchText = it },
+                label = "Tìm kiếm",
                 placeholder = searchPrompt,
                 leadingIcon = {
-                    Icon(Icons.Filled.Search, contentDescription = null)
+                    MsIcon(
+                        Ms.search,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = cs.onSurfaceVariant,
+                    )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 24.dp),
-            ) {
-                if (initialSelection.isNotEmpty()) {
-                    item {
+            Spacer(Modifier.height(M3ECardGap))
+            if (initialSelection.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(cs.errorContainer)
+                        .pressMorph(pressedScale = 0.97f) {
+                            onSelect("")
+                            onDismiss()
+                        }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MsIcon(
+                            Ms.close,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = cs.onErrorContainer,
+                        )
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             "Xoá lựa chọn",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelect("")
-                                    onDismiss()
-                                }
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            fontWeight = FontWeight.SemiBold,
+                            color = cs.onErrorContainer,
                         )
-                        HorizontalDivider()
+                    }
+                }
+                Spacer(Modifier.height(M3ECardGap))
+            }
+            // Danh sach trong 1 the 28dp; dong bo 20dp, dong dang chon
+            // nen primaryContainer + check trong vong tron.
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(cs.surfaceContainerHighest)
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(bottom = 8.dp),
+            ) {
+                if (shown.isEmpty()) {
+                    item {
+                        Text(
+                            "Không có entity phù hợp",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = cs.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        )
                     }
                 }
                 items(shown, key = { it.id }) { e ->
+                    val selected = e.id == initialSelection
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (selected) cs.primaryContainer else Color.Transparent)
+                            .pressMorph(pressedScale = 0.98f) {
                                 onSelect(e.id)
                                 onDismiss()
                             }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(
                                 e.friendlyName,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium,
+                                color = if (selected) cs.onPrimaryContainer else cs.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 e.id,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (selected) {
+                                    cs.onPrimaryContainer.copy(alpha = 0.7f)
+                                } else {
+                                    cs.onSurfaceVariant
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        if (e.id == initialSelection) {
-                            Icon(
-                                Icons.Filled.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
+                        if (selected) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(cs.primary),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                MsIcon(
+                                    Ms.check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = cs.onPrimary,
+                                )
+                            }
                         }
                     }
-                    HorizontalDivider()
                 }
             }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
