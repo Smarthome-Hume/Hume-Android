@@ -165,7 +165,9 @@ class AppHomeRepository(
         ids.add("sensor.aptomat_t3_power")
         ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
         ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
-        ids.add(HumeConfig.GRID_STATUS)
+        // (2026-10-22) Bo sensor.grid_status cu khoi watched: gridOn doc truc
+        // tiep status_string_3 (port iOS d8df5d3), khong con noi nao dung
+        // grid_status nua.
         // Trang thai inverter Solis — bao mat dien phai realtime (port iOS 65fe551).
         ids.add("sensor.solis_s6_eh1p_status_string_3")
         // Thoi gian pin + backup SOC: the pin doc nhung truoc day quen watch ->
@@ -177,6 +179,36 @@ class AppHomeRepository(
         ids.add("sensor.solis_s6_eh1p_status_string_3")
         // Nang luong pin (SoH/DoD): tu tinh gio sac thay cho sensor Solis bao ao.
         ids.add(HumeConfig.BATTERY_EFF_CAPACITY); ids.add(HumeConfig.BATTERY_REMAINING_ENERGY)
+        // (2026-10-22, E1) Flow 4 node: truoc day thieu cac sensor nay trong
+        // watched -> roi bucket ONE_DAY, dong bang 24h trong khi node PV/Pin
+        // van nhay 10s -> 4 node sai lech nhau tren may that (iOS da fix o
+        // 3af820b, baseWatchedIds). Bo sung day du theo iOS:
+        ids.add("sensor.solis_s6_eh1p_meter_active_power")
+        ids.add("sensor.solis_s6_eh1p_household_load_power_2")
+        ids.add("sensor.solis_s6_eh1p_backup_load_power_2")
+        ids.add("sensor.solis_s6_eh1p_household_load_today_energy_2")
+        ids.add("sensor.solis_s6_eh1p_backup_load_today_energy_2")
+        ids.add("sensor.solis_s6_eh1p_today_battery_discharge_energy_2")
+        ids.add("sensor.aptomat_tong_daily")
+        // BatteryInfo (tab Dien mat troi + popup): dien ap + gioi han dong BMS.
+        ids.add("sensor.solis_s6_eh1p_battery_voltage_2")
+        ids.add("sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2")
+        ids.add("sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2")
+        // (2026-10-22, B1) Toan bo entity dieu khien 2 expander Sac/Xa pin
+        // (specs trong AppEnergyRepository): truoc day chi co BACKUP_SOC duoc
+        // watch, con lai roi ONE_DAY -> bam Stepper/switch xong UI khong nhan
+        // state HA tra ve. iOS de ca nhom trong baseWatchedIds.
+        ids.add("switch.allow_grid_to_charge_the_battery_2")
+        ids.add("number.solis_s6_eh1p_battery_max_charge_current_2")
+        ids.add("number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2")
+        ids.add("number.solis_s6_eh1p_grid_time_of_use_charge_cut_off_soc_slot_1_2")
+        ids.add("switch.grid_time_of_use_charging_period_1_2")
+        ids.add("time.solis_s6_eh1p_grid_time_of_use_charge_start_slot_1_2")
+        ids.add("time.solis_s6_eh1p_grid_time_of_use_charge_end_slot_1_2")
+        ids.add("number.solis_s6_eh1p_force_charge_soc_2")
+        ids.add("number.solis_s6_eh1p_battery_max_discharge_current_2")
+        ids.add("number.solis_s6_eh1p_off_grid_overdischarge_soc_2")
+        ids.add("number.solis_s6_eh1p_overdischarge_soc_2")
         // An ninh: sensor cua/chuyen dong/khoi/nuoc.
         runCatching {
             ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
@@ -271,7 +303,12 @@ class AppHomeRepository(
         // Trang thai luoi tu sensor inverter (port iOS d8df5d3)
         val gridStatusRaw = entities["sensor.solis_s6_eh1p_status_string_3"]?.state
             ?.lowercase()?.replace('-', ' ')?.replace('_', ' ') ?: ""
-        val gridOn = !("off grid" in gridStatusRaw || "no grid" in gridStatusRaw ||
+        // (2026-10-22, B3) Bo sung 4 case exact (off/0/false/no) cho khop
+        // isGridOn cua iOS va AppEnergyRepository — thieu thi the pin giu
+        // limit backupSoc trong khi FlowCard da coi la mat dien.
+        val gridOn = !(gridStatusRaw == "off" || gridStatusRaw == "0" ||
+            gridStatusRaw == "false" || gridStatusRaw == "no" ||
+            "off grid" in gridStatusRaw || "no grid" in gridStatusRaw ||
             "outage" in gridStatusRaw || "mất" in gridStatusRaw || "mat dien" in gridStatusRaw)
         // Limit hieu dung: co dien -> backupSoc; mat dien -> overdischarge_soc
         val effectiveLimit = if (gridOn) backupSoc else overdischargeSoc
@@ -538,7 +575,12 @@ class AppHomeRepository(
         val lightOn = lights.any { entities[it.entity]?.isOn == true }
         // (2026-10-14, audit #3): bo filter type=="toggle" — hien tat ca loai
         // thiet bi nhu iOS (toggle/fan/cover/lock/media_player/vacuum/humidifier)
+        // (2026-10-22): loai "climate" khoi danh sach thiet bi — dieu hoa chi
+        // hien bang ClimateCard rieng nhu iOS (HomeRooms.swift toggles khong
+        // chua "climate"). Khong loc thi sheet render dieu hoa 2 lan + dem
+        // thiet bi lech + cong suat phong bi cong trung climate 2 lan.
         val devices = room.devices
+            .filter { it.type != "climate" }
             .map { d ->
                 val e = entities[d.entity]
                 DeviceUi(

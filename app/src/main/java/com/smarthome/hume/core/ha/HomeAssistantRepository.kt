@@ -393,6 +393,12 @@ class HomeAssistantRepository {
         if (_sensorsSheetOpen.value) return UpdateBucket.REALTIME
         bucketOverrides[entityId]?.let { return it }
         if (!_watched.value.contains(entityId)) return UpdateBucket.ONE_DAY
+        // (2026-10-22, E6 — port iOS 3af820b): trang thai luoi + cong suat
+        // meter phai REALTIME; de TEN_SECONDS thi badge Mat dien/Cap dien,
+        // switch household<->backup va node Luoi tre toi 10s so voi iOS.
+        if (entityId == "sensor.solis_s6_eh1p_status_string_3" ||
+            entityId == "sensor.solis_s6_eh1p_meter_active_power"
+        ) return UpdateBucket.REALTIME
         return if (entityId.startsWith("sensor.")) UpdateBucket.TEN_SECONDS
         else UpdateBucket.REALTIME
     }

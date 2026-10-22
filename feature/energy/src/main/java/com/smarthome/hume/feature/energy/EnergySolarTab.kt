@@ -27,7 +27,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -461,13 +466,28 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
 
 @Composable
 private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
+    // (2026-10-22, B2 — port iOS StepperView) Optimistic local + debounce
+    // 400ms: bam la hien so moi ngay, gom nhieu lan bam thanh 1 service call;
+    // chi nha local khi HA sync ve lech < 0.5. Truoc day moi tap = 1 call
+    // ngay va hien thang state HA -> so nhay nguoc vi inverter tra cham.
+    var local by remember { mutableStateOf<Double?>(null) }
+    val shown = local ?: value
+    LaunchedEffect(value) {
+        val l = local
+        if (l != null && kotlin.math.abs(value - l) < 0.5) local = null
+    }
+    LaunchedEffect(local) {
+        val l = local ?: return@LaunchedEffect
+        delay(400)
+        onChange(l)
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        StepperBtn("−") { onChange((value - 1).coerceAtLeast(0.0)) }
+        StepperBtn("−") { local = (shown - 1).coerceAtLeast(0.0) }
         Text(
-            "${value.roundToInt()}$unit",
+            "${shown.roundToInt()}$unit",
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
@@ -476,7 +496,7 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 56.dp),
         )
-        StepperBtn("+") { onChange(value + 1) }
+        StepperBtn("+") { local = shown + 1 }
     }
 }
 

@@ -142,13 +142,6 @@ class AppEnergyRepository(
         // (sensor.energy_home_daily cu dong bang khi CB mat dien)
         val homeDaily = if (gridOn) v("sensor.solis_s6_eh1p_household_load_today_energy_2")
             else v("sensor.solis_s6_eh1p_backup_load_today_energy_2")
-        // PowerRow "Tieu thu" dung consKw da switch theo gridOn (port iOS 6f32222)
-        val powerRows = listOf(
-            EnergyPowerRow(EnergyPowerKind.Battery, battW),
-            EnergyPowerRow(EnergyPowerKind.Solar, v(HumeConfig.PV_POWER)),
-            EnergyPowerRow(EnergyPowerKind.Grid, v("sensor.aptomat_tong_power")),
-            EnergyPowerRow(EnergyPowerKind.Home, consKw * 1000.0),
-        )
         val cb1 = v("sensor.aptomat_t1_power") / 1000.0
         val cb2 = v("sensor.aptomat_t2_power") / 1000.0
         val cb3 = v("sensor.aptomat_t3_power") / 1000.0
@@ -157,6 +150,16 @@ class AppEnergyRepository(
         // (sensor.cong_suat_nha cu dong bang khi CB mat dien)
         val consKw = (if (gridOn) v("sensor.solis_s6_eh1p_household_load_power_2")
             else v("sensor.solis_s6_eh1p_backup_load_power_2")) / 1000.0
+        // PowerRow "Tieu thu" dung consKw da switch theo gridOn (port iOS 6f32222).
+        // (2026-10-22, E2) Khoi nay truoc day nam TRUOC dong khai bao consKw
+        // (loi compile) va hang Grid dung sensor.aptomat_tong_power cu — iOS
+        // da bo vi CB tong chet khi mat dien, thay bang meter dao dau nhu Flow.
+        val powerRows = listOf(
+            EnergyPowerRow(EnergyPowerKind.Battery, battW),
+            EnergyPowerRow(EnergyPowerKind.Solar, v(HumeConfig.PV_POWER)),
+            EnergyPowerRow(EnergyPowerKind.Grid, -v("sensor.solis_s6_eh1p_meter_active_power")),
+            EnergyPowerRow(EnergyPowerKind.Home, consKw * 1000.0),
+        )
         val battChargeKwh = v("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
         val selfUse = if (pvToday > 0.01) {
             ((homeDaily + battChargeKwh) / pvToday).coerceIn(0.0, 1.0) * 100.0
@@ -314,6 +317,21 @@ class AppEnergyRepository(
             if (i > 0) id.substring(0, i) to id else null
         }.toMap()
 
+        // (2026-10-22, E5 — port iOS 87ceb3d/45a6205) Map friendly_name ->
+        // energy sensor (device_class=energy), khong phan biet hoa/thuong.
+        // Match theo ten ben hon theo prefix id vi naming khong nhat quan
+        // (vd power "o_cam_may_giat" vs energy "o_cam_phong_giat" cung ten
+        // "May giat") — thieu map nay thi thiet bi lech prefix mat kWh.
+        val energyByName = HashMap<String, String>()
+        entities.values.forEach { e ->
+            if (e.id.startsWith("sensor.") && e.isEnergySensor()) {
+                val name = e.friendly().trim().lowercase()
+                if (name.isNotEmpty() && !energyByName.containsKey(name)) {
+                    energyByName[name] = e.id
+                }
+            }
+        }
+
         fun agoText(e: LegacyEntity): String {
             val m = e.minutesAgo()
             return when {
@@ -339,7 +357,9 @@ class AppEnergyRepository(
             val target = if (e.isEnergySensor()) {
                 e
             } else {
+                // Uu tien: explicit -> friendly_name (E5) -> prefix id (cu).
                 val energyId = explicitEnergyMap[e.id]
+                    ?: energyByName[e.friendly().trim().lowercase()]
                     ?: prefixLookup[e.id.removeSuffix("_power")]
                     ?: return@mapNotNull null
                 entities[energyId] ?: return@mapNotNull null
@@ -352,6 +372,11 @@ class AppEnergyRepository(
             )
         }
             .distinctBy { it.id }
+            // (2026-10-22, E5 — port iOS d15e5dd) Khu trung theo ten
+            // (khong phan biet hoa/thuong): 2 sensor cung friendly_name
+            // thi giu cai co kWh cao nhat.
+            .groupBy { it.name.trim().lowercase() }
+            .values.mapNotNull { group -> group.maxByOrNull { it.value } }
             .sortedByDescending { it.value }
 
         return powerDevices to energyDevices
