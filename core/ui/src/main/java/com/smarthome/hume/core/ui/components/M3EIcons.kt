@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
  * vi hai glyph nay khong co trong font subset hien tai.
  */
 object M3EIcons {
-    val Light: ImageVector get() = LightCeiling
+    // (2026-10-22): icon den dung glyph goc Material Symbols, khong dung
+    // vector Font Awesome ve tay (LightCeiling da xoa) — khop iOS Ms.lightbulb.
+    val Light get() = Ms.lightbulb
     val Solar = Ms.wb_sunny
     val Battery = Ms.battery_charging_full
     val Power: ImageVector get() = BoltFa
@@ -83,41 +85,6 @@ object M3EIcons {
         else -> Ms.home
     }
     // ---- Custom icons tu file SVG (Font Awesome fill) ----
-
-    /** Den tran - dung cho tat ca icon den (Font Awesome, fill dac). */
-    val LightCeiling: ImageVector by lazy {
-        ImageVector.Builder("lightceiling", 24.dp, 24.dp, 24f, 24f).apply {
-            path(fill = SolidColor(Color.Black)) {
-                moveTo(23.782f, 14.932f)
-                curveTo(22.131f, 10.206f, 17.439f, 6.743f, 12.5f, 6.522f)
-                verticalLineTo(0.5f)
-                curveTo(12.5f, 0.224f, 12.276f, 0f, 12f, 0f)
-                curveTo(11.724f, 0f, 11.5f, 0.224f, 11.5f, 0.5f)
-                verticalLineTo(6.521f)
-                curveTo(6.561f, 6.743f, 1.869f, 10.205f, 0.218f, 14.932f)
-                curveTo(-0.197f, 16.12f, -0.019f, 17.388f, 0.706f, 18.41f)
-                curveTo(1.424f, 19.421f, 2.546f, 20f, 3.786f, 20f)
-                horizontalLineTo(8f)
-                curveTo(8f, 22.206f, 9.794f, 24f, 12f, 24f)
-                curveTo(14.206f, 24f, 16f, 22.206f, 16f, 20f)
-                horizontalLineTo(20.214f)
-                curveTo(21.454f, 20f, 22.576f, 19.42f, 23.294f, 18.41f)
-                curveTo(24.02f, 17.388f, 24.197f, 16.12f, 23.782f, 14.932f)
-                moveTo(12f, 23f)
-                curveTo(10.346f, 23f, 9f, 21.654f, 9f, 20f)
-                horizontalLineTo(15f)
-                curveTo(15f, 21.654f, 13.654f, 23f, 12f, 23f)
-                moveTo(22.479f, 17.831f)
-                curveTo(21.952f, 18.574f, 21.126f, 19f, 20.214f, 19f)
-                horizontalLineTo(3.786f)
-                curveTo(2.874f, 19f, 2.049f, 18.574f, 1.521f, 17.831f)
-                curveTo(0.985f, 17.077f, 0.854f, 16.14f, 1.161f, 15.262f)
-                curveTo(2.732f, 10.764f, 7.291f, 7.5f, 12f, 7.5f)
-                curveTo(16.709f, 7.5f, 21.268f, 10.764f, 22.839f, 15.262f)
-                curveTo(23.146f, 16.14f, 23.015f, 17.076f, 22.479f, 17.831f)
-            }
-        }.build()
-    }
 
     /** Khien gach - trang thai Tat (Font Awesome, fill dac). */
     val ShieldSlash: ImageVector by lazy {
