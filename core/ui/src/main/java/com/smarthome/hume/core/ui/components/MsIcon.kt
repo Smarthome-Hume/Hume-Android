@@ -188,6 +188,13 @@ object Ms {
     val electric_meter = "\uEC1B"
     val error = "\uE000"
     val expand_more = "\uE5CF"
+    // (2026-10-22) 4 glyph bo sung vao font subset (regen tu Material
+    // Symbols Rounded goc, da doi chieu outline 79 glyph cu khong doi):
+    // dung cho cac nut Sua/Xoa/sap xep trong Quan ly phong.
+    val edit = "\uE3C9"
+    val delete = "\uE872"
+    val keyboard_arrow_up = "\uE316"
+    val keyboard_arrow_down = "\uE313"
     val fiber_manual_record = "\uE061"
     val flight_takeoff = "\uE905"
     val fullscreen = "\uE5D0"

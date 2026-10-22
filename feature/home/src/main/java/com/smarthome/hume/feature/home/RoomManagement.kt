@@ -58,25 +58,6 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 // =====================================================================
-// Glyph bo sung cho Ms: font subset trong MsIcon.kt chua co edit/delete/
-// mui ten len-xuong. Dinh nghia bang extension property voi codepoint
-// Material Symbols Rounded chuan (cung font, cung cach render qua MsIcon)
-// de khong phai dung icon Material mac dinh nua.
-// =====================================================================
-
-/** Material Symbols "edit" U+E3C9. */
-val Ms.edit: String get() = "\uE3C9"
-
-/** Material Symbols "delete" U+E872. */
-val Ms.delete: String get() = "\uE872"
-
-/** Material Symbols "keyboard_arrow_up" U+E316. */
-val Ms.keyboard_arrow_up: String get() = "\uE316"
-
-/** Material Symbols "keyboard_arrow_down" U+E313. */
-val Ms.keyboard_arrow_down: String get() = "\uE313"
-
-// =====================================================================
 // PLACEHOLDER — data models + RoomStore interface.
 //
 // RoomStore THAT da co o app module: `com.smarthome.hume.data.RoomStore`
@@ -405,7 +386,8 @@ fun RoomMgmtConfirmSheet(
     }
 }
 
-/** Nut Sua nho trong the: Box 40dp bo 14dp surfaceContainer + icon edit 20dp. */
+/** Nut Sua nho trong the: Box 40dp bo 14dp primaryContainer + icon edit 20dp.
+ * Cung he mau voi icon container dau the (user 2026-10-22: mau phai dong nhat). */
 @Composable
 private fun EditButton(onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
@@ -413,7 +395,7 @@ private fun EditButton(onClick: () -> Unit) {
         modifier = Modifier
             .size(40.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(cs.surfaceContainer)
+            .background(cs.primaryContainer)
             .pressMorph(pressedScale = 0.88f, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -421,7 +403,7 @@ private fun EditButton(onClick: () -> Unit) {
             Ms.edit,
             contentDescription = "Sửa",
             modifier = Modifier.size(20.dp),
-            tint = cs.onSurfaceVariant,
+            tint = cs.onPrimaryContainer,
         )
     }
 }
@@ -440,7 +422,7 @@ private fun ReorderButtons(
             modifier = Modifier
                 .size(28.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(cs.surfaceContainer)
+                .background(cs.primaryContainer)
                 .pressMorph(pressedScale = 0.88f) { if (canMoveUp) onMoveUp() },
             contentAlignment = Alignment.Center,
         ) {
@@ -448,15 +430,15 @@ private fun ReorderButtons(
                 Ms.keyboard_arrow_up,
                 contentDescription = "Lên",
                 modifier = Modifier.size(18.dp),
-                tint = if (canMoveUp) cs.onSurfaceVariant
-                else cs.onSurfaceVariant.copy(alpha = 0.3f),
+                tint = if (canMoveUp) cs.onPrimaryContainer
+                else cs.onPrimaryContainer.copy(alpha = 0.3f),
             )
         }
         Box(
             modifier = Modifier
                 .size(28.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(cs.surfaceContainer)
+                .background(cs.primaryContainer)
                 .pressMorph(pressedScale = 0.88f) { if (canMoveDown) onMoveDown() },
             contentAlignment = Alignment.Center,
         ) {
@@ -464,8 +446,8 @@ private fun ReorderButtons(
                 Ms.keyboard_arrow_down,
                 contentDescription = "Xuống",
                 modifier = Modifier.size(18.dp),
-                tint = if (canMoveDown) cs.onSurfaceVariant
-                else cs.onSurfaceVariant.copy(alpha = 0.3f),
+                tint = if (canMoveDown) cs.onPrimaryContainer
+                else cs.onPrimaryContainer.copy(alpha = 0.3f),
             )
         }
     }
