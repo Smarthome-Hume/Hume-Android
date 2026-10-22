@@ -12,15 +12,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,6 +45,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -78,17 +77,20 @@ private const val VB_H = 430f
 private const val NODE_W = 150f
 private const val NODE_H = 175f
 
-private fun prodPath() = Path().apply {
-    moveTo(146f, 62f); lineTo(166f, 62f); quadraticTo(176f, 62f, 176f, 78f); lineTo(176f, 198f)
+// d = delta chieu cao moi hang node so voi thiet ke goc (NODE_H 175),
+// do FlowArea do duoc. Hang tren dich hub +d; hang duoi dich +2d vi ca hang
+// tren da cao them. d = 0 -> dung toa do goc.
+private fun prodPath(d: Float) = Path().apply {
+    moveTo(146f, 62f); lineTo(166f, 62f); quadraticTo(176f, 62f, 176f, 78f); lineTo(176f, 198f + d)
 }
-private fun gridPath() = Path().apply {
-    moveTo(204f, 198f); lineTo(204f, 78f); quadraticTo(204f, 62f, 214f, 62f); lineTo(234f, 62f)
+private fun gridPath(d: Float) = Path().apply {
+    moveTo(204f, 198f + d); lineTo(204f, 78f); quadraticTo(204f, 62f, 214f, 62f); lineTo(234f, 62f)
 }
-private fun consPath() = Path().apply {
-    moveTo(176f, 262f); lineTo(176f, 374f); quadraticTo(176f, 390f, 166f, 390f); lineTo(146f, 390f)
+private fun consPath(d: Float) = Path().apply {
+    moveTo(176f, 262f + d); lineTo(176f, 374f + 2f * d); quadraticTo(176f, 390f + 2f * d, 166f, 390f + 2f * d); lineTo(146f, 390f + 2f * d)
 }
-private fun battPath() = Path().apply {
-    moveTo(204f, 262f); lineTo(204f, 374f); quadraticTo(204f, 390f, 214f, 390f); lineTo(234f, 390f)
+private fun battPath(d: Float) = Path().apply {
+    moveTo(204f, 262f + d); lineTo(204f, 374f + 2f * d); quadraticTo(204f, 390f + 2f * d, 214f, 390f + 2f * d); lineTo(234f, 390f + 2f * d)
 }
 
 /** Toc do sweep: 18/v giay, clamp 4-14s — v la kW (dung abs de gia tri am van co toc do). */
@@ -227,20 +229,21 @@ private fun FlowArea(
     soc: Double,
     onBatteryClick: () -> Unit,
 ) {
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(VB_W / VB_H),
-    ) {
-        val w = maxWidth
-        val h = maxHeight
-        fun fx(x: Float): Dp = w * (x / VB_W)
-        fun fy(y: Float): Dp = h * (y / VB_H)
+    // (2026-10-22, user) Kich thuoc node TU DONG theo node can nhieu chieu
+    // cao nhat: node Pin co 2 dong kWh sac/xa nen cao nhat — ca 4 node lay
+    // theo chieu cao do duoc lon nhat, the cao theo. Truoc day NODE_H co
+    // dinh 175, noi dung phinh ra bi ep vao khung chet. Cach lam:
+    // SubcomposeLayout do chieu cao noi dung tung node o width chuan (Spacer
+    // weight cua FlowNode co thanh 0 khi do khong gioi han) -> nodeH = max.
+    SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
+        val maxW = constraints.maxWidth
+        val scale = maxW / VB_W // px cho 1 don vi viewBox
+        val nodeW = (NODE_W * scale).roundToInt()
+        val margin = (6f * scale).roundToInt()
+        val gap = (68f * scale).roundToInt() // kenh giua 2 hang (hub + track)
+        val hubPx = (64f * scale).roundToInt()
 
-        FlowTracks(flow = flow, charging = charging)
-
-        // nodes: 150x190px trong viewBox 380x460, cach ria 6px
-        val nw = fx(NODE_W); val nh = fy(NODE_H)
+        val pvM = subcompose("pv") {
         FlowNode(
             icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(24.dp)) },
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
@@ -248,9 +251,7 @@ private fun FlowArea(
             label = "Sản xuất", valueKw = flow.prodKw,
             // Nang luong (kWh) tung node — port iOS commit 46c365f (muc 25)
             energyKwh = flow.pvKwh,
-            modifier = Modifier
-                .size(nw, nh)
-                .offset(fx(6f), fy(6f)),
+            modifier = Modifier,
         ) {
             val prodTot = flow.prodKw.coerceAtLeast(0.01)
             SegBar(
@@ -261,9 +262,8 @@ private fun FlowArea(
                 total = prodTot,
             )
         }
-        // Trang thai luoi dien: pill tonal M3E DAT DUOI CUNG node (2026-09-30,
-        // user) — de cung hang icon bi tran (node ~146dp, icon+badge can ~159dp).
-        // Mat dien = do cung (#BA1A1A).
+        }
+        val gridM = subcompose("grid") {
         val gridBadgeFg = if (flow.gridOn) LocalHumeExtraColors.current.success else Color(0xFFBA1A1A)
         FlowNode(
             icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(24.dp)) },
@@ -271,9 +271,7 @@ private fun FlowArea(
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
             energyKwh = flow.gridKwh,
-            modifier = Modifier
-                .size(nw, nh)
-                .offset(fx(VB_W - 6f - NODE_W), fy(6f)),
+            modifier = Modifier,
         ) {
             // Pill trang thai luoi: can giua ngang trong node (2026-09-30, user).
             Box(
@@ -294,6 +292,8 @@ private fun FlowArea(
                 )
             }
         }
+        }
+        val homeM = subcompose("home") {
         FlowNode(
             icon = {
                 MsIcon(
@@ -309,9 +309,7 @@ private fun FlowArea(
             label = if (flow.gridOn) "Tiêu thụ" else "Cổng phụ",
             valueKw = flow.consKw,
             energyKwh = flow.homeKwh,
-            modifier = Modifier
-                .size(nw, nh)
-                .offset(fx(6f), fy(VB_H - 6f - NODE_H)),
+            modifier = Modifier,
         ) {
             val tot = (flow.cb1Kw + flow.cb2Kw + flow.cb3Kw).coerceAtLeast(0.01)
             SegBar(
@@ -323,7 +321,8 @@ private fun FlowArea(
                 total = tot,
             )
         }
-        // Khi pin xa: chu "Dang xa" + icon pin mau da cam (2026-09-30, user yeu cau).
+        }
+        val battM = subcompose("batt") {
         val battFg = if (charging) LocalHumeExtraColors.current.success else Color(0xFFF97316)
         FlowNode(
             icon = {
@@ -344,9 +343,7 @@ private fun FlowArea(
             badgeFg = battFg,
             // Bam node pin -> popup pin tai cho (muc 14; iOS de onTap rong)
             onClick = onBatteryClick,
-            modifier = Modifier
-                .size(nw, nh)
-                .offset(fx(VB_W - 6f - NODE_W), fy(VB_H - 6f - NODE_H)),
+            modifier = Modifier,
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -390,19 +387,38 @@ private fun FlowArea(
                 )
             }
         }
+        }
 
-        // hub inverter 64px o giua + ping ring flping 2.2s (demo .flhub::before)
-        // Dong nang luong chay tu 4 node ve inverter.
-        // Ping ring chi pulse khi co dong nang luong that (>= 5W o 1 track)
-        // — khong flow (ban dem) thi khong tao infinite transition (fix 2026-09-30).
-        val hub = fx(64f)
+        val intrinsic = Constraints.fixedWidth(nodeW)
+        val nodeH = maxOf(
+            pvM.maxOf { it.measure(intrinsic).height },
+            gridM.maxOf { it.measure(intrinsic).height },
+            homeM.maxOf { it.measure(intrinsic).height },
+            battM.maxOf { it.measure(intrinsic).height },
+            (NODE_H * scale).roundToInt(), // san = thiet ke goc 175
+        )
+        val totalH = margin * 2 + gap + nodeH * 2
+        // ViewBox dong: moi hang node cao them delta -> VB_H tang 2*delta;
+        // track + hub dich theo delta (xem prodPath/gridPath/consPath/battPath).
+        val delta = nodeH / scale - NODE_H
+        val dynVbH = VB_H + 2f * delta
+
+        val fixed = Constraints.fixed(nodeW, nodeH)
+        val pvP = pvM.map { it.measure(fixed) }
+        val gridP = gridM.map { it.measure(fixed) }
+        val homeP = homeM.map { it.measure(fixed) }
+        val battP = battM.map { it.measure(fixed) }
+        val tracksP = subcompose("tracks") {
+            FlowTracks(flow = flow, charging = charging, vbH = dynVbH, delta = delta)
+        }.map { it.measure(Constraints.fixed(maxW, totalH)) }
+        val hubDp = hubPx.toDp()
+        val hubP = subcompose("hub") {
+        val hub = hubDp
         val primary = MaterialTheme.colorScheme.primary
         val hasFlow = listOf(flow.prodKw, flow.gridKw, flow.consKw, flow.battKw)
             .any { kotlin.math.abs(it) >= 0.005 }
         Box(
-            modifier = Modifier
-                .size(hub)
-                .offset(fx(VB_W / 2 - 32f), fy(VB_H / 2 - 32f)),
+            modifier = Modifier.fillMaxSize(),
         ) {
             if (hasFlow) {
                 val pingT = rememberInfiniteTransition(label = "flping")
@@ -458,21 +474,31 @@ private fun FlowArea(
                 )
             }
         }
+        }.map { it.measure(Constraints.fixed(hubPx, hubPx)) }
+
+        layout(maxW, totalH) {
+            tracksP.forEach { it.placeRelative(0, 0) }
+            pvP.forEach { it.placeRelative(margin, margin) }
+            gridP.forEach { it.placeRelative(maxW - margin - nodeW, margin) }
+            homeP.forEach { it.placeRelative(margin, totalH - margin - nodeH) }
+            battP.forEach { it.placeRelative(maxW - margin - nodeW, totalH - margin - nodeH) }
+            hubP.forEach { it.placeRelative(maxW / 2 - hubPx / 2, totalH / 2 - hubPx / 2) }
+        }
     }
 }
 
 @Composable
-private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
+private fun FlowTracks(flow: EnergyFlowState, charging: Boolean, vbH: Float, delta: Float) {
     val primary = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.outlineVariant
     val transition = rememberInfiniteTransition(label = "flsweep")
     data class Track(val path: Path, val powerW: Double, val reverse: Boolean)
     val tracks = listOf(
-        Track(prodPath(), flow.prodKw * 1000, false),
+        Track(prodPath(delta), flow.prodKw * 1000, false),
         // gridPath huong hub->node; khi grid > 0 (mua dien) dong chay nguoc lai node->hub
-        Track(gridPath(), flow.gridKw * 1000, (flow.gridKw * 1000).roundToInt() > 0),
-        Track(consPath(), flow.consKw * 1000, false),
-        Track(battPath(), flow.battKw * 1000, !charging),
+        Track(gridPath(delta), flow.gridKw * 1000, (flow.gridKw * 1000).roundToInt() > 0),
+        Track(consPath(delta), flow.consKw * 1000, false),
+        Track(battPath(delta), flow.battKw * 1000, !charging),
     )
     val phases = tracks.mapIndexed { idx, t ->
         // Khong co dong nang luong (hien thi "0 W") -> phase tinh 0, khong chay
@@ -496,7 +522,7 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean) {
     }
     Canvas(Modifier.fillMaxSize()) {
         val sx = size.width / VB_W
-        val sy = size.height / VB_H
+        val sy = size.height / vbH
         // Do day net chay theo gia tri: lon nhat 4.5.dp (= 5.dp hien tai - 10%), nho nhat 1.5.dp
         val maxP = tracks.maxOf { kotlin.math.abs(it.powerW) }.coerceAtLeast(0.01)
         tracks.forEachIndexed { i, t ->
