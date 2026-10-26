@@ -26,6 +26,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
@@ -890,6 +891,32 @@ class HomeAssistantRepository {
 
     fun setLightColorTemp(entityId: String, kelvin: Int) =
         callService("light", "turn_on", serviceData(entityId) { put("color_temp_kelvin", kelvin) }, entityId)
+
+    /**
+     * (Batch D, GAP-09) Gui mau RGB + hieu ung cho den — iOS LightExpandedView
+     * goi light.turn_on voi rgb_color / effect (HA tu doi sang xy cho
+     * smartlight). Khong them color_temp vao the mo rong (iOS cung khong co).
+     */
+    fun setLightRgb(entityId: String, r: Int, g: Int, b: Int) =
+        callService(
+            "light", "turn_on",
+            serviceData(entityId) {
+                put(
+                    "rgb_color",
+                    buildJsonArray {
+                        add(r); add(g); add(b)
+                    },
+                )
+            },
+            entityId,
+        )
+
+    fun setLightEffect(entityId: String, effect: String) =
+        callService(
+            "light", "turn_on",
+            serviceData(entityId) { put("effect", effect) },
+            entityId,
+        )
 
     /**
      * (Batch D, GAP-08) Gui datapoint cho thiet bi LocalTuya — dung format

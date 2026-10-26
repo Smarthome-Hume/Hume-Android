@@ -150,6 +150,9 @@ class HomeViewModel(
     fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
         repo.setLocalTuyaDp(deviceId, dp, value)
     fun setBrightness(entityId: String, percent: Int) = repo.setLightBrightness(entityId, percent)
+    /** (Batch D, GAP-09) Mau RGB + hieu ung cho the den mo rong. */
+    fun setLightRgb(entityId: String, r: Int, g: Int, b: Int) = repo.setLightRgb(entityId, r, g, b)
+    fun setLightEffect(entityId: String, effect: String) = repo.setLightEffect(entityId, effect)
     fun setClimateTemp(entityId: String, temp: Double) = repo.setClimateTemp(entityId, temp)
     fun setHvacMode(entityId: String, mode: String) = repo.setHvacMode(entityId, mode)
     fun toggleClimate(entityId: String) = repo.toggleClimate(entityId)

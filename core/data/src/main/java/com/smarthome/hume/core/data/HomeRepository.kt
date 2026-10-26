@@ -23,6 +23,9 @@ interface HomeRepository {
     /** (Batch D, GAP-08) Gui datapoint LocalTuya (chi ma da biet). */
     fun setLocalTuyaDp(deviceId: String, dp: Int, value: String)
     fun setLightBrightness(entityId: String, percent: Int)
+    /** (Batch D, GAP-09) Mau RGB + hieu ung cho the den mo rong. */
+    fun setLightRgb(entityId: String, r: Int, g: Int, b: Int)
+    fun setLightEffect(entityId: String, effect: String)
     fun setClimateTemp(entityId: String, tempC: Double)
     fun setHvacMode(entityId: String, mode: String)
     fun toggleClimate(entityId: String)

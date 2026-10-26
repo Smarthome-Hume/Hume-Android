@@ -350,13 +350,23 @@ fun HomeScreen(
                         onToggleClimate = { viewModel.toggleClimate(it) },
                         // (Batch D, GAP-07) Trang thai tho HA cho the mo rong.
                         entityStates = entityStates,
-                        // (Batch D, GAP-08) Hanh dong the rua bat; D3 them
-                        // den (brightness/rgb/effect) vao day.
+                        // (Batch D, GAP-08/09) Hanh dong the mo rong:
+                        // rua bat (toggle/number/localtuya) + den
+                        // (brightness/rgb/effect).
                         expandedActions = ExpandedActions(
                             onToggle = { viewModel.toggle(it) },
                             onSetNumber = { id, v -> viewModel.setNumber(id, v) },
                             onSetLocalTuyaDp = { id, dp, v ->
                                 viewModel.setLocalTuyaDp(id, dp, v)
+                            },
+                            onSetBrightness = { id, pct ->
+                                viewModel.setBrightness(id, pct)
+                            },
+                            onSetLightRgb = { id, r, g, b ->
+                                viewModel.setLightRgb(id, r, g, b)
+                            },
+                            onSetLightEffect = { id, eff ->
+                                viewModel.setLightEffect(id, eff)
                             },
                         ),
                     )

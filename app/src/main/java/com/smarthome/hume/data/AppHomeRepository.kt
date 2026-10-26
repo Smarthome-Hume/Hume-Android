@@ -272,6 +272,10 @@ class AppHomeRepository(
     }
     override fun setLightBrightness(entityId: String, percent: Int) =
         ha.setLightBrightness(entityId, percent)
+    override fun setLightRgb(entityId: String, r: Int, g: Int, b: Int) =
+        ha.setLightRgb(entityId, r, g, b)
+    override fun setLightEffect(entityId: String, effect: String) =
+        ha.setLightEffect(entityId, effect)
     override fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
         ha.setLocalTuyaDp(deviceId, dp, value)
     override fun setClimateTemp(entityId: String, tempC: Double) =

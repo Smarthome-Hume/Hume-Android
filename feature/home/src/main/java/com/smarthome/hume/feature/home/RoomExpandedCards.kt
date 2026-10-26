@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,17 +60,24 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.ui.components.M3EMotion
@@ -108,7 +119,11 @@ fun RoomExpandedContent(
             device.powerEntityId == DishwasherIds.POWER_SENSOR -> {
             DishwasherExpandedView(entityStates, actions)
         }
-        // D3 chen nhanh den (light.smartlight / light.table_led) vao day.
+        // Gate dung 2 entity iOS — den khac roi ve generic.
+        device.entityId == "light.smartlight" ||
+            device.entityId == "light.table_led" -> {
+            LightExpandedView(device.entityId, entityStates, actions)
+        }
         else -> GenericExpandedView(device, entityStates)
     }
 }
@@ -866,5 +881,259 @@ fun ExpandedInfoRow(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
         )
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DEN (GAP-09) — port iOS LightExpandedView.
+//  Gate: CHI light.smartlight va light.table_led (dispatcher). Den khac
+//  roi ve generic. Khong co dieu khien color_temp (iOS cung khong co).
+//  - Slider sang: gui khi THA TAY qua HomeViewModel.setBrightness (da co,
+//    brightness_pct — tuong duong brightness 0–255 cua iOS), chong echo
+//    kieu iOS lastSentBrightness (o day theo %: bo qua sync ngoai khi
+//    lech <= 1% do lam tron pct <-> 0–255).
+//  - Mau sac: Android khong co ColorPicker he thong nhu SwiftUI nen dung
+//    thanh truot hue kieu MeScreen (track gradient HSV) — giu nguyen
+//    saturation/value cua mau hien tai, gui rgb_color debounce 300ms
+//    (HA tu doi sang xy cho smartlight, nhu comment iOS).
+//  - Hieu ung: hang chip cuon ngang (LazyRow — den ban ~150 chip),
+//    gui MA GOC, nhan Viet hoa qua effectDisplay (port y iOS).
+// ══════════════════════════════════════════════════════════════════
+
+/** Ten hieu ung -> tieng Viet (port y iOS effectDisplay). Chi doi NHAN;
+ * gia tri gui ve HA van la ma goc. */
+private fun effectDisplay(eff: String): String {
+    val exact: Map<String, String> = mapOf(
+        "blink" to "Nhấp nháy", "breathe" to "Thở", "okay" to "OK",
+        "channel_change" to "Đổi kênh",
+        "finish_effect" to "Kết thúc hiệu ứng", "stop_effect" to "Dừng hiệu ứng",
+        "colorloop" to "Xoay màu", "stop_colorloop" to "Dừng xoay màu",
+        "candle" to "Nến", "fire" to "Lửa", "ocean" to "Đại dương",
+        "forest" to "Rừng", "sunset" to "Hoàng hôn", "party" to "Tiệc",
+        "romantic" to "Lãng mạn", "random" to "Ngẫu nhiên",
+        "strobe" to "Nhấp nhanh", "flash" to "Chớp",
+        "twinkle" to "Lấp lánh", "sparkle" to "Lấp lánh",
+        "wave" to "Sóng", "gradient" to "Chuyển sắc",
+        "cycle" to "Xoay vòng", "pulse" to "Nhịp", "flow" to "Chảy",
+        "police" to "Cảnh sát",
+    )
+    exact[eff]?.let { return it }
+    val lower = eff.lowercase()
+    val families: List<Pair<String, String>> = listOf(
+        "rainbow" to "Cầu vồng", "chase" to "Đuổi",
+        "fade" to "Mờ dần", "music" to "Nhạc",
+        "strobe" to "Nhấp nhanh", "flash" to "Chớp",
+        "twinkle" to "Lấp lánh", "sparkle" to "Lấp lánh",
+        "wave" to "Sóng", "gradient" to "Chuyển sắc",
+        "cycle" to "Xoay vòng", "pulse" to "Nhịp",
+        "flow" to "Chảy", "candle" to "Nến", "fire" to "Lửa",
+    )
+    for ((prefix, vn) in families) {
+        if (lower.startsWith(prefix)) {
+            val rest = eff.drop(prefix.length).replace("_", " ").trim()
+            if (rest.isEmpty()) return vn
+            val capitalized = rest.split(" ").joinToString(" ") { word ->
+                word.replaceFirstChar { c -> c.uppercase() }
+            }
+            return "$vn $capitalized"
+        }
+    }
+    return eff.replace("_", " ").split(" ").joinToString(" ") { word ->
+        word.replaceFirstChar { c -> c.uppercase() }
+    }
+}
+
+private fun hsvOf(rgb: List<Int>?): FloatArray {
+    val hsv = FloatArray(3)
+    if (rgb != null) {
+        android.graphics.Color.RGBToHSV(rgb[0], rgb[1], rgb[2], hsv)
+    } else {
+        hsv[0] = 0f; hsv[1] = 0f; hsv[2] = 1f
+    }
+    return hsv
+}
+
+@Composable
+fun LightExpandedView(
+    entityId: String,
+    entityStates: Map<String, HomeEntity>,
+    actions: ExpandedActions,
+) {
+    val cs = MaterialTheme.colorScheme
+    val entity = entityStates[entityId]
+    val attrBrightness = entity?.attrDouble("brightness") // 0–255
+    val attrPct = attrBrightness?.let { (it / 255.0 * 100.0).toFloat() }
+    val attrRgb = entity?.attrIntList("rgb_color")
+    val effectList = entity?.attrStringList("effect_list").orEmpty()
+    val currentEffect = entity?.attrString("effect")
+
+    // Do sang — gui khi tha tay, chong echo kieu iOS.
+    var brightness by remember { mutableFloatStateOf(attrPct ?: 0f) }
+    var draggingBrightness by remember { mutableStateOf(false) }
+    var lastSentPercent by remember { mutableStateOf<Float?>(null) }
+    LaunchedEffect(attrPct) {
+        if (!draggingBrightness && attrPct != null &&
+            (lastSentPercent == null || abs(attrPct - lastSentPercent!!) > 1f)
+        ) {
+            brightness = attrPct
+        }
+    }
+
+    // Mau sac — hue slider, debounce 300ms, chong echo kieu iOS lastSentRGB.
+    val initialHsv = remember { hsvOf(attrRgb) }
+    var hue by remember { mutableFloatStateOf(initialHsv[0]) }
+    var satVal by remember { mutableStateOf(initialHsv[1] to initialHsv[2]) }
+    var lastSentRgb by remember { mutableStateOf<List<Int>?>(null) }
+    val scope = rememberCoroutineScope()
+    var colorJob by remember { mutableStateOf<Job?>(null) }
+    LaunchedEffect(attrRgb) {
+        if (attrRgb != null && attrRgb != lastSentRgb) {
+            val hsv = hsvOf(attrRgb)
+            hue = hsv[0]
+            satVal = hsv[1] to hsv[2]
+        }
+    }
+    fun currentRgb(): List<Int> {
+        val packed = android.graphics.Color.HSVToColor(
+            floatArrayOf(hue, satVal.first, satVal.second),
+        )
+        return listOf(
+            android.graphics.Color.red(packed),
+            android.graphics.Color.green(packed),
+            android.graphics.Color.blue(packed),
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Do sang.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Outlined.WbSunny, null,
+                tint = cs.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.size(12.dp))
+            Slider(
+                value = brightness,
+                onValueChange = {
+                    brightness = it
+                    draggingBrightness = true
+                },
+                valueRange = 0f..100f,
+                onValueChangeFinished = {
+                    draggingBrightness = false
+                    lastSentPercent = brightness
+                    actions.onSetBrightness(entityId, brightness.toInt())
+                },
+                colors = SliderDefaults.colors(
+                    thumbColor = cs.primary,
+                    activeTrackColor = cs.primary,
+                    inactiveTrackColor = cs.surfaceContainerHigh,
+                ),
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                "${brightness.toInt()}%",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = cs.onSurface,
+                textAlign = TextAlign.End,
+                modifier = Modifier.width(44.dp),
+            )
+        }
+        // Mau sac — hue slider (track gradient) + mau hien tai.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Màu sắc",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurface,
+                )
+                Spacer(Modifier.weight(1f))
+                val rgb = currentRgb()
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(rgb[0], rgb[1], rgb[2]))
+                        .border(1.dp, cs.outlineVariant, CircleShape),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(28.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = List(7) { i ->
+                                Color.hsv(i * 60f, 1f, 1f)
+                            } + listOf(Color.hsv(0f, 1f, 1f)),
+                        ),
+                    ),
+            ) {
+                Slider(
+                    value = hue,
+                    onValueChange = { newHue ->
+                        hue = newHue
+                        // Mau dang la trang (sat = 0) thi keo hue phai ra
+                        // mau that, khong thi truot khong co tac dung nhin thay.
+                        if (satVal.first == 0f) satVal = 1f to satVal.second
+                        colorJob?.cancel()
+                        colorJob = scope.launch {
+                            delay(300)
+                            val rgb = currentRgb()
+                            lastSentRgb = rgb
+                            actions.onSetLightRgb(entityId, rgb[0], rgb[1], rgb[2])
+                        }
+                    },
+                    valueRange = 0f..360f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.Transparent,
+                        inactiveTrackColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+        }
+        // Hieu ung — hang chip cuon ngang (den ban ~150 chip -> LazyRow).
+        if (effectList.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Hiệu ứng",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurface,
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(effectList, key = { it }) { eff ->
+                        val selected = eff == currentEffect
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(
+                                    if (selected) cs.primaryContainer
+                                    else cs.surfaceContainerHigh,
+                                )
+                                .clickable {
+                                    actions.onSetLightEffect(entityId, eff)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            Text(
+                                effectDisplay(eff),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (selected) cs.onPrimaryContainer
+                                else cs.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
