@@ -53,6 +53,9 @@ class AppHomeRepository(
     private val _homeState = MutableStateFlow(HomeUiState())
     override val homeState: StateFlow<HomeUiState> = _homeState.asStateFlow()
 
+    /** (Batch D, GAP-07) Trang thai tho HA cho the mo rong trong phong. */
+    override val entityStates: StateFlow<Map<String, LegacyEntity>> = ha.entities
+
     /**
      * Room configs dong (port iOS RoomStore).
      * Cho RoomStore seed/load persisted data; Home does not invent fallback rooms.
@@ -608,6 +611,7 @@ class AppHomeRepository(
                     iconKey = d.icon,
                     isOn = e?.isActive() == true,
                     powerW = d.powerEntity?.let { entities[it]?.numericState },
+                    powerEntityId = d.powerEntity,
                 )
             }
         val climateDevice = room.devices.firstOrNull { it.type == "climate" }

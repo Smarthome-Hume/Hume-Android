@@ -1,7 +1,14 @@
 package com.smarthome.hume.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -11,14 +18,15 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import android.os.SystemClock
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,8 +54,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -286,8 +295,32 @@ fun RoomSheet(
     onClimateTemp: (String, Double) -> Unit,
     onHvacMode: (String, String) -> Unit,
     onToggleClimate: (String) -> Unit,
+    // (Batch D, GAP-07) Trang thai tho HA + hanh dong cho the mo rong.
+    entityStates: Map<String, com.smarthome.hume.core.model.HomeEntity> = emptyMap(),
+    expandedActions: ExpandedActions = ExpandedActions(),
 ) {
     val cs = MaterialTheme.colorScheme
+    // Thiet bi dang mo rong (tap don vao cum icon+ten) — 1 the mo 1 luc,
+    // nho theo entityId nhu iOS expandedDevice (HomeRooms.swift).
+    var expandedDeviceId by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+    // Vi tri item cua thiet bi trong LazyColumn: header(0) + env(1) +
+    // climate?(1) + tieu de "Thiet bi"(1) + vi tri thiet bi.
+    val deviceItemIndex: (String) -> Int = { id ->
+        val base = 2 + (if (room.climate != null) 1 else 0) +
+            (if (room.devices.isNotEmpty()) 1 else 0)
+        base + room.devices.indexOfFirst { it.entityId == id }
+    }
+    // Mo xong cuon giu the o DAU khung nhin (iOS: delay 100ms + scrollTo
+    // anchor .top + re-check expandedDevice — neo .center cat 2 dau khi
+    // the cao hon man hinh, fix iOS c45e206).
+    LaunchedEffect(expandedDeviceId) {
+        val id = expandedDeviceId ?: return@LaunchedEffect
+        delay(100)
+        if (expandedDeviceId != id) return@LaunchedEffect
+        val idx = deviceItemIndex(id)
+        if (idx >= 0) listState.animateScrollToItem(idx)
+    }
     // Thiet bi switch dang cho xac nhan tat (bao ve Zigbee mesh, port iOS 0e855dd).
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -296,12 +329,13 @@ fun RoomSheet(
         containerColor = cs.surfaceContainer,
         dragHandle = { GrabHandle() },
     ) {
-        // Gioi han chieu cao sheet 85% man hinh (cach top 15%)
-        val maxSheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
+        // (Batch D, GAP-26) Full-height nhu iOS .large — bo cap 0.85 cu:
+        // the rua bat mo rong cao hon man hinh se cat hang nut cuoi.
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .padding(horizontal = 20.dp)
-                .heightIn(max = maxSheetH),
+                .fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -368,6 +402,16 @@ fun RoomSheet(
                         d,
                         contactOpen = contactOpenForDevice(d.iconKey, d.label, notifications),
                         onToggle = { onToggle(d.entityId) },
+                        expanded = expandedDeviceId == d.entityId,
+                        onToggleExpand = {
+                            // Mo/thu dung curve the an ninh: mo 450ms,
+                            // dong 700ms (iOS spring 0.45 / 0.7).
+                            val willOpen = expandedDeviceId != d.entityId
+                            expandedDeviceId = if (willOpen) d.entityId else null
+                        },
+                        expandedContent = {
+                            RoomExpandedContent(d, entityStates, expandedActions)
+                        },
                     )
                 }
             }
@@ -642,6 +686,10 @@ fun DeviceRow(
     modifier: Modifier = Modifier,
     // Ten phong hien tren dong trang thai (search, 2026-09-30): null = khong hien.
     roomLabel: String? = null,
+    // (Batch D, GAP-07) The mo rong: chi RoomSheet truyen 3 param nay.
+    expanded: Boolean = false,
+    onToggleExpand: (() -> Unit)? = null,
+    expandedContent: @Composable (() -> Unit)? = null,
 ) {
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
@@ -649,8 +697,21 @@ fun DeviceRow(
     // Xac nhan tat o cam inline (port iOS HomeDeviceRow, user 2026-10-14):
     // chi o cam can xac nhan, hien 2 nut ngay trong the thay vi popup.
     var isConfirming by remember { mutableStateOf(false) }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    // (Batch D, GAP-29) Switch mo dan bang opacity + scale 0.7 khi chuyen
+    // sang cum xac nhan (iOS spring 0.3/0.85).
+    val switchAlpha by animateFloatAsState(
+        targetValue = if (isConfirming) 0f else 1f,
+        animationSpec = tween(350, easing = M3EMotion.spring),
+        label = "confirmSwitchAlpha",
+    )
+    val switchScale by animateFloatAsState(
+        targetValue = if (isConfirming) 0.7f else 1f,
+        animationSpec = tween(350, easing = M3EMotion.spring),
+        label = "confirmSwitchScale",
+    )
+    // Column thay cho Row cu: hang header + slot noi dung mo rong trong
+    // CUNG the, cung nen surfaceContainerHighest bo 28dp (iOS :814).
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .pressMorphCard(
@@ -662,124 +723,175 @@ fun DeviceRow(
             .background(cs.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(
-                    if (d.isOn) cs.primaryContainer
-                    else extra.surfaceHigh,
-                ),
-        ) {
-            DeviceIcon(
-                d.iconKey, null,
-                tint = if (d.isOn) cs.onPrimaryContainer
-                else cs.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-        }
-        Spacer(Modifier.width(13.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                d.label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = cs.onSurface,
-            )
-            val powerW = d.powerW
-            val roomSuffix =
-                if (!roomLabel.isNullOrBlank()) " · $roomLabel" else ""
-            Text(
-                when {
-                    contactOpen == true -> "Đang mở"
-                    contactOpen == false -> "Đang đóng"
-                    d.isOn -> "Đang bật"
-                    else -> "Đang tắt"
-                } + (if (d.isOn && powerW != null && powerW > 0)
-                    " · ${if (powerW >= 1000) "%.1f kW".format(powerW / 1000) else "%.0f W".format(powerW)}"
-                else "") + roomSuffix,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = cs.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        if (contactOpen != null) {
-            // Chip contact .cchip
-            Box(
-                contentAlignment = Alignment.Center,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Vung tap mo/thu: CHI cum icon+ten (khong gom vung switch,
+            // de bam switch khong bi hieu thanh mo the). Dang xac nhan
+            // tat thi tap nay CHI huy xac nhan, khong mo the (GAP-29).
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(
-                        if (contactOpen) cs.errorContainer
-                        else cs.surfaceContainer,
-                    )
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                    .weight(1f)
+                    .clickable {
+                        if (isConfirming) {
+                            isConfirming = false
+                        } else {
+                            onToggleExpand?.invoke()
+                        }
+                    },
             ) {
-                Text(
-                    if (contactOpen) "MỞ" else "ĐÓNG",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.5.sp,
-                    color = if (contactOpen) cs.onErrorContainer
-                    else cs.onSurfaceVariant,
-                )
-            }
-        } else if (isConfirming) {
-            // 2 nut xac nhan inline (thay popup, user 2026-10-14)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Nut Huy
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .background(cs.surfaceContainerHigh)
-                        .clickable { isConfirming = false }
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .background(
+                            if (d.isOn) cs.primaryContainer
+                            else extra.surfaceHigh,
+                        ),
                 ) {
+                    DeviceIcon(
+                        d.iconKey, null,
+                        tint = if (d.isOn) cs.onPrimaryContainer
+                        else cs.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+                Spacer(Modifier.width(13.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        "Hủy",
-                        style = MaterialTheme.typography.labelMedium,
+                        d.label,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onSurface,
-                        maxLines = 1,
+                    )
+                    val powerW = d.powerW
+                    val roomSuffix =
+                        if (!roomLabel.isNullOrBlank()) " · $roomLabel" else ""
+                    Text(
+                        when {
+                            contactOpen == true -> "Đang mở"
+                            contactOpen == false -> "Đang đóng"
+                            d.isOn -> "Đang bật"
+                            else -> "Đang tắt"
+                        } + (if (d.isOn && powerW != null && powerW > 0)
+                            " · ${if (powerW >= 1000) "%.1f kW".format(powerW / 1000) else "%.0f W".format(powerW)}"
+                        else "") + roomSuffix,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = cs.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
                     )
                 }
-                // Nut Xac nhan (do)
+            }
+            if (contactOpen != null) {
+                // Chip contact .cchip
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(cs.error)
-                        .clickable {
-                            isConfirming = false
-                            onToggle()
-                        }
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .background(
+                            if (contactOpen) cs.errorContainer
+                            else cs.surfaceContainer,
+                        )
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
                 ) {
                     Text(
-                        "Xác nhận",
-                        style = MaterialTheme.typography.labelMedium,
+                        if (contactOpen) "MỞ" else "ĐÓNG",
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = cs.onError,
-                        maxLines = 1,
+                        letterSpacing = 0.5.sp,
+                        color = if (contactOpen) cs.onErrorContainer
+                        else cs.onSurfaceVariant,
                     )
                 }
-            }
-        } else {
-            M3ESwitch(
-                checked = d.isOn,
-                onCheckedChange = {
-                    haptic()
-                    // Chi o cam can xac nhan khi tat (user 2026-10-14)
-                    if (isOutlet(d) && d.isOn) {
-                        isConfirming = true
-                    } else {
-                        onToggle()
+            } else {
+                // Trailing: switch hoac 2 nut xac nhan (overlay — switch
+                // mo dan thay vi bien mat dot ngot, nut hien co animation).
+                Box(contentAlignment = Alignment.CenterEnd) {
+                    Box(
+                        modifier = Modifier
+                            .alpha(switchAlpha)
+                            .graphicsLayer(scaleX = switchScale, scaleY = switchScale),
+                    ) {
+                        M3ESwitch(
+                            checked = d.isOn,
+                            onCheckedChange = {
+                                if (isConfirming) return@M3ESwitch
+                                haptic()
+                                // Chi o cam can xac nhan khi tat (user 2026-10-14)
+                                if (isOutlet(d) && d.isOn) {
+                                    isConfirming = true
+                                } else {
+                                    onToggle()
+                                }
+                            },
+                        )
                     }
-                },
-            )
+                    AnimatedVisibility(
+                        visible = isConfirming,
+                        enter = fadeIn(tween(350, easing = M3EMotion.spring)) +
+                            scaleIn(tween(350, easing = M3EMotion.spring)),
+                        exit = fadeOut(tween(350, easing = M3EMotion.spring)) +
+                            scaleOut(tween(350, easing = M3EMotion.spring)),
+                    ) {
+                        // 2 nut xac nhan inline (thay popup, user 2026-10-14)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Nut Huy
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(cs.surfaceContainerHigh)
+                                    .clickable { isConfirming = false }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                            ) {
+                                Text(
+                                    "Hủy",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = cs.onSurface,
+                                    maxLines = 1,
+                                )
+                            }
+                            // Nut Xac nhan (do)
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(cs.error)
+                                    .clickable {
+                                        isConfirming = false
+                                        onToggle()
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                            ) {
+                                Text(
+                                    "Xác nhận",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = cs.onError,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Slot noi dung mo rong (GAP-07): mo 450ms / dong 700ms theo
+        // dung curve the an ninh iOS (spring 0.45 mo / 0.7 dong).
+        if (expandedContent != null) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(tween(450, easing = M3EMotion.spring)) +
+                    fadeIn(tween(450, easing = M3EMotion.spring)),
+                exit = shrinkVertically(tween(700, easing = M3EMotion.spring)) +
+                    fadeOut(tween(700, easing = M3EMotion.spring)),
+            ) {
+                Column(modifier = Modifier.padding(top = 12.dp)) {
+                    expandedContent()
+                }
+            }
         }
     }
 }

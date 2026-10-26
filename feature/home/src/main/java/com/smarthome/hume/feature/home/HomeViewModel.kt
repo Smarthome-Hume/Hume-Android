@@ -54,6 +54,10 @@ class HomeViewModel(
 
     val state: StateFlow<HomeUiState> = repo.homeState
 
+    /** (Batch D, GAP-07) Trang thai tho HA cho the mo rong trong phong. */
+    val entityStates: StateFlow<Map<String, com.smarthome.hume.core.model.HomeEntity>> =
+        repo.entityStates
+
     private val _ui = MutableStateFlow(HomeScreenUi())
     val ui: StateFlow<HomeScreenUi> = _ui.asStateFlow()
 

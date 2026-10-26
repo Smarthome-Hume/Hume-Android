@@ -114,6 +114,8 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val ui by viewModel.ui.collectAsState()
+    // (Batch D, GAP-07) Trang thai tho HA cho the mo rong trong phong.
+    val entityStates by viewModel.entityStates.collectAsState()
     val cs = MaterialTheme.colorScheme
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -346,6 +348,8 @@ fun HomeScreen(
                         onClimateTemp = { id, t -> viewModel.setClimateTemp(id, t) },
                         onHvacMode = { id, m -> viewModel.setHvacMode(id, m) },
                         onToggleClimate = { viewModel.toggleClimate(it) },
+                        // (Batch D, GAP-07) Trang thai tho HA cho the mo rong.
+                        entityStates = entityStates,
                     )
                 }
                 if (ui.notifOpen) {

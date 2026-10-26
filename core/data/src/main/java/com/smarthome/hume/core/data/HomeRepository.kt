@@ -1,5 +1,6 @@
 package com.smarthome.hume.core.data
 
+import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.model.HomeUiState
 import kotlinx.coroutines.flow.StateFlow
 
@@ -9,6 +10,11 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface HomeRepository {
     val homeState: StateFlow<HomeUiState>
+
+    /** Trang thai tho HA theo entityId — the mo rong trong phong (rua bat /
+     * den / generic) doc sensor + attribute truc tiep tu day, nhu iOS
+     * GroupEntityReader. Implementation o :app: ha.entities. */
+    val entityStates: StateFlow<Map<String, HomeEntity>>
 
     fun toggle(entityId: String)
     /** Bat/tat switch ro rang (khong lat nhu toggle). */

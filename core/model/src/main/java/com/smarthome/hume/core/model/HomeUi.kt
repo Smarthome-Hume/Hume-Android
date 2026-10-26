@@ -65,6 +65,9 @@ data class DeviceUi(
     val kind: DeviceKind = DeviceKind.Toggle,
     val isOn: Boolean = false,
     val powerW: Double? = null,
+    /** Power sensor cua thiet bi (neu co) — dispatcher the mo rong dung de
+     * gate dung nhu iOS (entity hoac powerEntity), khong doan tu ten. */
+    val powerEntityId: String? = null,
 )
 
 data class ClimateUi(
