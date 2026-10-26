@@ -190,6 +190,11 @@ class AppHomeRepository(
         ids.add("sensor.solis_s6_eh1p_backup_load_today_energy_2")
         ids.add("sensor.solis_s6_eh1p_today_battery_discharge_energy_2")
         ids.add("sensor.aptomat_tong_daily")
+        // (Batch B, GAP-04 — port iOS PumpAlertMonitor) Bom may loc Rice Home:
+        // khong watch -> roi bucket ONE_DAY, monitor app-level khong bao gio
+        // thay doi trang thai kip thoi. binary_sensor da watch se vao REALTIME
+        // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s).
+        ids.add("binary_sensor.r_ro_m_01")
         // (Batch A, GAP-05 — port iOS baseWatchedIds) Sensor chi phi ma
         // AppEnergyRepository doc cho the Chi phi dien (grid_cost/home_cost/
         // evn_current_unit_price): truoc day khong watch -> roi bucket

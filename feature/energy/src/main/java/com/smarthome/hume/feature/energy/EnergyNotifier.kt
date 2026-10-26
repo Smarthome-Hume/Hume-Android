@@ -51,6 +51,29 @@ object EnergyNotifier {
     /** Bao dong tu tat sau 30s (port iOS c885ea9). */
     private const val ALARM_TIMEOUT_MS = 30_000L
 
+    /**
+     * (Batch B, GAP-02) Co sync baseline luoi — true luc khoi dong va moi
+     * lan app len foreground (MainActivity.onStart goi requestGridSync(),
+     * port iOS HumeApp.onAppActive -> startGridMonitor sync). Root tieu thu
+     * co nay o emission energyState ke tiep: sync thay vi bao, de khong bao
+     * sai khi reconnect doi state trong luc app background. Chi dung tren
+     * main thread (root collector + MainActivity.onStart deu main) nen
+     * khong can dong bo them.
+     */
+    private var gridSyncRequested = true
+
+    /** Dat co sync baseline luoi cho emission energyState ke tiep (goi tu MainActivity.onStart). */
+    fun requestGridSync() {
+        gridSyncRequested = true
+    }
+
+    /** Root tieu thu co sync: true = emission nay chi sync, khong bao. */
+    fun consumeGridSyncRequest(): Boolean {
+        val requested = gridSyncRequested
+        gridSyncRequested = false
+        return requested
+    }
+
     private var lastGridOn: Boolean? = null
     private var lastLowBattery: Boolean = false
     private var lastProducing: Boolean? = null
@@ -236,8 +259,12 @@ object EnergyNotifier {
         NotificationManagerCompat.from(ctx).notify(id, n)
     }
 
-    /** State khong hop le — bo qua, khong tinh la chuyen doi (port iOS 47aec64). */
-    private fun isValidGridStatus(raw: String?): Boolean {
+    /**
+     * State khong hop le — bo qua, khong tinh la chuyen doi (port iOS 47aec64).
+     * Public de banner view-local o EnergyScreen dung chung guard (Batch B,
+     * GAP-02: banner khong nhay khi sensor chap chon unavailable/unknown).
+     */
+    fun isValidGridStatus(raw: String?): Boolean {
         val s = raw?.trim()?.lowercase() ?: return false
         return s.isNotEmpty() && s != "unavailable" && s != "unknown" && s != "none"
     }

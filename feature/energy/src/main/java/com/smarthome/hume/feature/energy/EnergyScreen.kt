@@ -95,11 +95,10 @@ fun EnergyScreen(
     val ui by vm.ui.collectAsState()
     val haptic = rememberHaptic()
     val scope = rememberCoroutineScope()
-    // Thong bao trang thai he thong dien khi state thay doi
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    androidx.compose.runtime.LaunchedEffect(state) {
-        EnergyNotifier.onStateChanged(ctx, state)
-    }
+    // (Batch B, GAP-02) Thong bao trang thai he thong dien KHONG con goi tu
+    // day nua: M3ERootScreen theo doi app-level (moi tab) va goi
+    // EnergyNotifier.onStateChanged — giu lai day se ban trung 2 lan cho
+    // 1 su kien luoi. Tab nay chi giu banner view-local ben duoi.
     var paneVisible by remember { mutableStateOf(true) }
     val risePlayed = remember { mutableSetOf<String>() }
     // Dinh vi the nang luong de deep-link "Xem pin" cuon toi
@@ -127,13 +126,20 @@ fun EnergyScreen(
     var gridAlert by remember { mutableStateOf<Boolean?>(null) }
     // Theo doi gridOn doi -> hien banner (bo qua lan dau tien).
     var lastGridOnSeen by remember { mutableStateOf<Boolean?>(null) }
-    LaunchedEffect(state.flow.gridOn) {
+    // (Batch B, GAP-02) Guard invalid chung voi monitor: bo qua emission
+    // khi inverterStatus unavailable/unknown/none/rong — tranh banner nhay
+    // khi sensor chap chon nhu iOS da chan.
+    LaunchedEffect(state.flow.gridOn, state.flow.inverterStatus) {
+        if (!EnergyNotifier.isValidGridStatus(state.flow.inverterStatus)) return@LaunchedEffect
         val g = state.flow.gridOn
         if (lastGridOnSeen != null && lastGridOnSeen != g) {
             gridAlert = g
         }
         lastGridOnSeen = g
     }
+    // Banner canh bao bom (Batch B, GAP-04 — port iOS pumpAlertFired):
+    // trang thai nam o PumpAlertMonitor, tab nay chi hien + nut "Da biet".
+    val pumpAlert by PumpAlertMonitor.alertVisible.collectAsState()
 
     // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the nang luong.
     LaunchedEffect(deepLink) {
@@ -225,6 +231,15 @@ fun EnergyScreen(
                 )
             }
         }
+        // Banner do canh bao bom chay lien tuc (Batch B, GAP-04).
+        // Nut "Da biet" chi an banner, giu co bao toi khi bom tat.
+        if (pumpAlert) {
+            item {
+                PumpAlertBanner(
+                    onDismiss = { PumpAlertMonitor.dismissBanner() },
+                )
+            }
+        }
         item {
             Box(Modifier.paneFade(paneVisible)) {
                 when (ui.tab) {
@@ -310,6 +325,64 @@ private fun GridAlertBanner(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = bg,
+                modifier = Modifier.clickable(onClick = onDismiss),
+            )
+        }
+    }
+}
+
+/**
+ * Banner do canh bao bom chay lien tuc (Batch B, GAP-04 — port iOS
+ * pumpAlertFired trong M3EEnergyView). Cung dang GridAlertBanner (do,
+ * chu trang, nut trang) nhung cau chu + nut rieng: nut "Da biet" chi an
+ * banner, co bao giu toi khi bom tat (PumpAlertMonitor.dismissBanner).
+ */
+@Composable
+private fun PumpAlertBanner(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(cs.error)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        MsIcon(
+            Ms.error,
+            contentDescription = null,
+            tint = androidx.compose.ui.graphics.Color.White,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.size(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "MÁY BƠM CHẠY LIÊN TỤC!",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = androidx.compose.ui.graphics.Color.White,
+            )
+            Text(
+                "Máy bơm máy lọc nước đã chạy liên tục 7 phút.",
+                style = MaterialTheme.typography.labelSmall,
+                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
+            )
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(androidx.compose.ui.graphics.Color.White)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text(
+                "Đã biết",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = cs.error,
                 modifier = Modifier.clickable(onClick = onDismiss),
             )
         }

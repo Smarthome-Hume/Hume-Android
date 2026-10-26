@@ -23,6 +23,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.data.HumeGraph
+import com.smarthome.hume.feature.energy.EnergyNotifier
+import com.smarthome.hume.feature.energy.PumpAlertMonitor
 import com.smarthome.hume.core.datastore.ThemeSettings
 import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.model.AuthSession
@@ -97,10 +99,23 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 app.haRepository.onAppForeground()
+                // (Batch B, GAP-02/04) Len foreground: sync baseline canh bao
+                // (port iOS HumeApp.onAppActive) — tranh bao sai khi reconnect
+                // doi state trong luc app background. Dung observer san co
+                // nay, khong tao lifecycle observer moi.
+                EnergyNotifier.requestGridSync()
+                PumpAlertMonitor.sync(
+                    applicationContext,
+                    app.haRepository.entities.value[PumpAlertMonitor.PUMP_ENTITY_ID]?.state,
+                )
             }
 
             override fun onStop(owner: LifecycleOwner) {
                 app.haRepository.onAppBackground()
+                // (Batch B, GAP-04) Tam dung dem 7 phut khi xuong background:
+                // monitor chi chay foreground nhu iOS (giu lastPumpOn + co bao,
+                // lan foreground sau sync() se dem lai neu bom con chay).
+                PumpAlertMonitor.onAppBackground()
             }
         })
 
