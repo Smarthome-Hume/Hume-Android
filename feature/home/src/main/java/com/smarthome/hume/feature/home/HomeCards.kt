@@ -514,14 +514,14 @@ fun SuggestCard(
         if (pagerState.currentPage >= tips.size) pagerState.scrollToPage(tips.size - 1)
     }
     // Cu chi nhan-giu + vuot len de xoa (thay nut X):
-    // nhan-giu -> the chim xuong (sink + scale .97); vuot len -> the di theo tay,
+    // (Da xoa hieu ung an xuong nhu iOS HomeSuggest: nhan-giu chi rung
+    // haptic, khong chim 7dp + scale .97 nua); vuot len -> the di theo tay,
     // tha qua nguong -> bay len + mo dan roi xoa; tha som -> nay spring ve cu.
     var pressing by remember { mutableStateOf(false) }
     var dragDy by remember { mutableFloatStateOf(0f) }
     val offsetYPx = remember { Animatable(0f) }
     val cardAlpha = remember { Animatable(1f) }
     val cardScale = remember { Animatable(1f) }
-    val sinkPx = with(density) { 7.dp.toPx() }
     val dismissThresholdPx = with(density) { 80.dp.toPx() }
     val flyOutPx = with(density) { 180.dp.toPx() }
     val fadeRangePx = with(density) { 240.dp.toPx() }
@@ -556,18 +556,15 @@ fun SuggestCard(
             .pointerInput(tips) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
+                        // Chi rung haptic + keo theo tay (khong chim/scale nua).
                         pressing = true
                         haptic()
-                        scope.launch {
-                            launch { offsetYPx.animateTo(sinkPx, pressSpring) }
-                            launch { cardScale.animateTo(0.97f, pressSpring) }
-                        }
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         dragDy += dragAmount.y
                         scope.launch {
-                            offsetYPx.snapTo(sinkPx + dragDy)
+                            offsetYPx.snapTo(dragDy)
                             cardAlpha.snapTo(
                                 (1f - min(-dragDy / fadeRangePx, 0.5f)).coerceIn(0f, 1f),
                             )

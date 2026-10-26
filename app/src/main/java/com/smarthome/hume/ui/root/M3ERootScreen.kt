@@ -318,6 +318,9 @@ fun M3ERootScreen(
                         onViewCamera = { selected = 2 },
                         roomStore = roomStoreAdapter,
                         pickerEntities = pickerEntities,
+                        // Chung instance wallpaper cua root de card Hinh nen
+                        // (tab Toi, GAP-15) dat xong nen doi ngay.
+                        wallpaperStore = wallpaperStore,
                     )
                 }
             }

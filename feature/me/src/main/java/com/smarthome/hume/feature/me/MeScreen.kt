@@ -141,6 +141,10 @@ fun MeScreen(
     onViewCamera: () -> Unit = {},
     roomStore: com.smarthome.hume.feature.home.RoomStore? = null,
     pickerEntities: kotlinx.coroutines.flow.StateFlow<Map<String, com.smarthome.hume.feature.home.PickerEntity>>? = null,
+    // Instance WallpaperStore cua root (M3ERootScreen): phai dung chung
+    // instance nay thi dat xong nen moi doi ngay (flow cua root); tao
+    // instance moi o day se chi ghi file/prefs, nen chi doi sau restart.
+    wallpaperStore: com.smarthome.hume.core.ui.wallpaper.WallpaperStore? = null,
 ) {
     val seed by vm.seed.collectAsState()
     val darkMode by vm.darkMode.collectAsState()
@@ -183,7 +187,31 @@ fun MeScreen(
     val getVideo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onPicked(it, true) }
     }
+    // Hinh nen (Batch A, GAP-15 — port iOS MeWallpaperCard): chon anh tu
+    // thu vien -> WallpaperStore.setWallpaper(uri) (copy vao bo nho app).
+    val pickWallpaper = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { u ->
+            scope.launch {
+                wallpaperStore?.setWallpaper(u)?.onFailure { e ->
+                    Toast.makeText(context, e.message ?: "Không lưu được hình nền", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    val getWallpaper = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { u ->
+            scope.launch {
+                wallpaperStore?.setWallpaper(u)?.onFailure { e ->
+                    Toast.makeText(context, e.message ?: "Không lưu được hình nền", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
     val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
+    fun launchWallpaperPicker() {
+        if (pickerAvailable) pickWallpaper.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        else getWallpaper.launch("image/*")
+    }
     fun launchImagePicker() {
         if (pickerAvailable) pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         else getImage.launch("image/*")
@@ -299,6 +327,15 @@ fun MeScreen(
             Spacer(Modifier.height(12.dp))
             CustomSeedRow(onApplyCustom = { haptic(); vm.setCustomColor(it) })
         }
+        // Card Hinh nen (port iOS MeWallpaperCard: sau Mau tuy chinh, truoc Font chu)
+        if (wallpaperStore != null) {
+            Box(Modifier.riseEntrance(0).padding(top = 12.dp)) {
+                WallpaperCard(
+                    store = wallpaperStore,
+                    onPick = { launchWallpaperPicker() },
+                )
+            }
+        }
         // Card 3: font chu (Google Fonts) — chon de tai ve va ap dung (2026-09-30)
         Box(Modifier.riseEntrance(0).padding(top = 12.dp)) {
             FontCard(
@@ -402,6 +439,93 @@ fun MeScreen(
     // Sheet chon font chu
     if (showFontSheet) {
         FontPickerSheet(vm = vm, onDismiss = { showFontSheet = false })
+    }
+}
+
+// ---------- hinh nen (port iOS MeWallpaperCard) ----------
+
+/**
+ * Card Hinh nen: chon anh tu thu vien lam nen app (ca sang/toi),
+ * nut Go xoa ve mac dinh. Cung style card Me: bo 28, surfaceContainerHighest,
+ * padding h16/v14, icon box 44dp primaryContainer.
+ */
+@Composable
+private fun WallpaperCard(
+    store: com.smarthome.hume.core.ui.wallpaper.WallpaperStore,
+    onPick: () -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    val wallpaperFile by store.wallpaper.collectAsState()
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(cs.surfaceContainerHighest)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(cs.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                // photo_camera co trong font subset (da verify cmap U+E3B0).
+                MsIcon(Ms.photo_camera, contentDescription = null, tint = cs.onPrimaryContainer)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "HÌNH NỀN",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurfaceVariant,
+                    letterSpacing = 0.4.sp,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    if (wallpaperFile != null) "Đã đặt hình nền cho app" else "Chọn ảnh từ thư viện làm hình nền cho app",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onSurface,
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(cs.primaryContainer)
+                    .pressMorph(pressedScale = 0.97f, onClick = onPick)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "Chọn từ thư viện",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = cs.onPrimaryContainer,
+                )
+            }
+            if (wallpaperFile != null) {
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .clickable { store.reset() }
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Gỡ",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = cs.error,
+                    )
+                }
+            }
+        }
     }
 }
 

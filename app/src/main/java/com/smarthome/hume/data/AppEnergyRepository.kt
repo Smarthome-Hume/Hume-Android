@@ -342,6 +342,14 @@ class AppEnergyRepository(
             }
         }
 
+        // (Batch A, GAP-06 — port iOS EnergyConsumeTab+Cards discoverDevices)
+        // Khu trung CA 2 list theo friendly_name (khong phan biet hoa/thuong),
+        // giu cai co WATTS cao nhat — ap dung truoc khi take() de 2 thiet bi
+        // cung ten khong chiem 2 slot top 5 o che do Cong suat. Che do Nang
+        // luong truoc day giu max kWh, nay doi sang max watts cho nhat quan
+        // voi iOS (gia tri hien thi van la kWh, chi tieu chi chon thay doi);
+        // watts lay tu sensor goc cua candidate (0 neu khong do duoc;
+        // candidate von la sensor nang luong thi lay so raw lam tieu chi phu).
         val powerDevices = candidates
             .filter { it.isPowerSensor() }
             .mapNotNull { e ->
@@ -350,6 +358,8 @@ class AppEnergyRepository(
                 EnergyDevice(e.id, e.friendly(), w, "W", agoText(e))
             }
             .distinctBy { it.id }
+            .groupBy { it.name.trim().lowercase() }
+            .values.mapNotNull { group -> group.maxByOrNull { it.value } }
             .sortedByDescending { it.value }
             .take(POWER_TOP_COUNT)
 
@@ -369,14 +379,11 @@ class AppEnergyRepository(
             EnergyDevice(
                 target.id, e.friendly(), kwh, "kWh", "Hôm nay",
                 (kwh * rate).roundToLong(),
-            )
+            ) to (e.watts() ?: 0.0)
         }
-            .distinctBy { it.id }
-            // (2026-10-22, E5 — port iOS d15e5dd) Khu trung theo ten
-            // (khong phan biet hoa/thuong): 2 sensor cung friendly_name
-            // thi giu cai co kWh cao nhat.
-            .groupBy { it.name.trim().lowercase() }
-            .values.mapNotNull { group -> group.maxByOrNull { it.value } }
+            .distinctBy { it.first.id }
+            .groupBy { it.first.name.trim().lowercase() }
+            .values.mapNotNull { group -> group.maxByOrNull { it.second }?.first }
             .sortedByDescending { it.value }
 
         return powerDevices to energyDevices

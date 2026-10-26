@@ -190,6 +190,12 @@ class AppHomeRepository(
         ids.add("sensor.solis_s6_eh1p_backup_load_today_energy_2")
         ids.add("sensor.solis_s6_eh1p_today_battery_discharge_energy_2")
         ids.add("sensor.aptomat_tong_daily")
+        // (Batch A, GAP-05 — port iOS baseWatchedIds) Sensor chi phi ma
+        // AppEnergyRepository doc cho the Chi phi dien (grid_cost/home_cost/
+        // evn_current_unit_price): truoc day khong watch -> roi bucket
+        // ONE_DAY, gia/chi phi stale toi 24h sau khi HA doi.
+        ids.add("sensor.grid_cost"); ids.add("sensor.home_cost")
+        ids.add("sensor.evn_current_unit_price")
         // BatteryInfo (tab Dien mat troi + popup): dien ap + gioi han dong BMS.
         ids.add("sensor.solis_s6_eh1p_battery_voltage_2")
         ids.add("sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2")

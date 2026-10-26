@@ -448,7 +448,7 @@ object EnergyInsightsManager {
                         label = "Xem thiết bị",
                         glyph = Ms.bolt,
                         isPrimary = true,
-                        target = InsightActionTarget.GoTab(EnergySubTab.Cons),
+                        target = InsightActionTarget.GoTab(EnergySubTab.Electric),
                     ),
                     InsightAction(
                         label = "Xem solar",

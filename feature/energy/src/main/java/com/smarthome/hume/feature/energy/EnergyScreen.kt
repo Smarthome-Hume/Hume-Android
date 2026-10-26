@@ -207,7 +207,8 @@ fun EnergyScreen(
         }
         item {
             EsubGroup(
-                items = listOf("Tiêu thụ", "Điện mặt trời"),
+                // Thu tu + ten theo iOS (solar -> electric); batch A chua co "Nước RO".
+                items = listOf("Điện mặt trời", "Điện lưới"),
                 selectedIndex = ui.tab.ordinal,
                 onSelect = ::selectTab,
                 modifier = Modifier
@@ -227,7 +228,7 @@ fun EnergyScreen(
         item {
             Box(Modifier.paneFade(paneVisible)) {
                 when (ui.tab) {
-                    EnergySubTab.Cons -> EnergyConsTab(
+                    EnergySubTab.Electric -> EnergyConsTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
                     )
                     EnergySubTab.Solar -> EnergySolarTab(

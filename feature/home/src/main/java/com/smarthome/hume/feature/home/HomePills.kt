@@ -102,7 +102,7 @@ private val ExpandedPillContentGap = 4.dp
  * - .smode: card 88x60dp, bo 26px, padding deu 8dp, gap 4dp;
  *   icon 20dp + nhan 11sp; chon = primaryContainer;
  *   vao smIn + stagger, :active scale(.92),
- *   chon xong tu thu gon sau 1000ms.
+ *   chon xong tu thu gon sau 30000ms (port iOS, truoc day 1000ms).
  */
 @Composable
 fun PillsRow(
@@ -124,7 +124,8 @@ fun PillsRow(
         if (!securityExpanded) modeSelectionPending = false
     }
     // The effect is cancelled when collapsed or removed from composition.
-    // Pointer activity pauses the timeout until release, then starts a fresh 2s.
+    // Pointer activity pauses the timeout until release, then starts a fresh 30s
+    // (port iOS HomePills: mo ra chua kip chon da thu ve o 2s cu).
     LaunchedEffect(
         securityExpanded,
         idleActivityRevision,
@@ -134,7 +135,7 @@ fun PillsRow(
         if (!securityExpanded || securityInteractionActive || modeSelectionPending) {
             return@LaunchedEffect
         }
-        delay(2_000)
+        delay(30_000)
         latestOnAutoCollapse()
     }
     val haptic = rememberHaptic()
@@ -308,8 +309,9 @@ fun PillsRow(
                                 selected = m == mode,
                                 entranceDelay = i * 60,
                                 onClick = {
-                                    // Keep the existing 1s mode-selection collapse;
-                                    // cancel the idle timer so the two cannot race.
+                                    // Post-select collapse 30s (port iOS HomePills,
+                                    // truoc day 1000ms); cancel the idle timer so
+                                    // the two cannot race.
                                     modeSelectionPending = true
                                     idleActivityRevision++
                                     haptic()
@@ -606,7 +608,7 @@ private fun BulbPill(
 
 /**
  * .smode: card 88x60dp; chon = primaryContainer; :active scale(.92);
- * vao smIn .45s spring + stagger; chon xong tu thu gon sau 1000ms.
+ * vao smIn .45s spring + stagger; chon xong tu thu gon sau 30000ms (port iOS, truoc day 1000ms).
  */
 @Composable
 private fun SecModeCard(
@@ -655,7 +657,7 @@ private fun SecModeCard(
                     onClick = {
                         onClick()
                         scope.launch {
-                            delay(1000)
+                            delay(30_000)
                             onAutoCollapse()
                         }
                     },

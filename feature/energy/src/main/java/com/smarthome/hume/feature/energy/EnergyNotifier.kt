@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -29,8 +31,18 @@ import com.smarthome.hume.core.model.EnergyUiState
 object EnergyNotifier {
     private const val CHANNEL_ID = "hume_energy_status"
     private const val CHANNEL_NAME = "Trạng thái hệ thống điện"
-    private const val CHANNEL_ALERT_ID = "hume_grid_alert"
+    // Batch A, GAP-17: channel bao dong co rung + am rieng. LUY Y Android:
+    // channel da tao thi khong doi duoc sound/vibrate (createNotificationChannel
+    // bo qua khi id da ton tai) — nen dung id MOI "hume_grid_alert_v2" thay
+    // vi sua channel cu "hume_grid_alert", va xoa channel cu trong
+    // ensureChannel() de user khong thay 2 channel canh bao trong Cai dat.
+    // minSdk = 26 nen channel la co che duy nhat co tac dung (builder
+    // setVibrate/setSound bi channel ghi de tren API 26+).
+    private const val CHANNEL_ALERT_ID = "hume_grid_alert_v2"
     private const val CHANNEL_ALERT_NAME = "Cảnh báo lưới điện"
+    private const val CHANNEL_ALERT_ID_OLD = "hume_grid_alert"
+    /** Pattern rung canh bao (port iOS warning haptic, dang pattern): 0,400,200,400. */
+    private val ALERT_VIBRATE_PATTERN = longArrayOf(0, 400, 200, 400)
 
     /** Action tat bao dong tu notification (port iOS c885ea9 STOP_ALARM). */
     const val ACTION_DISMISS_ALARM = "com.smarthome.hume.DISMISS_GRID_ALARM"
@@ -59,14 +71,30 @@ object EnergyNotifier {
                     NotificationManager.IMPORTANCE_DEFAULT,
                 ).apply { description = "Cập nhật trạng thái điện mặt trời, pin, lưới điện" },
             )
+            // Xoa channel bao dong cu (khong rung/khong am) — neu khong
+            // xoa, user van thay channel cu trong Cai dat > Thong bao.
+            nm.deleteNotificationChannel(CHANNEL_ALERT_ID_OLD)
             // Channel uu tien cao cho canh bao mat dien — hien heads-up banner
-            // ca khi app dang mo (port iOS fa7805e)
+            // ca khi app dang mo (port iOS fa7805e), kem rung + am bao dong
+            // rieng (port iOS alarm.caf + timeSensitive; Android dung am bao
+            // dong he thong TYPE_ALARM vi khong co file caf tuong duong).
             nm.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ALERT_ID,
                     CHANNEL_ALERT_NAME,
                     NotificationManager.IMPORTANCE_HIGH,
-                ).apply { description = "Báo động khi mất điện / có điện trở lại" },
+                ).apply {
+                    description = "Báo động khi mất điện / có điện trở lại"
+                    enableVibration(true)
+                    vibrationPattern = ALERT_VIBRATE_PATTERN
+                    setSound(
+                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build(),
+                    )
+                },
             )
         }
     }
@@ -154,6 +182,7 @@ object EnergyNotifier {
 
     /**
      * Canh bao mat/co dien: uu tien cao (heads-up banner ca khi app mo),
+     * rung + am bao dong theo channel hume_grid_alert_v2 (GAP-17),
      * nut "Tat bao dong", tu tat sau 30s (port iOS c885ea9).
      */
     private fun notifyGridAlert(ctx: Context, title: String, text: String) {

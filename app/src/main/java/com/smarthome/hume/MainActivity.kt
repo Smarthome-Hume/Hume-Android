@@ -1,15 +1,20 @@
 package com.smarthome.hume
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.Network
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,6 +33,42 @@ import com.smarthome.hume.feature.auth.LoginScreen
 import com.smarthome.hume.ui.root.M3ERootScreen
 
 class MainActivity : ComponentActivity() {
+    /**
+     * Xin quyen thong bao (Android 13+) — Batch A, GAP-16, port iOS
+     * HumeApp.onAppActive (nhung chi xin o day, KHONG xin lai moi lan
+     * app foreground nhu iOS). Manifest da khai bao POST_NOTIFICATIONS
+     * tu truoc; truoc day khong noi nao xin nen EnergyNotifier chi
+     * return im lang khi chua cap quyen.
+     */
+    private val notifPermLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* Ket qua luu qua co "asked": tu choi vinh vien -> Toast huong dan ben duoi */ }
+
+    private fun requestNotificationPermissionOnce() {
+        if (Build.VERSION.SDK_INT < 33) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) return
+        val prefs = getSharedPreferences("hume_notif_perm", MODE_PRIVATE)
+        val asked = prefs.getBoolean("asked", false)
+        // Mau BriefEdgeHost: user tu choi vinh vien (khong con hien dialog
+        // he thong) thi khong launch vo ich nua — giai thich ngan bang Toast
+        // huong vao Cai dat thay vi bam vao im re.
+        if (asked && !shouldShowRequestPermissionRationale(
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        ) {
+            Toast.makeText(
+                this,
+                "Thông báo đang tắt: vào Cài đặt > Thông báo để nhận cảnh báo mất điện.",
+                Toast.LENGTH_LONG,
+            ).show()
+            return
+        }
+        prefs.edit().putBoolean("asked", true).apply()
+        notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     override fun onResume() {
         super.onResume()
         // Port iOS 5ce8e65: xoa notification moi lan app len foreground.
@@ -44,6 +85,8 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        // Xin quyen thong bao 1 cho duy nhat (GAP-16): truoc khi ve UI.
+        requestNotificationPermissionOnce()
         // Port iOS 5ce8e65: xoa badge/notification khi mo app.
         // Android khong co badge he thong (tuy launcher) — xoa notification la tuong duong.
         NotificationManagerCompat.from(this).cancelAll()
