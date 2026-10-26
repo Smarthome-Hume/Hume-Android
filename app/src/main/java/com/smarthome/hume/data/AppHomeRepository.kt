@@ -198,6 +198,22 @@ class AppHomeRepository(
         // thay doi trang thai kip thoi. binary_sensor da watch se vao REALTIME
         // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s).
         ids.add("binary_sensor.r_ro_m_01")
+        // (Batch D, GAP-08 — port iOS RoomExpandedCards/DishwasherLiveManager)
+        // Nhom may rua bat Texgio: khong watch -> roi bucket ONE_DAY, the
+        // mo rong stale (trang thai/giai doan/con lai/nhiet do/chuong trinh
+        // + switch/tang cuong/number nuoc mem/hen gio).
+        ids.add("sensor.texgio_tgfpcm795b_g_trang_thai") // DP 7
+        ids.add("sensor.texgio_tgfpcm795b_g_giai_doan_rua") // DP 10
+        ids.add("sensor.texgio_tgfpcm795b_g_thoi_gian_con_lai") // DP 9
+        ids.add("sensor.texgio_tgfpcm795b_g_nhiet_do") // DP 11
+        ids.add("sensor.texgio_tgfpcm795b_g_chuong_trinh") // DP 6
+        ids.add("switch.texgio_tgfpcm795b_g_may_rua_bat") // DP 1
+        ids.add("switch.texgio_tgfpcm795b_g_bat_dau") // DP 2
+        ids.add("switch.texgio_tgfpcm795b_g_hoi_nuoc") // DP 108
+        ids.add("switch.texgio_tgfpcm795b_g_chong_dia") // DP 102
+        ids.add("switch.texgio_tgfpcm795b_g_khoa_tre_em") // DP 101
+        ids.add("number.texgio_tgfpcm795b_g_hen_gio") // DP 8
+        ids.add("number.texgio_tgfpcm795b_g_nuoc_mem") // DP 106
         // (Batch C, GAP-01 — port iOS EnergyWaterTab) Toan bo nhom nuoc RO
         // con lai: khong watch -> roi bucket ONE_DAY, tab Nuoc stale.
         // Bom binary_sensor.r_ro_m_01 da co tu Batch B, khong them trung.
@@ -256,6 +272,8 @@ class AppHomeRepository(
     }
     override fun setLightBrightness(entityId: String, percent: Int) =
         ha.setLightBrightness(entityId, percent)
+    override fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
+        ha.setLocalTuyaDp(deviceId, dp, value)
     override fun setClimateTemp(entityId: String, tempC: Double) =
         ha.setClimateTemperature(entityId, tempC)
     override fun setHvacMode(entityId: String, mode: String) = ha.setHvacMode(entityId, mode)

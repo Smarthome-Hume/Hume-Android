@@ -145,6 +145,10 @@ class HomeViewModel(
 
     // ----- actions (uy thac xuong repo) -----
     fun toggle(entityId: String) = repo.toggle(entityId)
+    /** (Batch D, GAP-08) Ghi number + datapoint LocalTuya cho the rua bat. */
+    fun setNumber(entityId: String, value: Double) = repo.setNumber(entityId, value)
+    fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
+        repo.setLocalTuyaDp(deviceId, dp, value)
     fun setBrightness(entityId: String, percent: Int) = repo.setLightBrightness(entityId, percent)
     fun setClimateTemp(entityId: String, temp: Double) = repo.setClimateTemp(entityId, temp)
     fun setHvacMode(entityId: String, mode: String) = repo.setHvacMode(entityId, mode)

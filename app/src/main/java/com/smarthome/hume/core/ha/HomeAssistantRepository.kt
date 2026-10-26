@@ -891,6 +891,22 @@ class HomeAssistantRepository {
     fun setLightColorTemp(entityId: String, kelvin: Int) =
         callService("light", "turn_on", serviceData(entityId) { put("color_temp_kelvin", kelvin) }, entityId)
 
+    /**
+     * (Batch D, GAP-08) Gui datapoint cho thiet bi LocalTuya — dung format
+     * JSON iOS goi (RoomExpandedCards.swift): {"device_id": ..., "dp": N,
+     * "value": ...}. Chi gui ma chuong trinh DA BIET; ma chua ro khong
+     * bao gio goi ham nay (UI chi thu lai).
+     */
+    fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
+        callService(
+            "localtuya", "set_dp",
+            buildJsonObject {
+                put("device_id", deviceId)
+                put("dp", dp)
+                put("value", value)
+            }.toString(),
+        )
+
     /** The stepper must move on the tap, so write the target attribute locally first. */
     fun setClimateTemperature(entityId: String, temperature: Double) {
         applyLocalAttribute(entityId, "temperature", JsonPrimitive(temperature))

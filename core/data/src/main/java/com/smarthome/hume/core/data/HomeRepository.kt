@@ -20,6 +20,8 @@ interface HomeRepository {
     /** Bat/tat switch ro rang (khong lat nhu toggle). */
     fun setSwitch(entityId: String, on: Boolean)
     fun setNumber(entityId: String, value: Double)
+    /** (Batch D, GAP-08) Gui datapoint LocalTuya (chi ma da biet). */
+    fun setLocalTuyaDp(deviceId: String, dp: Int, value: String)
     fun setLightBrightness(entityId: String, percent: Int)
     fun setClimateTemp(entityId: String, tempC: Double)
     fun setHvacMode(entityId: String, mode: String)

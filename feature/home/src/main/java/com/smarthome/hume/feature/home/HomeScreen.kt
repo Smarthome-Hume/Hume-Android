@@ -350,6 +350,15 @@ fun HomeScreen(
                         onToggleClimate = { viewModel.toggleClimate(it) },
                         // (Batch D, GAP-07) Trang thai tho HA cho the mo rong.
                         entityStates = entityStates,
+                        // (Batch D, GAP-08) Hanh dong the rua bat; D3 them
+                        // den (brightness/rgb/effect) vao day.
+                        expandedActions = ExpandedActions(
+                            onToggle = { viewModel.toggle(it) },
+                            onSetNumber = { id, v -> viewModel.setNumber(id, v) },
+                            onSetLocalTuyaDp = { id, dp, v ->
+                                viewModel.setLocalTuyaDp(id, dp, v)
+                            },
+                        ),
                     )
                 }
                 if (ui.notifOpen) {
