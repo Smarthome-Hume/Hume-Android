@@ -52,6 +52,8 @@ fun WeekChartD(
     vals: List<Float>,
     labels: List<String>,
     modifier: Modifier = Modifier,
+    /** Don vi hien trong tooltip (GAP-24): mac dinh kWh, tab Nuoc truyen "L". */
+    unit: String = "kWh",
 ) {
     val cs = MaterialTheme.colorScheme
     var selected by remember { mutableStateOf<Int?>(null) }
@@ -153,7 +155,7 @@ fun WeekChartD(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} kWh",
+                            "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} $unit",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = cs.onSurface,

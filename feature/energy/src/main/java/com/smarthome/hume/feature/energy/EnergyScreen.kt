@@ -213,8 +213,8 @@ fun EnergyScreen(
         }
         item {
             EsubGroup(
-                // Thu tu + ten theo iOS (solar -> electric); batch A chua co "Nước RO".
-                items = listOf("Điện mặt trời", "Điện lưới"),
+                // Thu tu + ten theo iOS (solar -> electric -> water, batch C them "Nước RO").
+                items = listOf("Điện mặt trời", "Điện lưới", "Nước RO"),
                 selectedIndex = ui.tab.ordinal,
                 onSelect = ::selectTab,
                 modifier = Modifier
@@ -250,6 +250,9 @@ fun EnergyScreen(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
                         energyBivr = energyBivr,
                         onBatteryClick = { insightPopup = InsightPopup.Battery },
+                    )
+                    EnergySubTab.Water -> EnergyWaterTab(
+                        state = state, risePlayed = risePlayed,
                     )
                 }
             }

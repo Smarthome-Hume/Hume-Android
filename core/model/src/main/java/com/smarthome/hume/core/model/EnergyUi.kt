@@ -105,6 +105,33 @@ data class BatteryControl(
     val isOn: Boolean = false,
 )
 
+/**
+ * Du lieu sub-tab Nuoc RO (port iOS EnergyWaterTab.swift, GAP-01).
+ * Entity ID THAT tren HA .22 (integration rice_home, may Rice Home R-RO-M-01):
+ * HA sinh ID theo ten thiet bi + hau to so theo thu tu dang ky — KHONG phai
+ * dang r_ro_m_01_<key>. Dung "sua" lai: entity dang <key> khong ton tai.
+ *   TDS -> sensor.r_ro_m_01, nhiet do -> sensor.r_ro_m_01_2,
+ *   lit hom nay -> sensor.r_ro_m_01_4, loi 1 con lai -> sensor.r_ro_m_01_7,
+ *   loi 1 da loc -> sensor.r_ro_m_01_8, bom -> binary_sensor.r_ro_m_01,
+ *   nuoc cap -> binary_sensor.r_ro_m_01_2, dang dung -> binary_sensor.r_ro_m_01_3.
+ * Loi 4-5 KHONG co du lieu (may khong bao) nen khong hien, giong iOS.
+ */
+data class WaterUiState(
+    val tempC: Double = 0.0,
+    val todayLiters: Double = 0.0,
+    val tds: Double = 0.0,
+    val filterPct: Double = 0.0,
+    val filterLiters: Double = 0.0,
+    val pumpOn: Boolean = false,
+    val waterInOn: Boolean = false,
+    val waterUseOn: Boolean = false,
+    /** So phut ke tu last_changed (null neu khong ro) — cho dong "X phut truoc". */
+    val filterMinutesAgo: Int? = null,
+    val pumpMinutesAgo: Int? = null,
+    val waterInMinutesAgo: Int? = null,
+    val waterUseMinutesAgo: Int? = null,
+)
+
 /** Trang thai rut gon 1 entity dieu khien duoc (phuc vu Energy Insights + Insight popup). */
 data class EntityToggleState(
     val entityId: String,
@@ -134,4 +161,13 @@ data class EnergyUiState(
     val lowBatteries: List<LowBatteryDevice> = emptyList(),
     /** Trang thai cac entity dieu khien (light/switch/fan/climate/cover/lock) — cho Insights. */
     val toggleStates: Map<String, EntityToggleState> = emptyMap(),
+    /** Du lieu sub-tab Nuoc RO (GAP-01). */
+    val water: WaterUiState = WaterUiState(),
+    /**
+     * Bieu do tuan nuoc: 7 cot (6 ngay qua + hom nay), gia tri = max lit trong
+     * ngay cua sensor.r_ro_m_01_4 (port iOS loadWaterWeekMax). Truong `kwh`
+     * cua EnergyWeekPoint o day mang lit — don vi hien thi do WeekChartD(unit="L")
+     * quyet dinh, khong phai ten truong.
+     */
+    val waterWeek: List<EnergyWeekPoint> = emptyList(),
 )

@@ -17,6 +17,7 @@ import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.model.EnergyWeekPoint
 import com.smarthome.hume.core.model.EntityToggleState
 import com.smarthome.hume.core.model.HumeConfig
+import com.smarthome.hume.core.model.WaterUiState
 import com.smarthome.hume.core.model.HomeEntity as LegacyEntity
 import com.smarthome.hume.core.model.LowBatteryDevice
 import kotlinx.coroutines.CoroutineScope
@@ -93,6 +94,7 @@ class AppEnergyRepository(
 
     override fun refreshHistory() {
         scope.launch { loadWeek() }
+        scope.launch { loadWaterWeek() }
     }
 
     // ---------- build ----------
@@ -238,7 +240,26 @@ class AppEnergyRepository(
                 )
             }
 
+        // (Batch C, GAP-01 — port iOS EnergyWaterTab) Nhom nuoc RO, ID that
+        // tren HA .22 (xem comment o WaterUiState). Loi 4-5 khong co du lieu
+        // nen khong dua vao state, giong iOS.
+        val water = WaterUiState(
+            tempC = v("sensor.r_ro_m_01_2"),
+            todayLiters = v("sensor.r_ro_m_01_4"),
+            tds = v("sensor.r_ro_m_01"),
+            filterPct = v("sensor.r_ro_m_01_7"),
+            filterLiters = v("sensor.r_ro_m_01_8"),
+            pumpOn = entities["binary_sensor.r_ro_m_01"]?.state == "on",
+            waterInOn = entities["binary_sensor.r_ro_m_01_2"]?.state == "on",
+            waterUseOn = entities["binary_sensor.r_ro_m_01_3"]?.state == "on",
+            filterMinutesAgo = entities["sensor.r_ro_m_01_7"]?.minutesAgo(),
+            pumpMinutesAgo = entities["binary_sensor.r_ro_m_01"]?.minutesAgo(),
+            waterInMinutesAgo = entities["binary_sensor.r_ro_m_01_2"]?.minutesAgo(),
+            waterUseMinutesAgo = entities["binary_sensor.r_ro_m_01_3"]?.minutesAgo(),
+        )
+
         return _state.value.copy(
+            water = water,
             todayKwh = homeDaily,
             cost = cost,
             powerRows = powerRows,
@@ -285,6 +306,38 @@ class AppEnergyRepository(
             isToday = true,
         )
         _state.value = _state.value.copy(week = days)
+    }
+
+    /**
+     * Bieu do tuan nuoc (Batch C, GAP-01 — port iOS loadWaterWeekMax):
+     * sensor.r_ro_m_01_4 reset hang ngay nen gia tri cot = MAX trong ngay.
+     * iOS goi 1 batch fetchHistoryBatch 7 ngay roi chia theo ngay; Android
+     * hoi TUNG NGAY MOT qua fetchRange (cung cach loadWeek, theo bai hoc
+     * trong HistoryFetcher: 1 query 168h de timeout tren HA yeu) — ngu
+     * nghia ket qua giong het: max cua moi ngay lich, nhan T2..T7/CN giong
+     * loadWeek (Mon=1 -> T2 ... Sun=7 -> CN, khop cach iOS danh nhan
+     * weekday 1=CN, con lai T<weekday>). Cot hom nay cung lay max lich su
+     * nhu iOS (khong lay live state nhu loadWeek cua tab Dien) — bo dem
+     * don dieu trong ngay nen max lich su ~ gia tri live; so lit live van
+     * hien o headline cua the Su dung.
+     * Khong cache (khac loadWeek): cot nuoc doi lien tuc trong ngay, cache
+     * theo ngay se giu gia tri cu toi het ngay.
+     */
+    private suspend fun loadWaterWeek() {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val dayMs = 86_400_000L
+        val labels = arrayOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
+        val days = (6 downTo 0).map { ago ->
+            val date = today.minusDays(ago.toLong())
+            val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
+            val maxV = runCatching {
+                HistoryFetcher.fetchRange("sensor.r_ro_m_01_4", start, start + dayMs)
+                    .maxOfOrNull { it.value } ?: 0.0
+            }.getOrDefault(0.0)
+            EnergyWeekPoint(labels[date.dayOfWeek.value - 1], maxV, isToday = ago == 0)
+        }
+        _state.value = _state.value.copy(waterWeek = days)
     }
 
     // ---------- device list (port DeviceFilterList) ----------

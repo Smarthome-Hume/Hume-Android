@@ -195,6 +195,13 @@ class AppHomeRepository(
         // thay doi trang thai kip thoi. binary_sensor da watch se vao REALTIME
         // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s).
         ids.add("binary_sensor.r_ro_m_01")
+        // (Batch C, GAP-01 — port iOS EnergyWaterTab) Toan bo nhom nuoc RO
+        // con lai: khong watch -> roi bucket ONE_DAY, tab Nuoc stale.
+        // Bom binary_sensor.r_ro_m_01 da co tu Batch B, khong them trung.
+        ids.add("sensor.r_ro_m_01"); ids.add("sensor.r_ro_m_01_2")
+        ids.add("sensor.r_ro_m_01_4"); ids.add("sensor.r_ro_m_01_7")
+        ids.add("sensor.r_ro_m_01_8")
+        ids.add("binary_sensor.r_ro_m_01_2"); ids.add("binary_sensor.r_ro_m_01_3")
         // (Batch A, GAP-05 — port iOS baseWatchedIds) Sensor chi phi ma
         // AppEnergyRepository doc cho the Chi phi dien (grid_cost/home_cost/
         // evn_current_unit_price): truoc day khong watch -> roi bucket

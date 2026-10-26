@@ -15,9 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 // Thu tu theo iOS (M3EEnergyView allCases: solar -> electric -> water).
-// Batch A chi co 2 tab (tab Nuoc RO them o batch C); mac dinh la Dien luoi
-// nhu iOS (.electric), khong phai tab dau tien.
-enum class EnergySubTab { Solar, Electric }
+// Batch C them Water (GAP-01); mac dinh van la Dien luoi nhu iOS
+// (.electric), khong phai tab dau tien.
+enum class EnergySubTab { Solar, Electric, Water }
 enum class DeviceMode { Power, Energy }
 
 data class EnergyScreenUi(
