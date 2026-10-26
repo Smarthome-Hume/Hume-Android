@@ -41,13 +41,11 @@ import java.util.Locale
  * tu entity HA .22, xem comment o WaterUiState) — tab nay khong tu goi HA.
  * Khong copy uiThrottle 2s cua iOS; khong hien loi 4-5.
  *
- * ICON (ghi ro, khong regen font o batch nay — font thuoc Batch E):
- * iOS dung SF Symbol `filter` (wrench.and.screwdriver) va `pump`
- * (arrow.triangle.2.circlepath); font Material Symbols subset cua Android
- * (83 glyph) KHONG co filter/pump/tune/autorenew (da check cmap) nen dung
- * glyph san co trong font, tuong duong ve nghia gan nhat:
- *   Tuoi tho loi -> Ms.sensors (glyph thiet bi/cam bien, co trong font)
- *   May bom     -> Ms.power   (glyph bat/tat thiet bi, co trong font)
+ * ICON (Batch E GAP-11, font regen 150 glyph tu Material Symbols Rounded
+ * goc v2.978): iOS dung SF Symbol `filter` va `pump`; nay font da co
+ * glyph that nen khong dung icon tam nua:
+ *   Tuoi tho loi -> Ms.filter     (U+E3D3, glyph loc)
+ *   May bom     -> Ms.water_pump (U+F5D8, glyph bom nuoc)
  * Nuoc cap -> Ms.water_drop va Dang su dung -> Ms.person la parity dung
  * iOS (ca 2 deu co trong font).
  */
@@ -301,7 +299,7 @@ private fun WaterSensorsGrid(w: WaterUiState, risePlayed: MutableSet<String>) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             WaterSensorCard(
-                glyph = Ms.sensors,
+                glyph = Ms.filter,
                 name = "Tuổi thọ lõi",
                 ago = waterAgo(w.filterMinutesAgo),
                 active = filterActive,
@@ -311,7 +309,7 @@ private fun WaterSensorsGrid(w: WaterUiState, risePlayed: MutableSet<String>) {
                 modifier = Modifier.weight(1f),
             )
             WaterSensorCard(
-                glyph = Ms.power,
+                glyph = Ms.water_pump,
                 name = "Máy bơm",
                 ago = waterAgo(w.pumpMinutesAgo),
                 active = w.pumpOn,
