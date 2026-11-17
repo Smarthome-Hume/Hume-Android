@@ -163,9 +163,8 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Tải tiêu thụ",
-                // iOS EnergySolarTab+Sunsynk.swift: M3EType.cardTitle 20pt
-                // (M3ETheme.swift) — Android titleSmall 14sp nho hon.
-                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
+                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
                 modifier = Modifier.alignByBaseline(),
             )
             Row(
@@ -247,8 +246,8 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Pin S6",
-                // iOS EnergySolarTab+Sunsynk.swift: M3EType.cardTitle 20pt.
-                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
+                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
             )
             Text(
                 "SOC ${state.battery.soc.roundToInt()}%",
@@ -407,13 +406,10 @@ private fun Expander(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    // (2026-11-17) Unify title the ve cardTitle 20pt:
-                    // titleSmall 14sp/17,1 -> 20sp/24,4; cot title+sub
-                    // 33,7 -> 41,0 < icon 44dp nen 0dp he qua. LUY Y: iOS
-                    // SolisExpander (EnergySolarTab.swift:169) dung
-                    // titleSmall 14pt — unify co tinh lech iOS o day
-                    // theo lenh dong nhat, khong phai port 1:1.
-                    style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
+                    // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu
+                    // dich (truoc day unify 20sp/24,4 o vong 17/11; iOS
+                    // SolisExpander dung titleSmall 14pt).
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(

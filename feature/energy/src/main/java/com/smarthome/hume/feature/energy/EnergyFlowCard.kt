@@ -169,13 +169,10 @@ fun EnergyFlowCard(
                 Column {
                     Text(
                         "Năng lượng",
-                        // (2026-11-17) Unify title the ve cardTitle 20pt:
-                        // titleLarge 22sp/26,8 -> 20sp/24,4 = -2,4dp/the
-                        // (cot trai 45,4 -> 43,0). LUY Y: iOS Flow
-                        // (EnergySolarTab+Flow.swift:103) dung titleLarge
-                        // 22pt — unify co tinh lech iOS o day theo lenh
-                        // dong nhat, khong phai port 1:1.
-                        style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
+                        // Title 13pt theo lenh user 18/11, lech iOS 20pt co
+                        // chu dich (truoc day unify 20sp/24,4 o vong 17/11;
+                        // iOS Flow dung titleLarge 22pt).
+                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                     // Dong trang thai inverter (port iOS 007d8ce): doc tu sensor moi.
