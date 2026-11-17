@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import android.os.SystemClock
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -63,12 +64,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.ClimateUi
@@ -299,13 +302,50 @@ private fun RoomCard(
                 // hien du. Khong thu nho chu, khong cat thong tin.
                 val subColor = if (room.lightOn) cs.onPrimaryContainer
                 else cs.onSurfaceVariant
-                if (room.roomPowerW > 0) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                // (2026-11-17, LỖI 3 vòng fix 2: sub vẫn bị "N ..." — ảnh 4842)
+                // iOS sub thẻ phòng là Font.custom 12pt CỨNG (M3EType.bodySmall,
+                // HomeRooms.swift:223-229 + M3ETheme.swift:143: f(12, .medium) ->
+                // Font.custom, không scale theo Dynamic Type), slot 144pt nên
+                // "7 thiết bị · 5 bật · 1,2kW" ~139pt luôn vừa. Android bodySmall
+                // là 12.sp nên scale theo fontScale hệ thống: ở fontScale > 1.0,
+                // Row tách của fix 7f2ab6b giữ được công suất nhưng phần đếm
+                // weight(1f) vẫn bị "..." ("5 ..." trong ảnh). Ghim fontScale =
+                // 1f CHỈ cho sub này để render đúng 12sp như iOS 12pt ở mọi cỡ
+                // chữ hệ thống. Không đổi chuỗi (đã là dạng ngắn "bật" như iOS),
+                // không thu nhỏ chữ, không đổi layout.
+                CompositionLocalProvider(
+                    LocalDensity provides Density(
+                        density = LocalDensity.current.density,
+                        fontScale = 1f,
+                    ),
+                ) {
+                    if (room.roomPowerW > 0) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = subColor,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                " · " + formatRoomPowerText(room.roomPowerW),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = subColor,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    } else {
                         Text(
                             "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
                             style = MaterialTheme.typography.bodySmall,
@@ -314,28 +354,9 @@ private fun RoomCard(
                             maxLines = 1,
                             softWrap = false,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            " · " + formatRoomPowerText(room.roomPowerW),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = subColor,
-                            maxLines = 1,
-                            softWrap = false,
+                            modifier = Modifier.padding(top = 3.dp),
                         )
                     }
-                } else {
-                    Text(
-                        "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = subColor,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
                 }
             }
         }
