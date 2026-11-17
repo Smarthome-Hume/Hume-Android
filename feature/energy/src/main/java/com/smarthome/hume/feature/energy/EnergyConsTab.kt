@@ -177,7 +177,9 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        // (2026-11-18) Cat MANH theo lenh user 04:30: contentPadding 20->10dp
+        // (-20dp tong doc; ngang cung 10dp).
+        contentPadding = 10.dp,
         modifier = Modifier.riseOnce("cons-cost", 440, risePlayed),
     ) {
         Text(
@@ -185,7 +187,8 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             // Title 17pt theo lenh user 18/11.
             style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
         )
-        Spacer(Modifier.height(12.dp))
+        // (2026-11-18) Cat MANH: khe title->Stat2 12->6dp.
+        Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat2(
                 label = "Điện lưới",
@@ -198,7 +201,8 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 modifier = Modifier.weight(1f),
             )
         }
-        Spacer(Modifier.height(10.dp))
+        // (2026-11-18) Cat MANH: khe Stat2->PBox 10->6dp.
+        Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PBox("Giá mua", (state.cost.buyPrice).toVnd(), Modifier.weight(1f))
             PBox("Giá EVN", (state.cost.evnPrice).toVnd(), Modifier.weight(1f))
@@ -214,7 +218,8 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(14.dp),
+            // (2026-11-18) Cat MANH: padding Stat2 14->8dp (-12dp).
+            .padding(8.dp),
     ) {
         Text(
             label,
@@ -226,7 +231,8 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
         // Overshoot khi data ve (port iOS 84dfe2c, cost-<label>); smartVnd giu ngan
         // nen hiem khi tran — giong iOS dung lineLimit(1).
         Row(
-            modifier = Modifier.padding(top = 4.dp),
+            // (2026-11-18) Cat MANH: khe label->gia tri 4->2dp.
+            modifier = Modifier.padding(top = 2.dp),
         ) {
             OvershootNumber(
                 value = vnd.toDouble(),
@@ -235,7 +241,9 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
                 chaosId = "cost-$label",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                    lineHeight = 24.4.sp,
+                    // (2026-11-18) Cat MANH: lineHeight gia tri 24,4->20sp
+                    // (-4,4dp; gia tri chi gom chu so/dau phay nen vua).
+                    lineHeight = 20.sp,
                 ).tnum(),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -260,7 +268,8 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(12.dp),
+            // (2026-11-18) Cat MANH: padding PBox 12->8dp (-8dp).
+            .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -273,9 +282,11 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
-                lineHeight = 17.1.sp,
+                // (2026-11-18) Cat MANH: lineHeight gia tri 17,1->15,5sp
+                // (-1,6dp; gia tri chi gom chu so + "đ", khong chan duoi).
+                lineHeight = 15.5.sp,
             ).tnum(),
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
