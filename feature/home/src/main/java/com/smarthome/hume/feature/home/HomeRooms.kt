@@ -73,6 +73,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.ClimateUi
@@ -224,6 +225,9 @@ private fun RoomCard(
                         val textMeasurer = rememberTextMeasurer()
                         val baseTemperatureStyle = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Light,
+                            // (2026-11-17) iOS tempValue khong co tnum
+                            // (M3ETheme.swift:135) — bo tnum tang bien an toan.
+                            fontFeatureSettings = "",
                         )
                         BoxWithConstraints(
                             contentAlignment = Alignment.CenterStart,
@@ -272,13 +276,24 @@ private fun RoomCard(
                 }
                 // Khoang cach icon-ten phong 25dp (iOS: Spacer().frame(height: 25))
                 Spacer(Modifier.height(25.dp))
-                com.smarthome.hume.core.ui.components.MarqueeText(
-                    text = room.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (room.lightOn) cs.onPrimaryContainer
-                    else cs.onSurface,
-                )
+                // (2026-11-17) Ten phong ghim fontScale = 1f nhu subtitle:
+                // iOS Font.custom 14pt cung, khong scale theo Dynamic Type
+                // (o fontScale 1,15 ten dai nhat 144,4dp > slot 140dp va
+                // bat dau cuon, trong khi iOS khong bao gio cuon).
+                CompositionLocalProvider(
+                    LocalDensity provides Density(
+                        density = LocalDensity.current.density,
+                        fontScale = 1f,
+                    ),
+                ) {
+                    com.smarthome.hume.core.ui.components.MarqueeText(
+                        text = room.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (room.lightOn) cs.onPrimaryContainer
+                        else cs.onSurface,
+                    )
+                }
                 // (GAP-27) Sub luon "N thiet bi · M bat · power" khi co
                 // cong suat, nhu iOS HomeRooms.swift:224-225.
                 // (2026-11-17, the phong trang chinh: cong suat bi che)
@@ -319,6 +334,9 @@ private fun RoomCard(
                 // hien — iOS slot 144pt cung cat chuoi nay.
                 val subStyle = MaterialTheme.typography.bodySmall.copy(
                     fontFeatureSettings = "",
+                    // (2026-11-17) lineHeight tu nhien 14,6sp (= 12 x 1,219):
+                    // M3 bodySmall 16dp thua 1,4dp/the so voi iOS.
+                    lineHeight = 14.6.sp,
                 )
                 // (2026-11-17, LỖI 3 vòng fix 2: sub vẫn bị "N ..." — ảnh 4842)
                 // iOS sub thẻ phòng là Font.custom 12pt CỨNG (M3EType.bodySmall,
@@ -337,43 +355,74 @@ private fun RoomCard(
                         fontScale = 1f,
                     ),
                 ) {
-                    if (room.roomPowerW > 0) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                    // (2026-11-17, sub van bi "N ..." khi cong suat >= 2,0kW)
+                    // Slot 140dp; "7 thiet bi · 7 bat · 2,0kW" = 142,5dp,
+                    // "4 thiet bi · 4 bat · 2,0kW" = 144,2dp ngay ca khi da
+                    // bo tnum; iOS vua duoc chi nho slot 163pt. Thu chu
+                    // xuong 11sp CHI khi do thay tran (pattern nhiet do):
+                    // ca xau nhat 144,2 -> 132,2dp vua, ca cuc doan
+                    // 147,6 -> 135,3dp vua. lineHeight giu 14,6sp ca 2 co
+                    // de chieu cao the khong doi khi doi co.
+                    val textMeasurer = rememberTextMeasurer()
+                    val fullSub = if (room.roomPowerW > 0) {
+                        "${room.deviceCount} thiết bị · ${room.devicesOn} bật · " +
+                            formatRoomPowerText(room.roomPowerW)
+                    } else {
+                        "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
+                    }
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        val maxWpx = with(LocalDensity.current) {
+                            maxWidth.roundToPx()
+                        }
+                        val subFontSize = if (textMeasurer.measure(
+                            text = AnnotatedString(fullSub),
+                            style = subStyle,
+                            overflow = TextOverflow.Clip,
+                            softWrap = false,
+                            maxLines = 1,
+                            constraints = Constraints(maxWidth = maxWpx),
+                        ).hasVisualOverflow) 11.sp else 12.sp
+                        val sizedSubStyle = subStyle.copy(fontSize = subFontSize)
+                        if (room.roomPowerW > 0) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
+                                    style = sizedSubStyle,
+                                    fontWeight = FontWeight.Medium,
+                                    color = subColor,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    " · " + formatRoomPowerText(room.roomPowerW),
+                                    style = sizedSubStyle,
+                                    fontWeight = FontWeight.Medium,
+                                    color = subColor,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                        } else {
                             Text(
                                 "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
-                                style = subStyle,
+                                style = sizedSubStyle,
                                 fontWeight = FontWeight.Medium,
                                 color = subColor,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                " · " + formatRoomPowerText(room.roomPowerW),
-                                style = subStyle,
-                                fontWeight = FontWeight.Medium,
-                                color = subColor,
-                                maxLines = 1,
-                                softWrap = false,
+                                modifier = Modifier.padding(top = 3.dp),
                             )
                         }
-                    } else {
-                        Text(
-                            "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
-                            style = subStyle,
-                            fontWeight = FontWeight.Medium,
-                            color = subColor,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
                     }
                 }
             }
@@ -558,7 +607,9 @@ fun RoomSheet(
                     item {
                         Text(
                             "Thiết bị",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                lineHeight = TextUnit.Unspecified,
+                            ),
                             fontWeight = FontWeight.SemiBold,
                             color = cs.onSurface,
                             modifier = Modifier.padding(top = 4.dp),
@@ -618,21 +669,37 @@ fun RoomSheet(
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 room.name,
-                                style = MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    lineHeight = TextUnit.Unspecified,
+                                ),
                                 fontWeight = FontWeight.Medium,
                                 color = cs.onSurface,
                             )
                         }
-                        Text(
-                            // (GAP-27) Sheet luon kem power, ke ca 0W —
-                            // iOS HomeRooms.swift:401-404.
-                            "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật · " +
-                                formatRoomPowerText(room.roomPowerW),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = cs.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-                        )
+                        // (2026-11-17) Sub sheet ap cung subStyle (bo tnum,
+                        // lineHeight 14,6sp) + ghim fontScale = 1f nhu sub
+                        // the phong, cho dong nhat (slot sheet ~328dp nen
+                        // chi ket khi fontScale >= ~1,8, khong phai viec gap).
+                        CompositionLocalProvider(
+                            LocalDensity provides Density(
+                                density = LocalDensity.current.density,
+                                fontScale = 1f,
+                            ),
+                        ) {
+                            Text(
+                                // (GAP-27) Sheet luon kem power, ke ca 0W —
+                                // iOS HomeRooms.swift:401-404.
+                                "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật · " +
+                                    formatRoomPowerText(room.roomPowerW),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFeatureSettings = "",
+                                    lineHeight = 14.6.sp,
+                                ),
+                                fontWeight = FontWeight.Medium,
+                                color = cs.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -678,7 +745,9 @@ private fun EnvTile(
                     // (GAP-30) EnvTile value titleMedium, nhu iOS
                     // HomeRooms.swift:490 (comment iOS :473 ghi titleLarge
                     // la sai so voi code).
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurface,
                 )
@@ -1008,7 +1077,9 @@ fun DeviceRow(
                 Column(Modifier.weight(1f)) {
                     Text(
                         d.label,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onSurface,
                     )
@@ -1024,7 +1095,9 @@ fun DeviceRow(
                         } + (if (d.isOn && powerW != null && powerW > 0)
                             " · ${if (powerW >= 1000) "%.1f kW".format(powerW / 1000) else "%.0f W".format(powerW)}"
                         else "") + roomSuffix,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         fontWeight = FontWeight.Medium,
                         color = cs.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp),
