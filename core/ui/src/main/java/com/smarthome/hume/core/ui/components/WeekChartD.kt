@@ -39,7 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Bieu do cot phuong an D (HTML demo hume-m3e-solar-charts.html):
@@ -69,8 +69,8 @@ fun WeekChartD(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            // Cat duoi iOS theo lenh user 22:03: 150 -> 120dp.
-            .height(120.dp)
+            // Cat duoi iOS theo lenh user 22:03: 150 -> 120dp (token Height.WeekChart).
+            .height(M3ETokens.Height.WeekChart)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { showAvg = !showAvg })
             },
@@ -85,8 +85,8 @@ fun WeekChartD(
         val bw = 30.dp * sx
         val avgY = y(avg)
         // Duong TB dut net (ve sau cot)
-        // Cat duoi iOS theo lenh user 22:03: 150 -> 120dp.
-        Canvas(Modifier.fillMaxWidth().height(120.dp)) {
+        // Cat duoi iOS theo lenh user 22:03: 150 -> 120dp (token Height.WeekChart).
+        Canvas(Modifier.fillMaxWidth().height(M3ETokens.Height.WeekChart)) {
             val yPx = avgY.toPx()
             val marginPx = 20.dp.toPx() * sx
             drawLine(
@@ -153,15 +153,21 @@ fun WeekChartD(
                 ) {
                     Box(
                         modifier = Modifier
-                            .shadow(8.dp, CircleShape)
+                            .shadow(M3ETokens.Spacing.Sm, CircleShape)
                             .clip(CircleShape)
                             .background(cs.surfaceContainerHigh)
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                            .padding(
+                                horizontal = 14.dp,
+                                vertical = M3ETokens.Spacing.Sm,
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             "${labels.getOrElse(i) { "" }}: ${"%.1f".format(v)} $unit",
-                            style = MaterialTheme.typography.bodySmall,
+                            // bodySmall tran: LH M3 mac dinh 16 -> token 14,6 (audit muc 3).
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                            ),
                             fontWeight = FontWeight.Bold,
                             color = cs.onSurface,
                             textAlign = TextAlign.Center,
@@ -177,14 +183,17 @@ fun WeekChartD(
                 Modifier
                     .align(Alignment.TopEnd)
                     .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
-                    .padding(end = 4.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .padding(end = M3ETokens.Spacing.Xs)
+                    .clip(RoundedCornerShape(M3ETokens.Spacing.Sm))
                     .background(glassBg)
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                    .padding(horizontal = M3ETokens.Spacing.Sm, vertical = 3.dp),
             ) {
                 Text(
                     "TB ${"%.1f".format(avg)}",
-                    style = MaterialTheme.typography.labelSmall,
+                    // labelSmall tran: LH M3 mac dinh 16 -> token 13,4 (audit muc 3).
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     fontWeight = FontWeight.Bold,
                     color = cs.onSurface,
                     maxLines = 1,
@@ -205,7 +214,9 @@ fun WeekChartD(
                 // (M3ETheme.swift khong set lineHeight; WeekChartD.swift:160-162
                 // .font(M3EType.labelSmall)). Android labelSmall mac dinh 16
                 // lam nhan ngay cao hon iOS ~2.6dp moi bieu do cot.
-                style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
+                ),
                 fontWeight = if (today) FontWeight.Bold else FontWeight.SemiBold,
                 color = if (today) cs.primary else cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,

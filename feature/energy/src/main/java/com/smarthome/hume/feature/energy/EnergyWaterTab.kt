@@ -32,6 +32,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.WeekChartD
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.util.Locale
 
 /**
@@ -71,7 +72,7 @@ fun EnergyWaterTab(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
+        verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
     ) {
         WaterWeekCard(state, risePlayed)
         WaterTdsCard(state.water, risePlayed)
@@ -86,8 +87,8 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
     val cs = MaterialTheme.colorScheme
     val w = state.water
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = Modifier.riseOnce("water-week", 420, risePlayed),
     ) {
         Row(
@@ -95,8 +96,11 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
         ) {
             Text(
                 "Sử dụng",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 (token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -113,6 +117,9 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
                     temp1(w.todayLiters),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.SemiBold,
+                        fontSize = M3ETokens.Text.HeroNumber.fontSize,
+                        // LH M3 mac dinh 40 -> token 39 (audit muc 3, nhom c).
+                        lineHeight = M3ETokens.Text.HeroNumber.lineHeight,
                         letterSpacing = (-0.3).sp,
                     ),
                     color = cs.onSurface,
@@ -122,17 +129,21 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
                 )
                 Text(
                     "L",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        lineHeight = M3ETokens.Text.ButtonText.lineHeight,
+                    ),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     modifier = Modifier
-                        .padding(start = 4.dp)
+                        .padding(start = M3ETokens.Spacing.Xs)
                         .alignByBaseline(),
                 )
                 Text(
                     " • ",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = M3ETokens.Text.Body.lineHeight,
+                    ),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
@@ -140,7 +151,9 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
                 )
                 Text(
                     temp1(w.tempC),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = M3ETokens.Text.Body.lineHeight,
+                    ),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
@@ -148,7 +161,9 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
                 )
                 Text(
                     "°C",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                    ),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
@@ -158,7 +173,8 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
                 )
             }
         }
-        Spacer(Modifier.height(14.dp))
+        // Khe title->chart 14->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         val vals = state.waterWeek.map { it.kwh.toFloat() }
         val labels = state.waterWeek.map { it.label }
         if (vals.isNotEmpty()) {
@@ -166,7 +182,9 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
         } else {
             Text(
                 "Đang tải dữ liệu…",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                ),
                 color = cs.onSurfaceVariant,
             )
         }
@@ -197,8 +215,8 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
         else -> 5
     }
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = Modifier.riseOnce("water-tds", 440, risePlayed),
     ) {
         Row(
@@ -207,8 +225,11 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Độ sạch nước",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 (token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -220,11 +241,16 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(badgeBg)
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    .padding(
+                        horizontal = M3ETokens.Spacing.Md,
+                        vertical = M3ETokens.Spacing.Xs,
+                    ),
             ) {
                 Text(
                     badge,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = badgeFg,
                     maxLines = 1,
@@ -232,12 +258,16 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
                 )
             }
         }
-        Spacer(Modifier.height(14.dp))
+        // Khe title->TDS 14->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         Row {
             Text(
                 "${tds.toInt()}",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.SemiBold,
+                    fontSize = M3ETokens.Text.HeroNumber.fontSize,
+                    // LH M3 mac dinh 40 -> token 39 (audit muc 3, nhom c).
+                    lineHeight = M3ETokens.Text.HeroNumber.lineHeight,
                     letterSpacing = (-0.3).sp,
                 ),
                 color = cs.onSurface,
@@ -245,21 +275,24 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
             )
             Text(
                 "ppm TDS",
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    lineHeight = M3ETokens.Text.ButtonText.lineHeight,
+                ),
                 color = cs.onSurfaceVariant,
                 modifier = Modifier
-                    .padding(start = 4.dp)
+                    .padding(start = M3ETokens.Spacing.Xs)
                     .alignByBaseline(),
             )
         }
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Khe TDS->thang 14->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs)) {
             repeat(5) { i ->
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .height(M3ETokens.Spacing.Sm)
+                        .clip(RoundedCornerShape(M3ETokens.Spacing.Xs))
                         .background(
                             if (i < segOn) extra.success else cs.surfaceContainer,
                         ),
@@ -267,19 +300,29 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
             }
         }
         Row(modifier = Modifier.padding(top = 6.dp)) {
-            Text("0", style = MaterialTheme.typography.labelSmall,
+            Text("0", style = MaterialTheme.typography.labelSmall.copy(
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
+            ),
                 color = cs.onSurfaceVariant)
             Spacer(Modifier.weight(1f))
-            Text("50", style = MaterialTheme.typography.labelSmall,
+            Text("50", style = MaterialTheme.typography.labelSmall.copy(
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
+            ),
                 color = cs.onSurfaceVariant)
             Spacer(Modifier.weight(1f))
-            Text("100", style = MaterialTheme.typography.labelSmall,
+            Text("100", style = MaterialTheme.typography.labelSmall.copy(
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
+            ),
                 color = cs.onSurfaceVariant)
             Spacer(Modifier.weight(1f))
-            Text("200", style = MaterialTheme.typography.labelSmall,
+            Text("200", style = MaterialTheme.typography.labelSmall.copy(
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
+            ),
                 color = cs.onSurfaceVariant)
             Spacer(Modifier.weight(1f))
-            Text("300+", style = MaterialTheme.typography.labelSmall,
+            Text("300+", style = MaterialTheme.typography.labelSmall.copy(
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
+            ),
                 color = cs.onSurfaceVariant)
         }
     }
@@ -291,7 +334,7 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
 private fun WaterSensorsGrid(w: WaterUiState, risePlayed: MutableSet<String>) {
     val filterActive = w.filterPct > 0
     Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
+        verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
         modifier = Modifier.riseOnce("water-sensors", 460, risePlayed),
     ) {
         Row(
@@ -361,15 +404,16 @@ private fun WaterSensorCard(
     val pillBg = if (active) cs.primary else cs.surfaceContainer
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Sensor))
             .background(cardBg)
+            // Padding 14dp: khong co token 14dp, giu so cu (ti le 1,00 x ten 14sp).
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(M3ETokens.Icon.IconBox)
                     .clip(CircleShape)
                     .background(
                         if (active) Color.White.copy(alpha = 0.55f)
@@ -380,22 +424,26 @@ private fun WaterSensorCard(
                     glyph,
                     contentDescription = null,
                     tint = if (active) containerOn else cs.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(M3ETokens.Icon.Standard),
                 )
             }
             Column(modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp)) {
+                .padding(start = M3ETokens.Spacing.Md)) {
                 Text(
                     name,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        lineHeight = M3ETokens.Text.ButtonText.lineHeight,
+                    ),
                     color = if (active) containerOn else cs.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     ago,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     color = (if (active) containerOn else cs.onSurfaceVariant)
                         .copy(alpha = if (active) 0.75f else 1f),
                     maxLines = 1,
@@ -403,7 +451,7 @@ private fun WaterSensorCard(
                 )
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         Row(modifier = Modifier.fillMaxWidth()) {
             Spacer(Modifier.weight(1f))
             Box(
@@ -417,6 +465,7 @@ private fun WaterSensorCard(
                 Text(
                     pill,
                     style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                         letterSpacing = 0.8.sp,
                     ),
                     color = if (active) cs.onPrimary else cs.onSurfaceVariant,

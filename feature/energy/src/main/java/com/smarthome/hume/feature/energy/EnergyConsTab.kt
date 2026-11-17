@@ -44,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyDevice
 import com.smarthome.hume.core.model.EnergyPowerKind
 import com.smarthome.hume.core.model.EnergyUiState
@@ -92,7 +91,9 @@ fun EnergyConsTab(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        // (2026-11-18) Ve token CardGap 10dp theo lenh vong chuan hoa
+        // (truoc 14dp, ngoai le duy nhat giua cac tab — audit muc 5).
+        verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap),
     ) {
         // (2026-10-05, user: xoa the goi y nang luong)
         WeekCard(state, risePlayed)
@@ -115,8 +116,8 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     val todayVal = state.homeDailyLiveKwh
 
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = Modifier.riseOnce("cons-week", 420, risePlayed),
     ) {
         Row(
@@ -125,8 +126,11 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Sử dụng",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 (token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -141,22 +145,26 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 chaosId = "usage-total",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.SemiBold,
-                    lineHeight = 39.sp,
+                    fontSize = M3ETokens.Text.HeroNumber.fontSize,
+                    lineHeight = M3ETokens.Text.HeroNumber.lineHeight,
                 ),
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),
             )
             Text(
                 "kWh",
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier
-                    .padding(start = 4.dp)
+                    .padding(start = M3ETokens.Spacing.Xs)
                     .alignByBaseline(),
             )
         }
-        Spacer(Modifier.height(14.dp))
+        // Khe title->chart 14->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         val vals = state.week.map { if (it.isToday) todayVal.toFloat() else it.kwh.toFloat() }
         val labels = state.week.map { it.label }
         if (vals.isNotEmpty()) {
@@ -164,7 +172,9 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         } else {
             Text(
                 "Đang tải dữ liệu…",
-                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                ),
                 color = cs.onSurfaceVariant,
             )
         }
@@ -313,17 +323,21 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
 @Composable
 private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = Modifier.riseOnce("cons-power", 460, risePlayed),
     ) {
         Text(
             "Công suất hoạt động",
-            // Title 17pt theo lenh user 18/11.
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+            // Title 17pt theo lenh user 18/11 (token CardTitle).
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = M3ETokens.Text.CardTitle.fontSize,
+                lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+            ),
         )
-        Spacer(Modifier.height(12.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Khe title->noi dung 12->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
+        Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
             state.powerRows.forEachIndexed { i, row ->
                 PowerRow(row = row, index = i)
             }
@@ -369,7 +383,9 @@ private fun PowerRow(
         ) {
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    lineHeight = M3ETokens.Text.StatLabel.lineHeight,
+                ),
             )
             // iOS PowerRowView: so labelLarge + "W" labelSmall, spacing 2, can baseline.
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -377,14 +393,14 @@ private fun PowerRow(
                     "${if (watts < 0) "−" else ""}${abs(watts).roundToInt()}",
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        lineHeight = 17.1.sp,
+                        lineHeight = M3ETokens.Text.ButtonText.lineHeight,
                     ).tnum(),
                     modifier = Modifier.alignByBaseline(),
                 )
                 Text(
                     "W",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        lineHeight = 13.4.sp,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.alignByBaseline(),
@@ -410,14 +426,14 @@ private fun FlatPowerBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(8.dp)
+            .height(M3ETokens.Spacing.Sm)
             .clip(CircleShape)
             .background(trackColor),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth(frac)
-                .height(8.dp)
+                .height(M3ETokens.Spacing.Sm)
                 .clip(CircleShape)
                 .background(color),
         )
@@ -441,8 +457,8 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     var legendShown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { legendShown = true }
     M3ECard(
-        shape = RoundedCornerShape(40.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.Donut),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = Modifier.riseOnce("cons-donut", 480, risePlayed),
     ) {
         if (state.donut.isEmpty()) {
@@ -450,12 +466,17 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             // (port iOS EnergyConsumeTab+Cards.swift:190-196).
             Text(
                 "Cơ cấu tiêu thụ",
-                // Title 17pt theo lenh user 18/11 (luc rong).
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 (luc rong, token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
             )
             Text(
                 "Chưa có dữ liệu tiêu thụ",
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
@@ -472,9 +493,12 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Column {
                 Text(
                     "Cơ cấu tiêu thụ",
-                    // Title 17pt theo lenh user 18/11 (luc co data; mau giu
-                    // onSurface nhu title the).
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                    // Title 17pt theo lenh user 18/11 (luc co data, token
+                    // CardTitle; mau giu onSurface nhu title the).
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = M3ETokens.Text.CardTitle.fontSize,
+                        lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Row {
@@ -486,13 +510,16 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         chaosId = "donut-total",
                         style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.SemiBold,
-                            lineHeight = 39.sp,
+                            fontSize = M3ETokens.Text.HeroNumber.fontSize,
+                            lineHeight = M3ETokens.Text.HeroNumber.lineHeight,
                         ).tnum(),
                         modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         " kWh",
-                        style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
+                        ),
                         modifier = Modifier.alignByBaseline(),
                     )
                 }
@@ -500,7 +527,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(M3ETokens.Icon.IconBoxDonut)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.tertiaryContainer),
             ) {
@@ -511,19 +538,20 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 )
             }
         }
-        Spacer(Modifier.height(14.dp))
+        // Khe title->donut 14->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         Row(verticalAlignment = Alignment.CenterVertically) {
             EnergyDonut(
                 total = state.donutTotalKwh,
                 slices = state.donut,
                 sliceColors = sliceColors,
-                // Cat duoi iOS theo lenh user 22:03: 140 -> 120dp.
-                modifier = Modifier.size(120.dp),
+                // Cat duoi iOS theo lenh user 22:03: 140 -> 120dp (token Height.Donut).
+                modifier = Modifier.size(M3ETokens.Height.Donut),
             )
             Spacer(Modifier.width(18.dp))
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap),
             ) {
                 state.donut.forEachIndexed { i, s ->
                     Row(
@@ -539,7 +567,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     ) {
                         Box(
                             Modifier
-                                .size(12.dp)
+                                .size(M3ETokens.Spacing.Md)
                                 .clip(CircleShape)
                                 .background(sliceColors[i % sliceColors.size]),
                         )
@@ -557,7 +585,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f),
-                            startPadding = 10.dp,
+                            startPadding = M3ETokens.Spacing.CardGap,
                         )
                         // cot % rong co dinh, can phai -> cac hang dóng thẳng
                         Text(
@@ -565,7 +593,7 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 14.6.sp,
+                                lineHeight = M3ETokens.Text.StatLabel.lineHeight,
                             ).tnum(),
                             maxLines = 1,
                             textAlign = TextAlign.End,
@@ -613,14 +641,15 @@ private fun DevicesCard(
         base.sortedByDescending { it.value }.take(5)
     }
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
         contentPadding = 0.dp,
         modifier = modifier
             .riseOnce("cons-dev", 440, risePlayed),
     ) {
         Column(
             modifier = Modifier.padding(
-                top = 20.dp, bottom = 12.dp, start = 16.dp, end = 16.dp),
+                top = M3ETokens.Spacing.Xl, bottom = M3ETokens.Spacing.Md,
+                start = M3ETokens.Spacing.Lg, end = M3ETokens.Spacing.Lg),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -629,15 +658,18 @@ private fun DevicesCard(
             ) {
                 Text(
                     "Thiết bị",
-                    // Title 17pt theo lenh user 18/11.
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                    // Title 17pt theo lenh user 18/11 (token CardTitle).
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = M3ETokens.Text.CardTitle.fontSize,
+                        lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                    ),
                 )
                 Row(
                     modifier = Modifier
                         .width(224.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(4.dp),
+                        .padding(M3ETokens.Spacing.Xs),
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     DeviceMode.entries.forEach { m ->
@@ -652,12 +684,17 @@ private fun DevicesCard(
                                     else Color.Transparent,
                                 )
                                 .pressMorph(pressedScale = 0.94f) { vm.setDeviceMode(m) }
-                                .padding(vertical = 8.dp, horizontal = 10.dp),
+                                .padding(
+                                    vertical = M3ETokens.Spacing.Sm,
+                                    horizontal = M3ETokens.Spacing.CardGap,
+                                ),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     if (m == DeviceMode.Power) "Công suất" else "Năng lượng",
-                                    style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        lineHeight = M3ETokens.Text.StatLabel.lineHeight,
+                                    ),
                                     color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
                                     // demo .dvsegi{white-space:nowrap}: khong de vo 2 dong
@@ -670,13 +707,17 @@ private fun DevicesCard(
                     }
                 }
             }
-            Spacer(Modifier.height(4.dp))
+            // Khe title->hang 4dp + khe tren hang 6dp = 10dp tong
+            // (= 0,60 x title 17, Ratio.TitleToContent).
+            Spacer(Modifier.height(M3ETokens.Spacing.Xs))
             if (devs.isEmpty()) {
                 Text(
                     "Chưa có dữ liệu thiết bị",
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = M3ETokens.Text.Body.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp),
+                    modifier = Modifier.padding(vertical = M3ETokens.Spacing.Sm),
                 )
             }
             devs.forEachIndexed { i, d ->
@@ -697,25 +738,31 @@ private fun DeviceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // Cat duoi iOS theo lenh user 22:03: khe tren moi hang 8 -> 6dp.
+            // Cat duoi iOS theo lenh user 22:03: khe tren moi hang 8 -> 6dp
+            // (khong co token 6dp; giu so cu).
             .padding(top = 6.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.SmallBox))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             // Cat duoi iOS theo lenh user 22:03: padding doc moi hang 12 -> 10dp.
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(horizontal = 14.dp, vertical = M3ETokens.Spacing.CardGap)
             .staggerEnter(index = index, visible = visible, staggerMs = 45),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 d.name,
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 if (mode == DeviceMode.Power) "Vừa xong" else "Hôm nay",
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, lineHeight = 13.4.sp),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = M3ETokens.Text.Caption.fontSize,
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
@@ -732,13 +779,16 @@ private fun DeviceRow(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
-                    lineHeight = 19.5.sp,
+                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
                 ).tnum(),
                 textAlign = TextAlign.End,
             )
             Text(
                 unit,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 13.4.sp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = M3ETokens.Text.Caption.fontSize,
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
                 modifier = Modifier.padding(top = 2.dp),
@@ -749,7 +799,7 @@ private fun DeviceRow(
             Column(
                 horizontalAlignment = Alignment.End,
                 modifier = Modifier
-                    .padding(start = 12.dp)
+                    .padding(start = M3ETokens.Spacing.Md)
                     .widthIn(min = 64.dp),
             ) {
                 Text(
@@ -757,13 +807,16 @@ private fun DeviceRow(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = LocalHumeExtraColors.current.success,
-                        lineHeight = 17.1.sp,
+                        lineHeight = M3ETokens.Text.Body.lineHeight,
                     ).tnum(),
                     textAlign = TextAlign.End,
                 )
                 Text(
                     "VND",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 13.4.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = M3ETokens.Text.Caption.fontSize,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End,
                 )
@@ -777,23 +830,34 @@ private fun DeviceRow(
 @Composable
 private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
         contentPadding = 0.dp,
         modifier = Modifier.riseOnce("cons-blw", 500, risePlayed),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            modifier = Modifier.padding(
+                horizontal = M3ETokens.Spacing.Xl,
+                vertical = M3ETokens.Spacing.Sm,
+            ),
         ) {
             Text(
                 "Pin thiết bị yếu",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
-                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                // Title 17pt theo lenh user 18/11 (token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
+                modifier = Modifier.padding(
+                    top = M3ETokens.Spacing.Md,
+                    bottom = M3ETokens.Spacing.Xs,
+                ),
             )
             if (state.lowBatteries.isEmpty()) {
                 Text(
                     "Tất cả thiết bị đều đủ pin",
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = M3ETokens.Text.Body.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -815,10 +879,12 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(width = 28.dp, height = 17.dp),
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(M3ETokens.Spacing.Md))
                     Text(
                         b.name,
-                        style = MaterialTheme.typography.labelLarge.copy(lineHeight = 17.1.sp),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            lineHeight = M3ETokens.Text.ButtonText.lineHeight,
+                        ),
                         modifier = Modifier.weight(1f),
                     )
                     Box(
@@ -839,10 +905,12 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
                                 ),
                         )
                     }
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(M3ETokens.Spacing.Md))
                     Text(
                         "${b.pct.roundToInt()}%",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, lineHeight = 17.1.sp,
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
                         ).tnum(),
                         color = if (b.pct <= 20) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,

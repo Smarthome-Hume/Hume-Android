@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyFlowState
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
@@ -154,12 +155,15 @@ fun EnergyFlowCard(
     val charging = flow.battCharging
     val soc = flow.soc
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
         contentPadding = 0.dp,
         modifier = modifier
             .riseOnce("sol-flow", 410, risePlayed),
     ) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp)) {
+        Column(Modifier.padding(
+            start = M3ETokens.Spacing.Lg, end = M3ETokens.Spacing.Lg,
+            top = M3ETokens.Spacing.Xl, bottom = M3ETokens.Spacing.Lg,
+        )) {
             // header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -169,8 +173,12 @@ fun EnergyFlowCard(
                 Column {
                     Text(
                         "Năng lượng",
-                        // Title 17pt theo lenh user 18/11 (iOS Flow dung titleLarge 22pt).
-                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                        // Title 17pt theo lenh user 18/11 (token CardTitle;
+                        // iOS Flow dung titleLarge 22pt).
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = M3ETokens.Text.CardTitle.fontSize,
+                            lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                        ),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                     // Dong trang thai inverter (port iOS 007d8ce): doc tu sensor moi.
@@ -178,18 +186,20 @@ fun EnergyFlowCard(
                     val (statusText, statusColor) = solisStatusVn(invStatus)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = M3ETokens.Spacing.Xs),
                     ) {
                         Box(
                             Modifier
-                                .size(8.dp)
+                                .size(M3ETokens.Spacing.Sm)
                                 .clip(CircleShape)
                                 .background(statusColor),
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
                             statusText,
-                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -197,7 +207,7 @@ fun EnergyFlowCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier
-                            .size(8.dp)
+                            .size(M3ETokens.Spacing.Sm)
                             .clip(CircleShape)
                             .background(Color(0xFF22C55E))
                             .blink(1600),
@@ -212,12 +222,14 @@ fun EnergyFlowCard(
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum",
-                            lineHeight = 26.8.sp,
+                            lineHeight = M3ETokens.naturalLineHeight(22.sp),
                         ),
                     )
                     Text(
                         " kWh",
-                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -259,7 +271,7 @@ private fun FlowArea(
 
         val pvM = subcompose("pv") {
         FlowNode(
-            icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(24.dp)) },
+            icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(M3ETokens.Icon.Standard)) },
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
             tintFg = Color(0xFFD97706),
             label = "Sản xuất", valueKw = flow.prodKw,
@@ -280,7 +292,7 @@ private fun FlowArea(
         val gridM = subcompose("grid") {
         val gridBadgeFg = if (flow.gridOn) LocalHumeExtraColors.current.success else Color(0xFFBA1A1A)
         FlowNode(
-            icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(24.dp)) },
+            icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(M3ETokens.Icon.Standard)) },
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
@@ -294,7 +306,9 @@ private fun FlowArea(
             ) {
                 Text(
                     if (flow.gridOn) "Cấp điện" else "Mất điện",
-                    style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     color = gridBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -302,7 +316,7 @@ private fun FlowArea(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(gridBadgeFg.copy(alpha = 0.16f))
-                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                        .padding(horizontal = 9.dp, vertical = M3ETokens.Spacing.Xs),
                 )
             }
         }
@@ -314,7 +328,7 @@ private fun FlowArea(
                     if (flow.gridOn) M3EIcons.Home else M3EIcons.Plug,
                     null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(M3ETokens.Icon.Standard),
                 )
             },
             tintBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
@@ -343,7 +357,10 @@ private fun FlowArea(
                 HorizontalBatteryIcon(
                     soc = soc.roundToInt(),
                     color = battFg,
-                    modifier = Modifier.size(width = 30.dp, height = 18.dp),
+                    modifier = Modifier.size(
+                        width = M3ETokens.Icon.BatteryIconWidth,
+                        height = M3ETokens.Icon.BatteryIconHeight,
+                    ),
                 )
             },
             tintBg = battFg.copy(alpha = 0.16f),
@@ -367,7 +384,7 @@ private fun FlowArea(
                     "SOC",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.SemiBold,
-                        lineHeight = 13.4.sp,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -379,7 +396,7 @@ private fun FlowArea(
                     chaosId = "flow-soc",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.SemiBold,
-                        lineHeight = 13.4.sp,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -494,7 +511,7 @@ private fun FlowArea(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
-                    .shadow(8.dp, CircleShape)
+                    .shadow(M3ETokens.Spacing.Sm, CircleShape)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
@@ -613,17 +630,17 @@ private fun FlowNode(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.SmallBox))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .pressMorph(pressedScale = 0.93f, onClick = onClick)
             // iOS: .padding(.vertical, 10) — gon hon de chua them dong kWh
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.CardGap),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(M3ETokens.Icon.IconBox)
                     .clip(CircleShape)
                     .background(tintBg),
             ) {
@@ -635,10 +652,14 @@ private fun FlowNode(
                 }
             }
             if (iconBadge != null) {
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(M3ETokens.Spacing.Sm))
                 Text(
                     iconBadge,
-                    style = MaterialTheme.typography.labelSmall.copy(),
+                    // .copy() trong de LH M3 mac dinh 16 -> token 13,4
+                    // (audit muc 3, nhom c; iconBadge hien chua dung o dau).
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     color = iconBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -646,17 +667,19 @@ private fun FlowNode(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(iconBadgeBg)
-                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                        .padding(horizontal = 9.dp, vertical = M3ETokens.Spacing.Xs),
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(M3ETokens.Spacing.Sm))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 label,
                 // iOS EnergySolarTab+Flow.swift FlowNodeView: M3EType.labelSmall
                 // 11pt semibold — Android dang 10.5sp Normal.
-                style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -667,7 +690,9 @@ private fun FlowNode(
                 Text(
                     badge,
                     // iOS: labelSmall 11pt — Android dang 9sp.
-                    style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
+                    ),
                     color = badgeFg,
                     // demo .flbdir{white-space:nowrap}: badge khong duoc xuong dong
                     maxLines = 1,
@@ -690,7 +715,7 @@ private fun FlowNode(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontFeatureSettings = "tnum",
-                    lineHeight = 19.5.sp,
+                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
                 ),
                 maxLines = 1,
                 softWrap = false,
@@ -698,7 +723,9 @@ private fun FlowNode(
             )
             Text(
                 " $unit",
-                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -739,7 +766,7 @@ private fun FlowNodeKwhRow(
                 label,
                 style = MaterialTheme.typography.labelSmall.copy(
                     // iOS mac dinh 11pt x 1.219 = 13.4 (khong ep lineHeight).
-                    lineHeight = 13.4.sp,
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
                 ),
                 color = cs.onSurfaceVariant.copy(alpha = 0.7f),
                 maxLines = 1,
@@ -748,7 +775,7 @@ private fun FlowNodeKwhRow(
                     .width(24.dp)
                     .alignByBaseline(),
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(M3ETokens.Spacing.Xs))
         }
         Text(
             String.format(Locale.US, "%.1f", kwh),
@@ -756,7 +783,7 @@ private fun FlowNodeKwhRow(
             // chat hon ca iOS (sua 16 -> 17.1, dong kWh cao them 1.1).
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Medium,
-                lineHeight = 17.1.sp,
+                lineHeight = M3ETokens.Text.Body.lineHeight,
                 fontFeatureSettings = "tnum",
             ),
             color = cs.onSurfaceVariant,
@@ -766,12 +793,14 @@ private fun FlowNodeKwhRow(
         )
         Text(
             "kWh",
-            style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
+            style = MaterialTheme.typography.labelSmall.copy(
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
+            ),
             color = cs.onSurfaceVariant.copy(alpha = 0.7f),
             maxLines = 1,
             softWrap = false,
             modifier = Modifier
-                .padding(start = 4.dp)
+                .padding(start = M3ETokens.Spacing.Xs)
                 .alignByBaseline(),
         )
     }
@@ -799,7 +828,7 @@ private fun SegBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(4.dp)
+                .height(M3ETokens.Spacing.Xs)
                 .clip(CircleShape)
                 .background(cs.surfaceContainerHigh),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -813,7 +842,7 @@ private fun SegBar(
                 Box(
                     modifier = Modifier
                         .weight(frac.coerceAtLeast(0.001f))
-                        .height(4.dp)
+                        .height(M3ETokens.Spacing.Xs)
                         .clip(CircleShape)
                         .background(segColor(kw)),
                 )
@@ -824,14 +853,14 @@ private fun SegBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
         ) {
             items.forEach { (name, _) ->
                 Text(
                     name,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.SemiBold,
-                        lineHeight = 13.4.sp,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,

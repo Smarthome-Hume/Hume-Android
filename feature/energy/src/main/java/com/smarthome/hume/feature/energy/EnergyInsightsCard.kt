@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.MarqueeText
@@ -35,6 +34,7 @@ import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.launch
 
 /**
@@ -62,31 +62,33 @@ fun EnergyInsightsCard(
 
     M3ECard(
         modifier = modifier.riseOnce("cons-insights", 400, risePlayed),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(M3ETokens.Corner.Card),
         // (2026-11-18) Cat them sau title 13pt: padding 16 -> 12dp (-8dp).
         // Detail 2 dong + chip danh muc lam the cao hon iOS 14,8dp (iOS
         // InsightsCard khung co dinh 68, detail 1 dong); cat padding ve
         // bang SuggestCard Home (12dp) + lineHeight detail ve tu nhien
         // 17,1 ben duoi de xuong sat iOS (+1,0dp). Khong cat chip/nut phu
         // (tinh nang muc 15, chi hien o insight solarSurplus).
-        contentPadding = 12.dp,
+        contentPadding = M3ETokens.Spacing.Md,
         containerColor = cs.tertiaryContainer,
     ) {
         Column {
             if (insights.isEmpty()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 8.dp),
+                    modifier = Modifier.padding(vertical = M3ETokens.Spacing.Sm),
                 ) {
                     MsIcon(
                         Ms.check, null,
                         tint = LocalHumeExtraColors.current.success,
                         modifier = Modifier.size(20.dp),
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(M3ETokens.Spacing.Sm))
                     Text(
                         "Mọi thứ đang tối ưu!",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
+                        ),
                         color = cs.onTertiaryContainer,
                     )
                 }
@@ -106,7 +108,7 @@ fun EnergyInsightsCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = M3ETokens.Spacing.Sm),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -164,33 +166,38 @@ private fun InsightRow(
             MsIcon(
                 insight.glyph.ifBlank { Ms.auto_awesome }, null,
                 tint = sevColor,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(M3ETokens.Icon.Standard),
             )
         }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 10.dp),
+                .padding(start = M3ETokens.Spacing.CardGap),
         ) {
             // Chip nhóm: Cảnh báo / Tiết kiệm / Thông tin — rõ mục đích gợi ý.
             Text(
                 insight.categoryLabel,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
+                ),
                 color = sevColor,
                 maxLines = 1,
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .background(sevColor.copy(alpha = 0.12f))
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                    .padding(horizontal = M3ETokens.Spacing.Sm, vertical = 2.dp),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(M3ETokens.Spacing.Xs))
             // Tiêu đề = tên thiết bị cụ thể; chạy marquee khi tràn thay vì cắt "...".
-            // Title 17pt theo lenh user 18/11 (iOS InsightsCard dung
-            // titleMedium 16pt). MarqueeText bo lineHeight nen line that =
-            // tu nhien ~20,7.
+            // Title 17pt theo lenh user 18/11 (token CardTitle; iOS
+            // InsightsCard dung titleMedium 16pt). MarqueeText bo lineHeight
+            // nen line that = tu nhien ~20,7.
             MarqueeText(
                 text = insight.title,
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 color = cs.onTertiaryContainer,
             )
             val detail = buildString {
@@ -204,7 +211,9 @@ private fun InsightRow(
                 // -5,8dp khi detail 2 dong — truong hop thuong gap vi cot
                 // giua chi ~178dp). Giu maxLines=2 de khong cat mat cau
                 // tiet kiem nhu iOS (iOS lineLimit 1).
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -213,8 +222,8 @@ private fun InsightRow(
             // Các nút phụ: chip nhỏ dưới mô tả (mục 15)
             if (secondary.isNotEmpty()) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
+                    modifier = Modifier.padding(top = M3ETokens.Spacing.Sm),
                 ) {
                     secondary.forEach { act ->
                         InsightSecondaryChip(act = act) {
@@ -226,7 +235,7 @@ private fun InsightRow(
             }
         }
         if (primary != null) {
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(M3ETokens.Spacing.Md))
             InsightPrimaryButton(act = primary) {
                 haptic()
                 onAction(primary)
@@ -251,11 +260,16 @@ private fun InsightPrimaryButton(
             )
             .clip(RoundedCornerShape(14.dp))
             .background(cs.onTertiaryContainer)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(
+                horizontal = M3ETokens.Spacing.Lg,
+                vertical = M3ETokens.Spacing.CardGap,
+            ),
     ) {
         Text(
             act.label,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelLarge.copy(
+                lineHeight = M3ETokens.Text.ButtonText.lineHeight,
+            ),
             color = cs.tertiaryContainer,
             maxLines = 1,
         )
@@ -273,9 +287,12 @@ private fun InsightSecondaryChip(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .pressMorph(pressedScale = 0.92f, onClick = onClick)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(M3ETokens.Spacing.Md))
             .background(cs.onTertiaryContainer.copy(alpha = 0.12f))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(
+                horizontal = M3ETokens.Spacing.Md,
+                vertical = M3ETokens.Spacing.Sm,
+            ),
     ) {
         if (act.glyph.isNotBlank()) {
             MsIcon(
@@ -287,7 +304,9 @@ private fun InsightSecondaryChip(
         }
         Text(
             act.label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(
+                lineHeight = M3ETokens.Text.ButtonTextSmall.lineHeight,
+            ),
             color = cs.onTertiaryContainer,
             maxLines = 1,
         )

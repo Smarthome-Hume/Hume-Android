@@ -34,6 +34,7 @@ import com.smarthome.hume.core.model.EnergyDonutSlice
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3EPopupAnimation
 import com.smarthome.hume.core.ui.components.OvershootNumber
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.asin
@@ -528,10 +529,11 @@ fun EnergyDonut(
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 8.dp),
+            modifier = Modifier.padding(horizontal = M3ETokens.Spacing.Sm),
         ) {
             // Giua donut: slice duoc chon (gia tri + ten), mac dinh la TONG.
             // Overshoot khi data ve (port iOS 84dfe2c, donut-center).
+            // headlineSmall tran: LH M3 mac dinh 28 -> token 24,4 (audit muc 3).
             val selSlice = selected?.let { slices.getOrNull(it) }
             OvershootNumber(
                 value = if (selSlice != null) total * selSlice.fraction else total,
@@ -540,12 +542,18 @@ fun EnergyDonut(
                 chaosId = "donut-center",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.SemiBold,
+                    fontSize = M3ETokens.Text.StatValueLarge.fontSize,
+                    lineHeight = M3ETokens.Text.StatValueLarge.lineHeight,
                     fontFeatureSettings = "tnum",
                 ),
             )
             Text(
                 selSlice?.name ?: "kWh",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    // labelSmall tran: LH M3 mac dinh 16 -> token 13,4 (audit muc 3).
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 // iOS :~665: ten xuong toi da 2 dong + co chu, khong cat

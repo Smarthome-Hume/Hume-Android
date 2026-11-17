@@ -58,6 +58,7 @@ import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.toSmartPowerParts
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -75,7 +76,7 @@ fun EnergySolarTab(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
+        verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
     ) {
         Expander(
             icon = {
@@ -151,8 +152,8 @@ fun EnergySolarTab(
 private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     val extra = LocalHumeExtraColors.current
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = Modifier.riseOnce("sol-syn", 420, risePlayed),
     ) {
         // demo .yt{align-items:baseline}
@@ -163,8 +164,11 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Tải tiêu thụ",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 (token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 modifier = Modifier.alignByBaseline(),
             )
             Row(
@@ -175,19 +179,22 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontFeatureSettings = "tnum",
-                        lineHeight = 26.8.sp,
+                        lineHeight = M3ETokens.naturalLineHeight(22.sp),
                     ),
                     modifier = Modifier.alignByBaseline(),
                 )
                 Text(
                     " kW",
-                    style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        lineHeight = M3ETokens.Text.StatLabel.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.alignByBaseline(),
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
+        // Khe title->tiers 12->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         state.tiers.forEach { t ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -196,12 +203,14 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             ) {
                 Text(
                     t.name,
-                    style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        lineHeight = M3ETokens.Text.StatLabel.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    modifier = Modifier.weight(1f).padding(end = M3ETokens.Spacing.Sm),
                 )
                 Text(
                     "${String.format("%.1f", t.kw)} kW",
@@ -209,7 +218,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontFeatureSettings = "tnum",
-                        lineHeight = 14.6.sp,
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                     ),
                 )
             }
@@ -219,26 +228,27 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(M3ETokens.Spacing.Sm)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth((t.kw / sumTier).toFloat().coerceIn(0f, 1f))
-                        .height(8.dp)
+                        .height(M3ETokens.Spacing.Sm)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.tertiary),
                 )
             }
             Spacer(Modifier.height(6.dp)) // cắt dưới iOS theo lệnh user 22:03 (10→6dp)
         }
-        Spacer(Modifier.height(14.dp))
+        // Khe cum 14->12dp = 0,70 x title 17 (Ratio.SectionGap, 11,9 -> 12).
+        Spacer(Modifier.height(M3ETokens.Spacing.Md))
         HorizontalDivider(
             thickness = 1.dp,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(M3ETokens.Spacing.Md))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -246,19 +256,22 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Pin S6",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 (token CardTitle).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
             )
             Text(
                 "SOC ${state.battery.soc.roundToInt()}%",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
                     color = extra.success,
-                    lineHeight = 14.6.sp,
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                 ),
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(M3ETokens.Spacing.Sm))
         // demo .socbar2 i{transition:width .8s}
         val socFrac by animateFloatAsState(
             targetValue = (state.battery.soc / 100).toFloat().coerceIn(0f, 1f),
@@ -268,20 +281,21 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(8.dp)
+                .height(M3ETokens.Spacing.Sm)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(socFrac)
-                    .height(8.dp)
+                    .height(M3ETokens.Spacing.Sm)
                     .clip(CircleShape)
                     .background(extra.success),
             )
         }
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Khe SOC bar->MiniBox 14->12dp = 0,70 x title 17 (Ratio.SectionGap).
+        Spacer(Modifier.height(M3ETokens.Spacing.Md))
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.RowGap)) {
             MiniBox(
                 "Công suất",
                 miniVal(kotlin.math.abs(state.battery.powerW).toSmartPowerParts()),
@@ -296,7 +310,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             )
         }
         Spacer(Modifier.height(6.dp)) // cắt dưới iOS theo lệnh user 22:03 (10→6dp)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.RowGap)) {
             MiniBox(
                 "Sạc giới hạn",
                 miniVal(state.battery.chargeLimitA.roundToInt().toString() to "A"),
@@ -319,7 +333,7 @@ private fun miniVal(vararg parts: Pair<String, String>): AnnotatedString =
             if (i > 0) append(" · ")
             append(num)
             withStyle(SpanStyle(
-                fontSize = MaterialTheme.typography.labelSmall.fontSize,
+                fontSize = M3ETokens.Text.Caption.fontSize,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )) { append(" $unit") }
@@ -330,15 +344,17 @@ private fun miniVal(vararg parts: Pair<String, String>): AnnotatedString =
 private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.SmallBox))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 14.dp, vertical = 10.dp), // cắt dưới iOS theo lệnh user 22:03 (12→10dp)
+            // Padding doc 10dp (cat duoi iOS theo lenh user 22:03, 12->10dp);
+            // ngang 14dp = 0,85 x value 16 (Ratio.PBoxPadding, 13,6 -> 14).
+            .padding(horizontal = 14.dp, vertical = M3ETokens.Spacing.CardGap),
     ) {
         Text(
             label,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.SemiBold,
-                lineHeight = 13.4.sp,
+                lineHeight = M3ETokens.Text.Caption.lineHeight,
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -347,7 +363,7 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
-                lineHeight = 19.5.sp,
+                lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
             ),
             modifier = Modifier.padding(top = 3.dp),
         )
@@ -378,7 +394,7 @@ private fun Expander(
         modifier = Modifier
             .fillMaxWidth()
             .riseOnce(riseKey, riseDelay, risePlayed)
-            .clip(RoundedCornerShape(32.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.CardLarge))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Row(
@@ -386,12 +402,12 @@ private fun Expander(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggle() }
-                .padding(horizontal = 20.dp, vertical = 18.dp),
+                .padding(horizontal = M3ETokens.Spacing.Xl, vertical = 18.dp),
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(M3ETokens.Icon.IconBox)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
@@ -402,18 +418,23 @@ private fun Expander(
                     icon()
                 }
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(M3ETokens.Spacing.Md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    // Title 17pt theo lenh user 18/11 (iOS SolisExpander
-                    // dung titleSmall 14pt).
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                    // Title 17pt theo lenh user 18/11 (token CardTitle;
+                    // iOS SolisExpander dung titleSmall 14pt).
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = M3ETokens.Text.CardTitle.fontSize,
+                        lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -422,7 +443,7 @@ private fun Expander(
                 M3EIcons.ChevronDown, null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(M3ETokens.Icon.Chevron)
                     .rotate(chev),
             )
         }
@@ -438,7 +459,7 @@ private fun Expander(
                 // (EnergySolarTab.swift): vung mo rong chi padding
                 // ngang 20, KHONG top 2 / bottom 16 — Android thua
                 // iOS 18dp moi expander khi mo.
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = M3ETokens.Spacing.Xl),
             ) {
                 content()
             }
@@ -455,11 +476,13 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
             .fillMaxWidth()
             .padding(vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
     ) {
         Text(
             c.name,
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 17.1.sp),
+            style = MaterialTheme.typography.labelLarge.copy(
+                lineHeight = M3ETokens.Text.ButtonText.lineHeight,
+            ),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
@@ -476,7 +499,9 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
             BatteryControlKind.Time -> {
                 Text(
                     c.state.take(5),
-                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -503,7 +528,7 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.RowGap),
     ) {
         StepperBtn("−") { local = (shown - 1).coerceAtLeast(0.0) }
         Text(
@@ -511,7 +536,7 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
-                lineHeight = 17.1.sp,
+                lineHeight = M3ETokens.Text.Body.lineHeight,
             ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
@@ -526,14 +551,16 @@ private fun StepperBtn(text: String, onClick: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(32.dp)
+            .size(M3ETokens.Icon.StepperButton)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .pressMorph(pressedScale = 0.85f, onClick = onClick),
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium.copy(lineHeight = 19.5.sp),
+            style = MaterialTheme.typography.titleMedium.copy(
+                lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+            ),
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
