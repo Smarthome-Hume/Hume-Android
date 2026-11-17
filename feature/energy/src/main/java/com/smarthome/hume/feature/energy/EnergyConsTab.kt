@@ -182,7 +182,10 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     ) {
         Text(
             "Chi phí điện",
-            style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
+            // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+            // EnergyConsumeTab.swift:156): titleSmall 14sp/17,1 -> 20sp/24,4
+            // = +7,3dp/the (theo lenh unify, chap nhan tang).
+            style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -290,7 +293,10 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     ) {
         Text(
             "Công suất hoạt động",
-            style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
+            // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+            // EnergyConsumeTab.swift:275): titleSmall 14sp/17,1 -> 20sp/24,4
+            // = +7,3dp/the (theo lenh unify, chap nhan tang).
+            style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
         )
         Spacer(Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -420,7 +426,10 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             // (port iOS EnergyConsumeTab+Cards.swift:190-196).
             Text(
                 "Cơ cấu tiêu thụ",
-                style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
+                // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+                // EnergyConsumeTab+Cards.swift:177): titleSmall 14sp/17,1
+                // -> 20sp/24,4 = +7,3dp (luc rong, theo lenh unify).
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
             )
             Text(
                 "Chưa có dữ liệu tiêu thụ",
@@ -441,8 +450,13 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Column {
                 Text(
                     "Cơ cấu tiêu thụ",
-                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+                    // EnergyConsumeTab+Cards.swift:177): bodySmall 12sp/14,6
+                    // -> 20sp/24,4; cot label+so 53,6 -> 63,4 = +9,8dp/the
+                    // (icon 52dp khong con ap dao; theo lenh unify). Mau
+                    // cung doi onSurfaceVariant -> onSurface nhu title the.
+                    style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Row {
                     // Tong donut: overshoot khi data ve (port iOS 84dfe2c, donut-total)
@@ -754,7 +768,10 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
         ) {
             Text(
                 "Pin thiết bị yếu",
-                style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
+                // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+                // EnergyConsumeTab+Cards.swift:1002): titleSmall 14sp/17,1
+                // -> 20sp/24,4 = +7,3dp/the (theo lenh unify, chap nhan tang).
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
             )
             if (state.lowBatteries.isEmpty()) {

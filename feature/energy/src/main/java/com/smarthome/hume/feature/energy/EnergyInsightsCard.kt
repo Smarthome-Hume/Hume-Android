@@ -178,9 +178,15 @@ private fun InsightRow(
             )
             Spacer(Modifier.height(4.dp))
             // Tiêu đề = tên thiết bị cụ thể; chạy marquee khi tràn thay vì cắt "...".
+            // (2026-11-17) Unify title the ve cardTitle 20pt:
+            // titleMedium 16sp (line mac dinh 24) -> 20sp/24,4 = +0,4dp/dong
+            // (MarqueeText bo lineHeight nen line that = tu nhien 24,38).
+            // LUY Y: iOS InsightsCard (EnergyConsumeTab+Cards.swift:1110)
+            // dung titleMedium 16pt — unify co tinh lech iOS o day theo
+            // lenh dong nhat, khong phai port 1:1.
             MarqueeText(
                 text = insight.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 color = cs.onTertiaryContainer,
             )
             val detail = buildString {

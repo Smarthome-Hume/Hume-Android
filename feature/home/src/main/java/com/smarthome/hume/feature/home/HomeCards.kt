@@ -882,9 +882,10 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             Text(
                 "Điện mặt trời",
                 // (2026-11-17) iOS cardTitle 20pt (HomeSolarCard.swift:24);
-                // 0dp he qua (gia tri 39,0 van chi phoi hang).
+                // unify: lineHeight 24.4 (= 20 x 1,219) nhu moi title the
+                // khac, thay Unspecified (tu nhien 24,38 ~ 0dp he qua).
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    lineHeight = TextUnit.Unspecified,
+                    lineHeight = 24.4.sp,
                 ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,

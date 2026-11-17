@@ -407,7 +407,13 @@ private fun Expander(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
+                    // (2026-11-17) Unify title the ve cardTitle 20pt:
+                    // titleSmall 14sp/17,1 -> 20sp/24,4; cot title+sub
+                    // 33,7 -> 41,0 < icon 44dp nen 0dp he qua. LUY Y: iOS
+                    // SolisExpander (EnergySolarTab.swift:169) dung
+                    // titleSmall 14pt — unify co tinh lech iOS o day
+                    // theo lenh dong nhat, khong phai port 1:1.
+                    style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(

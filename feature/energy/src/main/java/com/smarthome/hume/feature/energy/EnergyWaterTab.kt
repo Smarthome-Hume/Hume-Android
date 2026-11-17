@@ -95,7 +95,11 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
         ) {
             Text(
                 "Sử dụng",
-                style = MaterialTheme.typography.bodyMedium,
+                // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+                // EnergyWaterTab.swift:94): bodyMedium 14sp (line 20) ->
+                // 20sp/24,4; hang van do gia tri headlineLarge (line 40)
+                // chi phoi nen 0dp he qua.
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -206,7 +210,10 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Độ sạch nước",
-                style = MaterialTheme.typography.bodyMedium,
+                // (2026-11-17) Unify title the ve cardTitle 20pt (iOS
+                // EnergyWaterTab.swift:194): bodyMedium 14sp (line 20) ->
+                // 20sp/24,4; hang badge ~24dp -> 24,4 = +0,4dp/the.
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
