@@ -236,7 +236,7 @@ fun HomeScreen(
                         bottom = 120.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
-                    // card->card 14; pills->sec 20; sec->card 12
+                    // card->card 10 (cat duoi iOS theo lenh user 22:03); pills->sec 20; sec->card 12
                     // (Khong blur live o day: M3ERootScreen chup anh tinh 1 lan
                     //  roi blur san khi mo overlay -> het khựng.)
                     // Keep the 120dp clearance in contentPadding so it scrolls
@@ -251,7 +251,7 @@ fun HomeScreen(
                             }
                         }
                         item {
-                            Column(Modifier.padding(bottom = 14.dp)) {
+                            Column(Modifier.padding(bottom = 10.dp)) {
                                 SuggestCard(
                                     state,
                                     aiTips = aiTips,
@@ -278,7 +278,7 @@ fun HomeScreen(
                     }
                     // (The thong bao da xoa theo yeu cau user - khong co tac dung)
                     item {
-                        Column(Modifier.padding(bottom = 14.dp)) {
+                        Column(Modifier.padding(bottom = 10.dp)) {
                             SolarWeekCard(state)
                         }
                     }
@@ -340,7 +340,7 @@ fun HomeScreen(
                         .padding(horizontal = 18.dp)
                         .padding(top = statusBarTop + 8.dp),
                 ) {
-                    Column(Modifier.padding(bottom = 14.dp)) {
+                    Column(Modifier.padding(bottom = 10.dp)) {
                         HomeHeader(
                             state = state,
                             avatarUrl = state.avatarUrl,

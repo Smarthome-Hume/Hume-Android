@@ -8,8 +8,9 @@ import androidx.compose.ui.unit.dp
 /**
  * Khoang cach chuan giua cac the (user 2026-10-01): dung cho tab -> the,
  * the -> the, the -> navbar — mot gia tri duy nhat cho ca he thong.
+ * Cắt dưới iOS theo lệnh user 22:03: 14 -> 10dp (khe giữa các thẻ ngắn hơn chuẩn iOS).
  */
-val M3ECardGap = 14.dp
+val M3ECardGap = 10.dp
 
 /**
  * Scroll-end clearance for the four tab pages that sit beneath the floating navbar.

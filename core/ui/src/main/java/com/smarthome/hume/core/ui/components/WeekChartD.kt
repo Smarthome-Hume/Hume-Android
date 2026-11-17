@@ -69,7 +69,8 @@ fun WeekChartD(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(150.dp)
+            // Cat duoi iOS theo lenh user 22:03: 150 -> 120dp.
+            .height(120.dp)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { showAvg = !showAvg })
             },
@@ -77,11 +78,15 @@ fun WeekChartD(
         val w = maxWidth
         val sx = w / 320.dp
         fun x(i: Int): androidx.compose.ui.unit.Dp = (20f + i * (280f / 6f)).dp * sx
-        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 126.dp * (1f - (v / maxValue).coerceIn(0f, 1f))
+        // Cat duoi iOS theo lenh user 22:03: range 126 -> 96dp, giu offset tren 14dp.
+        // Cong thuc moi: y = 14 + 96 * (1 - v/max); day cot 110dp (= 14 + 96),
+        // giu nguyen le duoi 10dp nhu cu (150 - 140 = 120 - 110 = 10dp).
+        fun y(v: Float): androidx.compose.ui.unit.Dp = 14.dp + 96.dp * (1f - (v / maxValue).coerceIn(0f, 1f))
         val bw = 30.dp * sx
         val avgY = y(avg)
         // Duong TB dut net (ve sau cot)
-        Canvas(Modifier.fillMaxWidth().height(150.dp)) {
+        // Cat duoi iOS theo lenh user 22:03: 150 -> 120dp.
+        Canvas(Modifier.fillMaxWidth().height(120.dp)) {
             val yPx = avgY.toPx()
             val marginPx = 20.dp.toPx() * sx
             drawLine(
@@ -109,12 +114,13 @@ fun WeekChartD(
         }
         vals.forEachIndexed { i, v ->
             val top = y(v)
-            val baseH = (140.dp - top).coerceAtLeast(4.dp)
+            // Cat duoi iOS theo lenh user 22:03: day cot 140 -> 110dp (= 14 + 96, theo y(v) moi).
+            val baseH = (110.dp - top).coerceAtLeast(4.dp)
             val chaos = chaosFactors.getOrElse(i) { 1f }
             val h = baseH * chaos
             // Khi data doi, CHI cot bar animate chieu cao (emphasized 600ms) —
             // the chua khong rung/scale (port tu iOS c5b64c6).
-            // Day cot giu yen o 140dp: offsetY = top + (baseH - animH).
+            // Day cot giu yen o 110dp (cat duoi iOS theo lenh user 22:03): offsetY = top + (baseH - animH).
             val animH by animateDpAsState(
                 targetValue = h,
                 animationSpec = tween(120, easing = FastOutSlowInEasing),

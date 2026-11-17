@@ -484,7 +484,8 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 total = state.donutTotalKwh,
                 slices = state.donut,
                 sliceColors = sliceColors,
-                modifier = Modifier.size(140.dp),
+                // Cat duoi iOS theo lenh user 22:03: 140 -> 120dp.
+                modifier = Modifier.size(120.dp),
             )
             Spacer(Modifier.width(18.dp))
             Column(
@@ -664,10 +665,12 @@ private fun DeviceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            // Cat duoi iOS theo lenh user 22:03: khe tren moi hang 8 -> 6dp.
+            .padding(top = 6.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            // Cat duoi iOS theo lenh user 22:03: padding doc moi hang 12 -> 10dp.
+            .padding(horizontal = 14.dp, vertical = 10.dp)
             .staggerEnter(index = index, visible = visible, staggerMs = 45),
         verticalAlignment = Alignment.CenterVertically,
     ) {

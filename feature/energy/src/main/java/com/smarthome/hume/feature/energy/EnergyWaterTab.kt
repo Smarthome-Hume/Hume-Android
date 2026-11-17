@@ -71,7 +71,7 @@ fun EnergyWaterTab(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
     ) {
         WaterWeekCard(state, risePlayed)
         WaterTdsCard(state.water, risePlayed)
@@ -289,7 +289,7 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
 private fun WaterSensorsGrid(w: WaterUiState, risePlayed: MutableSet<String>) {
     val filterActive = w.filterPct > 0
     Column(
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
         modifier = Modifier.riseOnce("water-sensors", 460, risePlayed),
     ) {
         Row(

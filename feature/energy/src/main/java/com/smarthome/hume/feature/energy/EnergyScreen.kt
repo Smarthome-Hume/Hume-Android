@@ -211,7 +211,7 @@ fun EnergyScreen(
             top = statusBarTop + 76.dp, start = 18.dp, end = 18.dp,
             bottom = 120.dp,
         ),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
     ) {
         item {
             EsubGroup(

@@ -75,7 +75,7 @@ fun EnergySolarTab(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
     ) {
         Expander(
             icon = {
@@ -232,7 +232,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         .background(MaterialTheme.colorScheme.tertiary),
                 )
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp)) // cắt dưới iOS theo lệnh user 22:03 (10→6dp)
         }
         Spacer(Modifier.height(14.dp))
         HorizontalDivider(
@@ -296,7 +296,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 Modifier.weight(1f),
             )
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(6.dp)) // cắt dưới iOS theo lệnh user 22:03 (10→6dp)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             MiniBox(
                 "Sạc giới hạn",
@@ -333,7 +333,7 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp), // cắt dưới iOS theo lệnh user 22:03 (12→10dp)
     ) {
         Text(
             label,
