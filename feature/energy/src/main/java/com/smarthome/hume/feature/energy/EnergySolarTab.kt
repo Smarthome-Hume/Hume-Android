@@ -140,6 +140,13 @@ fun EnergySolarTab(
 
 // ---------- sunsynk summary ----------
 
+// LineHeight chuan iOS (SwiftUI mac dinh = line height tu nhien cua
+// Montserrat: hhea (968+251)/1000 = 1.219 x co chu; M3ETheme.swift
+// khong set lineHeight). Android theme M3 dat lineHeight lon hon
+// (vd titleMedium 24 thay vi 19.5) nen the cao hon iOS — set rieng
+// tung Text trong file nay ve 1.219 x size: 22->26.8, 20->24.4,
+// 16->19.5, 14->17.1, 12->14.6, 11->13.4 (sp).
+
 @Composable
 private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     val extra = LocalHumeExtraColors.current
@@ -156,7 +163,9 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Tải tiêu thụ",
-                style = MaterialTheme.typography.titleSmall.copy(),
+                // iOS EnergySolarTab+Sunsynk.swift: M3EType.cardTitle 20pt
+                // (M3ETheme.swift) — Android titleSmall 14sp nho hon.
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 modifier = Modifier.alignByBaseline(),
             )
             Row(
@@ -167,12 +176,13 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontFeatureSettings = "tnum",
+                        lineHeight = 26.8.sp,
                     ),
                     modifier = Modifier.alignByBaseline(),
                 )
                 Text(
                     " kW",
-                    style = MaterialTheme.typography.labelMedium.copy(),
+                    style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.alignByBaseline(),
                 )
@@ -187,7 +197,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             ) {
                 Text(
                     t.name,
-                    style = MaterialTheme.typography.labelMedium.copy(),
+                    style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
@@ -200,6 +210,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontFeatureSettings = "tnum",
+                        lineHeight = 14.6.sp,
                     ),
                 )
             }
@@ -236,13 +247,15 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Pin S6",
-                style = MaterialTheme.typography.titleSmall.copy(),
+                // iOS EnergySolarTab+Sunsynk.swift: M3EType.cardTitle 20pt.
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
             )
             Text(
                 "SOC ${state.battery.soc.roundToInt()}%",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
                     color = extra.success,
+                    lineHeight = 14.6.sp,
                 ),
             )
         }
@@ -324,7 +337,10 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 13.4.sp,
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
@@ -332,6 +348,7 @@ private fun MiniBox(label: String, value: AnnotatedString, modifier: Modifier = 
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
+                lineHeight = 19.5.sp,
             ),
             modifier = Modifier.padding(top = 3.dp),
         )
@@ -390,12 +407,12 @@ private fun Expander(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleSmall.copy(),
+                    style = MaterialTheme.typography.titleSmall.copy(lineHeight = 17.1.sp),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(),
+                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -441,7 +458,7 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
     ) {
         Text(
             c.name,
-            style = MaterialTheme.typography.labelLarge.copy(),
+            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 17.1.sp),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
@@ -458,7 +475,7 @@ private fun ControlRow(c: BatteryControl, vm: EnergyViewModel) {
             BatteryControlKind.Time -> {
                 Text(
                     c.state.take(5),
-                    style = MaterialTheme.typography.bodySmall.copy(),
+                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -493,6 +510,7 @@ private fun Stepper(value: Double, unit: String, onChange: (Double) -> Unit) {
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontFeatureSettings = "tnum",
+                lineHeight = 17.1.sp,
             ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
@@ -514,7 +532,7 @@ private fun StepperBtn(text: String, onClick: () -> Unit) {
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium.copy(),
+            style = MaterialTheme.typography.titleMedium.copy(lineHeight = 19.5.sp),
             color = MaterialTheme.colorScheme.onSurface,
         )
     }

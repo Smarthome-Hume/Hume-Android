@@ -224,7 +224,11 @@ fun WeekChartD(
             val today = i == labels.lastIndex
             Text(
                 l,
-                style = MaterialTheme.typography.labelSmall,
+                // lineHeight iOS: labelSmall 11pt tu nhien 11 x 1.219 = 13.4
+                // (M3ETheme.swift khong set lineHeight; WeekChartD.swift:160-162
+                // .font(M3EType.labelSmall)). Android labelSmall mac dinh 16
+                // lam nhan ngay cao hon iOS ~2.6dp moi bieu do cot.
+                style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
                 fontWeight = if (today) FontWeight.Bold else FontWeight.SemiBold,
                 color = if (today) cs.primary else cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,

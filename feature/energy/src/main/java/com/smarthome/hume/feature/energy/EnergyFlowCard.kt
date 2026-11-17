@@ -135,6 +135,14 @@ private fun solisStatusVn(raw: String): Pair<String, Color> {
     }
 }
 
+// LineHeight chuan iOS (SwiftUI mac dinh = line height tu nhien cua
+// Montserrat: hhea (968+251)/1000 = 1.219 x co chu; M3ETheme.swift
+// khong set lineHeight). Android theme M3 dat lineHeight lon hon
+// (vd titleMedium 24 thay vi 19.5) nen the cao hon iOS — set rieng
+// tung Text trong file nay ve 1.219 x size: 22->26.8, 16->19.5,
+// 14->17.1, 12->14.6, 11->13.4 (sp). Rieng 2 dong kWh: Android
+// dang ep 15/16sp, iOS mac dinh 13.4/17.1 — sua ve dung so iOS.
+
 @Composable
 fun EnergyFlowCard(
     flow: EnergyFlowState,
@@ -161,7 +169,7 @@ fun EnergyFlowCard(
                 Column {
                     Text(
                         "Năng lượng",
-                        style = MaterialTheme.typography.titleLarge.copy(),
+                        style = MaterialTheme.typography.titleLarge.copy(lineHeight = 26.8.sp),
                     )
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                     // Dong trang thai inverter (port iOS 007d8ce): doc tu sensor moi.
@@ -180,7 +188,7 @@ fun EnergyFlowCard(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             statusText,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -203,11 +211,12 @@ fun EnergyFlowCard(
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum",
+                            lineHeight = 26.8.sp,
                         ),
                     )
                     Text(
                         " kWh",
-                        style = MaterialTheme.typography.bodyMedium.copy(),
+                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -284,7 +293,7 @@ private fun FlowArea(
             ) {
                 Text(
                     if (flow.gridOn) "Cấp điện" else "Mất điện",
-                    style = MaterialTheme.typography.labelSmall.copy(),
+                    style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
                     color = gridBadgeFg,
                     maxLines = 1,
                     softWrap = false,
@@ -355,7 +364,10 @@ private fun FlowArea(
             ) {
                 Text(
                     "SOC",
-                    style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 13.4.sp,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 // SOC %: overshoot khi data ve (port iOS 84dfe2c, flow-soc)
@@ -364,7 +376,10 @@ private fun FlowArea(
                     format = { "${it.roundToInt()}%" },
                     durationMs = 800,
                     chaosId = "flow-soc",
-                    style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 13.4.sp,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -638,8 +653,9 @@ private fun FlowNode(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = 10.5.sp, fontWeight = FontWeight.Normal),
+                // iOS EnergySolarTab+Flow.swift FlowNodeView: M3EType.labelSmall
+                // 11pt semibold — Android dang 10.5sp Normal.
+                style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -649,8 +665,8 @@ private fun FlowNode(
                 Spacer(Modifier.width(5.dp))
                 Text(
                     badge,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
+                    // iOS: labelSmall 11pt — Android dang 9sp.
+                    style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
                     color = badgeFg,
                     // demo .flbdir{white-space:nowrap}: badge khong duoc xuong dong
                     maxLines = 1,
@@ -673,6 +689,7 @@ private fun FlowNode(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontFeatureSettings = "tnum",
+                    lineHeight = 19.5.sp,
                 ),
                 maxLines = 1,
                 softWrap = false,
@@ -680,7 +697,7 @@ private fun FlowNode(
             )
             Text(
                 " $unit",
-                style = MaterialTheme.typography.bodySmall.copy(),
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.6.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -720,8 +737,8 @@ private fun FlowNodeKwhRow(
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall.copy(
-                    // lineHeight gon de vua node 175 (iOS SwiftUI text mac dinh chat hon)
-                    lineHeight = 15.sp,
+                    // iOS mac dinh 11pt x 1.219 = 13.4 (khong ep lineHeight).
+                    lineHeight = 13.4.sp,
                 ),
                 color = cs.onSurfaceVariant.copy(alpha = 0.7f),
                 maxLines = 1,
@@ -734,11 +751,11 @@ private fun FlowNodeKwhRow(
         }
         Text(
             String.format(Locale.US, "%.1f", kwh),
-            // lineHeight 16sp (thay vi 20sp cua bodyMedium) de vua node 175 —
-            // render van giong iOS (SwiftUI khong cong them line spacing).
+            // iOS mac dinh 14pt x 1.219 = 17.1 — Android dang ep 16sp,
+            // chat hon ca iOS (sua 16 -> 17.1, dong kWh cao them 1.1).
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Medium,
-                lineHeight = 16.sp,
+                lineHeight = 17.1.sp,
                 fontFeatureSettings = "tnum",
             ),
             color = cs.onSurfaceVariant,
@@ -748,7 +765,7 @@ private fun FlowNodeKwhRow(
         )
         Text(
             "kWh",
-            style = MaterialTheme.typography.labelSmall.copy(lineHeight = 15.sp),
+            style = MaterialTheme.typography.labelSmall.copy(lineHeight = 13.4.sp),
             color = cs.onSurfaceVariant.copy(alpha = 0.7f),
             maxLines = 1,
             softWrap = false,
@@ -811,7 +828,10 @@ private fun SegBar(
             items.forEach { (name, _) ->
                 Text(
                     name,
-                    style = MaterialTheme.typography.labelSmall.copy( fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 13.4.sp,
+                    ),
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
