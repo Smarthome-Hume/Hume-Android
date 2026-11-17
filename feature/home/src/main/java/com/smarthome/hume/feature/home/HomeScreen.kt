@@ -323,11 +323,22 @@ fun HomeScreen(
                     Modifier
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
-                        .padding(horizontal = 18.dp)
-                        .padding(top = statusBarTop + 8.dp)
+                        // (2026-11-17, the goi y bi the an ninh de) onGloballyPositioned
+                        // PHAI dat TRUOC padding: dat sau .padding(top) thi chi do
+                        // phan noi dung ben trong Column, thieu statusBarTop + 8dp
+                        // -> headerHeight thieu ~32-38dp -> LazyColumn top padding
+                        // thieu bay nhieu -> item dau ("Goi y cho ban" 24dp + 12dp)
+                        // truot len duoi hang pill an ninh co dinh, chi con khe
+                        // ~4dp giua pill va the goi y thay vi 20+24+12=56dp.
+                        // iOS do ca VStack gom padding (.padding(.top, 8)
+                        // .onGeometryChange, M3EHomeView.swift:117-120); Android
+                        // phai do ca khoi da padding moi 1:1 — cung la chieu cao
+                        // M3EHeaderFade yeu cau ("da gom status bar").
                         .onGloballyPositioned {
                             headerHeight = with(density) { it.size.height.toDp() }
-                        },
+                        }
+                        .padding(horizontal = 18.dp)
+                        .padding(top = statusBarTop + 8.dp),
                 ) {
                     Column(Modifier.padding(bottom = 14.dp)) {
                         HomeHeader(
