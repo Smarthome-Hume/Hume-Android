@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +50,7 @@ import com.smarthome.hume.core.model.EnergyPowerKind
 import com.smarthome.hume.core.model.EnergyUiState
 import com.smarthome.hume.core.model.EnergyWeekPoint
 import com.smarthome.hume.core.ui.components.M3ECard
+import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.OvershootNumber
 import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.HorizontalBatteryIcon
@@ -485,18 +485,21 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                                 .clip(CircleShape)
                                 .background(sliceColors[i % sliceColors.size]),
                         )
-                        // Viewport marquee keo den sat mep cham mau (bo Spacer):
-                        // padding nam TRONG marquee -> chu chay den mep cham moi an,
-                        // luc nghi van cach 10.dp nhu cu.
-                        Text(
-                            s.name,
-                            style = MaterialTheme.typography.labelMedium.copy(),
+                        // Ten dai ("A/C phòng ngủ chính", ~139dp o 12sp)
+                        // tran cot label nen chay marquee kieu iOS
+                        // (MarqueeText: nghi 1.5s o dau -> cuon het ->
+                        // nghi 1.2s -> cuon ve) thay vi basicMarquee()
+                        // cuon vong lien tuc khong nghi — anh that bat
+                        // dung moi noi vong lap nen thay manh "nh" (duoi
+                        // "chinh") + "A/C pho" (dau vong lap moi) chen
+                        // nhau, trong nhu bi cat / cham mau chen len chu.
+                        // iOS dung MarqueeText y het (DonutCard legend).
+                        MarqueeText(
+                            text = s.name,
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .weight(1f)
-                                .basicMarquee()
-                                .padding(start = 10.dp),
+                            modifier = Modifier.weight(1f),
+                            startPadding = 10.dp,
                         )
                         // cot % rong co dinh, can phai -> cac hang dóng thẳng
                         Text(

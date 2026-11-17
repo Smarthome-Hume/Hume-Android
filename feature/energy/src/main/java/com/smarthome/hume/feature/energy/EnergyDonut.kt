@@ -34,7 +34,6 @@ import com.smarthome.hume.core.model.EnergyDonutSlice
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3EPopupAnimation
 import com.smarthome.hume.core.ui.components.OvershootNumber
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.asin
@@ -254,7 +253,6 @@ fun EnergyDonut(
     sliceColors: List<Color>,
     modifier: Modifier = Modifier,
 ) {
-    val track = LocalHumeExtraColors.current.surfaceHigh
     val grey = MaterialTheme.colorScheme.outlineVariant
     // Khi data doi: ve lai tu dau kem wobble thay vi nhay cung —
     // port tu iOS c5b64c6. Animatable de snapTo(0) roi replay.
@@ -376,10 +374,12 @@ fun EnergyDonut(
             val r = side / 2f - 17.dp.toPx()
             val lineBase = 16.dp.toPx()
             val swell = 3.dp.toPx()
-            drawArc(
-                color = track, startAngle = 0f, sweepAngle = 360f,
-                useCenter = false, style = Stroke(lineBase, cap = StrokeCap.Round),
-            )
+            // KHONG ve track/vanh ngoai: iOS EnergyDonut Canvas chi ve cac
+            // slice (+ lop phu xam khi khong chon), khong co full-circle
+            // track (EnergyConsumeTab+Cards.swift:580-660, v76). Track cu
+            // (drawArc 360 do, khong topLeft/size nen ve het Canvas, ban
+            // kinh tam side/2 — nam NGOAI ban kinh slice r = side/2-17dp)
+            // hien thanh vong tron xam mo bao quanh donut tren anh that.
             // Entrance stagger + wobble (port tu iOS c5b64c6, GIU NGUYEN):
             // slice vot qua roi nay ve thay vi nhay cung khi data update.
             val locals = normFractions.mapIndexed { i, _ ->
