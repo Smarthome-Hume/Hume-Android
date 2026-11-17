@@ -533,9 +533,16 @@ fun SuggestCard(
             },
         containerColor = cs.tertiaryContainer,
         shape = RoundedCornerShape(28.dp),
-        contentPadding = 16.dp,
+        // (2026-11-17) Rut ngan them theo lenh user (vong 44d50c2 da chot
+        // cat DUOI chuan iOS): padding DOC 16 -> 12dp (-8dp). iOS
+        // contentPadding 16, Android moi thanh phan da <= iOS (icon 30<40,
+        // title 14<16pt, sub 12<14pt, nut v7<10, pager tu nhien 33,7<60)
+        // nen padding doc 32dp (gan nua the) la phan duy nhat con cat
+        // duoc ma khong pha noi dung. Padding NGANG giu 16 (12+4 bu ben
+        // trong) de icon/text/nut khong gian ra.
+        contentPadding = 12.dp,
     ) {
-        Column {
+        Column(Modifier.padding(horizontal = 4.dp)) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth(),
@@ -577,7 +584,10 @@ fun SuggestCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
+                        // (2026-11-17) Khe tren dots 10 -> 6dp (-4dp khi
+                        // >1 tip, cat duoi iOS theo lenh user; 6dp la so
+                        // da dung o vong 44d50c2: spacer 10->6, khe hang 8->6).
+                        .padding(top = 6.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
