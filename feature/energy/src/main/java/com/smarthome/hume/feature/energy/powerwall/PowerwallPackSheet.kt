@@ -69,6 +69,11 @@ import kotlin.math.roundToInt
  * + RectangleShape, the cach deu 3 canh 8dp, bo 20dp ca 4 goc, top gap
  * 183dp; noi dung pack cuon trong the (verticalScroll) nen khong can
  * chieu cao rieng.
+ * (Viec 3, 2026-11-17) Dong nhat HOAN TOAN voi RoomSheet: padding noi
+ * dung ngang 20dp, top inset 93dp + bottom 0dp + Spacer 24dp cuoi (nhu
+ * RoomSheet), fade 93dp, GrabHandle CAN GIUA, header start 28dp/end
+ * 20dp. Truoc day Pack dung so rieng cua iOS PackSheet (16/81/24dp,
+ * GrabHandle lech trai) nen nhin van lech voi RoomSheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +110,7 @@ fun PowerwallPackSheet(
         // bottom inset (mac dinh modalWindowInsets = bottom insets).
         contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         // Khong dung dragHandle slot cua M3: GrabHandle nam trong dai
-        // header co dinh de fade 81dp phu kin tu dinh sheet nhu iOS.
+        // header co dinh de fade 93dp phu kin tu dinh sheet nhu RoomSheet.
         dragHandle = null,
     ) {
         Column(
@@ -127,30 +132,49 @@ fun PowerwallPackSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 81.dp, bottom = 24.dp),
+                    // (Viec 3) Padding noi dung = RoomSheet: ngang 20dp
+                    // (cu 16dp), top 93dp (cu 81dp), bottom 0dp + Spacer
+                    // 24dp cuoi list (cu padding bottom 24dp) — dung co
+                    // che RoomSheet (LazyColumn bottom 0 + item Spacer 24dp).
+                    // LUU Y: header Pack cao 44dp (Room ~56dp) nen khe duoi
+                    // header Pack thanh 24dp (93-25-44), Room ~12dp — so
+                    // top inset/fade thi bang nhau, khe duoi header thi
+                    // lech do chieu cao header khac nhau (xem bao cao).
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 93.dp, bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OverviewGrid(pack, cs, extra)
                 CellChartCard(pack, cs, extra)
                 TempsCard(pack, cs, extra)
                 ParamsCard(pack, cs, extra)
+                Spacer(Modifier.height(24.dp))
             }
             M3EHeaderFade(
                 color = cs.surfaceContainer,
-                height = 81.dp,
-                modifier = Modifier.align(Alignment.TopStart),
+                // (Viec 3) Fade 93dp nhu RoomSheet (cu 81dp).
+                height = 93.dp,
+                modifier = Modifier.align(Alignment.TopCenter),
             )
             Column(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
+                    .align(Alignment.TopCenter)
                     .fillMaxWidth(),
+                // (Viec 3) Can giua nhu RoomSheet: truoc day khong co
+                // horizontalAlignment nen GrabHandle dinh mep TRAI the
+                // (RoomSheet can giua). Chi GrabHandle bi anh huong —
+                // PackHeader fillMaxWidth nen giu nguyen vi tri.
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 PowerwallGrabHandle()
-                // v59: bo sheet 55 -> 60pt nen goc tren bo rong hon — doi
-                // header (icon + ten pack) sang phai 8pt cho khoi sat mep
-                // cong (iOS: .padding(.horizontal, 16) + .padding(.leading, 8)).
-                PackHeader(pack, packName, cs, Modifier.padding(start = 24.dp, end = 16.dp))
+                // (Viec 3) Header start 28dp/end 20dp nhu RoomSheet
+                // (.padding(start=8).padding(horizontal=20)); cu la
+                // start 24dp/end 16dp theo iOS PackSheet rieng
+                // (.horizontal 16 + .leading 8).
+                PackHeader(
+                    pack, packName, cs,
+                    Modifier.padding(start = 8.dp).padding(horizontal = 20.dp),
+                )
             }
             }
             // Spacer TRONG SUOT duoi the: day the cach mep duoi dung 8dp —
