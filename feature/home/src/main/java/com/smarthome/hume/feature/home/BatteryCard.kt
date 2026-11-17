@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.BatteryUi
@@ -56,6 +57,18 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
     val bigTime = parseDurationBig(battery.timeText)
         ?: battery.timeText?.takeIf { it == "—" || it == "Đã đầy" || it == "Đã cạn" }
 
+    // lineHeight: iOS KHONG dat lineHeight o dau ca (M3EType chi co
+    // Font.custom(size, weight) — M3ETheme.swift; grep 0 hit "lineHeight"
+    // trong M3ETheme.swift / HomeBatteryCard.swift) nen SwiftUI dung line
+    // height tu nhien cua Montserrat (hhea ascent 968 + descent 251 = 1.219em,
+    // do tu Hume/Fonts/Montserrat-*.ttf). Typography M3 cua Android gan
+    // lineHeight co dinh (16/20/28/52) nen lech iOS: pill + legend thua
+    // 1.37dp moi cho, gio lon thieu 2.86dp. Moi Text trong the nay deu dung
+    // .copy(lineHeight = TextUnit.Unspecified) de Compose dung line height
+    // tu nhien cua cung font Montserrat -> khop iOS theo cau truc, khong
+    // tu chon so. Tong chieu cao sau fix (tinh tu code): NGHI 173.3dp,
+    // SAC/XA 230.1dp = iOS (20 pad + 48 + 10 + 26.6 pill + [2 + 54.9 gio
+    // lon] + 10 + 14 bar + 10 + 14.6 legend + 20 pad).
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
@@ -69,7 +82,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 "Hiệu năng pin",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = TextUnit.Unspecified),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
@@ -105,7 +118,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 battery.statusText,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = TextUnit.Unspecified),
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 1.5.sp,
                 color = pillFg,
@@ -122,7 +135,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 bigTime,
-                style = MaterialTheme.typography.displayMedium,
+                style = MaterialTheme.typography.displayMedium.copy(lineHeight = TextUnit.Unspecified),
                 fontWeight = FontWeight.Light,
                 letterSpacing = (-0.5).sp,
                 color = cs.onSurface,
@@ -133,7 +146,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         "KẾT THÚC LÚC",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.copy(lineHeight = TextUnit.Unspecified),
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
                         color = cs.onSurfaceVariant,
@@ -141,7 +154,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     )
                     Text(
                         et,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.headlineSmall.copy(lineHeight = TextUnit.Unspecified),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onSurface,
                         modifier = Modifier.padding(top = 2.dp),
@@ -174,7 +187,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Dự trữ",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = TextUnit.Unspecified),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
                 )
@@ -187,6 +200,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     chaosId = "batt-reserve",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.SemiBold,
+                        lineHeight = TextUnit.Unspecified,
                     ),
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),
@@ -213,7 +227,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Sử dụng",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = TextUnit.Unspecified),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurfaceVariant,
                 )
@@ -224,6 +238,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                     chaosId = "batt-usage",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.SemiBold,
+                        lineHeight = TextUnit.Unspecified,
                     ),
                     color = cs.onSurface,
                     modifier = Modifier.padding(start = 4.dp),

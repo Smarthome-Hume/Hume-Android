@@ -446,11 +446,13 @@ fun DishwasherExpandedView(
                     )
                 }
                 Spacer(Modifier.size(8.dp))
+                // iOS RoomExpandedCards.swift:200 chevron
+                // .font(.system(size: 12)) — Android cu: 14dp.
                 Icon(
                     Icons.Outlined.KeyboardArrowDown, null,
                     tint = cs.onSurfaceVariant,
                     modifier = Modifier
-                        .size(14.dp)
+                        .size(12.dp)
                         .graphicsLayer { rotationZ = chevronRot },
                 )
             }

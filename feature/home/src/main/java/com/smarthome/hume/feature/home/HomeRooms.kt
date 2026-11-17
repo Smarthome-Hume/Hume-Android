@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -714,12 +715,15 @@ private fun ClimateCard(
             modifier = Modifier.fillMaxWidth(),
         ) {
             // Stepper: - | nhiet do | + (nen rieng, bo "Muc tieu")
+            // iOS HomeRooms.swift:535 HStack(spacing: 12), :549 .padding(6),
+            // :551 corner 18 — Android cu: khong spacing, padding 4, bo 16.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .background(cs.surfaceContainer)
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .padding(6.dp),
             ) {
                 StepperButton(Icons.Outlined.Remove, enabled = c.isOn) {
                     haptic()
@@ -944,6 +948,9 @@ fun DeviceRow(
         // handler nay khong lam gi, switch van nhan tap binh thuong.
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            // iOS HomeRooms.swift:737 HStack(spacing: 13) ngoai (cum
+            // icon+ten -> trailing switch/chip) — Android cu: khong spacing.
+            horizontalArrangement = Arrangement.spacedBy(13.dp),
             modifier = Modifier.clickable {
                 if (isConfirming) isConfirming = false
             },
@@ -1070,9 +1077,13 @@ fun DeviceRow(
                         // 2 nut xac nhan inline (thay popup, user 2026-10-09)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Nut Huy
+                            // iOS HomeRooms.swift:805 .frame(minHeight: 40)
+                            // — Android cu: labelMedium 12/16 + padding 20
+                            // = 36dp, thap hon iOS 4dp.
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
+                                    .heightIn(min = 40.dp)
                                     .clip(CircleShape)
                                     .background(cs.surfaceContainerHigh)
                                     .clickable { isConfirming = false }
@@ -1087,9 +1098,11 @@ fun DeviceRow(
                                 )
                             }
                             // Nut Xac nhan (do)
+                            // iOS HomeRooms.swift:819 .frame(minHeight: 40).
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
+                                    .heightIn(min = 40.dp)
                                     .clip(CircleShape)
                                     .background(cs.error)
                                     .clickable {
