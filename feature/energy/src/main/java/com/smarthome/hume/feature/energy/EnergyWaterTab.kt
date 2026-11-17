@@ -88,7 +88,6 @@ private fun WaterWeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) 
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("water-week", 420, risePlayed),
     ) {
         Row(
@@ -199,7 +198,6 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
-        containerColor = extra.surfaceHighest,
         modifier = Modifier.riseOnce("water-tds", 440, risePlayed),
     ) {
         Row(

@@ -146,7 +146,6 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
-        containerColor = extra.surfaceHighest,
         modifier = Modifier.riseOnce("sol-syn", 420, risePlayed),
     ) {
         // demo .yt{align-items:baseline}
@@ -364,7 +363,7 @@ private fun Expander(
             .fillMaxWidth()
             .riseOnce(riseKey, riseDelay, risePlayed)
             .clip(RoundedCornerShape(32.dp))
-            .background(LocalHumeExtraColors.current.surfaceHighest),
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

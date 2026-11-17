@@ -202,7 +202,7 @@ private fun InsightDeviceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(if (isOn) cs.error else cs.primary)
+                .background(if (isOn) Color(0xFFEF4444) else cs.primary)
                 .pressMorph(pressedScale = 0.96f) {
                     haptic()
                     onToggle(popup.entityId)
@@ -213,7 +213,8 @@ private fun InsightDeviceCard(
         ) {
             MsIcon(
                 if (isOn) Ms.power_settings_new else Ms.bolt, null,
-                tint = if (isOn) cs.onError else cs.onPrimary,
+                // iOS: nut do/chinh deu chu trang (.foregroundStyle(.white)).
+                tint = if (isOn) Color.White else cs.onPrimary,
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.size(8.dp))
@@ -221,7 +222,7 @@ private fun InsightDeviceCard(
                 if (isOn) "Tắt ngay" else "Bật lên",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = if (isOn) cs.onError else cs.onPrimary,
+                color = if (isOn) Color.White else cs.onPrimary,
             )
         }
         Spacer(Modifier.height(16.dp))
@@ -361,6 +362,11 @@ private fun InsightCostCard(
     onClose: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
+    // iOS InsightCostCard: so tiet kiem mau .green (sang ca 2 mode).
+    // Dung token success thay vi hardcode 2E7D32 (xanh dam, chim tren nen
+    // toi dark mode); token success cung la mau xanh iOS dung o cac cho
+    // tuong duong (SOC, badge "Rat sach").
+    val extra = LocalHumeExtraColors.current
     val saving = cost.homeVnd - cost.gridVnd
 
     fun fmtVnd(v: Long): String {
@@ -395,7 +401,7 @@ private fun InsightCostCard(
             fmtVnd(saving),
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF2E7D32),
+            color = extra.success,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         Text(

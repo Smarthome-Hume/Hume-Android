@@ -148,7 +148,6 @@ fun EnergyFlowCard(
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = modifier
             .riseOnce("sol-flow", 410, risePlayed),
     ) {

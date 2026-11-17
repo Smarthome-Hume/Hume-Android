@@ -106,7 +106,6 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-week", 420, risePlayed),
     ) {
         Row(
@@ -167,7 +166,6 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-cost", 440, risePlayed),
     ) {
         Text(
@@ -274,7 +272,6 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 20.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-power", 460, risePlayed),
     ) {
         Text(
@@ -374,7 +371,6 @@ private fun FlatPowerBar(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
-    val extra = LocalHumeExtraColors.current
     // 4 mau slice RIENG BIET: primary (theme) + 3 mau co dinh (xanh duong, ho phach, tim)
     // de tranh trung nhau nhu vu primary==tertiary o theme xanh la
     val sliceColors = listOf(
@@ -389,7 +385,6 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
         shape = RoundedCornerShape(40.dp),
         contentPadding = 20.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-donut", 480, risePlayed),
     ) {
         if (state.donut.isEmpty()) {
@@ -556,7 +551,6 @@ private fun DevicesCard(
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = modifier
             .riseOnce("cons-dev", 440, risePlayed),
     ) {
@@ -716,7 +710,6 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 0.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-blw", 500, risePlayed),
     ) {
         Column(

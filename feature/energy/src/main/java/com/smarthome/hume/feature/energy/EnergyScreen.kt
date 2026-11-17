@@ -317,9 +317,12 @@ private fun GridAlertBanner(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
-    val bg = if (alertOn) extra.success else cs.error
+    // iOS M3EEnergyView: banner do dung Color.red (do tuoi, khong doi theo
+    // seed); cs.error dark la FFB4AB (hong nhat, chu trang khong doc duoc).
+    // EF4444 la mau do co dinh app da dung o solisStatusColor (iOS cung
+    // dung EF4444 cho "normal operation").
+    val bg = if (alertOn) extra.success else androidx.compose.ui.graphics.Color(0xFFEF4444)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -379,13 +382,14 @@ private fun PumpAlertBanner(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val cs = MaterialTheme.colorScheme
+    // iOS M3EEnergyView: banner do dung Color.red (xem GridAlertBanner).
+    val alertRed = androidx.compose.ui.graphics.Color(0xFFEF4444)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(cs.error)
+            .background(alertRed)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         MsIcon(
@@ -419,7 +423,7 @@ private fun PumpAlertBanner(
                 "Đã biết",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = cs.error,
+                color = alertRed,
                 modifier = Modifier.clickable(onClick = onDismiss),
             )
         }
