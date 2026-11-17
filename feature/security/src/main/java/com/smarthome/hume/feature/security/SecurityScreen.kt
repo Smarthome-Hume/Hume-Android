@@ -80,7 +80,6 @@ import com.smarthome.hume.core.ui.components.M3ESectionHeader
 import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.riseIn
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -304,7 +303,7 @@ private fun RecCard(
         Modifier
             .width(132.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(LocalHumeExtraColors.current.surfaceHighest) // demo .rec: surfaceHighest
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest) // iOS M3ERecCard: surfaceContainerHighest (extra.surfaceHighest fallback ve Cam = nau, sai khi seed Indigo)
             .pressMorph(pressedScale = 0.94f, onClick = onClick) // demo .rec:active scale(.94)
             .padding(8.dp),
     ) {
@@ -420,11 +419,13 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     val on = s.isOn
     // Active: dung primaryContainer/tertiaryContainer de doi mau theo theme
     // (khong dung errorContainer vi Material quy dinh error luon do).
-    // Inactive: the surfaceHighest, icon/pill = surfaceContainer.
+    // Inactive: the surfaceContainerHighest (iOS M3ESecurityView.swift:146).
+    // KHONG dung extra.surfaceHighest: M3ERawTokens thieu "indigo"/"lime"
+    // nen fallback ve Cam = nau 35302A, sai khi seed la Indigo.
     val cardBg = when {
         on && s.warn -> cs.tertiaryContainer
         on -> cs.primaryContainer
-        else -> LocalHumeExtraColors.current.surfaceHighest
+        else -> cs.surfaceContainerHighest
     }
     val iconBg = when {
         on -> androidx.compose.ui.graphics.Color.White.copy(alpha = 0.55f)

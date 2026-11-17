@@ -59,6 +59,17 @@ class MeViewModel : ViewModel() {
         .map { s -> runCatching { M3ESeed.valueOf(s.seedName) }.getOrDefault(M3ESeed.Cam) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, M3ESeed.Cam)
 
+    /**
+     * Mau tuy chinh dang kich hoat (theme_custom_color != null) — khi do
+     * scheme thuc te sinh tu mau custom, khong phai tu seedName; SeedRow
+     * khong duoc tick bat ky seed nao (iOS MeColorPicker.swift:90-91:
+     * selected = customSeedHex == nil && seed == s). Neu khong, user vua
+     * ap mau custom Indigo van thay tick o Cam — sai trang thai that.
+     */
+    val hasCustomColor: StateFlow<Boolean> = themeStore.settings
+        .map { s -> s.customColor != null }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val darkMode: StateFlow<Boolean?> = themeStore.settings
         .map { s -> s.darkMode }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)

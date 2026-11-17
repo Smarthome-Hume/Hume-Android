@@ -107,7 +107,6 @@ import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.pressMorph
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -144,6 +143,8 @@ fun MeScreen(
     pickerEntities: kotlinx.coroutines.flow.StateFlow<Map<String, com.smarthome.hume.feature.home.PickerEntity>>? = null,
 ) {
     val seed by vm.seed.collectAsState()
+    // Mau custom dang kich hoat -> khong tick seed nao (xem MeViewModel.hasCustomColor).
+    val hasCustomColor by vm.hasCustomColor.collectAsState()
     val darkMode by vm.darkMode.collectAsState()
     val haptic = rememberHaptic()
 
@@ -288,7 +289,7 @@ fun MeScreen(
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
             )
-            SeedRow(selected = seed, onSelect = { haptic(); vm.setSeed(it) })
+            SeedRow(selected = if (hasCustomColor) null else seed, onSelect = { haptic(); vm.setSeed(it) })
         }
         // Card 2: mau tuy chinh co background rieng (muc cuoi trang)
         Column(
@@ -747,7 +748,7 @@ private fun NotifCard(onViewCamera: () -> Unit) {
     val haptic = rememberHaptic()
     // demo .nbtn: press-main flex-grow 1.18 / press-nei flex-grow .93 + scaleX(.95)
     val np = rememberNeighborPress(2, 1.18f, 0.93f)
-    val surfaceLow = LocalHumeExtraColors.current.surfaceLow
+    val surfaceLow = MaterialTheme.colorScheme.surfaceContainerLow // (extra.surfaceLow == surfaceContainerLow voi 8 seed co token, nhung fallback Cam khi seed Indigo/Lime/custom -> dung cs.* cho doi theo moi seed)
     Row(
         Modifier
             .fillMaxWidth()
@@ -838,7 +839,7 @@ private fun RowScope.NButton(
     val bg = when {
         primary && pressed -> MaterialTheme.colorScheme.primaryContainer
         primary -> MaterialTheme.colorScheme.primary
-        pressed -> LocalHumeExtraColors.current.surfaceHigh
+        pressed -> MaterialTheme.colorScheme.surfaceContainerHigh // (extra.surfaceHigh == surfaceContainerHigh voi 8 seed co token, nhung fallback Cam khi seed Indigo/Lime/custom)
         else -> MaterialTheme.colorScheme.surfaceContainer
     }
     val fg = when {
@@ -887,13 +888,16 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text("Chế độ hiển thị", style = MaterialTheme.typography.titleSmall)
-        // Cum 3 che do: nen surfaceHighest bo 24, moi option nen rieng
+        // Cum 3 che do: nen surfaceContainerHigh bo 24, moi option nen rieng
+        // (iOS MeThemeModeCard: surfaceContainerHigh — KHONG dung
+        // extra.surfaceHighest, M3ERawTokens thieu indigo/lime nen fallback
+        // ve Cam = nau 35302A, sai khi seed la Indigo).
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(LocalHumeExtraColors.current.surfaceHighest)
+                .background(cs.surfaceContainerHigh)
                 .padding(14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -1191,9 +1195,10 @@ private val seedNames = mapOf(
  */
 @OptIn(ExperimentalLayoutApi::class)
 /** Hang mau chu dao: 2 hang x 5 mau (2026-09-30, user yeu cau) —
- *  moi hang la Row SpaceBetween de luon du 5 dot/hang, khong wrap lech. */
+ *  moi hang la Row SpaceBetween de luon du 5 dot/hang, khong wrap lech.
+ *  selected = null khi mau tuy chinh dang kich hoat (khong tick seed nao). */
 @Composable
-private fun SeedRow(selected: M3ESeed, onSelect: (M3ESeed) -> Unit) {
+private fun SeedRow(selected: M3ESeed?, onSelect: (M3ESeed) -> Unit) {
     Column(
         // Nam trong card nen chi can khoang cach voi label phia tren
         modifier = Modifier

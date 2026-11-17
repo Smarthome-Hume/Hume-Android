@@ -238,7 +238,7 @@ private fun SocCell(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(extra.surfaceHighest)
+            .background(cs.surfaceContainerHighest) // iOS PackSheet:124 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
             .padding(vertical = 12.dp),
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
@@ -301,7 +301,7 @@ private fun ValueCellNum(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(com.smarthome.hume.core.ui.theme.LocalHumeExtraColors.current.surfaceHighest)
+            .background(cs.surfaceContainerHighest) // iOS PackSheet:144 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -531,7 +531,7 @@ private fun InnerCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(extra.surfaceHighest)
+            .background(cs.surfaceContainerHighest) // iOS PackSheet:283 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

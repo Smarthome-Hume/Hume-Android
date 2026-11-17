@@ -65,7 +65,6 @@ fun PowerwallSettingsSheet(
     onDismiss: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = com.smarthome.hume.core.ui.theme.LocalHumeExtraColors.current
     val rows = remember(payload) { BatterySettings.from(payload.sys).formatted() }
     val density = LocalDensity.current
 
@@ -114,7 +113,7 @@ fun PowerwallSettingsSheet(
                         modifier = Modifier.weight(1f),
                     ) {
                         for (i in rows.indices step 2) {
-                            SettingCell(rows[i].first, rows[i].second, cs, extra)
+                            SettingCell(rows[i].first, rows[i].second, cs)
                         }
                     }
                     Column(
@@ -122,7 +121,7 @@ fun PowerwallSettingsSheet(
                         modifier = Modifier.weight(1f),
                     ) {
                         for (i in 1..rows.lastIndex step 2) {
-                            SettingCell(rows[i].first, rows[i].second, cs, extra)
+                            SettingCell(rows[i].first, rows[i].second, cs)
                         }
                     }
                 }
@@ -185,14 +184,13 @@ private fun SettingCell(
     label: String,
     value: String,
     cs: androidx.compose.material3.ColorScheme,
-    extra: com.smarthome.hume.core.ui.theme.HumeExtraColors,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(extra.surfaceHighest)
+            .background(cs.surfaceContainerHighest) // iOS SettingsSheet:131 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
             .padding(14.dp),
     ) {
         Text(

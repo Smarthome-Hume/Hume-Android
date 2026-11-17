@@ -317,14 +317,22 @@ object PowerwallLiveData {
         dark: Boolean = colors.surface.luminance() < 0.5f,
     ): Map<String, String> {
         val amber = if (dark) "#F59E0B" else "#D98A1F" // mau canh bao ngu nghia, giu nhu trang goc
-        val sceneBg = if (dark) "#191c18" else hex(extra.surfaceHighest)
-        val sceneFloor = if (dark) "#2A2721" else hexDarkened(extra.surfaceHighest, 0.18)
-        val sceneWall = if (dark) "#33302A" else hexDarkened(extra.surfaceHighest, 0.08)
+        // (fix 3 — seed: "surface"/"card"/"chip" phai lay tu ColorScheme
+        // (surfaceContainerHighest/High/Low) de doi theo seed hien tai.
+        // extra.surfaceHighest/High/Low tra trong M3ERawTokens theo seed;
+        // map thieu "indigo"/"lime" nen fallback ve Cam = nau, sai khi seed
+        // la Indigo — dung iOS PowerwallLiveData.themeVars: surface/
+        // surface2/card/card2 = surfaceContainerHighest/High, chip =
+        // surfaceContainerLow. scene-bg/floor/wall dark giu hardcode
+        // #191c18/#2A2721/#33302A Y HET iOS (cung hardcode o iOS).)
+        val sceneBg = if (dark) "#191c18" else hex(colors.surfaceContainerHighest)
+        val sceneFloor = if (dark) "#2A2721" else hexDarkened(colors.surfaceContainerHighest, 0.18)
+        val sceneWall = if (dark) "#33302A" else hexDarkened(colors.surfaceContainerHighest, 0.08)
         return mapOf(
             // Lop nen (dung ngoai .espui: khung canh, sel-tag, nut reset).
             "bg" to hex(colors.surface),
-            "surface" to hex(extra.surfaceHighest),
-            "surface2" to hex(extra.surfaceHigh),
+            "surface" to hex(colors.surfaceContainerHighest),
+            "surface2" to hex(colors.surfaceContainerHigh),
             "ink" to hex(colors.onSurface),
             "ink2" to hex(colors.onSurfaceVariant),
             "line" to hex(colors.outlineVariant),
@@ -341,8 +349,8 @@ object PowerwallLiveData {
             "scene-floor" to sceneFloor,
             "scene-wall" to sceneWall,
             // Lop the (trong .espui: the he thong/pack, modal, pill, nut, thanh).
-            "card" to hex(extra.surfaceHighest),
-            "card2" to hex(extra.surfaceHigh),
+            "card" to hex(colors.surfaceContainerHighest),
+            "card2" to hex(colors.surfaceContainerHigh),
             "surf-cont" to hex(colors.surfaceContainer),
             "text" to hex(colors.onSurface),
             "muted" to hex(colors.onSurfaceVariant),
@@ -351,7 +359,7 @@ object PowerwallLiveData {
             "on-primary-c" to hex(colors.onPrimaryContainer),
             "sec-cont" to hex(colors.secondaryContainer),
             "on-sec-cont" to hex(colors.onSecondaryContainer),
-            "chip" to hex(extra.surfaceLow),
+            "chip" to hex(colors.surfaceContainerLow),
             "ok" to hex(extra.success),
             "warn" to amber,
             "err" to hex(colors.error),
