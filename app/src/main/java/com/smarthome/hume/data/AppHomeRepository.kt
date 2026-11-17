@@ -227,6 +227,10 @@ class AppHomeRepository(
         // ONE_DAY, gia/chi phi stale toi 24h sau khi HA doi.
         ids.add("sensor.grid_cost"); ids.add("sensor.home_cost")
         ids.add("sensor.evn_current_unit_price")
+        // (N-01 — port iOS baseWatchedIds) grid_import_billing la mau so
+        // cua gia mua dien (evnBuyRate); home_import_billing doi xung theo
+        // iOS. Khong watch -> rate stale toi 24h sau khi HA doi.
+        ids.add("sensor.grid_import_billing"); ids.add("sensor.home_import_billing")
         // BatteryInfo (tab Dien mat troi + popup): dien ap + gioi han dong BMS.
         ids.add("sensor.solis_s6_eh1p_battery_voltage_2")
         ids.add("sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2")

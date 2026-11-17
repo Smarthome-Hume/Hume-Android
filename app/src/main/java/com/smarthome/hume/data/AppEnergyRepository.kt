@@ -109,14 +109,20 @@ class AppEnergyRepository(
 
         val pvToday = v(HumeConfig.PV_TODAY)
         val gridCost = v("sensor.grid_cost")
+        val gridImport = v("sensor.grid_import_billing")
         val homeCost = v("sensor.home_cost")
         val evn = v("sensor.evn_current_unit_price").let { if (it > 0) it else 2167.0 }
-        val rate = (homeCost / 147.49).roundToLong()
+        // (N-01 — port iOS evnBuyRate, EnergyConsumeTab.swift:23-26 +
+        // EnergyConsumeTab+Cards.swift:56-58) Gia mua dien = grid_cost /
+        // grid_import_billing; fallback 2167 khi dau ky reset (import = 0).
+        // Bo hang so cu. Dung chung cho the Chi phi (buyPrice) + costVnd
+        // tung thiet bi trong buildDevices.
+        val rate = if (gridImport > 0) gridCost / gridImport else 2167.0
 
         val cost = EnergyCost(
             gridVnd = gridCost.roundToLong(),
             homeVnd = homeCost.roundToLong(),
-            buyPrice = (homeCost / 147.49).roundToLong(),
+            buyPrice = rate.roundToLong(),
             evnPrice = evn.roundToLong(),
             savedVnd = (evn * pvToday).roundToLong(),
             savedKwh = pvToday,
@@ -345,25 +351,17 @@ class AppEnergyRepository(
     private fun buildDevices(
         entities: Map<String, LegacyEntity>,
         registry: Map<String, com.smarthome.hume.core.ha.RegistryEntry>,
-        rate: Long,
+        rate: Double,
     ): Pair<List<EnergyDevice>, List<EnergyDevice>> {
-        val labelled = ha.entityIdsWithLabel(DEVICE_LIST_LABEL)
-        val usingLabels = labelled.isNotEmpty()
-        val candidates: List<LegacyEntity> = if (usingLabels) {
-            labelled.mapNotNull { entities[it] }
-        } else {
-            entities.values
-                .filter { e ->
-                    e.id.startsWith("sensor.") && e.id.endsWith("_power") &&
-                        powerNoise.none { e.id.contains(it) }
-                }
-                .filter { e ->
-                    val entry = registry[e.id]
-                    entry?.hiddenBy == null && entry?.disabledBy == null &&
-                        entry?.entityCategory == null
-                }
-                .distinctBy { e -> registry[e.id]?.deviceId ?: e.id }
-        }
+        // (GAP-25 — port iOS discoverDevices, EnergyConsumeTab+Cards.swift:54-124)
+        // Duyet toan bo entityCache, khong label/registry: moi sensor.*_power
+        // tru powerNoise. Bo cong label "New" + filter
+        // hiddenBy/disabledBy/entityCategory + distinctBy deviceId.
+        val candidates: List<LegacyEntity> = entities.values
+            .filter { e ->
+                e.id.startsWith("sensor.") && e.id.endsWith("_power") &&
+                    powerNoise.none { e.id.contains(it) }
+            }
 
         val prefixLookup = entities.keys.mapNotNull { id ->
             val i = id.indexOf("_daily_energy_")
@@ -407,7 +405,7 @@ class AppEnergyRepository(
             .filter { it.isPowerSensor() }
             .mapNotNull { e ->
                 val w = e.watts() ?: return@mapNotNull null
-                if (!usingLabels && w <= 0) return@mapNotNull null
+                if (w <= 0) return@mapNotNull null
                 EnergyDevice(e.id, e.friendly(), w, "W", agoText(e))
             }
             .distinctBy { it.id }
@@ -475,7 +473,6 @@ class AppEnergyRepository(
     }
 
     companion object {
-        private const val DEVICE_LIST_LABEL = "New"
         private const val POWER_TOP_COUNT = 5
 
         private val chargeControlSpecs = listOf(
@@ -521,11 +518,16 @@ private fun LegacyEntity.unitOfMeasurement(): String? = attr("unit_of_measuremen
 
 private fun LegacyEntity.unitRaw(): String? = unitOfMeasurement()?.trim()
 
+// (GAP-25 — port iOS discoverDevices) iOS khong match theo unit/device_class
+// cho power: moi sensor.*_power deu la candidate, doi don vi bang toWatts
+// (watts()). Chi giu check id de ham van dung duoc doc lap.
 private fun LegacyEntity.isPowerSensor(): Boolean =
-    deviceClass() == "power" || unitRaw() in setOf("W", "kW", "mW", "MW")
+    id.startsWith("sensor.") && id.endsWith("_power")
 
+// (GAP-25) iOS energyByName chi map device_class == "energy" (khong match
+// theo unit Wh/kWh/MWh).
 private fun LegacyEntity.isEnergySensor(): Boolean =
-    deviceClass() == "energy" || unitRaw() in setOf("Wh", "kWh", "MWh")
+    deviceClass() == "energy"
 
 private fun LegacyEntity.watts(): Double? {
     val raw = numericState ?: return null
