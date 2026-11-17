@@ -447,15 +447,18 @@ fun RoomSheet(
     // The nam TREN navbar (che navbar) — dung nhu iOS; ModalBottomSheet
     // (Dialog) da dat the tren navbar, GIU nguyen, khong refactor.
     // 3 canh (2 ben + day) cach deu mep man hinh 8dp (tinh toi bounding
-    // box), top gap giu 124dp. Bo 14dp ca 4 goc = theo nguyen tac dong
-    // tam cua user: R_man Samsung 22dp - khe 8dp = 14dp. KHONG copy
-    // bo 60pt cua iOS — man Samsung bo khac iPhone (man iPhone bo
-    // ~60pt, man S26U bo ~22dp). Kich thuoc the
-    // suy ra tu gia tri runtime (KHONG hardcode 411/826): rong =
-    // screenW - 2*8, cao = screenH - 124 - 8.
+    // box). Bo 14dp ca 4 goc = theo nguyen tac dong tam cua user:
+    // R_man Samsung 22dp - khe 8dp = 14dp. KHONG copy bo 60pt cua iOS
+    // — man Samsung bo khac iPhone (man iPhone bo ~60pt, man S26U bo
+    // ~22dp). Chieu cao the theo iOS (user 19:44: the Android cao hon
+    // iOS): the iOS cao 737pt/956pt = 77%, top gap 211pt/956pt = 22%
+    // (do tu anh iOS 19:27) → top gap Android = 22% * 832dp = 183dp,
+    // the cao 641dp = 77%. Kich thuoc the suy ra tu gia tri runtime
+    // (KHONG hardcode 411/826): rong = screenW - 2*8,
+    // cao = screenH - 183 - 8.
     val screenH = LocalConfiguration.current.screenHeightDp.dp
     val sheetMargin = 8.dp
-    val topGap = 124.dp
+    val topGap = 183.dp
     val cardH = screenH - topGap - sheetMargin
     ModalBottomSheet(
         onDismissRequest = onDismiss,
