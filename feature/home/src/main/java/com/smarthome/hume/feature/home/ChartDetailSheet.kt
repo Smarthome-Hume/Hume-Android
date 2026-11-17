@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +36,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
@@ -69,6 +70,11 @@ typealias ChartHistoryLoader = suspend (
  * Sheet bieu do chi tiet khi cham vao the Hieu nang pin / Dien mat troi.
  * - Pin: bieu do vung SOC 24h + bieu do cot cong suat sac/xa
  * - Solar: bieu do vung cong suat 24h
+ * The noi giong RoomSheet/PackSheet (fix 3d): container M3 trong suot +
+ * RectangleShape, the cach deu 3 canh 8dp, bo 20dp ca 4 goc, top gap 183dp.
+ * DEAD UI (da xac nhan): chartDetail chi bi gan null, SolarWeekCard khong
+ * co onClick nen sheet nay hien khong duoc goi o dau — van chuyen sang
+ * the noi theo lenh user "Chuyen het".
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,65 +84,100 @@ fun ChartDetailSheet(
     loadHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
 ) {
     val cs = MaterialTheme.colorScheme
+    // The noi giong RoomSheet (fix 3d): top gap 183dp, the cao = screenH - 183 - 8, cach deu 3 canh 8dp.
+    val screenH = LocalConfiguration.current.screenHeightDp.dp
+    val sheetMargin = 8.dp
+    val topGap = 183.dp
+    val cardH = screenH - topGap - sheetMargin
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
-        containerColor = cs.surfaceContainer,
-        dragHandle = { GrabHandle() },
+        // (fix 3d, nhu RoomSheet) Container M3 TRONG SUOT + hinh chu nhat:
+        // the NHIN THAY ve BEN TRONG content. Scrim + vuot dong cua M3 giu nguyen.
+        shape = RectangleShape,
+        containerColor = Color.Transparent,
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
+        // Khong dung dragHandle slot cua M3: GrabHandle ve trong the (can giua o dinh).
+        dragHandle = null,
     ) {
-        val maxSheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
-        LazyColumn(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .heightIn(max = maxSheetH),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .height(screenH - topGap),
         ) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (type == ChartDetailType.Battery) {
-                        HorizontalBatteryIcon(
-                            soc = 100,
-                            color = cs.primary,
-                            modifier = Modifier.size(width = 34.dp, height = 20.dp),
-                        )
-                    } else {
-                        MsIcon(
-                            M3EIcons.SolarPower,
-                            null,
-                            tint = cs.primary,
-                            modifier = Modifier.size(30.dp),
-                        )
+            // The noi: rong = screenW - 2*8, cao = screenH - 183 - 8,
+            // bo 20dp CA 4 GOC, nen surfaceContainer.
+            Box(
+                Modifier
+                    .padding(horizontal = sheetMargin)
+                    .fillMaxWidth()
+                    .height(cardH)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cs.surfaceContainer),
+            ) {
+                Column(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        GrabHandle()
                     }
-                    Spacer(Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            if (type == ChartDetailType.Battery) "Hiệu năng pin" else "Điện mặt trời",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = cs.onSurface,
-                        )
-                        Text(
-                            "Lịch sử 24 giờ qua",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = cs.onSurfaceVariant,
-                        )
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp)
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        item {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (type == ChartDetailType.Battery) {
+                                    HorizontalBatteryIcon(
+                                        soc = 100,
+                                        color = cs.primary,
+                                        modifier = Modifier.size(width = 34.dp, height = 20.dp),
+                                    )
+                                } else {
+                                    MsIcon(
+                                        M3EIcons.SolarPower,
+                                        null,
+                                        tint = cs.primary,
+                                        modifier = Modifier.size(30.dp),
+                                    )
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        if (type == ChartDetailType.Battery) "Hiệu năng pin" else "Điện mặt trời",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = cs.onSurface,
+                                    )
+                                    Text(
+                                        "Lịch sử 24 giờ qua",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = cs.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                        if (type == ChartDetailType.Battery) {
+                            item {
+                                BatterySocChart(loadHistory)
+                            }
+                            item {
+                                BatteryPowerChart(loadHistory)
+                            }
+                        } else {
+                            item {
+                                SolarPowerChart(loadHistory)
+                            }
+                        }
+                        item { Spacer(Modifier.height(20.dp)) }
                     }
                 }
             }
-            if (type == ChartDetailType.Battery) {
-                item {
-                    BatterySocChart(loadHistory)
-                }
-                item {
-                    BatteryPowerChart(loadHistory)
-                }
-            } else {
-                item {
-                    SolarPowerChart(loadHistory)
-                }
-            }
-            item { Spacer(Modifier.height(20.dp)) }
+            // Spacer TRONG SUOT duoi the: day the cach mep duoi dung 8dp.
+            Spacer(Modifier.height(sheetMargin))
         }
     }
 }
