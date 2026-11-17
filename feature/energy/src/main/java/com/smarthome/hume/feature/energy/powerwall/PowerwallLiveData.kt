@@ -26,11 +26,13 @@ import kotlin.math.roundToInt
  * window.__humePowerwallLive (bridge trong index.html). Mau sac the theo
  * theme app qua window.__humePowerwallTheme.
  *
- * CHUA WATCH FULL (N-12): danh sach [entityIds] la nguon su that duy nhat
+ * WATCH FULL (N-12, da port): danh sach [entityIds] la nguon su that duy nhat
  * cho tap watched (205 entity = 4 pack x 46 key + 4 id master + 6 system
- * + 11 setting). Cho toi khi N-12 watch full, cac entity
- * nay chi co gia tri snapshot luc mo trang (REST /api/states) va khong
- * tick live theo WebSocket — man hinh van hien so luc mo, khong hien "-".
+ * + 11 setting), dang ky vao updateWatched qua POWERWALL_ENTITY_IDS trong
+ * AppHomeRepository — cac entity nay tick live theo WebSocket; snapshot
+ * REST /api/states luc mo trang chi la gia tri ban dau, khong phai nguon
+ * duy nhat. (Sua comment stale: ban truoc ghi "chua watch full" khi N-12
+ * chua land; N-12 da land cung dot port nay.)
  */
 object PowerwallLiveData {
 
