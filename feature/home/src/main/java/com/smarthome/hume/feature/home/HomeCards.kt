@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -816,7 +817,13 @@ private fun SuggestTipRow(
                     pressedScale = 0.9f,
                     corner = 14.dp,
                     pressedCorner = 10.dp,
-                    onClick = if (done) null else { onAction(btnRect) },
+                    // { ... } sau else la block (goi onAction ngay luc compose),
+                    // khong phai lambda — phai tra ve lambda de chi goi khi tap.
+                    onClick = if (done) {
+                        null
+                    } else {
+                        { onAction(btnRect) }
+                    },
                 )
                 .onGloballyPositioned { btnRect = it.boundsInWindow() }
                 // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
