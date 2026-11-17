@@ -235,8 +235,11 @@ private fun FlowArea(
     // cao nhat: node Pin co 2 dong kWh sac/xa nen cao nhat — ca 4 node lay
     // theo chieu cao do duoc lon nhat, the cao theo. Truoc day NODE_H co
     // dinh 175, noi dung phinh ra bi ep vao khung chet. Cach lam:
-    // SubcomposeLayout do chieu cao noi dung tung node o width chuan (Spacer
-    // weight cua FlowNode co thanh 0 khi do khong gioi han) -> nodeH = max.
+    // SubcomposeLayout lay chieu cao noi dung tung node o width chuan bang
+    // maxIntrinsicHeight (Spacer weight cua FlowNode co thanh 0 khi do
+    // intrinsic, nhu khi do khong gioi han) -> nodeH = max; moi node chi
+    // measure 1 lan voi Constraints.fixed(nodeW, nodeH) (do 2 lan = crash,
+    // xem FIX crash 1 o duoi).
     SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
         val maxW = constraints.maxWidth
         val scale = maxW / VB_W // px cho 1 don vi viewBox
@@ -391,12 +394,23 @@ private fun FlowArea(
         }
         }
 
-        val intrinsic = Constraints.fixedWidth(nodeW)
+        // FIX crash 1 (16:04:45 PID 28437 + 16:05:03 PID 30841, x2 giong het):
+        // moi Measurable chi duoc measure 1 LAN trong 1 luot measure cua
+        // SubcomposeLayout. Truoc day do chieu cao node bang measure() voi
+        // Constraints.fixedWidth(nodeW) roi measure LAI cung Measurable voi
+        // Constraints.fixed(nodeW, nodeH) o :409-412 -> Compose nem
+        // IllegalStateException "measure() may not be called multiple times
+        // on the same Measurable" ngay khi vao tab Nang luong.
+        // Lay chieu cao bang maxIntrinsicHeight(nodeW) — intrinsic query
+        // KHONG tinh la measure — roi chi measure 1 lan duy nhat voi fixed().
+        // FlowNode la Column chuan (Spacer weight = 0 ca khi do intrinsic lan
+        // khi do khong gioi han chieu cao) nen intrinsic height == chieu cao
+        // do duoc truoc day; nodeH va layout nhin thay khong doi.
         val nodeH = maxOf(
-            pvM.maxOf { it.measure(intrinsic).height },
-            gridM.maxOf { it.measure(intrinsic).height },
-            homeM.maxOf { it.measure(intrinsic).height },
-            battM.maxOf { it.measure(intrinsic).height },
+            pvM.maxOf { it.maxIntrinsicHeight(nodeW) },
+            gridM.maxOf { it.maxIntrinsicHeight(nodeW) },
+            homeM.maxOf { it.maxIntrinsicHeight(nodeW) },
+            battM.maxOf { it.maxIntrinsicHeight(nodeW) },
             (NODE_H * scale).roundToInt(), // san = thiet ke goc 175
         )
         val totalH = margin * 2 + gap + nodeH * 2

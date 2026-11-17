@@ -24,6 +24,11 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     // ExoPlayer cho ClipOverlay (video ghi hinh that, khop version voi :app = 1.5.1)
     implementation("androidx.media3:media3-exoplayer:1.5.1")
+    // FIX crash 2 (16:16:39, PID 31160): LivePlayerOverlay choi HLS (m3u8, go2rtc :1984)
+    // nhung thieu artifact HLS -> DefaultMediaSourceFactory.createMediaSource load
+    // reflectively androidx.media3.exoplayer.hls.HlsMediaSource$Factory va nem
+    // ClassNotFoundException -> IllegalStateException tai SecurityScreen.kt:704.
+    implementation("androidx.media3:media3-exoplayer-hls:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
