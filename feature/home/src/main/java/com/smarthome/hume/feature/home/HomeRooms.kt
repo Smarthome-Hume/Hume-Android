@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -396,21 +398,31 @@ fun RoomSheet(
     // Thiet bi switch dang cho xac nhan tat (bao ve Zigbee mesh, port iOS 0e855dd).
     // (N-07b) Chieu cao sheet tinh TU MAN HINH (screenHeightDp * 0.85),
     // khong dung fillMaxHeight(0.85f): fillMaxHeight lay ti le theo
-    // constraint noi dung ma M3 cap cho ModalBottomSheet — do tu anh may
-    // that 4829 (S26U, APK 0672d8d): top gap chi ~110dp thay vi 124dp
-    // (0.15 x 826dp), tuc sheet cao hon detent 0.85 cua iOS ~15dp.
-    // Cach nay giong het PackSheet / ChartDetailSheet / LightsSheet
-    // (heightIn(max = screenHeightDp * 0.85)); dung height() chinh xac
-    // (khong phai heightIn(max)) de giu detent cung 0.85 ke ca phong it
-    // thiet bi — nhu iOS .presentationDetents([.fraction(0.85)]).
-    val sheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
+    // constraint noi dung ma M3 cap cho ModalBottomSheet.
+    // (N-07c) Vong 1 dat content = 0.85 * screenHeightDp (702dp) nhung
+    // sheet that van cao ~750dp (anh 4840: top gap ~77dp thay vi 124dp):
+    // M3 ModalBottomSheet cong them contentWindowInsets mac dinh
+    // (BottomSheetDefaults.windowInsets/modalWindowInsets = systemBars
+    // phia Bottom, tuc thanh nav Android ~48dp tren S26U) lam padding
+    // DUOI content, trong Surface — nen chieu cao NHIN THAY cua sheet =
+    // content + inset nay. Tru inset khoi content de TONG = 0.85 * man
+    // hinh; doc dung inset M3 dung nen dung ca 2 che do nav (nut 48dp /
+    // cu chi ~16dp). Dung height() chinh xac (khong heightIn(max)) de
+    // giu detent cung 0.85 ke ca phong it thiet bi — nhu iOS
+    // .presentationDetents([.fraction(0.85)]) (HomeRooms.swift:426).
+    val screenH = LocalConfiguration.current.screenHeightDp.dp
+    val bottomInset = WindowInsets.navigationBars.asPaddingValues()
+        .calculateBottomPadding()
+    val sheetH = screenH * 0.85f - bottomInset
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         // (N-07) Detent 0.85 + bo 60dp nhu iOS HomeRooms.swift:426-427
         // (.presentationDetents([.fraction(0.85)]) +
         // .presentationCornerRadius(60)); cac sheet khac GIU 44dp
-        // (iOS M3EShape.sheet = 44).
+        // (iOS M3EShape.sheet = 44). Da verify vong 2: 60 la DUNG cho
+        // RoomSheet — 44 o HomeSheets.swift:64 la HomeLightsSheet
+        // ("N den dang sang"), khong phai sheet phong; KHONG doi 60->44.
         shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp),
         containerColor = cs.surfaceContainer,
         // (N-07) Khong dung dragHandle slot cua M3: GrabHandle nam trong
