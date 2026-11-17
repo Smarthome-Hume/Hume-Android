@@ -643,15 +643,16 @@ class AppHomeRepository(
     /**
      * (2026-10-14, audit #9): Map trang thai dung cho tung loai thiet bi.
      * Cover: isOpen -> on; Lock: isLocked -> on; con lai: isOn.
+     * (2026-11-17): LegacyEntity la data class HomeEntity nen khong co
+     * subtype de `when (this) is ...` nhu sealed interface domain — phan
+     * biet theo prefix entityId + state tho (cover chi "open" la mo,
+     * lock chi "locked" la khoa; cac state chuyen tiep opening/closing/
+     * locking/unlocking khong tinh la active).
      */
-    private fun LegacyEntity.isActive(): Boolean = when (this) {
-        is LegacyEntity.Light -> isOn
-        is LegacyEntity.Switch -> isOn
-        is LegacyEntity.Fan -> isOn
-        is LegacyEntity.BinarySensor -> isOn
-        is LegacyEntity.Cover -> isOpen
-        is LegacyEntity.Lock -> isLocked
-        else -> false
+    private fun LegacyEntity.isActive(): Boolean = when {
+        id.startsWith("cover.") -> state == "open"
+        id.startsWith("lock.") -> state == "locked"
+        else -> isOn
     }
 
     private fun buildRoom(room: RoomBubbleConfig, entities: Map<String, LegacyEntity>): RoomUi {
