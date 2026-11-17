@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,6 +59,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -421,32 +421,57 @@ fun RoomSheet(
     // (N-07b) Chieu cao sheet tinh TU MAN HINH (screenHeightDp * 0.85),
     // khong dung fillMaxHeight(0.85f): fillMaxHeight lay ti le theo
     // constraint noi dung ma M3 cap cho ModalBottomSheet.
-    // (N-07c) Vong 1 dat content = 0.85 * screenHeightDp (702dp) nhung
-    // sheet that van cao ~750dp (anh 4840: top gap ~77dp thay vi 124dp):
-    // M3 ModalBottomSheet cong them contentWindowInsets mac dinh
-    // (BottomSheetDefaults.windowInsets/modalWindowInsets = systemBars
-    // phia Bottom, tuc thanh nav Android ~48dp tren S26U) lam padding
-    // DUOI content, trong Surface — nen chieu cao NHIN THAY cua sheet =
-    // content + inset nay. Tru inset khoi content de TONG = 0.85 * man
-    // hinh; doc dung inset M3 dung nen dung ca 2 che do nav (nut 48dp /
-    // cu chi ~16dp). Dung height() chinh xac (khong heightIn(max)) de
-    // giu detent cung 0.85 ke ca phong it thiet bi — nhu iOS
-    // .presentationDetents([.fraction(0.85)]) (HomeRooms.swift:426).
+    // (N-07d) Chieu cao sheet = 0.85 * screenHeightDp, KHONG tru inset nua.
+    // Do lai tu anh that (ti le that 2.633 px/dp — grab 44dp = 115.7px,
+    // bo 60dp = 158.0px, rong anh 1011px / man 384dp; S26U 1440x3120 @
+    // density 3.75 -> man 384x832dp, khop probe SM-S948B):
+    // - Anh 1011x2048 bi cat ~39.5dp tren (status bar: status_bar_height_
+    //   portrait 7.54mm ~ 148px ~ 39.5dp; anh khong thay status bar) nen
+    //   "top gap 93dp" tinh tu mep anh la SAI. Gap that 4848 = 223.5px /
+    //   2.633 + 39.5 = 124.4dp; mo hinh: content 0.85*832 - 14.8 = 692.4
+    //   + B (M3 cong them, do duoc 14.8dp) = 707.2 -> gap 124.8dp. Anh
+    //   4840 khop y he: 184.5px/2.633 + 39.5 = 109.6dp vs mo hinh
+    //   832 - (707.2 + 14.8) = 110.0dp. "Lech ~31dp" = 39.5 (crop tren
+    //   bi bo qua) - 8.6 (sai ti le 2.46 thay vi 2.633) — khong con phan
+    //   lech nao chua giai thich. May dung cu chi nen B = navRead = ~15dp
+    //   (KHONG phai 48dp); vong 2 da dat 124dp, khong phai 93dp.
+    // - Phep tru vong 2 (614c381) chi dung nho B (M3 doc trong Dialog)
+    //   == navRead (doc o activity): doi che do nav, IME mo (mac dinh
+    //   modalWindowInsets gom ca IME), hay M3 doi dinh nghia thi lech
+    //   lai. Cach ben: tu nam contentWindowInsets = 0 (M3 khong cong
+    //   them gi — pattern chinh thuc trong doc M3 "Use Material 3
+    //   insets"), va do nav inset TRONG Dialog. RoomSheet khong co o
+    //   nhap lieu nen tat IME padding la an toan. So "826dp" o comment
+    //   cu khong co nguon goc do duoc (0.15*826 = 123.9dp, van ~124dp);
+    //   mo hinh anh khop 832dp.
+    // (fix 3, lenh user 2026-11-17 17:56 — THE NOI, huy ca 2 chi dao truoc
+    // ve day sheet) Sheet la THE NOI: 3 canh (2 ben + day) cach deu mep
+    // man hinh 16dp; bo CA 4 GOC 90dp nam TRONG bounding box the (16dp
+    // tinh toi bounding box, khong cong them cho goc). Top gap giu 124dp.
+    // Kich thuoc the suy ra tu gia tri runtime (KHONG hardcode 411/826):
+    // rong = screenW - 2*16, cao = screenH - 124 - 16. Khong dung lai
+    // 0.85*man - inset cua vong 2 nua (gio co margin day 16dp co dinh
+    // thay cho inset nav).
     val screenH = LocalConfiguration.current.screenHeightDp.dp
-    val bottomInset = WindowInsets.navigationBars.asPaddingValues()
-        .calculateBottomPadding()
-    val sheetH = screenH * 0.85f - bottomInset
+    val sheetMargin = 16.dp
+    val topGap = 124.dp
+    val cardH = screenH - topGap - sheetMargin
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        // (N-07) Detent 0.85 + bo 60dp nhu iOS HomeRooms.swift:426-427
-        // (.presentationDetents([.fraction(0.85)]) +
-        // .presentationCornerRadius(60)); cac sheet khac GIU 44dp
-        // (iOS M3EShape.sheet = 44). Da verify vong 2: 60 la DUNG cho
-        // RoomSheet — 44 o HomeSheets.swift:64 la HomeLightsSheet
-        // ("N den dang sang"), khong phai sheet phong; KHONG doi 60->44.
-        shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp),
-        containerColor = cs.surfaceContainer,
+        // (fix 3) Container M3 TRONG SUOT + hinh chu nhat: the NHIN THAY
+        // ve BEN TRONG content (bo 90dp ca 4 goc, nen surfaceContainer).
+        // Ly do: M3 neo day container vao mep duoi man hinh va container
+        // full-width — muon the noi cach mep 16dp thi container phai trong
+        // suot, the that nam trong. Shape container de chu nhat co tinh:
+        // neu de bo 90dp, Surface cat content theo shape se cat vao goc
+        // cua the. Scrim + vuot dong cua M3 giu nguyen.
+        shape = RectangleShape,
+        containerColor = Color.Transparent,
+        // (N-07d) Tu kiem soat inset: M3 khong cong them bottom inset
+        // (mac dinh modalWindowInsets = bottom insets, ap qua
+        // windowInsetsPadding duoi content) — ly do xem (N-07d) o tren.
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         // (N-07) Khong dung dragHandle slot cua M3: GrabHandle nam trong
         // dai header co dinh de fade 93dp phu kin tu dinh sheet nhu iOS
         // (GrabHandle + header trong VStack co dinh, HomeRooms.swift:376-377).
@@ -455,9 +480,18 @@ fun RoomSheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .height(sheetH),
+                .height(screenH - topGap),
         ) {
-            Box(Modifier.fillMaxSize()) {
+            // The noi: rong = screenW - 2*16, cao = screenH - 124 - 16,
+            // bo 90dp CA 4 GOC, nen surfaceContainer.
+            Box(
+                Modifier
+                    .padding(horizontal = sheetMargin)
+                    .fillMaxWidth()
+                    .height(cardH)
+                    .clip(RoundedCornerShape(90.dp))
+                    .background(cs.surfaceContainer),
+            ) {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -466,7 +500,9 @@ fun RoomSheet(
                     // (N-07) Top inset 93dp (= dai header 25 GrabHandle +
                     // 56 header + 12 gap) de tile dau tien bat dau duoi
                     // header co dinh (iOS HomeRooms.swift:355).
-                    contentPadding = PaddingValues(top = 93.dp),
+                    // Bottom trong the = 0dp: noi dung cuoi cach day the
+                    // 24dp nho item Spacer cuoi list.
+                    contentPadding = PaddingValues(top = 93.dp, bottom = 0.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                 // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
@@ -542,7 +578,7 @@ fun RoomSheet(
                     Column(
                         Modifier
                             .fillMaxWidth()
-                            // (N-07) Bo sheet 60dp nen goc tren bo rong
+                            // (N-07) Bo sheet 90dp nen goc tren bo rong
                             // hon — doi header sang phai 8dp cho khoi sat
                             // mep cong (iOS v59).
                             .padding(start = 8.dp)
@@ -575,6 +611,11 @@ fun RoomSheet(
                     }
                 }
             }
+            // (fix 3) Spacer TRONG SUOT duoi the: day the cach mep duoi
+            // dung 16dp — day moi la co che tao margin day (M3 neo day
+            // container vao mep duoi). Vuot dong van hoat dong ca tren
+            // vung nay vi no nam trong container cua sheet.
+            Spacer(Modifier.height(sheetMargin))
         }
     }
 }
@@ -857,7 +898,6 @@ fun DeviceRow(
     expandedContent: @Composable (() -> Unit)? = null,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = LocalHumeExtraColors.current
     val haptic = rememberHaptic()
     // Xac nhan tat switch inline (port iOS HomeDeviceRow, user 2026-10-09):
     // switch Zigbee la router mesh nen tat can xac nhan, hien 2 nut ngay
@@ -923,7 +963,7 @@ fun DeviceRow(
                         .clip(CircleShape)
                         .background(
                             if (d.isOn) cs.primaryContainer
-                            else extra.surfaceHigh,
+                            else cs.surfaceContainer, // iOS HomeRooms.swift:556 (extra.surfaceHigh fallback Cam = nau khi seed Indigo/Lime)
                         ),
                 ) {
                     DeviceIcon(
