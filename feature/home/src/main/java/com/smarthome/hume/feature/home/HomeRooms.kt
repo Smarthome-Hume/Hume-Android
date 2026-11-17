@@ -753,7 +753,12 @@ private fun EnvTile(
                 )
                 Text(
                     label,
-                    style = MaterialTheme.typography.bodySmall,
+                    // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                    // (iOS bodySmall 12pt tu nhien ~14,6): chi dong nhat
+                    // chu, khong doi chieu cao the (icon 48dp ap dao).
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
@@ -817,8 +822,13 @@ private fun ClimateCard(
                 }
                 Text(
                     // (GAP-28) Port iOS HomeRooms.swift:539-542: "21°C" font titleLarge.
+                    // (Viec 5) lineHeight tu nhien thay vi M3 28sp
+                    // (iOS titleLarge 22pt tu nhien ~26,8): chi dong nhat
+                    // chu, khong doi chieu cao the (nut stepper 42dp ap dao).
                     "%.0f°C".format(target),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                     maxLines = 1,
@@ -950,7 +960,12 @@ private fun ClimateModeGroup(
             ) {
                 Text(
                     hvacLabels[m] ?: m,
-                    style = MaterialTheme.typography.labelSmall,
+                    // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                    // (iOS labelSmall 11pt tu nhien ~13,4): chi dong nhat
+                    // chu, khong doi chieu cao the (nut cao co dinh 44dp).
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = if (sel) cs.onPrimaryContainer else cs.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1118,7 +1133,13 @@ fun DeviceRow(
                 ) {
                     Text(
                         if (contactOpen) "MỞ" else "ĐÓNG",
-                        style = MaterialTheme.typography.labelSmall,
+                        // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                        // (iOS labelSmall 11pt tu nhien ~13,4): chip
+                        // 30dp -> 27,4dp nhu iOS; khong doi chieu cao the
+                        // (icon 48dp ap dao).
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
                         color = if (contactOpen) cs.onErrorContainer
@@ -1181,7 +1202,13 @@ fun DeviceRow(
                             ) {
                                 Text(
                                     "Hủy",
-                                    style = MaterialTheme.typography.labelMedium,
+                                    // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                                    // (iOS labelMedium 12pt tu nhien ~14,6): noi
+                                    // dung 36dp -> 34,6dp; nut van minHeight 40dp
+                                    // nhu iOS nen khong doi chieu cao nut.
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        lineHeight = TextUnit.Unspecified,
+                                    ),
                                     fontWeight = FontWeight.SemiBold,
                                     color = cs.onSurface,
                                     maxLines = 1,
@@ -1203,7 +1230,12 @@ fun DeviceRow(
                             ) {
                                 Text(
                                     "Xác nhận",
-                                    style = MaterialTheme.typography.labelMedium,
+                                    // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                                    // (iOS labelMedium 12pt tu nhien ~14,6): nhu
+                                    // nut Huy — nut van minHeight 40dp nhu iOS.
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        lineHeight = TextUnit.Unspecified,
+                                    ),
                                     fontWeight = FontWeight.SemiBold,
                                     color = cs.onError,
                                     maxLines = 1,

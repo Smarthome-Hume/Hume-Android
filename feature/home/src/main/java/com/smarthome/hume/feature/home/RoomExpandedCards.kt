@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -350,7 +351,13 @@ fun DishwasherExpandedView(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     "Thời gian chu trình",
-                    style = MaterialTheme.typography.bodySmall,
+                    // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                    // (iOS bodySmall 12pt tu nhien ~14,6): cot trai hero
+                    // 82dp -> 80,6dp (van ngan hon iOS 86,1dp vi
+                    // displayLarge theme 64sp < tu nhien iOS 69,5).
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     color = cs.onSurfaceVariant,
                 )
                 Text(
@@ -367,12 +374,22 @@ fun DishwasherExpandedView(
                 ) {
                     Text(
                         "$temp°C",
-                        style = MaterialTheme.typography.titleLarge,
+                        // (Viec 5) lineHeight tu nhien thay vi M3 28sp
+                        // (iOS titleLarge 22pt tu nhien ~26,8): chi dong
+                        // nhat chu, khong doi chieu cao hero (cot trai ap dao).
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         color = cs.onSurface,
                     )
                     Text(
                         "Nhiệt độ nước",
-                        style = MaterialTheme.typography.bodySmall,
+                        // (Viec 5) lineHeight tu nhien thay vi M3 16sp
+                        // (iOS bodySmall 12pt tu nhien ~14,6): cot phai
+                        // 46dp -> 43,4dp nhu iOS.
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         color = cs.onSurfaceVariant,
                     )
                 }
@@ -383,7 +400,11 @@ fun DishwasherExpandedView(
             "${
                 p.statusDisplay(statusRaw)
             } • $programDisplay",
-            style = MaterialTheme.typography.titleMedium,
+            // (Viec 5) lineHeight tu nhien 19,5 thay vi M3 24sp (-4,5dp):
+            // iOS titleMedium 16pt tu nhien.
+            style = MaterialTheme.typography.titleMedium.copy(
+                lineHeight = TextUnit.Unspecified,
+            ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )
@@ -416,7 +437,11 @@ fun DishwasherExpandedView(
             ) {
                 Text(
                     "CHƯƠNG TRÌNH",
-                    style = MaterialTheme.typography.labelSmall,
+                    // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp:
+                    // iOS labelSmall 11pt tu nhien.
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     letterSpacing = 0.5.sp,
                     color = cs.onSurfaceVariant,
                 )
@@ -440,7 +465,12 @@ fun DishwasherExpandedView(
                         selectedProgram?.durationMin?.let {
                             "$programDisplay · $it phút"
                         } ?: programDisplay,
-                        style = MaterialTheme.typography.labelLarge,
+                        // (Viec 5) lineHeight tu nhien 17,1 thay vi M3 20sp:
+                        // iOS labelLarge 14pt tu nhien; chip 28dp -> 25,1dp,
+                        // hang tieu de chuong trinh 28dp -> 25,1dp (-2,9dp).
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimaryContainer,
                     )
@@ -503,7 +533,12 @@ fun DishwasherExpandedView(
                             }
                             Text(
                                 prog.display,
-                                style = MaterialTheme.typography.labelSmall,
+                                // (Viec 5) lineHeight tu nhien 13,4 thay vi M3
+                                // 16sp (-2,6dp): iOS labelSmall 11pt tu nhien;
+                                // item chuong trinh 76dp -> 73,4dp nhu iOS.
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    lineHeight = TextUnit.Unspecified,
+                                ),
                                 color = cs.onSurfaceVariant,
                                 maxLines = 1,
                             )
@@ -549,7 +584,11 @@ fun DishwasherExpandedView(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 "NƯỚC MỀM",
-                style = MaterialTheme.typography.labelSmall,
+                // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp (-2,6dp):
+                // iOS labelSmall 11pt tu nhien.
+                style = MaterialTheme.typography.labelSmall.copy(
+                    lineHeight = TextUnit.Unspecified,
+                ),
                 letterSpacing = 0.5.sp,
                 color = cs.onSurfaceVariant,
             )
@@ -597,13 +636,22 @@ fun DishwasherExpandedView(
                 Row {
                     Text(
                         "$softLevel",
-                        style = MaterialTheme.typography.displaySmall,
+                        // (Viec 5) lineHeight tu nhien thay vi M3 44sp
+                        // (iOS displaySmall 36pt tu nhien ~43,9): chi dong
+                        // nhat chu, khong doi chieu cao hang (stepper 56dp ap dao).
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         color = cs.onSurface,
                         modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         "/15",
-                        style = MaterialTheme.typography.bodyMedium,
+                        // (Viec 5) lineHeight tu nhien thay vi M3 20sp
+                        // (iOS bodyMedium 14pt tu nhien ~17,1): nhu tren.
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         color = cs.onSurfaceVariant,
                         modifier = Modifier.alignByBaseline(),
                     )
@@ -617,7 +665,11 @@ fun DishwasherExpandedView(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 "HẸN GIỜ BẮT ĐẦU",
-                style = MaterialTheme.typography.labelSmall,
+                // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp (-2,6dp):
+                // iOS labelSmall 11pt tu nhien.
+                style = MaterialTheme.typography.labelSmall.copy(
+                    lineHeight = TextUnit.Unspecified,
+                ),
                 letterSpacing = 0.5.sp,
                 color = cs.onSurfaceVariant,
             )
@@ -635,7 +687,12 @@ fun DishwasherExpandedView(
                 Spacer(Modifier.weight(1f))
                 Text(
                     timerText,
-                    style = MaterialTheme.typography.displaySmall,
+                    // (Viec 5) lineHeight tu nhien thay vi M3 44sp
+                    // (iOS displaySmall 36pt tu nhien ~43,9): chi dong
+                    // nhat chu, khong doi chieu cao hang (stepper 56dp ap dao).
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
                     color = cs.onSurface,
                 )
                 Spacer(Modifier.weight(1f))
@@ -722,7 +779,13 @@ fun DishwasherExpandedView(
                     )
                     Text(
                         if (statusRaw == "Run") "Tạm dừng" else "Bắt đầu rửa",
-                        style = MaterialTheme.typography.labelLarge,
+                        // (Viec 5) lineHeight tu nhien thay vi M3 20sp
+                        // (iOS labelLarge 14pt tu nhien ~17,1): nut
+                        // 52dp -> 49,1dp; hang nut van cao 60dp (nut Dung
+                        // ap dao) nen khong doi chieu cao hang.
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimary,
                     )
@@ -785,7 +848,11 @@ private fun DishwasherSegmentFlow(
                     }
                     Text(
                         label,
-                        style = MaterialTheme.typography.labelSmall,
+                        // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp
+                        // (-2,6dp): iOS labelSmall 11pt tu nhien.
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            lineHeight = TextUnit.Unspecified,
+                        ),
                         color = if (i == current) cs.onSurface
                         else cs.onSurfaceVariant,
                         maxLines = 1,
@@ -810,7 +877,11 @@ private fun DishwasherMetaPill(icon: ImageVector, value: String) {
         Icon(icon, null, tint = cs.primary, modifier = Modifier.size(14.dp))
         Text(
             value,
-            style = MaterialTheme.typography.labelLarge,
+            // (Viec 5) lineHeight tu nhien 17,1 thay vi M3 20sp (-2,9dp):
+            // iOS labelLarge 14pt tu nhien; pill 36dp -> 33,1dp nhu iOS.
+            style = MaterialTheme.typography.labelLarge.copy(
+                lineHeight = TextUnit.Unspecified,
+            ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
             maxLines = 1,
@@ -1047,7 +1118,14 @@ fun LightExpandedView(
             Spacer(Modifier.size(12.dp))
             Text(
                 "${brightness.toInt()}%",
-                style = MaterialTheme.typography.labelLarge,
+                // (Viec 5) lineHeight tu nhien thay vi M3 20sp
+                // (iOS labelLarge 14pt tu nhien ~17,1): chi dong nhat
+                // chu, khong doi chieu cao hang (Slider M3 48dp ap dao —
+                // xem bao cao: iOS Slider ~31pt, phan thua 17dp nay can
+                // quyet dinh rieng truoc khi cat).
+                style = MaterialTheme.typography.labelLarge.copy(
+                    lineHeight = TextUnit.Unspecified,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 textAlign = TextAlign.End,
