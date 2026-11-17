@@ -74,7 +74,6 @@ import com.smarthome.hume.core.storage.SettingsStore
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -646,7 +645,6 @@ private fun M3ENavBar(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = LocalHumeExtraColors.current
     val pill = RoundedCornerShape(34.dp)
     val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
@@ -690,7 +688,9 @@ private fun M3ENavBar(
                 // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
                 // Navbar dac 0.98 (user 2026-10-02).
-                .background(extra.surfaceLowest.copy(alpha = 0.98f))
+                // (fix 3) iOS M3ERootView.swift:248: navbar = surfaceContainerLowest.
+                // Truoc day extra.surfaceLowest — fallback Cam 28211B khi seed Indigo/Lime.
+                .background(cs.surfaceContainerLowest.copy(alpha = 0.98f))
                 .padding(10.dp),
         ) {
             navItems.forEachIndexed { i, item ->

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -56,7 +57,16 @@ data class HumeExtraColors(
     val surfaceLowest: Color,
 )
 
-private fun extraColors(seed: M3ESeed, dark: Boolean): HumeExtraColors {
+// (fix 3) Khi dung mau custom (customSeedColor != null), scheme sinh tu mau
+// custom nhung extra truoc day van tra theo seedName -> 2 nua theme lech
+// nhau. Khi do lay 4 mau surface tu scheme hieu dung (surfaceContainer*);
+// 12 key success/info/violet/pink giong nhau moi seed nen van tra token.
+private fun extraColors(
+    seed: M3ESeed,
+    dark: Boolean,
+    scheme: ColorScheme,
+    useSchemeSurfaces: Boolean,
+): HumeExtraColors {
     val s = seed.name.lowercase()
     fun t(name: String): Color {
         val map = if (dark) M3E_DARK_TOKENS else M3E_LIGHT_TOKENS
@@ -72,9 +82,10 @@ private fun extraColors(seed: M3ESeed, dark: Boolean): HumeExtraColors {
         onVioletContainer = t("onVioletContainer"),
         pink = t("pink"), pinkContainer = t("pinkContainer"),
         onPinkContainer = t("onPinkContainer"),
-        surfaceLow = t("surfaceLow"), surfaceHigh = t("surfaceHigh"),
-        surfaceHighest = t("surfaceHighest"),
-        surfaceLowest = t("surfaceLowest"),
+        surfaceLow = if (useSchemeSurfaces) scheme.surfaceContainerLow else t("surfaceLow"),
+        surfaceHigh = if (useSchemeSurfaces) scheme.surfaceContainerHigh else t("surfaceHigh"),
+        surfaceHighest = if (useSchemeSurfaces) scheme.surfaceContainerHighest else t("surfaceHighest"),
+        surfaceLowest = if (useSchemeSurfaces) scheme.surfaceContainerLowest else t("surfaceLowest"),
     )
 }
 
@@ -251,7 +262,9 @@ fun HumeM3ETheme(
         colorSchemeFor(seed, darkTheme)
     }
     val typography = remember(fontFamily) { humeTypography(fontFamily) }
-    CompositionLocalProvider(LocalHumeExtraColors provides extraColors(seed, darkTheme)) {
+    CompositionLocalProvider(
+        LocalHumeExtraColors provides extraColors(seed, darkTheme, scheme, customSeedColor != null)
+    ) {
         MaterialTheme(
             colorScheme = scheme,
             shapes = HumeShapes,

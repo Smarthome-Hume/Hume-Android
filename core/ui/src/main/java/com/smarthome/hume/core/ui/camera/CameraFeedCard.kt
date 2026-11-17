@@ -55,7 +55,6 @@ import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import kotlinx.coroutines.delay
 
 /**
@@ -109,7 +108,7 @@ fun CameraFeedCard(
     M3ECard(
         shape = RoundedCornerShape(32.dp),
         contentPadding = 12.dp,
-        containerColor = LocalHumeExtraColors.current.surfaceHighest, // demo .seccam: surfaceHighest
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest, // iOS M3ESecurityCamera.swift:75 (extra.surfaceHighest fallback Cam = nau khi seed Indigo/Lime)
         modifier = modifier,
     ) {
         Box(

@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import androidx.compose.ui.unit.dp
 
 /**
@@ -74,7 +73,7 @@ fun M3ESwitch(
             .clip(shape)
             .background(
                 if (checked) MaterialTheme.colorScheme.primary
-                else LocalHumeExtraColors.current.surfaceHighest
+                else MaterialTheme.colorScheme.surfaceContainerHighest // (fix 3) switch OFF: extra.surfaceHighest fallback Cam = nau khi seed Indigo/Lime; giong cac the inactive khac (surfaceContainerHighest)
             )
             .border(
                 2.dp,

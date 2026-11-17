@@ -576,7 +576,11 @@ private val darkSchemeAmber: ColorScheme
 
 internal fun colorSchemeFor(seed: M3ESeed, dark: Boolean): ColorScheme {
     val s = seed.name.lowercase()
-    return when {
+    // (fix 3) background/onBackground chua bao gio duoc set trong scheme nao
+    // -> roi ve baseline M3 (FFFBFF/121212), khong theo seed. M3E khong co
+    // background rieng: nen trang/dialog dung surface (iOS cung khong set
+    // nen rieng o cac man nay). Ghi de o day de bao phu ca 16 scheme ten.
+    val base = when {
         dark && s == "cam" -> darkSchemeCam
         s == "cam" -> lightSchemeCam
         dark && s == "green" -> darkSchemeGreen
@@ -599,6 +603,7 @@ internal fun colorSchemeFor(seed: M3ESeed, dark: Boolean): ColorScheme {
         s == "indigo" -> colorSchemeForCustom(Color(0xFF4A5AA8), dark)
         else -> lightSchemeCam
     }
+    return base.copy(background = base.surface, onBackground = base.onSurface)
 }
 
 /**
@@ -617,7 +622,8 @@ internal fun colorSchemeForCustom(seedColor: Color, dark: Boolean): ColorScheme 
     }
     val white = Color.White
     val black = Color.Black
-    return if (!dark) {
+    // (fix 3) Xem ghi chu o colorSchemeFor: background = surface.
+    val base = if (!dark) {
         lightColorScheme(
             primary = seedColor,
             onPrimary = white,
@@ -664,4 +670,5 @@ internal fun colorSchemeForCustom(seedColor: Color, dark: Boolean): ColorScheme 
             outlineVariant = mix(seedColor, black, 0.5f),
         )
     }
+    return base.copy(background = base.surface, onBackground = base.onSurface)
 }
