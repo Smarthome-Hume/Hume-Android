@@ -882,13 +882,14 @@ fun ExpandedInfoRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             label,
-            style = MaterialTheme.typography.bodyMedium,
+            // (2026-11-17) lineHeight tu nhien 17,1 thay vi M3 20 (-2,9dp/dong).
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.weight(1f))
         Text(
             value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -1058,7 +1059,7 @@ fun LightExpandedView(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Màu sắc",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
@@ -1115,7 +1116,7 @@ fun LightExpandedView(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "Hiệu ứng",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
@@ -1137,7 +1138,8 @@ fun LightExpandedView(
                         ) {
                             Text(
                                 effectDisplay(eff),
-                                style = MaterialTheme.typography.labelMedium,
+                                // (2026-11-17) lineHeight tu nhien 14,6 thay vi M3 16 (-1,4dp).
+                                style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
                                 color = if (selected) cs.onPrimaryContainer
                                 else cs.onSurfaceVariant,
                             )

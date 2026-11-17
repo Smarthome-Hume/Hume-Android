@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
@@ -870,7 +871,11 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         ) {
             Text(
                 "Điện mặt trời",
-                style = MaterialTheme.typography.bodyMedium,
+                // (2026-11-17) iOS cardTitle 20pt (HomeSolarCard.swift:24);
+                // 0dp he qua (gia tri 39,0 van chi phoi hang).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    lineHeight = TextUnit.Unspecified,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -879,7 +884,10 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             )
             Text(
                 "%.1f".format(Locale.US, todayShown),
-                style = MaterialTheme.typography.headlineLarge,
+                // (2026-11-17) lineHeight tu nhien 39,0 thay vi M3 40 (-1,0dp).
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    lineHeight = TextUnit.Unspecified,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 modifier = Modifier.alignByBaseline(),

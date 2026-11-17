@@ -124,7 +124,8 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Sử dụng",
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                // (2026-11-17) iOS cardTitle 20pt; 0dp (so 32pt ap dao).
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -594,7 +595,9 @@ private fun DevicesCard(
             ) {
                 Text(
                     "Thiết bị",
-                    style = MaterialTheme.typography.titleMedium.copy(lineHeight = 19.5.sp),
+                    // (2026-11-17) iOS cardTitle 20pt (+Cards.swift:767);
+                    // 0dp (toggle 38,6 ap dao).
+                    style = MaterialTheme.typography.headlineSmall.copy(lineHeight = 24.4.sp),
                 )
                 Row(
                     modifier = Modifier

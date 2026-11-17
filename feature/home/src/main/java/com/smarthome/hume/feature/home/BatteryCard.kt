@@ -82,7 +82,9 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 "Hiệu năng pin",
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = TextUnit.Unspecified),
+                // (2026-11-17) iOS cardTitle 20pt (HomeBatteryCard.swift:135);
+                // 0dp he qua (vong 48dp chi phoi hang).
+                style = MaterialTheme.typography.headlineSmall.copy(lineHeight = TextUnit.Unspecified),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
