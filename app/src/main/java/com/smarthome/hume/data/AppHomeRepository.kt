@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -137,6 +138,12 @@ class AppHomeRepository(
 
     /** Dang ky realtime cho cac entity dashboard dang hien (2026-09-30). */
     private var lastWatched: Set<String> = emptySet()
+
+    /** (N-03, v70) Dong BMS lam muot (EMA, alpha 0.2) + mau dong cuoi cho
+     * cong thuc thoi gian pin — port iOS CurrentEMA (HomeBatteryCard giu
+     * @State battEMA, cap nhat qua onChange(of: bmsCurr)). */
+    private var battCurrentEma: Double? = null
+    private var lastBmsCurr: Double? = null
     private fun updateWatched(s: HomeUiState) {
         val ids = HashSet<String>()
         // Tat ca thiet bi tren UI (config phong + climate) — bao gom sensor dien.
@@ -173,15 +180,18 @@ class AppHomeRepository(
         // grid_status nua.
         // Trang thai inverter Solis — bao mat dien phai realtime (port iOS 65fe551).
         ids.add("sensor.solis_s6_eh1p_status_string_3")
-        // Thoi gian pin + backup SOC: the pin doc nhung truoc day quen watch ->
-        // gia tri stale tu luc mo app (nguyen nhan the pin mat cum thoi gian).
-        ids.add(HumeConfig.BATTERY_TIME_LEFT); ids.add(HumeConfig.BATTERY_TIME_TO_FULL)
+        // Backup SOC: the pin doc nhung truoc day quen watch -> gia tri stale
+        // tu luc mo app (nguyen nhan the pin mat cum thoi gian).
         ids.add(HumeConfig.BACKUP_SOC)
         // Nguong ep xa khi mat dien (port iOS f251d8e) + sensor trang thai inverter
         ids.add("sensor.solis_s6_eh1p_overdischarge_soc_2")
         ids.add("sensor.solis_s6_eh1p_status_string_3")
-        // Nang luong pin (SoH/DoD): tu tinh gio sac thay cho sensor Solis bao ao.
-        ids.add(HumeConfig.BATTERY_EFF_CAPACITY); ids.add(HumeConfig.BATTERY_REMAINING_ENERGY)
+        // (N-03, v70 — port iOS PowerwallLiveData.timeCalcEntityIds, 31 entity)
+        // Cong thuc thoi gian sac/xa moi doc BMS truc tiep, khong dung sensor
+        // thoi gian cua Solis (da bo fallback) hay sensor nang luong SoH/DoD
+        // (cong thuc cu dung, gio khong con dung) nen khong watch 4 sensor
+        // do nua.
+        ids.addAll(BATTERY_TIME_CALC_ENTITY_IDS)
         // (2026-10-22, E1) Flow 4 node: truoc day thieu cac sensor nay trong
         // watched -> roi bucket ONE_DAY, dong bang 24h trong khi node PV/Pin
         // van nhay 10s -> 4 node sai lech nhau tren may that (iOS da fix o
@@ -364,65 +374,80 @@ class AppHomeRepository(
         val resting = battPowerW in 0.0..5.0
         val discharging = battPowerW < 0.0
         val charging = !resting && !discharging
-        // (2026-09-30) sensor.battery_time_to_full_2 cua Solis bao AO (lich su
-        // 17h-02h: 0, 7.8, 18.7, 67.3, 1091.3h nhay loan) -> luc SAC tu tinh:
-        // (dung luong hieu dung - nang luong con lai) / cong suat sac.
-        // 2 sensor nay chuan (4.62/20.99 kWh khop SOC 22%).
-        val effCapKwh = entities[HumeConfig.BATTERY_EFF_CAPACITY]?.numericState
-        val remainKwh = entities[HumeConfig.BATTERY_REMAINING_ENERGY]?.numericState
-        val chargeMins: Int? =
-            if (charging && effCapKwh != null && remainKwh != null && battPowerW > 20.0) {
-                ((effCapKwh - remainKwh).coerceAtLeast(0.0) / (battPowerW / 1000.0) * 60)
-                    .toInt().takeIf { it > 0 }
-            } else null
-        // Thoi gian XA 2 phase (port iOS 76a3e65, user 2026-10-09):
-        // - Phase 1 (soc > limit): thoi gian con lai o muc su dung (toi khi cham limit)
-        // - Phase 2 (soc <= limit): thoi gian con lai o muc du tru (toi khi can)
-        // Tinh local, uu tien hon sensor HA.
-        val dischargeMins: Int? =
-            if (discharging && effCapKwh != null && effCapKwh > 0) {
-                val dischargeKw = kotlin.math.abs(battPowerW) / 1000.0
-                if (dischargeKw > 0.02) {
-                    val pct = if (soc > effectiveLimit) (soc - effectiveLimit).toDouble()
-                    else soc.toDouble()
-                    ((pct / 100.0 * effCapKwh) / dischargeKw * 60).toInt().takeIf { it > 0 }
-                } else null
-            } else null
-        // Sensor runtime theo huong: xa -> TIME_LEFT (template user, dang dung
-        // tot -> giu nguyen), sac -> tu tinh o tren, fallback sensor Solis.
-        val runtimeEntity = if (discharging)
-            entities[HumeConfig.BATTERY_TIME_LEFT]
-        else
-            entities[HumeConfig.BATTERY_TIME_TO_FULL]
-        // Hume goc: uu tien friendly_time attribute, fallback raw state.
-        // friendly_time co the chua quote thua do template (vd "\"Dang sac/Cho\"")
-        // -> dung contentOrNull (khong phai toString) roi lot sach quote.
-        val sensorText = if (resting) null else
-            runtimeEntity?.attributes?.get("friendly_time")?.jsonPrimitive?.contentOrNull
-                ?.replace("\"", "")?.trim()?.takeIf { it.isNotBlank() }
-                ?: runtimeEntity?.state?.takeIf { it.isNotBlank() && it != "unknown" }
-        // Luc sac/xa: "H:MM" tu so phut tu tinh (uu tien local, fallback sensor).
-        val runtimeText = if (resting) null else when {
-            chargeMins != null -> "${chargeMins / 60}:${(chargeMins % 60).toString().padStart(2, '0')}"
-            dischargeMins != null -> "${dischargeMins / 60}:${(dischargeMins % 60).toString().padStart(2, '0')}"
-            else -> sensorText
+        // (N-03, v70 — port iOS Hume/M3E/Tabs/BatteryTimeCalc.swift +
+        // HomeBatteryCard.swift:55-63,88-101) Thoi gian sac/xa tinh local tu
+        // BMS (Ah/A), KHONG dung sensor Solis nua: sensor.battery_time_to_full_2
+        // da ghi nhan bao ao (iOS bo fallback o v70), sensor.thoi_gian_pin_con_lai
+        // khong phai duration. Cong thuc cu (kWh Solis / W tuc thoi, sac toi
+        // 100%, xa phase 2 toi 0%) cung bo theo.
+        //   1. Dong BMS lam muot bang EMA (alpha 0.2 moi lan HA day state moi).
+        //   2. Cua so SOC thuc: sac toi setting_cutoff_soc live (97%),
+        //      xa toi setting_discharge_cutoff_soc live (5%) — khong toi 100%/0%.
+        //   3. Sac 2 pha CC/CV: CC toi goi CV roi CV dong giam tuyen tinh xuong
+        //      nguong ngat setting_cutoff_c_rate (0.05 C, live).
+        //      GOI CV (GIA DINH — ghi ro trong code iOS, copy nguyen, khong phai
+        //      so do): SOC 90%. Ngoai ra neu cell cao nhat da cham nguong CV
+        //      (cellMax >= min(cell-max live, CV pack / 16)) thi coi nhu dang
+        //      trong pha CV roi.
+        //   4. Xa giu cau truc 2 phase theo limit hieu dung (user 2026-10-09),
+        //      nhung phase 2 dung o 5% (BMS ngat) thay vi 0% nhu cu.
+        //   5. Mien tinh bang Ah/A nen thoi gian KHONG phu thuoc dien ap.
+        //   6. Bien: dong ≈ 0 / thieu du lieu -> "—"; sac >= 97% -> "Đã đầy";
+        //      xa <= 5% -> "Đã cạn".
+        fun bms(id: String): Double? = entities[id]?.numericState
+        val bmsSoc = bms("sensor.powerwall_bms_master_py_system_soc") ?: soc.toDouble()
+        val bmsCurr = bms("sensor.powerwall_bms_master_py_system_current")
+        val bmsCellMax = bms("sensor.powerwall_bms_master_cell_max")
+        // Tong dung luong Ah + gioi han dong he thong = tong 4 pack (iOS
+        // PowerwallLiveData.payload: master chi bao gioi han cua rieng no,
+        // 31.2 A — khong phai tong he thong). Pack 2 khong co trong danh sach
+        // iOS (chi master, pack_1, pack_3, pack_4) — copy nguyen.
+        val bmsPacks = listOf("master", "pack_1", "pack_3", "pack_4")
+        val fccAh = bmsPacks.sumOf { bms("sensor.powerwall_bms_${it}_full_charge_cap") ?: 0.0 }
+        val limChgA = bms("sensor.powerwall_bms_master_py_chg_current_limit")
+            ?: bmsPacks.sumOf { bms("sensor.powerwall_bms_${it}_charge_current_limit") ?: 0.0 }
+        val limDisA =
+            bmsPacks.sumOf { bms("sensor.powerwall_bms_${it}_discharge_current_limit") ?: 0.0 }
+        val settings = batterySettingsFrom(entities)
+        // EMA: cap nhat khi dong BMS DOI (giong iOS onChange(of: bmsCurr));
+        // chua co mau dau thi dung dong live hien tai (1 mau dau). Dong mat
+        // (entity thieu) thi giu EMA cu — fccAh = 0 da tra unknown nen khong
+        // hien so cu.
+        if (bmsCurr != null && bmsCurr != lastBmsCurr) {
+            battCurrentEma = battCurrentEma?.let { 0.2 * bmsCurr + 0.8 * it } ?: bmsCurr
+            lastBmsCurr = bmsCurr
         }
-        val endTime = if (resting) null else when {
-            chargeMins != null -> {
-                val end = java.time.LocalTime.now().plusMinutes(chargeMins.toLong())
+        val emaCurr = battCurrentEma ?: (bmsCurr ?: 0.0)
+        // Chieu sac/xa van lay theo Solis flowW nhu iOS (resting 0..5W,
+        // discharging < 0); chi dong + SOC + Ah + setting lay tu BMS.
+        val battTime = batteryTimeCalc(
+            soc = bmsSoc,
+            currentEma = emaCurr,
+            cellMax = bmsCellMax,
+            fccAh = fccAh,
+            limChgA = limChgA,
+            limDisA = limDisA,
+            settings = settings,
+            dischargeLimitSoc = effectiveLimit.toDouble(),
+            charging = charging,
+            discharging = discharging,
+        )
+        // iOS HomeBatteryCard:88-101 — .minutes -> "H:MM" + gio ket thuc
+        // (chi khi > 0 phut); .unknown -> "—"; .full -> "Đã đầy";
+        // .empty -> "Đã cạn". Luc nghi khong hien thoi gian (null).
+        val runtimeText: String? = if (resting) null else when (battTime) {
+            is BatteryTime.Minutes ->
+                "${battTime.minutes / 60}:${(battTime.minutes % 60).toString().padStart(2, '0')}"
+            BatteryTime.Unknown -> "—"
+            BatteryTime.Full -> "Đã đầy"
+            BatteryTime.Empty -> "Đã cạn"
+        }
+        val endTime: String? =
+            if (battTime is BatteryTime.Minutes && battTime.minutes > 0) {
+                val end = java.time.LocalTime.now().plusMinutes(battTime.minutes.toLong())
                 // 24h co dinh (port iOS 05827af, en_US_POSIX)
                 String.format(java.util.Locale.US, "%02d:%02d", end.hour, end.minute)
-            }
-            dischargeMins != null -> {
-                val end = java.time.LocalTime.now().plusMinutes(dischargeMins.toLong())
-                String.format(java.util.Locale.US, "%02d:%02d", end.hour, end.minute)
-            }
-            // Uu tien friendly_time (cong thuc Hume goc), fallback raw state —
-            // truoc day chi parse state nen lech voi bigTime (an oan khi
-            // friendly_time la duration ma state khong phai).
-            else -> parseDurationToEndTime(sensorText ?: "")
-                ?: runtimeEntity?.state?.let { parseDurationToEndTime(it) }
-        }
+            } else null
 
         val alarmId = alarmEntityId()
         val alarmEntity = alarmId?.let { entities[it] }
@@ -972,39 +997,172 @@ private val VI_NAME_DICT = listOf(
     "room" to "phòng",
 )
 
-/**
- * Parse duration tu sensor HA (vi du "2:30", "1:15:30", "90",
- * "6 giờ 50 phút") thanh gio ket thuc "hh:mm". Tra ve null neu khong parse duoc.
- */
-private fun parseDurationToEndTime(duration: String): String? {
-    val totalMinutes = durationToMinutes(duration) ?: return null
-    val now = java.time.LocalTime.now()
-    val end = now.plusMinutes(totalMinutes.toLong())
-    // 24h co dinh (port iOS 05827af)
-    return String.format(java.util.Locale.US, "%02d:%02d", end.hour, end.minute)
+// ---------- BatteryTimeCalc v70 (N-03) ----------
+// Port 1:1 tu iOS Hume/M3E/Tabs/BatteryTimeCalc.swift (v70) — cong thuc thoi
+// gian sac/xa cho the "Hieu nang pin". Xem ghi chu dau file iOS ve 6 diem
+// moi (EMA, cua so SOC live, 2 pha CC/CV, 2 phase xa, mien Ah/A, bien).
+// parseDurationToEndTime/durationToMinutes cu (chi phuc vu fallback sensor
+// Solis) da xoa theo — khong con noi nao dung.
+
+/** Entity toi thieu cho cong thuc thoi gian sac/xa — port 1:1 iOS
+ * PowerwallLiveData.timeCalcEntityIds (31 thay vi ~220 entity day du). */
+private val BATTERY_TIME_CALC_ENTITY_IDS: List<String> = buildList {
+    val mp = "sensor.powerwall_bms_master_"
+    add(mp + "py_system_soc"); add(mp + "py_system_voltage")
+    add(mp + "py_system_current"); add(mp + "cell_max")
+    for (p in listOf("master", "pack_1", "pack_3", "pack_4")) {
+        for (key in listOf(
+            "full_charge_cap", "remaining_cap",
+            "charge_current_limit", "discharge_current_limit"
+        )) {
+            add("sensor.powerwall_bms_${p}_$key")
+        }
+    }
+    // Setting BMS live tren master (port iOS PowerwallLiveData.settingEntityIds).
+    for (key in listOf(
+        "setting_charge_cv", "setting_cutoff_soc", "setting_cutoff_c_rate",
+        "setting_charge_limit_c_rate", "setting_discharge_cutoff_soc",
+        "setting_discharge_limit_c_rate", "setting_cell_max_volt",
+        "setting_cell_min_volt", "setting_cutoff_volt", "setting_undervoltage",
+        "py_chg_current_limit"
+    )) {
+        add(mp + key)
+    }
 }
 
-private fun durationToMinutes(duration: String): Int? {
-    val t = duration.trim()
-    if (t.isEmpty()) return null
-    // Tieng Viet tu template sensor: "6 giờ 50 phút", "2 giờ", "45 phút".
-    val lower = t.lowercase()
-    val hM = Regex("""(\d+)\s*(giờ|gio|tiếng|tieng|h)\b""").find(lower)
-    val pM = Regex("""(\d+)\s*(phút|phut|p)\b""").find(lower)
-    if (hM != null || pM != null) {
-        val h = hM?.groupValues?.get(1)?.toIntOrNull() ?: 0
-        val m = pM?.groupValues?.get(1)?.toIntOrNull() ?: 0
-        return h * 60 + m
+/** Setting BMS — so CHINH luon la live tu sensor setting_* (master).
+ * Fallback duoi day = gia tri hardcode cu trong iOS, chi dung khi entity live
+ * thieu hoac unknown; da kiem chung 19:44 16/11: live khop 100% cac so nay. */
+private data class BatterySettings(
+    val chargeCV: Double = 54.4, // setting_charge_cv (V)
+    val cutoffSoc: Double = 97.0, // setting_cutoff_soc (%)
+    val cutoffCRate: Double = 0.05, // setting_cutoff_c_rate (C)
+    val chargeLimitCRate: Double = 0.30, // setting_charge_limit_c_rate (C)
+    val dischargeCutoffSoc: Double = 5.0, // setting_discharge_cutoff_soc (%)
+    val dischargeLimitCRate: Double = 0.30, // setting_discharge_limit_c_rate (C)
+    val cellMaxVolt: Double = 3.400, // setting_cell_max_volt (V)
+    val cellMinVolt: Double = 3.000, // setting_cell_min_volt (V)
+    val cutoffVolt: Double = 48.0, // setting_cutoff_volt (V)
+    val undervoltage: Double = 40.0, // setting_undervoltage (V)
+)
+
+/** Doc setting live tu entity setting_* tren master; field nao thieu thi giu
+ * fallback (port iOS BatterySettings.from(sys:) — key sys setCV/setCutSOC/
+ * setCutC/setLimC_C/setDisCutSOC/setDisLimC_C/setCellMax/setCellMin/setCutV/
+ * setUVP map 1:1 sang entity setting_* tuong ung). */
+private fun batterySettingsFrom(entities: Map<String, LegacyEntity>): BatterySettings {
+    val mp = "sensor.powerwall_bms_master_"
+    fun num(key: String): Double? = entities[mp + key]?.numericState
+    return BatterySettings(
+        chargeCV = num("setting_charge_cv") ?: 54.4,
+        cutoffSoc = num("setting_cutoff_soc") ?: 97.0,
+        cutoffCRate = num("setting_cutoff_c_rate") ?: 0.05,
+        chargeLimitCRate = num("setting_charge_limit_c_rate") ?: 0.30,
+        dischargeCutoffSoc = num("setting_discharge_cutoff_soc") ?: 5.0,
+        dischargeLimitCRate = num("setting_discharge_limit_c_rate") ?: 0.30,
+        cellMaxVolt = num("setting_cell_max_volt") ?: 3.400,
+        cellMinVolt = num("setting_cell_min_volt") ?: 3.000,
+        cutoffVolt = num("setting_cutoff_volt") ?: 48.0,
+        undervoltage = num("setting_undervoltage") ?: 40.0,
+    )
+}
+
+/** Ket qua uoc luong thoi gian (hien thi o the pin) — port iOS BatteryTime. */
+private sealed interface BatteryTime {
+    data class Minutes(val minutes: Int) : BatteryTime
+    data object Unknown : BatteryTime // "—": khong uoc luong duoc (dong ≈ 0 / thieu du lieu)
+    data object Full : BatteryTime // "Đã đầy": SOC da o nguong ngat sac
+    data object Empty : BatteryTime // "Đã cạn": SOC da o nguong ngat xa
+}
+
+/** Nguong deadband iOS CurrentEMA.deadband: duoi 2.0 A coi nhu khong co dong
+ * (nghi / trickle). 2.0 A ≈ 100 W o 52 V. */
+private const val BATTERY_TIME_DEADBAND_A = 2.0
+
+/** Goi CV (GIA DINH — xem ghi chu dau file iOS): pha CV bat dau o SOC nay.
+ * Port iOS BatteryTimeCalc.socCVKnee = 90.0. */
+private const val BATTERY_TIME_SOC_CV_KNEE = 90.0
+
+private fun batteryTimeCalc(
+    soc: Double,
+    currentEma: Double, // A, da EMA; sac +, xa − (lay theo chieu dang xet)
+    cellMax: Double?, // dien ap cell cao nhat (V), de phat hien pha CV
+    fccAh: Double, // Σ full_charge_cap (Ah)
+    limChgA: Double, // gioi han dong sac he thong (A)
+    limDisA: Double, // gioi han dong xa he thong (A)
+    settings: BatterySettings,
+    dischargeLimitSoc: Double, // limit hieu dung luc xa: backupSoc (co luoi) hoac overdischargeSoc (mat dien), %
+    charging: Boolean,
+    discharging: Boolean,
+): BatteryTime {
+    if (charging) return batteryChargeTime(soc, currentEma, cellMax, fccAh, limChgA, settings)
+    if (discharging) {
+        return batteryDischargeTime(soc, currentEma, fccAh, limDisA, settings, dischargeLimitSoc)
     }
-    return try {
-        val parts = t.split(":")
-        when (parts.size) {
-            3 -> parts[0].toInt() * 60 + parts[1].toInt() // h:mm:ss
-            2 -> parts[0].toInt() * 60 + parts[1].toInt() // h:mm hoac m:ss
-            1 -> parts[0].toDouble().toInt() // so phut
-            else -> null
-        }
-    } catch (e: Exception) {
-        null
+    return BatteryTime.Unknown
+}
+
+/** Thoi gian sac day toi nguong ngat (phut): pha CC + pha CV (taper).
+ * Port iOS BatteryTimeCalc.chargeTime. */
+private fun batteryChargeTime(
+    soc: Double,
+    currentEma: Double,
+    cellMax: Double?,
+    fccAh: Double,
+    limChgA: Double,
+    settings: BatterySettings,
+): BatteryTime {
+    if (fccAh <= 0) return BatteryTime.Unknown
+    if (currentEma <= BATTERY_TIME_DEADBAND_A) return BatteryTime.Unknown
+    if (soc >= settings.cutoffSoc) return BatteryTime.Full
+    val qTgt = settings.cutoffSoc / 100 * fccAh
+    val qNow = soc / 100 * fccAh
+    val dQ = qTgt - qNow
+    if (dQ <= 0) return BatteryTime.Full
+    val iCut = settings.cutoffCRate * fccAh
+    val iCap = minOf(limChgA, settings.chargeLimitCRate * fccAh)
+    val iCC = minOf(currentEma, iCap)
+    if (iCC <= BATTERY_TIME_DEADBAND_A) return BatteryTime.Unknown
+    // Vao pha CV khi cell cao nhat cham nguong HOAC SOC da qua goi.
+    val cvCell = minOf(settings.cellMaxVolt, settings.chargeCV / 16)
+    val qKnee = BATTERY_TIME_SOC_CV_KNEE / 100 * fccAh
+    val inCV = (cellMax != null && cellMax >= cvCell) || qNow >= qKnee
+    val dQcc = if (inCV) 0.0 else maxOf(0.0, qKnee - qNow)
+    val dQcv = dQ - dQcc
+    val tCC = dQcc / iCC // gio
+    // Pha CV: dong giam tuyen tinh tu dong vao pha xuong nguong ngat
+    // (neu dong vao da duoi nguong ngat thi khong con gi de giam).
+    val iCVEnd = minOf(iCC, iCut)
+    val iCVAvg = (iCC + iCVEnd) / 2
+    val tCV = dQcv / maxOf(iCVAvg, BATTERY_TIME_DEADBAND_A) // gio
+    return BatteryTime.Minutes(((tCC + tCV) * 60).roundToInt())
+}
+
+/** Thoi gian xa toi limit hieu dung / toi nguong ngat 5% (phut).
+ * Port iOS BatteryTimeCalc.dischargeTime. */
+private fun batteryDischargeTime(
+    soc: Double,
+    currentEma: Double,
+    fccAh: Double,
+    limDisA: Double,
+    settings: BatterySettings,
+    dischargeLimitSoc: Double,
+): BatteryTime {
+    if (fccAh <= 0) return BatteryTime.Unknown
+    if (currentEma >= -BATTERY_TIME_DEADBAND_A) return BatteryTime.Unknown
+    if (soc <= settings.dischargeCutoffSoc) return BatteryTime.Empty
+    val iDis = minOf(kotlin.math.abs(currentEma), limDisA, settings.dischargeLimitCRate * fccAh)
+    if (iDis <= BATTERY_TIME_DEADBAND_A) return BatteryTime.Unknown
+    val qNow = soc / 100 * fccAh
+    val dQ: Double
+    if (soc > dischargeLimitSoc) {
+        // Phase 1: phan su dung, toi limit hieu dung.
+        dQ = qNow - dischargeLimitSoc / 100 * fccAh
+    } else {
+        // Phase 2: phan du tru, toi nguong ngat xa cua BMS (5%, live)
+        // — cu di toi 0% la sai (BMS ngat truoc).
+        dQ = qNow - settings.dischargeCutoffSoc / 100 * fccAh
     }
+    if (dQ <= 0) return BatteryTime.Empty
+    return BatteryTime.Minutes(((dQ / iDis) * 60).roundToInt())
 }

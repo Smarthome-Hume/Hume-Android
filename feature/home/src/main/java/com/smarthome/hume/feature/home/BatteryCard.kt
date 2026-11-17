@@ -69,8 +69,12 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
     val soc = battery.soc.coerceIn(0, 100)
     val reserve = battery.reservePct
     val usage = battery.usagePct
-    // timeText = friendly_time tu entity (null khi NGHỈ)
+    // timeText = "H:MM" tu BatteryTimeCalc v70 (null khi NGHỈ); bien "—" /
+    // "Đã đầy" / "Đã cạn" hien thang nhu iOS HomeBatteryCard:88-101, khong an
+    // nhu text rac cua sensor template cu (parseDurationBig tra null cho
+    // text khong phai duration — chi 3 chuoi nay duoc hien thang).
     val bigTime = parseDurationBig(battery.timeText)
+        ?: battery.timeText?.takeIf { it == "—" || it == "Đã đầy" || it == "Đã cạn" }
 
     M3ECard(
         shape = RoundedCornerShape(32.dp),
