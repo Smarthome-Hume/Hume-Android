@@ -63,7 +63,13 @@ fun EnergyInsightsCard(
     M3ECard(
         modifier = modifier.riseOnce("cons-insights", 400, risePlayed),
         shape = RoundedCornerShape(28.dp),
-        contentPadding = 16.dp,
+        // (2026-11-18) Cat them sau title 13pt: padding 16 -> 12dp (-8dp).
+        // Detail 2 dong + chip danh muc lam the cao hon iOS 14,8dp (iOS
+        // InsightsCard khung co dinh 68, detail 1 dong); cat padding ve
+        // bang SuggestCard Home (12dp) + lineHeight detail ve tu nhien
+        // 17,1 ben duoi de xuong sat iOS (+1,0dp). Khong cat chip/nut phu
+        // (tinh nang muc 15, chi hien o insight solarSurplus).
+        contentPadding = 12.dp,
         containerColor = cs.tertiaryContainer,
     ) {
         Column {
@@ -194,7 +200,12 @@ private fun InsightRow(
             }
             Text(
                 detail,
-                style = MaterialTheme.typography.bodyMedium,
+                // (2026-11-18) lineHeight tu nhien 17,1 (= 14 x 1,219, nhu
+                // iOS bodyMedium) thay vi M3 mac dinh 20 (-2,9dp/dong,
+                // -5,8dp khi detail 2 dong — truong hop thuong gap vi cot
+                // giua chi ~178dp). Giu maxLines=2 de khong cat mat cau
+                // tiet kiem nhu iOS (iOS lineLimit 1).
+                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
