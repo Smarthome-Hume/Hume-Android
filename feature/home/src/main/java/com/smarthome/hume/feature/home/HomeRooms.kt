@@ -443,29 +443,28 @@ fun RoomSheet(
     //   nhap lieu nen tat IME padding la an toan. So "826dp" o comment
     //   cu khong co nguon goc do duoc (0.15*826 = 123.9dp, van ~124dp);
     //   mo hinh anh khop 832dp.
-    // (fix 3c, 2026-11-17 — THE NOI, bo 6dp DONG TAM goc man hinh)
-    // User chot 19:12: 90dp (ac47cb4) qua to, 60dp ver truoc cung sai
-    // nguyen tac. The la the noi: 3 canh (2 ben + day) cach deu mep
-    // man hinh 16dp (tinh toi bounding box), top gap giu 124dp.
-    // NGUYEN TAC DONG TAM: R_the = R_man - margin = 22 - 16 = 6dp cho
-    // CA 4 goc (R_man ~ 22dp la goc bo man hinh S26U). Kiem chung: tam
-    // goc duoi-trai man = (22, H-22); tam goc the = (16+6, H-16-6) =
-    // (22, H-22) -> trung tam, khe deu 16dp moi cho. Kich thuoc the
+    // (fix 3d, 2026-11-17 — BAN CHOT theo anh iOS user gui 19:27)
+    // The nam TREN navbar (che navbar) — dung nhu iOS; ModalBottomSheet
+    // (Dialog) da dat the tren navbar, GIU nguyen, khong refactor.
+    // 3 canh (2 ben + day) cach deu mep man hinh 8dp (tinh toi bounding
+    // box), top gap giu 124dp. Bo 60dp ca 4 goc = iOS
+    // .presentationCornerRadius(60) 1:1 (do tu anh iOS: fit cung goc
+    // r~60pt, khe 8pt ca 3 canh; man iPhone 440x956pt). Kich thuoc the
     // suy ra tu gia tri runtime (KHONG hardcode 411/826): rong =
-    // screenW - 2*16, cao = screenH - 124 - 16.
+    // screenW - 2*8, cao = screenH - 124 - 8.
     val screenH = LocalConfiguration.current.screenHeightDp.dp
-    val sheetMargin = 16.dp
+    val sheetMargin = 8.dp
     val topGap = 124.dp
     val cardH = screenH - topGap - sheetMargin
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        // (fix 3c) Container M3 TRONG SUOT + hinh chu nhat: the NHIN THAY
-        // ve BEN TRONG content (bo 6dp ca 4 goc, nen surfaceContainer).
+        // (fix 3d) Container M3 TRONG SUOT + hinh chu nhat: the NHIN THAY
+        // ve BEN TRONG content (bo 60dp ca 4 goc, nen surfaceContainer).
         // Ly do: M3 neo day container vao mep duoi man hinh va container
-        // full-width — muon the noi cach mep 16dp thi container phai trong
+        // full-width — muon the noi cach mep 8dp thi container phai trong
         // suot, the that nam trong. Shape container de chu nhat co tinh:
-        // neu de bo 6dp, Surface cat content theo shape se cat vao goc
+        // neu de bo 60dp, Surface cat content theo shape se cat vao goc
         // cua the. Scrim + vuot dong cua M3 giu nguyen.
         shape = RectangleShape,
         containerColor = Color.Transparent,
@@ -483,15 +482,15 @@ fun RoomSheet(
                 .fillMaxWidth()
                 .height(screenH - topGap),
         ) {
-            // The noi: rong = screenW - 2*16, cao = screenH - 124 - 16,
-            // bo 6dp CA 4 GOC (dong tam goc man hinh, xem (fix 3c) o tren),
-            // nen surfaceContainer.
+            // The noi: rong = screenW - 2*8, cao = screenH - 124 - 8,
+            // bo 60dp CA 4 GOC (iOS .presentationCornerRadius(60) 1:1,
+            // xem (fix 3d) o tren), nen surfaceContainer.
             Box(
                 Modifier
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
                     .height(cardH)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(60.dp))
                     .background(cs.surfaceContainer),
             ) {
                 LazyColumn(
