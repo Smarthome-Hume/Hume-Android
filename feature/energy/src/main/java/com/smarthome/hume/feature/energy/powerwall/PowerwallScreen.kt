@@ -3,9 +3,17 @@ package com.smarthome.hume.feature.energy.powerwall
 import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
+import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -20,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.M3EHeaderFade
+import kotlinx.coroutines.delay
 import org.json.JSONObject
 
 /**
@@ -58,9 +69,17 @@ import org.json.JSONObject
  *
  * KHAC BIET SO VOI iOS (ghi ro, khong giau):
  * - iOS chen theme truoc lan ve dau bang WKUserScript (document-start).
- *   Android WebView khong co document-start injection: lan ve dau dung
- *   mau mac dinh toi cua bundle, theme day ngay sau onPageFinished roi
- *   day lai moi khi doi seed/sang-toi (cung duong day nhu iOS updateUIView).
+ *   Android WebView khong co document-start injection: lan ve dau VAN dung
+ *   mau mac dinh toi cua bundle (xem index.html:54 — token ESP32
+ *   --card:#313A43...), nen WebView duoc GIU AN (alpha 0) cho toi khi
+ *   onPageFinished + evaluateJavascript theme/data chay xong roi moi fade in
+ *   250ms. Trong luc an, user chi thay nen surface + title (native, dung
+ *   theme) — khong bao gio thay lan ve dau sai mau hay the "-" luc moi vao.
+ *   Luu y: setBackgroundColor(cs.surface) chi doi mau nen NATIVE cua view
+ *   (chong flash trang truoc khi HTML ve), khong doi duoc mau HTML ben
+ *   trong — vi vay chi gate bang alpha moi het flash. Dung alpha (khong
+ *   dung visibility GONE) de WebView van co kich thuoc that: canvas 3D
+ *   resize() theo box.clientWidth/Height, GONE se cho canvas 0x0.
  * - iOS day noi dung webview xuong 130pt bang scrollView.contentInset.top.
  *   Android WebView khong co contentInset: tuong duong bang cach dat
  *   `.wrap` padding-top = 148px (130 + 18px goc) sau khi trang load xong
@@ -88,6 +107,25 @@ fun PowerwallScreen(
 
     var packSheetKey by remember { mutableStateOf<String?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
+
+    // Gate hien WebView (fix flash mau lan ve dau, user 17/11): chi hien
+    // khi theme JS + data JS dau tien da chay xong trong trang (callback
+    // cua evaluateJavascript, xem PowerwallBridge). forceReady la luoi an
+    // toan: neu load/theme kẹt (vd loi asset) thi sau 4s van hien trang
+    // chu khong de user dung truoc man hinh trong mai.
+    var themeApplied by remember { mutableStateOf(false) }
+    var dataApplied by remember { mutableStateOf(false) }
+    var forceReady by remember { mutableStateOf(false) }
+    val pageReady = (themeApplied && dataApplied) || forceReady
+    val webViewAlpha by animateFloatAsState(
+        targetValue = if (pageReady) 1f else 0f,
+        animationSpec = tween(durationMillis = 250),
+        label = "powerwallReadyFade",
+    )
+    LaunchedEffect(Unit) {
+        delay(READY_FALLBACK_MS)
+        forceReady = true
+    }
 
     // Trang thai day du lieu (port iOS Coordinator: isReady + pending).
     val bridge = remember {
@@ -118,9 +156,55 @@ fun PowerwallScreen(
                     settings.allowFileAccess = true
                     settings.setSupportZoom(false)
                     // Nen webview theo theme (tranh flash trang luc load).
+                    // Chi doi nen native — mau HTML ben trong van la mac
+                    // dinh cua bundle cho toi khi theme JS chay xong, nen
+                    // WebView van giu alpha 0 toi luc do (xem pageReady).
                     setBackgroundColor(cs.surface.toArgb())
                     addJavascriptInterface(bridge, "HumeAndroid")
+                    // (a) Chan doan vung 3D trong tren may that: truoc day
+                    // khong co WebChromeClient nen console JS + loi load
+                    // hoan toan vo hinh (ca vong render cua bundle cung
+                    // nuot loi theo tung frame). Chuyen tat ca ve Logcat
+                    // tag PowerwallWebView de lan test sau doc duoc loi
+                    // that (WebGL/context/shader) thay vi doan.
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                            Log.d(
+                                TAG,
+                                "[${message.messageLevel()}] ${message.message()} " +
+                                    "(${message.sourceId()}:${message.lineNumber()})",
+                            )
+                            return true
+                        }
+                    }
                     webViewClient = object : WebViewClient() {
+                        override fun onReceivedError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            error: WebResourceError,
+                        ) {
+                            if (request.isForMainFrame) {
+                                Log.e(
+                                    TAG,
+                                    "load error ${error.errorCode}: ${error.description} " +
+                                        "url=${request.url}",
+                                )
+                            }
+                        }
+
+                        override fun onReceivedHttpError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            errorResponse: WebResourceResponse,
+                        ) {
+                            if (request.isForMainFrame) {
+                                Log.e(
+                                    TAG,
+                                    "HTTP ${errorResponse.statusCode} url=${request.url}",
+                                )
+                            }
+                        }
+
                         override fun onPageFinished(view: WebView, url: String?) {
                             bridge.markReady(view)
                             // Day noi dung xuong duoi title o trang thai
@@ -129,8 +213,12 @@ fun PowerwallScreen(
                                 "document.querySelector('.wrap').style.paddingTop='${CONTENT_TOP_INSET_PX}px';",
                                 null,
                             )
-                            bridge.pushTheme(themeJson)
-                            bridge.pushData(payloadJson)
+                            // Theme + data day qua bridge; callback chi
+                            // chay khi evaluateJavascript da thuc thi xong
+                            // trong trang — pageReady (fade in) doi ca hai
+                            // de khong lo lan ve sai mau / the "-" luc moi vao.
+                            bridge.pushTheme(themeJson) { themeApplied = true }
+                            bridge.pushData(payloadJson) { dataApplied = true }
                         }
                     }
                     loadUrl("file:///android_asset/$POWERWALL_ASSET_PATH")
@@ -147,7 +235,10 @@ fun PowerwallScreen(
                 webView.stopLoading()
                 webView.destroy()
             },
-            modifier = Modifier.fillMaxSize(),
+            // Alpha 0 trong luc chua san sang (khong dung GONE — xem
+            // comment o dau file). Title + fade native nam tren van hien
+            // binh thuong trong luc doi.
+            modifier = Modifier.fillMaxSize().alpha(webViewAlpha),
         )
         // v63/v74: lop fade gradient kieu Zalo — lop RIENG giua webview va
         // title: dac 0.95 o tren, gradient 72dp mo dan xuong trong suot;
@@ -212,6 +303,16 @@ fun PowerwallScreen(
 /** Duong dan bundle trong assets (module :feature:energy, merge vao APK). */
 private const val POWERWALL_ASSET_PATH = "powerwall-dashboard/index.html"
 
+/** Tag Logcat cho WebView Powerwall (console JS + loi load). */
+private const val TAG = "PowerwallWebView"
+
+/**
+ * Luoi an toan cho gate hien trang: neu sau thoi gian nay ma theme/data
+ * van chua apply (load kẹt, asset loi...), van hien trang de user khong
+ * dung truoc man hinh trong. Load asset local + push theme thuong < 1s.
+ */
+private const val READY_FALLBACK_MS = 4_000L
+
 /**
  * Tuong duong iOS contentInset.top = 130: `.wrap` trong bundle von co
  * padding-top 18px; dat 148px de the 3D dau tien nam duoi pill title o
@@ -241,6 +342,16 @@ private class PowerwallBridge(
     private var pendingThemeJson: String? = null
     private var pendingDataJson: String? = null
 
+    /**
+     * Callback chay khi theme JS dau tien da thuc thi xong trong trang
+     * (gate fade-in). Luu rieng khoi pendingThemeJson vi callback co the
+     * duoc dang ky o lan pushTheme bi dedup (theme da day truoc do qua
+     * update) hoac o lan pushData null (chua co data) — no chi chay khi
+     * push do that su duoc flush, hoac ngay lap tuc neu da flush roi.
+     */
+    private var pendingThemeCallback: (() -> Unit)? = null
+    private var firstDataCallback: (() -> Unit)? = null
+
     fun markReady(view: WebView) {
         webView = view
         isReady = true
@@ -248,16 +359,33 @@ private class PowerwallBridge(
     }
 
     /** Day theme (chi khi doi that, nhu iOS updateUIView). */
-    fun pushTheme(themeJson: String) {
-        if (themeJson == lastThemeJson) return
+    fun pushTheme(themeJson: String, onApplied: (() -> Unit)? = null) {
+        if (onApplied != null) pendingThemeCallback = onApplied
+        if (themeJson == lastThemeJson) {
+            // Da day roi (hoac da queue — flush o markReady se goi
+            // callback). Chi goi ngay khi chac chan da flush xong.
+            if (isReady) {
+                pendingThemeCallback?.invoke()
+                pendingThemeCallback = null
+            }
+            return
+        }
         lastThemeJson = themeJson
         pendingThemeJson = themeJson
         pushPending()
     }
 
     /** Day data (chi khi doi that; ViewModel da throttle 2s). */
-    fun pushData(dataJson: String?) {
-        if (dataJson == null || dataJson == lastDataJson) return
+    fun pushData(dataJson: String?, onFirstApplied: (() -> Unit)? = null) {
+        if (onFirstApplied != null) firstDataCallback = onFirstApplied
+        if (dataJson == null) return // Chua co data: giu callback, doi lan push sau.
+        if (dataJson == lastDataJson) {
+            if (isReady) {
+                firstDataCallback?.invoke()
+                firstDataCallback = null
+            }
+            return
+        }
         lastDataJson = dataJson
         pendingDataJson = dataJson
         pushPending()
@@ -268,17 +396,19 @@ private class PowerwallBridge(
         if (!isReady) return
         pendingThemeJson?.let { json ->
             pendingThemeJson = null
+            val cb = pendingThemeCallback
+            pendingThemeCallback = null
             view.evaluateJavascript(
                 "window.__humePowerwallTheme && window.__humePowerwallTheme($json)",
-                null,
-            )
+            ) { cb?.invoke() }
         }
         pendingDataJson?.let { json ->
             pendingDataJson = null
+            val cb = firstDataCallback
+            firstDataCallback = null
             view.evaluateJavascript(
                 "window.__humePowerwallLive && window.__humePowerwallLive($json)",
-                null,
-            )
+            ) { cb?.invoke() }
         }
     }
 

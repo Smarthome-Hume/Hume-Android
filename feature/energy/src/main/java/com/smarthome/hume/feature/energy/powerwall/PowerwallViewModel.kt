@@ -22,12 +22,25 @@ import kotlinx.coroutines.launch
  * `PowerwallWebView.Coordinator` (PowerwallSimulationView.swift).
  *
  * Nguon so lieu: [HomeRepository.entityStates] — cung flow tho HA ma the
- * mo rong trong phong dung (port iOS GroupEntityReader). Man hinh KHONG tu
- * dang ky watched set: tap 205 entity [PowerwallLiveData.entityIds] la
- * viec cua worker N-12. Cho toi khi do, cac entity nay chi co gia tri
- * snapshot luc mo trang (REST /api/states luc ket noi / len foreground);
- * WebSocket event cua entity chua watched bi giu o bucket ONE_DAY nen so
- * tren trang khong tick live — ghi ro de khong ai tuong live da du.
+ * mo rong trong phong dung (port iOS GroupEntityReader). Tap 205 entity
+ * [PowerwallLiveData.entityIds] DA duoc dang ky vao watched set (N-12,
+ * AppHomeRepository: ids.addAll(POWERWALL_ENTITY_IDS)) nen cac entity nay
+ * tick live theo WebSocket; snapshot REST /api/states luc ket noi / len
+ * foreground chi la gia tri ban dau. (Sua comment stale: ban truoc ghi
+ * N-12 chua land — nay da land.)
+ *
+ * GAP CON LAI SO VOI iOS (ghi ro, chua sua — can doi interface
+ * HomeRepository o :core:data, ngoai pham vi file nay): iOS
+ * GroupEntityReader.seed() chay lai moi khi mo trang + moi khi
+ * ha.isConnected chuyen sang true (lay gia tri cuoi biet ngay lap tuc).
+ * Android o day chi phan ung theo emission cua entityStates: neu luc mo
+ * trang ma _entities con rong (vd app vua khoi dong, snapshot /api/states
+ * chua ve / that bai) thi the van "-" cho toi khi emission ke tiep toi,
+ * khong co lenh refetch rieng khi mo trang. Tam giai: PowerwallScreen
+ * giu WebView an toi khi push data dau tien chay xong (co fallback 4s),
+ * nen user khong thay trang thai "-" do nua; muon het han thi them
+ * refresh rieng cho 205 entity nay vao HomeRepository (port iOS
+ * HomeAssistantManager.refreshStates(ids:)).
  *
  * Throttle day data 2s (port iOS Coordinator.dataThrottle): GroupEntityReader
  * da chan moi entity 2s nhung 205 sensor doi lech nhau nen payload doi
