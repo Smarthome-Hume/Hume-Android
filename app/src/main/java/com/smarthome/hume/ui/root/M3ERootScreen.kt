@@ -128,12 +128,6 @@ fun M3ERootScreen(
             scope = coroutineScope,
         )
     }
-    // Hinh nen app (port iOS WallpaperManager/MeWallpaperCard)
-    val wallpaperStore = remember(context) {
-        com.smarthome.hume.core.ui.wallpaper.WallpaperStore(context)
-    }
-    val wallpaperFile by wallpaperStore.wallpaper.collectAsState()
-    androidx.compose.runtime.LaunchedEffect(Unit) { wallpaperStore.load() }
     // (Batch B, GAP-02/04) Monitor canh bao app-level — port iOS HumeApp
     // startGridMonitor/startPumpMonitor. Root song xuyen ca 4 tab nen canh
     // bao toi duoc ca khi user khong o tab Nang luong; EnergyScreen khong
@@ -268,15 +262,6 @@ fun M3ERootScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface),
         ) {
-            // Hinh nen app (port iOS): anh nam duoi cung, phu full man hinh
-            wallpaperFile?.let { file ->
-                coil.compose.AsyncImage(
-                    model = file,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
             // Text() khong truyen color mac dinh lay LocalContentColor (den) vi
             // content khong nam trong Surface; cung cap onSurface (dark-aware)
             // cho ca 4 tab de chu khong bi chim trong che do toi.
@@ -391,9 +376,6 @@ fun M3ERootScreen(
                         onViewCamera = { selected = 2 },
                         roomStore = roomStoreAdapter,
                         pickerEntities = pickerEntities,
-                        // Chung instance wallpaper cua root de card Hinh nen
-                        // (tab Toi, GAP-15) dat xong nen doi ngay.
-                        wallpaperStore = wallpaperStore,
                     )
                 }
             }

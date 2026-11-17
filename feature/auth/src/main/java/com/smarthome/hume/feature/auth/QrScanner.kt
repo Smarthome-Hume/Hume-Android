@@ -94,7 +94,7 @@ fun QrScanner(
 
     // (GAP-43, port iOS M3ELoginView QrImagePicker + decodeQr) Chon anh QR
     // tu thu vien: Photo Picker neu co, fallback GetContent — dung pattern
-    // MeScreen (pickWallpaper/launchImagePicker).
+    // MeScreen (launchImagePicker).
     val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
     val onQrImagePicked: (Uri) -> Unit = { uri ->
         decodeQrFromUri(
