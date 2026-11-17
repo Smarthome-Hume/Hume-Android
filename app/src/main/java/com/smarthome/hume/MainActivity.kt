@@ -16,9 +16,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -151,6 +154,16 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
+            // (fontScale 1f, user 21:06) Ghim fontScale = 1f toan app: chu sp
+            // khong scale theo font he thong, khop iOS dung pt cung -> cac the
+            // co ngan ve dung kich thuoc thiet ke. Neu khong on thi revert
+            // commit nay (ve ban cu). Chi doi fontScale, giu nguyen density
+            // (dp -> px khong doi) nen chi anh huong chu sp, khong anh huong
+            // layout dp hay dp -> px (vd swipe threshold).
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(density = density.density, fontScale = 1f),
+            ) {
             // Nguon su that cho gate dang nhap: AuthRepository cua kien truc moi.
             // (Doc chung file "hume_settings"/"hume_secrets" voi SettingsStore cu.)
             val session by graph.authRepository.session.collectAsState(initial = AuthSession())
@@ -203,6 +216,7 @@ class MainActivity : ComponentActivity() {
                     LoginScreen()
                 }
             }
+            } // CompositionLocalProvider(LocalDensity fontScale=1f)
         }
     }
 }
