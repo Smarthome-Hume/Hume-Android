@@ -275,23 +275,66 @@ private fun RoomCard(
                 )
                 // (GAP-27) Sub luon "N thiet bi · M bat · power" khi co
                 // cong suat, nhu iOS HomeRooms.swift:224-225.
-                val sub = if (room.roomPowerW > 0) {
-                    "${room.deviceCount} thiết bị · ${room.devicesOn} bật · " +
-                        formatRoomPowerText(room.roomPowerW)
+                // (2026-11-17, the phong trang chinh: cong suat bi che)
+                // NGUYEN NHAN DO THAT: sub la 1 Text duy nhat, maxLines=1 +
+                // Ellipsis o CUOI — cong suat nam cuoi chuoi nen bat cu tran
+                // nao cung an mat no truoc. Do that bang Montserrat-Medium
+                // 12 (file iOS Hume/Fonts/Montserrat-Medium.ttf, cung font
+                // Android tai qua Google Fonts): "5 thiết bị · 3 bật · 816W"
+                // = 136.5pt; Android them tnum (bodySmall co
+                // fontFeatureSettings="tnum", iOS M3EType khong co) lam
+                // "816" rong them toi +4.4 (tabular = rong so 0) -> 140.9dp. Slot chu Android:
+                // (411 - 18*2 - 12)/2 - 14*2 = 153.5dp — vua o fontScale
+                // 1.0 (thua 12.6dp) nhung vo o fontScale >= ~1.09, trong khi
+                // iOS chu 12pt CUNG (Font.custom khong scale theo Dynamic
+                // Type) + slot 144pt nen van vua. Man hinh khong phai ly do:
+                // S26U 411dp con RONG hon iPhone 402pt, the Android
+                // (181.5dp) rong hon the iOS (172pt).
+                // FIX: tach sub thanh Row — phan dem weight(1f) + Ellipsis,
+                // phan cong suat co dinh, KHONG bao gio bi cat. O fontScale
+                // 1.0 render giong het 1 Text cu (cung chuoi, cung style);
+                // khi chu phong to, chi phan dem bi "...", cong suat van
+                // hien du. Khong thu nho chu, khong cat thong tin.
+                val subColor = if (room.lightOn) cs.onPrimaryContainer
+                else cs.onSurfaceVariant
+                if (room.roomPowerW > 0) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = subColor,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            " · " + formatRoomPowerText(room.roomPowerW),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = subColor,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 } else {
-                    "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
+                    Text(
+                        "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = subColor,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
                 }
-                Text(
-                    sub,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = if (room.lightOn) cs.onPrimaryContainer
-                    else cs.onSurfaceVariant,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
             }
         }
     }
