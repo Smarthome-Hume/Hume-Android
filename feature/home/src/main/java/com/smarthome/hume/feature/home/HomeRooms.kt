@@ -85,8 +85,18 @@ import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import java.util.Locale
 
 /**
+ * (GAP-27) Format cong suat phong, port 1:1 iOS roomPowerText /
+ * sheetPowerText (HomeRooms.swift:174-179, :401-404): <1000W hien W
+ * nguyen, >=1000W hien kW 1 so le. Nguong cu 100W (user 2026-10-05)
+ * khong khop iOS nen bo.
+ */
+private fun formatRoomPowerText(w: Double): String =
+    if (w >= 1000) "%.1fkW".format(w / 1000) else "%.0fW".format(w)
+
+/**
  * Luoi the phong theo demo rev12 (.roomc): layout DOC — nut den 48px tren,
- * ten 13.5px/700, sub 11.5px/500; padding 16px 14px; cham bao cua mo .rdot2;
+ * ten 13.5px/700, sub 11.5px/500; padding 19px 14px (GAP-30, iOS vertical
+ * 19); cham bao cua mo .rdot2;
  * :active{scale(.95); radius 20px} spring; rise stagger .36s + i*.03s.
  * (Tieu de "Phong" do HomeScreen ve — khong ve trung o day.)
  */
@@ -96,6 +106,11 @@ fun RoomGrid(
     notifications: List<HomeNotification>,
     onRoom: (RoomUi) -> Unit,
     onToggleLight: (String) -> Unit,
+    // (GAP-30) Nhan 1 lan duy nhat voi TOAN BO light.* cua phong —
+    // port iOS toggleRoomLights (HomeRooms.swift:241-248, 1 lenh
+    // light.turn_on/off voi entity_id = danh sach). Null = caller chua
+    // co method batch, fallback goi onToggleLight tung den nhu cu.
+    onToggleLights: ((List<String>) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -106,9 +121,24 @@ fun RoomGrid(
                         room = room,
                         onOpen = { onRoom(room) },
                         onToggleLight = {
-                            room.devices.filter {
-                                it.entityId.startsWith("light.") && it.isOn == room.lightOn
-                            }.forEach { onToggleLight(it.entityId) }
+                            // (GAP-30) iOS lightIds (HomeRooms.swift:147-149):
+                            // TOAN BO light.* cua phong; callee quyet dinh
+                            // turn_on/off theo anyOn roi gui 1 lenh duy nhat.
+                            val ids = room.devices.filter {
+                                it.entityId.startsWith("light.")
+                            }.map { it.entityId }
+                            if (ids.isNotEmpty()) {
+                                if (onToggleLights != null) {
+                                    onToggleLights(ids)
+                                } else {
+                                    // Fallback tam: chua co method batch o
+                                    // ViewModel/repo (nam ngoai file nay).
+                                    room.devices.filter {
+                                        it.entityId.startsWith("light.") &&
+                                            it.isOn == room.lightOn
+                                    }.forEach { onToggleLight(it.entityId) }
+                                }
+                            }
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -148,7 +178,7 @@ private fun RoomCard(
                 if (room.lightOn) cs.primaryContainer
                 else cs.surfaceContainerHighest,
             )
-            .padding(horizontal = 14.dp, vertical = 16.dp),
+            .padding(horizontal = 14.dp, vertical = 19.dp),
     ) {
             Column {
                 // Hang tren: icon phong + nhiet do sat icon.
@@ -242,16 +272,11 @@ private fun RoomCard(
                     color = if (room.lightOn) cs.onPrimaryContainer
                     else cs.onSurface,
                 )
-                // Subtitle chi con thiet bi (bo nhiet do ra) -> nhieu khong gian hon;
-                // them tong cong suat phong khi > 0 (port iOS roomPowerText).
-                val powerSuffix = if (room.roomPowerW > 0) {
-                    val w = room.roomPowerW
-                    // (2026-10-05, user: tu 100W doi sang kW de text ngan, khong tran)
-                    " · " + if (w >= 100) "%.1f kW".format(w / 1000)
-                    else "%.0f W".format(w)
-                } else ""
+                // (GAP-27) Sub luon "N thiet bi · M bat · power" khi co
+                // cong suat, nhu iOS HomeRooms.swift:224-225.
                 val sub = if (room.roomPowerW > 0) {
-                    "${room.devicesOn} bật$powerSuffix"
+                    "${room.deviceCount} thiết bị · ${room.devicesOn} bật · " +
+                        formatRoomPowerText(room.roomPowerW)
                 } else {
                     "${room.deviceCount} thiết bị · ${room.devicesOn} bật"
                 }
@@ -450,7 +475,10 @@ fun RoomSheet(
                             )
                         }
                         Text(
-                            "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật",
+                            // (GAP-27) Sheet luon kem power, ke ca 0W —
+                            // iOS HomeRooms.swift:401-404.
+                            "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật · " +
+                                formatRoomPowerText(room.roomPowerW),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
                             color = cs.onSurfaceVariant,
@@ -493,7 +521,10 @@ private fun EnvTile(
             Column {
                 Text(
                     value,
-                    style = MaterialTheme.typography.titleLarge,
+                    // (GAP-30) EnvTile value titleMedium, nhu iOS
+                    // HomeRooms.swift:490 (comment iOS :473 ghi titleLarge
+                    // la sai so voi code).
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurface,
                 )
@@ -768,7 +799,18 @@ fun DeviceRow(
             .background(cs.surfaceContainerHighest)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // (GAP-29) Tap than the (hang header, ngoai cum icon+ten) huy
+        // xac nhan — port iOS HomeRooms.swift:833-837. Tap vao cum
+        // icon+ten do clickable con xu ly (huy hoac mo the); switch khi
+        // dang xac nhan bi disable (iOS allowsHitTesting(false)) nen
+        // tap roi xuong day va huy xac nhan; khi khong xac nhan thi
+        // handler nay khong lam gi, switch van nhan tap binh thuong.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable {
+                if (isConfirming) isConfirming = false
+            },
+        ) {
             // Vung tap mo/thu: CHI cum icon+ten (khong gom vung switch,
             // de bam switch khong bi hieu thanh mo the). Dang xac nhan
             // tat thi tap nay CHI huy xac nhan, khong mo the (GAP-29).
@@ -860,6 +902,11 @@ fun DeviceRow(
                     ) {
                         M3ESwitch(
                             checked = d.isOn,
+                            // (GAP-29) Switch khong nhan hit khi dang xac
+                            // nhan — iOS allowsHitTesting(!isConfirming) —
+                            // de tap roi xuong tap handler muc the va huy
+                            // xac nhan thay vi bi switch nuot.
+                            enabled = !isConfirming,
                             onCheckedChange = {
                                 if (isConfirming) return@M3ESwitch
                                 haptic()
