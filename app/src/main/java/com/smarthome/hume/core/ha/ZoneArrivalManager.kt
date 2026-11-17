@@ -445,7 +445,7 @@ object ZoneArrivalManager {
  */
 class ZoneArrivalReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val event = GeofencingEvent.from(intent) ?: return
+        val event = GeofencingEvent.fromIntent(intent) ?: return
         if (event.hasError()) {
             Log.e(TAG_ZONE, "GeofencingEvent error ${event.errorCode}")
             return
