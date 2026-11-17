@@ -130,12 +130,31 @@ fun EnergyScreen(
     // (Batch B, GAP-02) Guard invalid chung voi monitor: bo qua emission
     // khi inverterStatus unavailable/unknown/none/rong — tranh banner nhay
     // khi sensor chap chon nhu iOS da chan.
+    // (GAP-02 du) Debounce 3s — port iOS GridAlertMonitor.update/fireAlert:
+    // banner chi hien khi state giu on dinh du 3s, nhu notification cua
+    // EnergyNotifier. Lam debounce TAI CHO trong LaunchedEffect nay vi
+    // EnergyNotifier khong expose tin hieu gridOn da debounce (chi ban
+    // notification ben trong) va scope chi cho phep sua file nay (phan
+    // banner). LaunchedEffect restart (huy delay) neu gridOn/inverterStatus
+    // doi trong 3s — dung co che huy cua coroutine, khong them job/Handler.
+    // Nho: invalid giua chung cung restart + huy delay (khat hon iOS mot
+    // chut — iOS update() bo qua invalid ma khong huy debounce dang cho —
+    // nhung khop voi EnergyNotifier.onStateChanged cua Android, no huy
+    // debounce khi gap invalid).
     LaunchedEffect(state.flow.gridOn, state.flow.inverterStatus) {
         if (!EnergyNotifier.isValidGridStatus(state.flow.inverterStatus)) return@LaunchedEffect
         val g = state.flow.gridOn
-        if (lastGridOnSeen != null && lastGridOnSeen != g) {
-            gridAlert = g
+        if (lastGridOnSeen == null) {
+            lastGridOnSeen = g
+            return@LaunchedEffect
         }
+        if (lastGridOnSeen == g) return@LaunchedEffect
+        delay(3000)
+        // Kiem tra lai state van on dinh (port iOS fireAlert guard
+        // lastGridOn == gridOn) truoc khi hien banner.
+        if (state.flow.gridOn != g) return@LaunchedEffect
+        if (!EnergyNotifier.isValidGridStatus(state.flow.inverterStatus)) return@LaunchedEffect
+        gridAlert = g
         lastGridOnSeen = g
     }
     // Banner canh bao bom (Batch B, GAP-04 — port iOS pumpAlertFired):

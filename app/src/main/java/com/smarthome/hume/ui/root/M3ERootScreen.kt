@@ -1,12 +1,14 @@
 package com.smarthome.hume.ui.root
 
 import android.graphics.Bitmap
+import android.os.Build
 import android.view.View
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -23,7 +25,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.drawToBitmap
@@ -89,6 +93,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private data class NavItem(val tab: HumeTab, val icon: String)
 
@@ -132,7 +138,8 @@ fun M3ERootScreen(
     // Foreground-only: socket ngat khi app background (observer san co o
     // MainActivity) nen khong con event; moi lan len foreground MainActivity
     // sync lai baseline (requestGridSync/sync) de khong bao sai khi reconnect.
-    // Root diff chi co wiring monitor nay — khong them gesture moi (GAP-37).
+    // (GAP-37) Vuot mep trai mo Brief nam o Box content ben duoi
+    // (briefEdgeSwipe), khong phai o day.
     val appAlertContext = remember(context) { context.applicationContext }
     androidx.compose.runtime.LaunchedEffect(ha) {
         // Sync bom lan dau (khong bao) — port iOS PumpAlertMonitor.sync().
@@ -201,6 +208,13 @@ fun M3ERootScreen(
         // (2026-09-30, user chon thay cho vuot canh trai de tranh nham voi
         // system back gesture cua thiet bi).
         var briefOpen by rememberSaveable { mutableStateOf(false) }
+        // (GAP-37) Trang mo phong Powerwall 3D dang mo — chan vuot mep mo Brief
+        // (port iOS M3ERootView.swift:47-48,52-66: if powerwallShown { return }).
+        // Android: trang Powerwall (feature/energy/powerwall/PowerwallRoute)
+        // hien CHUA noi vao dieu huong cua root (grep: khong caller nao
+        // navigate toi route nay) nen co nay tam luon false; khi noi trang
+        // vao (mo bang navigationDestination nhu iOS) thi set true luc mo.
+        var powerwallShown by remember { mutableStateOf(false) }
         // Overlay toan man hinh (viewer avatar / popup camera): ve o tang root,
         // TREN navbar, de lop mo + blur phu ca navbar chu khong chi vung content.
         // Nhan request tu HomeScreen qua callback (HomeScreen khong tu ve overlay).
@@ -264,7 +278,17 @@ fun M3ERootScreen(
             CompositionLocalProvider(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface,
             ) {
-            Box(Modifier.fillMaxSize()) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    // (GAP-37) Vuot mep trai mo Brief (port iOS M3ERootView
+                    // briefOpenGesture); GIU NGUYEN vuot tren navbar
+                    // (M3ENavBar onSwipeOpenBrief).
+                    .briefEdgeSwipe(
+                        enabled = !powerwallShown,
+                        onOpenBrief = { briefOpen = true },
+                    ),
+            ) {
                 when (navItems[selected].tab) {
                     HumeTab.Home -> HomeScreen(
                         onOpenSecurity = { selected = 2 },
@@ -431,6 +455,7 @@ fun M3ERootScreen(
                 CameraPopupOverlay(
                     camKey = req.camKey,
                     camName = req.camName,
+                    sourceRect = req.sourceRect,
                     onDismiss = { camPopup = null; bgSnapshot = null },
                 )
             }
@@ -490,6 +515,113 @@ private fun eraseAvatarGhost(small: Bitmap, view: View, rect: Rect) {
             }
         }
     }
+}
+
+/**
+ * (GAP-37) Vuot mep trai mo Brief — port 1:1 iOS M3ERootView.swift:52-66
+ * (briefOpenGesture + simultaneousGesture tren tabContent):
+ * - DragGesture(minimumDistance: 20): chi xet khi bat dau tu mep trai
+ *   (startLocation.x < 24) va vuot phai dx > 80, |dx| > |dy| * 1.5.
+ * - simultaneousGesture: ScrollView con khong nuot gesture — tren Compose
+ *   lam bang cach CHI QUAN SAT, KHONG consume: doc vi tri tho qua
+ *   awaitPointerEvent, khong goi change.consume(), nen LazyColumn con van
+ *   cuon binh thuong trong khi vuot. awaitFirstDown(requireUnconsumed =
+ *   false) de van thay down ngay ca khi bat dau tren mot item clickable
+ *   (con no consume down cho hieu ung nhan).
+ * - Trang Powerwall mo thi chan (iOS: if powerwallShown { return }) —
+ *   truyen qua [enabled] = !powerwallShown.
+ *
+ * System back gesture: tu Android 10, vuot mep trai mac dinh la Back he
+ * thong va he thong lay gesture truoc khi app thay — de vuot mep toi duoc
+ * Compose, phai khai vung mep la "app xu ly" bang
+ * View.setSystemGestureExclusionRects (dai 24dp sat mep trai, cao toan vung
+ * content). Rect tinh theo toa do cua View goc (rootView = LocalView), cap
+ * nhat moi lan layout doi (xoay man hinh...) va ap lai khi [enabled] doi
+ * (Powerwall mo thi tra lai mep trai cho Back he thong — vuot trai o trang
+ * Powerwall la back/xoay 3D theo iOS). Back he thong van dung duoc tu mep
+ * phai / thanh dieu huong.
+ */
+@Composable
+private fun Modifier.briefEdgeSwipe(
+    enabled: Boolean,
+    onOpenBrief: () -> Unit,
+): Modifier {
+    val density = LocalDensity.current
+    val view = LocalView.current
+    val edgePx = with(density) { 24.dp.toPx() }
+    val thresholdPx = with(density) { 80.dp.toPx() }
+    val openBriefRef = rememberUpdatedState(onOpenBrief)
+    val enabledRef = rememberUpdatedState(enabled)
+    // bounds + rect da ap dung (chi set lai khi doi).
+    val exclusionState = remember {
+        object {
+            var bounds: Rect? = null
+            var applied: android.graphics.Rect? = null
+        }
+    }
+    fun applyExclusion() {
+        val b = exclusionState.bounds ?: return
+        val loc = IntArray(2).also { view.getLocationInWindow(it) }
+        val strip = if (enabledRef.value) {
+            android.graphics.Rect(
+                (b.left - loc[0]).roundToInt(),
+                (b.top - loc[1]).roundToInt(),
+                (b.left - loc[0] + edgePx).roundToInt(),
+                (b.bottom - loc[1]).roundToInt(),
+            )
+        } else {
+            null
+        }
+        if (exclusionState.applied != strip) {
+            exclusionState.applied = strip
+            // setSystemGestureExclusionRects chi co tu API 29 (Android 10) —
+            // may cu hon khong co system back gesture mep nen khong can loai tru.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                view.setSystemGestureExclusionRects(
+                    if (strip == null) emptyList() else listOf(strip),
+                )
+            }
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(enabled) { applyExclusion() }
+    return this
+        .onGloballyPositioned { coords ->
+            exclusionState.bounds = coords.boundsInWindow()
+            applyExclusion()
+        }
+        .pointerInput(enabled) {
+            while (true) {
+                awaitPointerEventScope {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    // Chi nhan khi bat dau tu mep trai < 24dp (iOS
+                    // startLocation.x < 24); khong phai thi bo qua
+                    // gesture nay (cho lan cham tiep theo).
+                    if (!enabledRef.value || down.position.x >= edgePx) return@awaitPointerEventScope
+                    var dx = 0f
+                    var dy = 0f
+                    var done = false
+                    while (!done) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id }
+                            ?: continue
+                        if (change.changedToUpOrCanceled()) {
+                            done = true
+                            continue
+                        }
+                        val d = change.position - change.previousPosition
+                        dx += d.x
+                        dy += d.y
+                        // iOS: dx > 80 && |dx| > |dy| * 1.5 (minimumDistance 20
+                        // da thoa vi 80 > 20). KHONG consume -> ScrollView con
+                        // van nhan du su kien (tuong duong simultaneousGesture).
+                        if (dx > thresholdPx && abs(dx) > abs(dy) * 1.5f) {
+                            openBriefRef.value()
+                            done = true
+                        }
+                    }
+                }
+            }
+        }
 }
 
 /**

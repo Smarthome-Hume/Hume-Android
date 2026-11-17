@@ -269,7 +269,7 @@ fun HomeScreen(
                                     onOpenSecurity = onOpenSecurity,
                                     onOpenEnergy = onOpenEnergy,
                                     cameras = secState.cameras,
-                                    onOpenCamera = { key, name -> onOpenCameraPopup(CameraPopupRequest(key, name)) },
+                                    onOpenCamera = { key, name, rect -> onOpenCameraPopup(CameraPopupRequest(key, name, rect)) },
                                 )
                             }
                         }

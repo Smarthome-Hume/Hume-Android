@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,11 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -57,7 +61,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -400,8 +409,9 @@ fun SuggestCard(
     onBatteryDetail: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
     onOpenEnergy: () -> Unit = {},
-    /** Mo popup camera ngay tren trang Nha (thay vi chuyen sang tab An ninh). */
-    onOpenCamera: (camKey: String, camName: String) -> Unit = { _, _ -> },
+    /** Mo popup camera ngay tren trang Nha (thay vi chuyen sang tab An ninh);
+     * truyen kem sourceRect cua nut bam de popup animate tu do (GAP-36). */
+    onOpenCamera: (camKey: String, camName: String, sourceRect: Rect?) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     // Goi y phan ung truc tiep theo state (chuyen dong -> camera, cua mo, pin yeu)
@@ -532,7 +542,7 @@ fun SuggestCard(
                     tip = tip,
                     done = doneMap[tip.key] == true,
                     batterySoc = state.battery.soc,
-                    onAction = {
+                    onAction = { rect ->
                         haptic()
                         when {
                             tip.key == "battery" -> onBatteryDetail()
@@ -540,7 +550,7 @@ fun SuggestCard(
                                 // Mo popup camera ngay tren trang Nha (khong chuyen tab).
                                 val sensorId = tip.key.removePrefix("motion:")
                                 cameraForSensor(sensorId, cameras)?.let { cam ->
-                                    onOpenCamera(cam.key, cam.name)
+                                    onOpenCamera(cam.key, cam.name, rect)
                                 } ?: onOpenSecurity()
                             }
                             tip.key == "door" -> doneMap[tip.key] = true
@@ -593,48 +603,157 @@ fun SuggestCard(
  * Goi mo popup camera o tang root (phu TOAN man hinh, ke ca navbar),
  * hieu ung mo/dim giong viewer avatar.
  */
-data class CameraPopupRequest(val camKey: String, val camName: String)
+data class CameraPopupRequest(
+    val camKey: String,
+    val camName: String,
+    /** Vi tri nut "Xem camera" (boundsInWindow) — de animate tu do phong ra. */
+    val sourceRect: Rect? = null,
+)
 
 /**
  * Popup camera mo ngay tren trang Nha khi bam "Xem camera" o the goi y.
  * Cham vung mo ben ngoai de dong; cham vao feed de mo khoa (giong tab An ninh).
+ *
+ * (GAP-36) Port iOS HomeSuggest.swift:1013-1100 (CameraOverlayView):
+ * animate 1 animRect duy nhat tu sourceRect cua nut -> card 16:9 giua man
+ * hinh (rong W-40, dich len 50dp), thu ve dung vi tri nut khi dong; khong
+ * dung scaleEffect (tranh giat) va khong dung vong delay() step-based — dung
+ * Animatable<Rect> + animateTo dong bo vsync (quy tac 120Hz cua repo), cung
+ * cau truc nhu AvatarViewerOverlay (core/ui/avatar/AvatarViewer.kt).
+ * - Mo: spring(response: 0.35, dampingFraction: 0.8) -> stiffness (2pi/0.35)^2
+ *   ~ 322, dampingRatio 0.8.
+ * - Dong: spring(response: 0.3, dampingFraction: 0.8) -> stiffness ~ 439.
+ * - Khong co sourceRect: mo tu giua nho 40x40 (y = H/2 - 70, nhu iOS);
+ *   dong thu nho ve tam 40x40.
+ * Luu y: card Android co padding 12dp moi ben (CameraFeedCard) nen chieu cao
+ * dich = (cardW - 24dp) * 9/16 + 24dp — dung chieu cao tu nhien nay de luc
+ * dung yen card khong bi keo/gian; giua chuyen dong feed (16:9 theo chieu
+ * rong) co the thua/thieu vai px chieu cao, card clip theo bo 32dp.
  */
 @Composable
 fun CameraPopupOverlay(
     camKey: String,
     camName: String,
+    /** Vi tri nut "Xem camera" (boundsInWindow). Null = mo tu giua nho. */
+    sourceRect: Rect? = null,
     onDismiss: () -> Unit,
 ) {
     var unlocked by remember { mutableStateOf(false) }
     val secRepo = remember { HumeGraph.get().securityRepository }
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    var overlayRect by remember { mutableStateOf<Rect?>(null) }
+    var closing by remember { mutableStateOf(false) }
+
+    // Dich: card rong W-40, giua man hinh, nhich len 50dp (iOS targetRect).
+    fun targetRect(): Rect? {
+        val o = overlayRect ?: return null
+        val cardW = o.width - with(density) { 40.dp.toPx() }
+        val pad = with(density) { 24.dp.toPx() }
+        val cardH = (cardW - pad) * 9f / 16f + pad
+        val up = with(density) { 50.dp.toPx() }
+        val left = o.left + (o.width - cardW) / 2f
+        val top = o.top + (o.height - cardH) / 2f - up
+        return Rect(left, top, left + cardW, top + cardH)
+    }
+
+    // Ve card NGAY tu frame dau tai dung vi tri nut (nhu AvatarViewerOverlay):
+    // truoc day phai doi overlayRect do xong moi ve -> card bien mat 1-2 frame.
+    val rectAnim = remember(sourceRect) {
+        Animatable(sourceRect ?: Rect(0f, 0f, 40f, 40f), Rect.VectorConverter)
+    }
+    // Nen mo dan mem thay vi pop 0.55 ngay frame dau (nhu AvatarViewerOverlay).
+    var scrimOn by remember { mutableStateOf(false) }
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (closing) 0f else if (scrimOn) 0.55f else 0f,
+        animationSpec = tween(250, easing = M3EMotion.emphasized),
+        label = "camScrim",
+    )
+
+    // Mo ra: tu nut -> card giua man hinh. Chay dung 1 lan (khoa Unit):
+    // khong lay sourceRect/overlayRect lam key vi khi mo popup, content bi
+    // blur -> header do lai vi tri -> onGloballyPositioned ban lai -> key
+    // doi -> effect relaunch giua chung -> animateTo bi huy.
+    LaunchedEffect(Unit) {
+        scrimOn = true
+        snapshotFlow { overlayRect }.filterNotNull().first()
+        // Khong co source: bat dau tu giua nho 40x40 (iOS: W/2-20, H/2-70).
+        if (sourceRect == null) {
+            val o = overlayRect ?: return@LaunchedEffect
+            rectAnim.snapTo(
+                Rect(o.center.x - 20f, o.center.y - 70f, o.center.x + 20f, o.center.y - 30f),
+            )
+        }
+        val target = targetRect() ?: return@LaunchedEffect
+        rectAnim.animateTo(
+            target,
+            spring(stiffness = 322f, dampingRatio = 0.8f),
+        )
+    }
+
+    fun requestClose() {
+        if (closing) return
+        closing = true
+        scope.launch {
+            // Thu ve dung vi tri nut; khong co nut thi thu nho ve tam 40x40.
+            val closeRect = sourceRect ?: rectAnim.value.let { r ->
+                Rect(r.center.x - 20f, r.center.y - 20f, r.center.x + 20f, r.center.y + 20f)
+            }
+            rectAnim.animateTo(
+                closeRect,
+                spring(stiffness = 439f, dampingRatio = 0.8f),
+            )
+            onDismiss()
+        }
+    }
+
+    // Ve card tai vi tri animate (doi window -> local cua overlay).
+    val r = rectAnim.value
+    val origin = overlayRect?.topLeft ?: Offset.Zero
+    val localOffset = IntOffset(
+        (r.left - origin.x).roundToInt(),
+        (r.top - origin.y).roundToInt(),
+    )
+    // Chua do duoc overlay + khong co source: chua ve card (tranh nhay 1 frame
+    // o goc 0,0); chi hien nen mo dan.
+    val cardVisible = sourceRect != null || overlayRect != null
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.55f))
+            .onGloballyPositioned { overlayRect = it.boundsInWindow() }
+            .background(Color.Black.copy(alpha = scrimAlpha))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onDismiss,
+                onClick = ::requestClose,
             ),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.TopStart,
     ) {
-        CameraFeedCard(
-            camKey = camKey,
-            camName = camName,
-            snapshotUrl = secRepo.snapshotUrl(camKey),
-            unlocked = unlocked,
-            onUnlock = { unlocked = true },
-            mjpegUrl = secRepo.mjpegUrl(camKey),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-                // Chan tap xuyen qua the lam dong popup
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
-                ),
-        )
+        if (cardVisible) {
+            CameraFeedCard(
+                camKey = camKey,
+                camName = camName,
+                snapshotUrl = secRepo.snapshotUrl(camKey),
+                unlocked = unlocked,
+                onUnlock = { unlocked = true },
+                mjpegUrl = secRepo.mjpegUrl(camKey),
+                modifier = Modifier
+                    .offset { localOffset }
+                    .size(
+                        with(density) { r.width.toDp() },
+                        with(density) { r.height.toDp() },
+                    )
+                    // Clip theo bo card de feed 16:9 khong tran ra ngoai
+                    // giua chuyen dong (luc card chua dat ti le tu nhien).
+                    .clip(RoundedCornerShape(32.dp))
+                    // Chan tap xuyen qua the lam dong popup
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    ),
+            )
+        }
     }
 }
 
@@ -642,11 +761,15 @@ fun CameraPopupOverlay(
 private fun SuggestTipRow(
     tip: SuggestTip,
     done: Boolean,
-    onAction: () -> Unit,
+    /** Nhan rect cua nut action (boundsInWindow) de caller animate tu do (GAP-36, port iOS CameraActionButton). */
+    onAction: (Rect?) -> Unit,
     /** % pin de hien icon pin dung muc (cho tip pin yeu). */
     batterySoc: Int? = null,
 ) {
     val cs = MaterialTheme.colorScheme
+    // Vi tri nut action — do bang onGloballyPositioned nhu iOS
+    // CameraActionButton (GeometryReader + onAppear/onChange), doc luc tap.
+    var btnRect by remember { mutableStateOf<Rect?>(null) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 2.dp),
@@ -693,8 +816,9 @@ private fun SuggestTipRow(
                     pressedScale = 0.9f,
                     corner = 14.dp,
                     pressedCorner = 10.dp,
-                    onClick = if (done) null else onAction,
+                    onClick = if (done) null else { onAction(btnRect) },
                 )
+                .onGloballyPositioned { btnRect = it.boundsInWindow() }
                 // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
                 .alpha(if (done) 0.6f else 1f)
                 .background(cs.onTertiaryContainer)
