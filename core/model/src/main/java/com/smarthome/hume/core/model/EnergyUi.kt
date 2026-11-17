@@ -144,6 +144,13 @@ data class EntityToggleState(
 data class EnergyUiState(
     val week: List<EnergyWeekPoint> = emptyList(),
     val todayKwh: Double = 0.0,
+    /**
+     * kWh hom nay LIVE tu sensor.energy_home_daily (port iOS EnergyConsumeTab.swift:5,84).
+     * KHONG tai dung todayKwh: todayKwh da switch theo trang thai luoi
+     * (household/backup_load_today_energy_2, port iOS 6f32222). Dung cho
+     * headline + cot cuoi cua the "Su dung" (WeekCard).
+     */
+    val homeDailyLiveKwh: Double = 0.0,
     val cost: EnergyCost = EnergyCost(),
     val powerRows: List<EnergyPowerRow> = emptyList(),
     val flow: EnergyFlowState = EnergyFlowState(),

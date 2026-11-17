@@ -129,7 +129,9 @@ private fun solisStatusVn(raw: String): Pair<String, Color> {
         "bypass / inverting / synchronize" -> "Đang đồng bộ" to Color(0xFFA16207)
         "fault" -> "Lỗi" to Color(0xFFEF4444)
         "standby" -> "Chờ sẵn" to Color(0xFF22C55E)
-        else -> (if (raw.isEmpty()) "—" else raw) to Color(0xFF22C55E)
+        // Trang thai la (ke ca "null" tu may) -> "Không rõ", khong hien gia
+        // tri tho tieng Anh (port iOS M3EEnergyView.swift:31; rong -> "—").
+        else -> (if (raw.isEmpty()) "—" else "Không rõ") to Color(0xFF22C55E)
     }
 }
 

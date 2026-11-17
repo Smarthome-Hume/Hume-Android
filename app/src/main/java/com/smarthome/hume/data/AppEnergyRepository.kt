@@ -267,6 +267,11 @@ class AppEnergyRepository(
         return _state.value.copy(
             water = water,
             todayKwh = homeDaily,
+            // kWh hom nay LIVE tu sensor.energy_home_daily cho the "Su dung"
+            // (port iOS EnergyConsumeTab.swift:84; sensor da watched — xem
+            // AppHomeRepository, khong can them). Khac todayKwh (da switch
+            // theo luoi o tren): gia tri nay dung nguyen sensor goc nhu iOS.
+            homeDailyLiveKwh = v("sensor.energy_home_daily"),
             cost = cost,
             powerRows = powerRows,
             flow = flow,

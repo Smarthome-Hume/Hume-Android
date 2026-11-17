@@ -98,7 +98,10 @@ fun EnergyConsTab(
 @Composable
 private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     val cs = MaterialTheme.colorScheme
-    val todayVal = state.week.find { it.isToday }?.kwh ?: state.todayKwh
+    // Headline + cot cuoi lay LIVE tu sensor.energy_home_daily (port iOS
+    // EnergyConsumeTab.swift:84-86), khong lay tu state.week (fetch 5 phut)
+    // hay state.todayKwh (da switch theo trang thai luoi).
+    val todayVal = state.homeDailyLiveKwh
 
     M3ECard(
         shape = RoundedCornerShape(32.dp),
@@ -111,7 +114,7 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "Năng lượng sử dụng",
+                "Sử dụng",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
@@ -371,7 +374,6 @@ private fun FlatPowerBar(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
-    if (state.donut.isEmpty()) return
     val extra = LocalHumeExtraColors.current
     // 4 mau slice RIENG BIET: primary (theme) + 3 mau co dinh (xanh duong, ho phach, tim)
     // de tranh trung nhau nhu vu primary==tertiary o theme xanh la
@@ -390,6 +392,24 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         containerColor = LocalHumeExtraColors.current.surfaceHighest,
         modifier = Modifier.riseOnce("cons-donut", 480, risePlayed),
     ) {
+        if (state.donut.isEmpty()) {
+            // Chua co du lieu: hien placeholder thay vi an han the
+            // (port iOS EnergyConsumeTab+Cards.swift:190-196).
+            Text(
+                "Cơ cấu tiêu thụ",
+                style = MaterialTheme.typography.titleSmall.copy(),
+            )
+            Text(
+                "Chưa có dữ liệu tiêu thụ",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+            )
+            return@M3ECard
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

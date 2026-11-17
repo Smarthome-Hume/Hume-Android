@@ -1,5 +1,14 @@
 package com.smarthome.hume.core.ui.components
 
+import androidx.compose.animation.core.EaseOutCubic
+import androidx.compose.animation.core.EaseOutQuad
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,27 +26,40 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
- * Thanh pin M3E — ban CHOT (demo battery-bar):
- * 1 thanh duy nhat chia 2 segment: Du tru = flat (trai) + Su dung = wavy (phai).
+ * Thanh pin M3E — port 1:1 tu iOS WavyBatteryBar.swift (ban chot, KHONG gap/marker):
+ * - Limit la RANH GIOI: segment 0→limit (nen xam secondaryContainer) vs
+ *   segment limit→100% (track xam nhat, alpha 0.45).
+ * - Flat dac (primary): 0 → min(soc, limit).
+ * - Xam "du tru chua sac": soc → limit (khi soc < limit), cung mau nen segment.
+ * - Wavy (primary): limit → soc, chi khi soc > limit; song truot lien tuc
+ *   -15dp (= dung 1 buoc song) moi 1s, linear, vo han.
+ * - Overshoot mo dau: flat 0→1 (khong vuot), wavy 0→full→ve dung.
+ * - KHONG gap 6dp tai vi tri limit, KHONG vach marker dung (iOS dynamic moi da bo).
+ * - Vi tri soc/limit animate mem bang animateFloatAsState khi doi (port iOS
+ *   .animation(emphasized, value: animKey "soc-limit")) nen sau lan dau
+ *   thanh van truot mem thay vi set tuc thi nhu co che barPlayed cu.
  *
- * Giai phau: [flat 10px][khe 4px][wavy 14px][khe 4px][track 10px][stop dot 4px]
- * - flat: width (100%-8px)*pr, primary
- * - wavy: left (100%-8px)*pr+4px, width (100%-8px)*pu; song: buoc 15px,
- *   bien 4, stroke 6; bo 2 dau bang container pill (clip)
- * - track: left (100%-8px)*(pr+pu)+8px, secondaryContainer
- * - pr = min(soc,20)/100, pu = max(0,soc-20)/100
+ * Component DUNG CHUNG: the pin Home (BatteryCard) + popup pin tab Dien
+ * (InsightPopup). Truoc day popup dung ban cu (pr = min(soc,limit), khe 4px,
+ * song tinh); gio cung 1 model segment + song truot voi the pin.
+ * (B5 KHONG dong vao: popup van doc battery_power_flow nhu cu, chua kiem
+ * chung lai doi voi battery_power_2 cua iOS.)
  */
 @Composable
 fun WavyBatteryBar(
@@ -46,75 +68,83 @@ fun WavyBatteryBar(
     reserveLimit: Int = 20,
 ) {
     val socC = soc.coerceIn(0, 100)
-    val pr = minOf(socC, reserveLimit) / 100f
-    val pu = maxOf(0, socC - reserveLimit) / 100f
+    val limitC = reserveLimit.coerceIn(0, 100)
+    val socPos = socC / 100f
+    val limitPos = limitC / 100f
+
+    // Vi tri animate mem khi soc/limit doi (thay cho set tuc thi sau lan dau).
+    val animSocPos by animateFloatAsState(
+        targetValue = socPos,
+        animationSpec = tween(700, easing = M3EMotion.emphasized),
+        label = "socPos",
+    )
+    val animLimitPos by animateFloatAsState(
+        targetValue = limitPos,
+        animationSpec = tween(700, easing = M3EMotion.emphasized),
+        label = "limitPos",
+    )
+    val flatEnd = minOf(animSocPos, animLimitPos) // 0 → min(soc, limit): flat dac
+    val wavyLen = maxOf(0f, animSocPos - animLimitPos) // limit → soc: wavy (khi soc > limit)
+
+    // Animation scale mo dau: flat 0→1 (ease-out bac 2, 630ms), wavy 0→full→ve
+    // dung (ease-out bac 2 len full 630ms roi ease-out bac 3 ve 1, tong 1400ms)
+    // — dung iOS WavyBatteryBar.startBarAnimation (18+22 buoc x 35ms).
+    // He so de wavy dat full 100%: 1/wavyLen — nhu iOS fullScale.
+    val full = if (wavyLen > 0f) 1f / wavyLen else 1f
+    val flatScale by animateFloatAsState(
+        targetValue = if (socC > 0) 1f else 0f,
+        animationSpec = tween(durationMillis = 630, easing = EaseOutQuad),
+        label = "flatScale",
+    )
+    val barScale by animateFloatAsState(
+        targetValue = if (socC > 0) 1f else 0f,
+        animationSpec = keyframes {
+            durationMillis = 1400
+            0f at 0 using EaseOutQuad
+            full at 630 using EaseOutCubic
+            1f at 1400
+        },
+        label = "barScale",
+    )
+    // Song truot: 0 -> 15px (1 buoc song) moi 1s, linear, vo han
+    val waveT = rememberInfiniteTransition(label = "bwaveslide")
+    val phase by waveT.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+        ),
+        label = "wavePhase",
+    )
+
     val primary = MaterialTheme.colorScheme.primary
-    val trackColor = MaterialTheme.colorScheme.secondaryContainer
+    val segmentBg = MaterialTheme.colorScheme.secondaryContainer // nen segment 0→limit
+    val trackColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f) // track nhat
     val pill = RoundedCornerShape(50)
 
     BoxWithConstraints(
         modifier = modifier
             .height(14.dp)
-            .semantics { progressBarRangeInfo = ProgressBarRangeInfo(socC.toFloat(), 0f..100f) },
+            .semantics {
+                progressBarRangeInfo = ProgressBarRangeInfo(socC.toFloat(), 0f..100f)
+            },
     ) {
         val w = maxWidth
-        val flatW = (w - 8.dp) * pr
-        val wavyL = (w - 8.dp) * pr + 4.dp
-        val wavyW = (w - 8.dp) * pu
-        val trackL = (w - 8.dp) * (pr + pu) + 8.dp
-        val trackW = w - 4.dp - trackL
+        val barW = w - 8.dp // chieu rong vung ve (tru 8dp nhu iOS)
+        val limitX = barW * animLimitPos // vi tri limit
 
-        // Segment flat: Du tru
-        if (flatW > 0.dp) {
-            Box(
-                Modifier
-                    .align(Alignment.CenterStart)
-                    .width(flatW)
-                    .height(10.dp)
-                    .clip(pill)
-                    .background(primary),
-            )
-        }
-        // Segment wavy: Su dung
-        if (wavyW > 0.dp) {
-            Canvas(
-                Modifier
-                    .offset(x = wavyL)
-                    .align(Alignment.CenterStart)
-                    .width(wavyW)
-                    .height(14.dp)
-                    .clip(pill),
-            ) {
-                val wavelength = 15.dp.toPx()
-                val amplitude = 4.dp.toPx()
-                val cy = size.height / 2f
-                val path = Path().apply {
-                    moveTo(0f, cy)
-                    var x = 0f
-                    var up = true
-                    while (x < size.width) {
-                        val cx = x + wavelength / 4f
-                        val ex = x + wavelength / 2f
-                        // control lech 2A -> dinh song dat A
-                        quadraticBezierTo(
-                            cx,
-                            if (up) cy - 2f * amplitude else cy + 2f * amplitude,
-                            ex,
-                            cy,
-                        )
-                        x = ex
-                        up = !up
-                    }
-                    lineTo(size.width, cy)
-                }
-                drawPath(
-                    path = path,
-                    color = primary,
-                    style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
-                )
-            }
-        }
-        // Track
+        // Segment 0→limit: nen xam (lien mach, khong tru gap)
+        val segW = limitX.coerceAtLeast(0.dp)
+        // Track limit→100%: xam nhat
+        val trackL = limitX + 8.dp
+        val trackW = (w - 4.dp - trackL).coerceAtLeast(0.dp)
+        // Flat: 0 → min(soc, limit)
+        val flatW = (barW * flatEnd * flatScale).coerceAtLeast(0.dp)
+        // Wavy: limit → soc (khi soc > limit)
+        val wavyL = limitX + 4.dp
+        val wavyW = (barW * wavyLen * barScale).coerceAtLeast(0.dp)
+
+        // Track: vung su dung (limit → 100%), mau nhat
         if (trackW > 0.dp) {
             Box(
                 Modifier
@@ -126,7 +156,75 @@ fun WavyBatteryBar(
                     .background(trackColor),
             )
         }
-        // Stop dot
+        // Nen segment du tru (0 → limit): xam dac
+        if (segW > 0.dp) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .width(segW)
+                    .height(10.dp)
+                    .clip(pill)
+                    .background(segmentBg),
+            )
+        }
+        // Flat dac: phan da sac (0 → min(soc, limit)), nam tren nen segment
+        if (flatW > 0.dp) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .width(flatW)
+                    .height(10.dp)
+                    .clip(pill)
+                    .background(primary),
+            )
+        }
+        // (Khong vach marker dung tai limit — iOS dynamic moi da bo.)
+        if (wavyW > 0.dp) {
+            // Path song build 1 LAN theo chieu rong (remember) — moi frame chi
+            // translate + drawPath, khong tessellate Path 60fps (fix khựng 2026-09-30).
+            val density = LocalDensity.current
+            val wavePath = remember(wavyW, density) {
+                val wPx = with(density) { wavyW.toPx() }
+                val wl = with(density) { 15.dp.toPx() }
+                val amp = with(density) { 4.dp.toPx() }
+                val cy = with(density) { 14.dp.toPx() } / 2f
+                Path().apply {
+                    var x = -wl
+                    var up = true
+                    moveTo(x, cy)
+                    while (x < wPx + 2 * wl) {
+                        val cx = x + wl / 4f
+                        val ex = x + wl / 2f
+                        quadraticBezierTo(
+                            cx,
+                            if (up) cy - 2f * amp else cy + 2f * amp,
+                            ex,
+                            cy,
+                        )
+                        x = ex
+                        up = !up
+                    }
+                }
+            }
+            Canvas(
+                Modifier
+                    .offset(x = wavyL)
+                    .align(Alignment.CenterStart)
+                    .width(wavyW)
+                    .height(14.dp)
+                    .clip(pill),
+            ) {
+                val wavelength = 15.dp.toPx()
+                translate(left = -phase * wavelength) {
+                    drawPath(
+                        path = wavePath,
+                        color = primary,
+                        style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                }
+            }
+        }
+        // Stop dot cuoi thanh (iOS co: Circle 4pt trailing).
         Box(
             Modifier
                 .align(Alignment.CenterEnd)
