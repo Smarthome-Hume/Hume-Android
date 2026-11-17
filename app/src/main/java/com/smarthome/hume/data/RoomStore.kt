@@ -125,5 +125,21 @@ class RoomStore(private val context: Context) {
         }
     }
 
+    // N-11: sensor cua phong — port iOS RoomStore.setTempSensor/setHumiditySensor.
+
+    /** Doi/xoa sensor nhiet do cua phong (entity rong = chua chon). Luu ngay. */
+    suspend fun setTempSensor(entity: String, roomId: String) = mutateRooms { rooms ->
+        rooms.map { room ->
+            if (room.id == roomId) room.copy(tempEntity = entity) else room
+        }
+    }
+
+    /** Doi/xoa sensor do am cua phong (entity rong = chua chon). Luu ngay. */
+    suspend fun setHumiditySensor(entity: String, roomId: String) = mutateRooms { rooms ->
+        rooms.map { room ->
+            if (room.id == roomId) room.copy(humidityEntity = entity) else room
+        }
+    }
+
     suspend fun resetToDefaults() = mutateRooms { defaultRooms() }
 }

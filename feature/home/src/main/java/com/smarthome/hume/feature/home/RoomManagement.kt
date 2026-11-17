@@ -105,6 +105,10 @@ interface RoomStore {
     suspend fun deleteDevice(roomId: String, deviceId: String)
     // (2026-10-14, audit #8): doi thu tu thiet bi trong phong
     suspend fun moveDevice(roomId: String, from: Int, to: Int)
+    // N-11: doi/xoa sensor nhiet do / do am cua phong — luu ngay (port iOS
+    // RoomStore.setTempSensor/setHumiditySensor; entity rong = chua chon).
+    suspend fun setTempSensor(entity: String, roomId: String)
+    suspend fun setHumiditySensor(entity: String, roomId: String)
 }
 
 /** Stub in-memory de UI chay duoc truoc khi wire store that. */
@@ -164,6 +168,13 @@ class StubRoomStore : RoomStore {
                 }
             }
         }
+    }
+    // N-11: doi/xoa sensor cua phong — luu ngay (port iOS setTempSensor/setHumiditySensor).
+    override suspend fun setTempSensor(entity: String, roomId: String) = mutate { list ->
+        list.map { if (it.id == roomId) it.copy(tempEntity = entity) else it }
+    }
+    override suspend fun setHumiditySensor(entity: String, roomId: String) = mutate { list ->
+        list.map { if (it.id == roomId) it.copy(humidityEntity = entity) else it }
     }
 }
 
@@ -617,6 +628,17 @@ fun RoomManagementScreen(
 }
 
 /**
+ * Dong phu duoi ten phong: so thiet bi + so sensor da chon (nhiet do/do am).
+ * Port iOS RoomManagementView.roomSensorCountText: chi them "· M sensor" khi M > 0.
+ */
+private fun roomSensorCountText(room: DynRoom): String {
+    val sensorCount = (if (room.tempEntity.isBlank()) 0 else 1) +
+        (if (room.humidityEntity.isBlank()) 0 else 1)
+    if (sensorCount == 0) return "${room.devices.size} thiết bị"
+    return "${room.devices.size} thiết bị · $sensorCount sensor"
+}
+
+/**
  * RoomRow theo nguyen tac M3E Hume:
  * - The 28dp surfaceContainerHighest, padding 16x14dp, khong shadow
  * - Icon 48dp bo 16dp primaryContainer, nam giua icon-background
@@ -670,7 +692,7 @@ private fun RoomRow(
                 color = cs.onSurface,
             )
             Text(
-                "${room.devices.size} thiết bị",
+                roomSensorCountText(room),
                 style = MaterialTheme.typography.bodySmall,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
@@ -711,6 +733,27 @@ fun RoomDetailScreen(
     var editingDevice by remember { mutableStateOf<DynDevice?>(null) }
     var pendingDeleteDevice by remember { mutableStateOf<DynDevice?>(null) }
     var swipeResetKey by remember { mutableStateOf(0) }
+    // N-11: dong sensor nao dang mo picker (null = khong mo).
+    var pickingSensor by remember { mutableStateOf<RoomSensorKind?>(null) }
+
+    // Sensor nhiet/am da dung o phong khac → an khoi picker (port iOS usedSensorEntities).
+    val usedSensorEntities: Set<String> = remember(rooms, roomId) {
+        buildSet {
+            for (r in rooms) {
+                if (r.id == roomId) continue
+                if (r.tempEntity.isNotBlank()) add(r.tempEntity)
+                if (r.humidityEntity.isNotBlank()) add(r.humidityEntity)
+            }
+        }
+    }
+
+    // Port iOS RoomDetailEditView.setSensor: doi/xoa sensor → luu ngay qua store.
+    fun setSensor(kind: RoomSensorKind, entity: String) {
+        scope.launch {
+            if (kind == RoomSensorKind.Temperature) store.setTempSensor(entity, roomId)
+            else store.setHumiditySensor(entity, roomId)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -730,6 +773,38 @@ fun RoomDetailScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(M3ECardGap),
         ) {
+            // N-11: section Sensor (port iOS RoomDetailEditView) — truoc section Thiet bi.
+            item {
+                M3ESectionTitle("Sensor")
+            }
+            item {
+                RoomSensorRow(
+                    title = "Sensor nhiệt độ",
+                    icon = M3EIcons.Thermometer,
+                    entity = room?.tempEntity.orEmpty(),
+                    onPick = { pickingSensor = RoomSensorKind.Temperature },
+                    onClear = { setSensor(RoomSensorKind.Temperature, "") },
+                    entranceDelay = 0,
+                )
+            }
+            item {
+                RoomSensorRow(
+                    title = "Sensor độ ẩm",
+                    icon = M3EIcons.Humidity,
+                    entity = room?.humidityEntity.orEmpty(),
+                    onPick = { pickingSensor = RoomSensorKind.Humidity },
+                    onClear = { setSensor(RoomSensorKind.Humidity, "") },
+                    entranceDelay = 50,
+                )
+            }
+            item {
+                Text(
+                    "Chạm để đổi sensor, vuốt sang trái để xoá.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                )
+            }
             item {
                 M3ESectionTitle("Thiết bị (${devices.size})")
             }
@@ -793,6 +868,104 @@ fun RoomDetailScreen(
                 swipeResetKey++
             },
         )
+    }
+    // N-11: picker doi sensor — ghi qua setSensor nen luu ngay (port iOS sensorBinding).
+    val sensorToPick = pickingSensor
+    val liveRoom = room
+    if (sensorToPick != null && liveRoom != null) {
+        SensorPickerDialog(
+            title = if (sensorToPick == RoomSensorKind.Temperature) "Sensor nhiệt độ" else "Sensor độ ẩm",
+            entityId = if (sensorToPick == RoomSensorKind.Temperature) liveRoom.tempEntity else liveRoom.humidityEntity,
+            onEntityChange = { setSensor(sensorToPick, it) },
+            pickerEntities = pickerEntities,
+            exclude = usedSensorEntities,
+            onDismiss = { pickingSensor = null },
+        )
+    }
+}
+
+/** Loai sensor cua phong (port iOS RoomDetailEditView.RoomSensorKind). */
+private enum class RoomSensorKind { Temperature, Humidity }
+
+/**
+ * Mot dong sensor trong chi tiet phong (port iOS RoomDetailEditView.sensorRow):
+ * cham de doi (mo picker), vuot sang trai de xoa (full-swipe, nen Xoa
+ * destructive) — xoa luu ngay qua onClear, khong hoi lai. Nut "Doi" cua iOS
+ * duoc thay bang cham vao dong (mo picker).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RoomSensorRow(
+    title: String,
+    icon: Any,
+    entity: String,
+    onPick: () -> Unit,
+    onClear: () -> Unit,
+    entranceDelay: Int = 0,
+) {
+    val cs = MaterialTheme.colorScheme
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onClear()
+                false // giu lai dong (da doi thanh "Chua chon"), khong truot han
+            } else {
+                true
+            }
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        // iOS chi hien nut Xoa khi da chon sensor.
+        enableDismissFromEndToStart = entity.isNotBlank(),
+        backgroundContent = { SwipeDeleteBackground() },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .riseIn(entranceDelay)
+                .clip(RoundedCornerShape(28.dp))
+                .background(cs.surfaceContainerHighest)
+                .pressMorph(pressedScale = 0.97f, onClick = onPick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(cs.surfaceContainer),
+            ) {
+                MsIcon(
+                    icon,
+                    null,
+                    modifier = Modifier.size(24.dp),
+                    tint = cs.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = cs.onSurface,
+                )
+                Text(
+                    entity.ifBlank { "Chưa chọn" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
     }
 }
 
@@ -893,7 +1066,6 @@ private fun SensorPickerField(
     domains: List<String> = listOf("sensor"),
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    val cs = MaterialTheme.colorScheme
 
     PickerField(
         label = label,
@@ -901,29 +1073,54 @@ private fun SensorPickerField(
         onClick = { showPicker = true },
     )
 
-    if (showPicker && pickerEntities != null) {
-        Dialog(
-            onDismissRequest = { showPicker = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+    if (showPicker) {
+        SensorPickerDialog(
+            title = label,
+            entityId = entityId,
+            onEntityChange = onEntityChange,
+            pickerEntities = pickerEntities,
+            exclude = exclude,
+            domains = domains,
+            onDismiss = { showPicker = false },
+        )
+    }
+}
+
+/**
+ * Dialog chon sensor/entity dung chung cho form sua phong va dong sensor
+ * o chi tiet phong (port iOS SensorPickerView): loc theo domain, an sensor
+ * da dung o noi khac (tru lua chon hien tai — EntityPickerScreen tu giu
+ * lai), trong picker co nut "Xoa lua chon".
+ */
+@Composable
+private fun SensorPickerDialog(
+    title: String,
+    entityId: String,
+    onEntityChange: (String) -> Unit,
+    pickerEntities: StateFlow<Map<String, PickerEntity>>?,
+    exclude: Set<String> = emptySet(),
+    domains: List<String> = listOf("sensor"),
+    onDismiss: () -> Unit,
+) {
+    if (pickerEntities == null) return
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(cs.background)
-            ) {
-                EntityPickerScreen(
-                    title = label,
-                    domains = domains,
-                    entities = pickerEntities,
-                    exclude = exclude,
-                    initialSelection = entityId,
-                    onSelect = {
-                        onEntityChange(it)
-                        showPicker = false
-                    },
-                    onDismiss = { showPicker = false },
-                )
-            }
+            EntityPickerScreen(
+                title = title,
+                domains = domains,
+                entities = pickerEntities,
+                exclude = exclude,
+                initialSelection = entityId,
+                onSelect = onEntityChange,
+                onDismiss = onDismiss,
+            )
         }
     }
 }

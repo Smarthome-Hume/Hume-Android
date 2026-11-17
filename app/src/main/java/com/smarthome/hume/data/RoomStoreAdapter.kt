@@ -61,6 +61,15 @@ class RoomStoreAdapter(
         real.moveDevice(roomId, from, to)
     }
 
+    // N-11: doi/xoa sensor cua phong — luu ngay (port iOS setTempSensor/setHumiditySensor).
+    override suspend fun setTempSensor(entity: String, roomId: String) {
+        real.setTempSensor(entity, roomId)
+    }
+
+    override suspend fun setHumiditySensor(entity: String, roomId: String) {
+        real.setHumiditySensor(entity, roomId)
+    }
+
     private fun ManagedRoom.toDyn() = DynRoom(
         id = id,
         name = name,
