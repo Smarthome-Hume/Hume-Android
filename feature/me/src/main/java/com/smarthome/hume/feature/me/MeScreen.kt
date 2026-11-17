@@ -154,6 +154,25 @@ fun MeScreen(
     // Avatar: dung chung key voi header trang Nha (AppHomeRepository publish vao HumeGraph).
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // (GAP-31) Ver build — port iOS M3EMeView.swift:239, BuildInfo.displayString
+    // "v<version> (<build>)". Lay tu PackageManager: BuildConfig cua module
+    // library khong mang versionName/versionCode cua app (chi app module co,
+    // app/build.gradle.kts:15-16: versionName "0.1.0", versionCode 1), va
+    // feature khong import duoc BuildConfig cua app (app phu thuoc feature).
+    val appVersionString = remember(context) {
+        runCatching {
+            val pi = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    android.content.pm.PackageManager.PackageInfoFlags.of(0),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+            "v${pi.versionName} (${pi.longVersionCode})"
+        }.getOrElse { "v0.1.0 (1)" }
+    }
     val userKey by vm.userKey.collectAsState()
     val avatarStore = remember { AvatarStore(context) }
     val avatarMap by avatarStore.avatars.collectAsState()
@@ -256,19 +275,22 @@ fun MeScreen(
             )
         }
 
-        // Quan ly phong & thiet bi (port iOS RoomManagementView)
-        if (roomStore != null) {
-            Box(Modifier.riseEntrance(600)) { M3ESectionTitle("Phòng & thiết bị", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
-            Box(Modifier.riseEntrance(610)) {
-                RoomManagementCard(onOpen = { showRoomManagement = true })
-            }
-        }
-
         Box(Modifier.riseEntrance(620)) { M3ESectionTitle("Trí tuệ nhân tạo", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
         Box(Modifier.riseEntrance(640)) { AiSettingsCard(vm = vm) }
 
         Box(Modifier.riseEntrance(660)) { M3ESectionTitle("Camera", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
         Box(Modifier.riseEntrance(680)) { FrigateRemoteCard(vm = vm) }
+
+        // (GAP-35) Quan ly phong & thiet bi — thu tu theo iOS
+        // M3EMeView.swift:194 (block 4b, sau Camera, truoc Che do hien thi).
+        // Delay 700/710 de stagger entrance don dieu theo thu tu moi
+        // (iOS block 4b khong co riseIn; Android giu riseEntrance).
+        if (roomStore != null) {
+            Box(Modifier.riseEntrance(700)) { M3ESectionTitle("Phòng & thiết bị", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
+            Box(Modifier.riseEntrance(710)) {
+                RoomManagementCard(onOpen = { showRoomManagement = true })
+            }
+        }
 
         // (Muc "FAB menu" tam xoa theo yeu cau 29/09)
 
@@ -331,6 +353,19 @@ fun MeScreen(
                 onOpen = { showFontSheet = true },
             )
         }
+        // (GAP-31) Footer phien ban — port iOS M3EMeView.swift:239
+        // "Hume v<version> (<build>)", labelSmall, can giua, padding top 8
+        // (iOS block 10, cuoi trang sau Font chu).
+        Text(
+            text = "Hume $appVersionString",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        )
     }
 
         // (N-06) Fade gradient + pill title co dinh (port iOS
@@ -359,7 +394,7 @@ fun MeScreen(
                 // demo .phdr h2: 26px/700 ls -.3px
                 Text(
                     "Thông tin",
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,

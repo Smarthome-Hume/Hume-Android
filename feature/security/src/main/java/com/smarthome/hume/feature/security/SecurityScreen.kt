@@ -237,7 +237,7 @@ fun SecurityScreen(
                 Text(
                     "An ninh",
                     color = cs.onPrimaryContainer,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                 )
@@ -459,7 +459,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
     }
     val chipLabel = when (s.kind) {
         SensorKind.Door -> if (on) "MỞ" else "ĐÓNG"
-        SensorKind.Motion -> if (on) "PHÁT HIỆN" else "TRỐNG"
+        SensorKind.Motion -> if (on) "CÓ" else "YÊN TĨNH"
         else -> if (on) "BÁO ĐỘNG" else if (s.iconKey == "smoke") "Bình thường" else "An toàn"
     }
     val icon = when (s.iconKey) {
@@ -521,7 +521,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                 }
             }
             // demo .sst: 10.5px/800/ls .8px, padding 6px 12px, radius 999px
-            // (2026-10-05, user: width co dinh theo text dai nhat "Binh thuong" = 96dp)
+            // (GAP-33, port iOS M3ESecurityView.swift:177-185: pill rong 120
+            // co dinh, can giua the — thay 96dp cu theo text dai nhat).
             Text(
                 chipLabel,
                 style = MaterialTheme.typography.labelSmall,
@@ -533,7 +534,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
                 softWrap = false,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .width(96.dp)
+                    .width(120.dp)
                     .clip(CircleShape)
                     .background(pillBg)
                     .padding(vertical = 6.dp),
