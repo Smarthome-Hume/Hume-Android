@@ -540,7 +540,10 @@ fun SuggestCard(
         // nen padding doc 32dp (gan nua the) la phan duy nhat con cat
         // duoc ma khong pha noi dung. Padding NGANG giu 16 (12+4 bu ben
         // trong) de icon/text/nut khong gian ra.
-        contentPadding = 12.dp,
+        // (2026-11-18) Cat MANH theo lenh user 04:30: padding doc 12 -> 5dp
+        // (-14dp). MarqueeText bo qua lineHeight nen cat them bang co chu
+        // title 14->13sp, sub 12->11sp (xem SuggestTipRow).
+        contentPadding = 5.dp,
     ) {
         Column(Modifier.padding(horizontal = 4.dp)) {
             HorizontalPager(
@@ -587,7 +590,7 @@ fun SuggestCard(
                         // (2026-11-17) Khe tren dots 10 -> 6dp (-4dp khi
                         // >1 tip, cat duoi iOS theo lenh user; 6dp la so
                         // da dung o vong 44d50c2: spacer 10->6, khe hang 8->6).
-                        .padding(top = 6.dp),
+                        .padding(top = 2.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -596,7 +599,7 @@ fun SuggestCard(
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 3.dp)
-                                .size(if (selected) 7.dp else 5.dp)
+                                .size(if (selected) 6.dp else 4.dp)
                                 .clip(CircleShape)
                                 .background(
                                     if (selected) cs.onTertiaryContainer
@@ -793,13 +796,13 @@ private fun SuggestTipRow(
             MsIcon(
                 M3EIcons.batteryLevel(batterySoc), null,
                 tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(22.dp),
             )
         } else {
             MsIcon(
                 Ms.auto_awesome, null,
                 tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(22.dp),
             )
         }
         // Viewport marquee keo dai den sat mep icon (bo Spacer): chu chay
@@ -808,17 +811,20 @@ private fun SuggestTipRow(
             // The co dinh 1 dong tieu de + 1 dong mo ta; chu dai tu chay marquee
             MarqueeText(
                 text = tip.title,
-                style = MaterialTheme.typography.bodyMedium,
+                // (2026-11-18) Cat MANH: title 14->13sp (MarqueeText chi lay
+                // fontSize tu style, bo qua lineHeight) — cot chu 33,7->30,2dp.
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onTertiaryContainer,
                 startPadding = 14.dp,
             )
             MarqueeText(
                 text = tip.sub,
-                style = MaterialTheme.typography.bodySmall,
+                // (2026-11-18) Cat MANH: sub 12->11sp + khe tren 2->1dp.
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                 fontWeight = FontWeight.Medium,
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = 1.dp),
                 startPadding = 14.dp,
             )
         }
@@ -842,7 +848,8 @@ private fun SuggestTipRow(
                 // .sgbtn: nen onTertiaryContainer; :disabled{opacity:.6}
                 .alpha(if (done) 0.6f else 1f)
                 .background(cs.onTertiaryContainer)
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+                // (2026-11-18) Cat MANH: padding doc nut 7->4dp (nut 31,1->25,1dp).
+                .padding(horizontal = 12.dp, vertical = 4.dp),
         ) {
             Text(
                 if (done) tip.doneLabel else tip.action,
