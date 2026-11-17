@@ -20,7 +20,7 @@ import com.smarthome.hume.core.model.EnergyUiState
 
 /**
  * Thong bao trang thai he thong dien.
- * Theo doi: mat dien luoi, pin yeu, pin day, bat dau/kethuc san xuat dien mat troi.
+ * Theo doi: mat dien luoi, pin day, bat dau/kethuc san xuat dien mat troi.
  *
  * Port iOS:
  * - 3cbc087/f69835a: notification khi doi trang thai luoi (banner + am)
@@ -75,7 +75,6 @@ object EnergyNotifier {
     }
 
     private var lastGridOn: Boolean? = null
-    private var lastLowBattery: Boolean = false
     private var lastProducing: Boolean? = null
     private var lastFullBattery: Boolean = false
     /** Debounce chong spam khi sensor chap chon (port iOS 47aec64). */
@@ -132,7 +131,6 @@ object EnergyNotifier {
         val soc = state.battery.soc
         val gridOn = flow.gridOn
         val producing = solarW > 20
-        val lowBattery = soc < 20
         val fullBattery = soc >= 98
 
         // 1. Mat / co dien luoi tro lai (port iOS 3cbc087, f69835a; 47aec64: debounce 3s)
@@ -167,17 +165,7 @@ object EnergyNotifier {
             lastGridOn = gridOn
         }
 
-        // 2. Pin yeu
-        if (lowBattery && !lastLowBattery) {
-            notify(
-                ctx, 2,
-                "🔋 Pin yếu (${soc.toInt()}%)",
-                "Dung lượng pin dưới 20%. Hạn chế tải nặng.",
-            )
-        }
-        lastLowBattery = lowBattery
-
-        // 3. Pin day
+        // 2. Pin day
         if (fullBattery && !lastFullBattery) {
             notify(
                 ctx, 3,
@@ -187,7 +175,7 @@ object EnergyNotifier {
         }
         lastFullBattery = fullBattery
 
-        // 4. Bat dau / ket thuc san xuat dien mat troi
+        // 3. Bat dau / ket thuc san xuat dien mat troi
         if (lastProducing != null && lastProducing != producing) {
             if (producing) notify(
                 ctx, 4,

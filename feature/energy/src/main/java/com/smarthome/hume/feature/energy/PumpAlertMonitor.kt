@@ -49,7 +49,7 @@ object PumpAlertMonitor {
     private const val CHANNEL_ID = "hume_pump_alert"
     private const val CHANNEL_NAME = "Cảnh báo máy bơm"
 
-    /** ID notification rieng (luoi = 1, pin yeu = 2, pin day = 3, san xuat = 4). */
+    /** ID notification rieng (luoi = 1, pin day = 3, san xuat = 4; pin yeu = 2 da xoa 21:26). */
     const val NOTIF_ID_PUMP = 5
 
     /** Rung 1 lan duy nhat khi bao (port iOS warning haptic 1 lan). */
