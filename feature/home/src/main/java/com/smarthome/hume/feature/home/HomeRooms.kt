@@ -577,7 +577,8 @@ fun RoomSheet(
                     // Bottom trong the = 0dp: noi dung cuoi cach day the
                     // 24dp nho item Spacer cuoi list.
                     contentPadding = PaddingValues(top = 93.dp, bottom = 0.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    // (2026-11-18) Cat MANH: khe doc giua cac the con 12->8dp.
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                 // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
                 item {
@@ -612,7 +613,8 @@ fun RoomSheet(
                             ),
                             fontWeight = FontWeight.SemiBold,
                             color = cs.onSurface,
-                            modifier = Modifier.padding(top = 4.dp),
+                            // (2026-11-18) Cat MANH: khe tren tieu de 4->2dp.
+                            modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                     items(room.devices, key = { it.entityId }) { d ->
@@ -726,17 +728,19 @@ private fun EnvTile(
         modifier = modifier
             .clip(RoundedCornerShape(30.dp))
             .background(cs.surfaceContainerHighest)
-            .padding(14.dp),
+            // (2026-11-18) Cat MANH: padding EnvTile 14->8dp (-12dp). Bo 30dp GIU NGUYEN.
+            .padding(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(48.dp)
+                    // (2026-11-18) Cat MANH: vong tron icon EnvTile 48->36dp, icon 24->20dp.
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(container),
             ) {
-                Icon(icon, null, tint = onContainer, modifier = Modifier.size(24.dp))
+                Icon(icon, null, tint = onContainer, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column {
@@ -798,7 +802,8 @@ private fun ClimateCard(
             .alpha(dim)
             .clip(RoundedCornerShape(24.dp))
             .background(cs.surfaceContainerHighest)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            // (2026-11-18) Cat MANH: padding doc 14->8dp, ngang 16->12dp (-12dp).
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -810,11 +815,12 @@ private fun ClimateCard(
             // :551 corner 18 — Android cu: khong spacing, padding 4, bo 16.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                // (2026-11-18) Cat MANH: khe stepper 12->8dp, padding 6->4dp.
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(cs.surfaceContainer)
-                    .padding(6.dp),
+                    .padding(4.dp),
             ) {
                 StepperButton(Icons.Outlined.Remove, enabled = c.isOn) {
                     haptic()
@@ -833,7 +839,7 @@ private fun ClimateCard(
                     color = cs.onSurface,
                     maxLines = 1,
                     softWrap = false,
-                    modifier = Modifier.padding(horizontal = 8.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp),
                 )
                 StepperButton(Icons.Outlined.Add, enabled = c.isOn) {
                     haptic()
@@ -844,7 +850,8 @@ private fun ClimateCard(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(54.dp)
+                    // (2026-11-18) Cat MANH: nut nguon dieu hoa 54->40dp, icon 26->20dp.
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(if (c.isOn) cs.primaryContainer else cs.surfaceContainer)
                     .pressMorph(pressedScale = 0.88f) {
@@ -855,12 +862,13 @@ private fun ClimateCard(
                 Icon(
                     Icons.Outlined.PowerSettingsNew, null,
                     tint = if (c.isOn) cs.onPrimaryContainer else cs.onSurfaceVariant,
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
     }
-    Spacer(Modifier.height(10.dp))
+    // (2026-11-18) Cat MANH: khe 2 hop dieu hoa 10->6dp.
+    Spacer(Modifier.height(6.dp))
     // .ac-modes: surfaceHighest, bo 24px, padding 14px
     Box(
         modifier = Modifier
@@ -868,7 +876,7 @@ private fun ClimateCard(
             .alpha(dim)
             .clip(RoundedCornerShape(24.dp))
             .background(cs.surfaceContainerHighest)
-            .padding(14.dp),
+            .padding(8.dp),
     ) {
         ClimateModeGroup(c = c, enabled = c.isOn, onMode = onMode)
     }
@@ -885,7 +893,8 @@ private fun StepperButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             // (GAP-28) Port iOS HomeRooms.swift:580-592: nut stepper tron 42pt, icon 22.
-            .size(42.dp)
+            // (2026-11-18) Cat MANH: nut 42->34dp, icon 22->18dp.
+            .size(34.dp)
             .clip(CircleShape)
             .background(cs.surfaceContainerHighest)
             .pressMorph(pressedScale = 0.85f, onClick = if (enabled) onClick else null),
@@ -893,7 +902,7 @@ private fun StepperButton(
         Icon(
             icon, null,
             tint = cs.onSurface,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(18.dp),
         )
     }
 }
@@ -936,7 +945,8 @@ private fun ClimateModeGroup(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(w)
-                    .height(44.dp)
+                    // (2026-11-18) Cat MANH: chip che do 44->34dp (-10dp).
+                    .height(34.dp)
                     .graphicsLayer(scaleX = scale, scaleY = scale)
                     .clip(RoundedCornerShape(18.dp))
                     .background(if (sel) cs.primaryContainer else cs.surfaceContainer)
@@ -1039,7 +1049,8 @@ fun DeviceRow(
                 onClick = null,
             )
             .background(cs.surfaceContainerHighest)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            // (2026-11-18) Cat MANH: padding doc DeviceRow 14->8dp (-12dp).
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         // (GAP-29) Tap than the (hang header, ngoai cum icon+ten) huy
         // xac nhan — port iOS HomeRooms.swift:833-837. Tap vao cum
@@ -1074,7 +1085,8 @@ fun DeviceRow(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(48.dp)
+                        // (2026-11-18) Cat MANH: icon thiet bi 48->36dp, glyph 24->20dp.
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(
                             if (d.isOn) cs.primaryContainer
@@ -1085,7 +1097,7 @@ fun DeviceRow(
                         d.iconKey, null,
                         tint = if (d.isOn) cs.onPrimaryContainer
                         else cs.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
                 Spacer(Modifier.width(13.dp))
@@ -1129,7 +1141,8 @@ fun DeviceRow(
                             if (contactOpen) cs.errorContainer
                             else cs.surfaceContainer,
                         )
-                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                        // (2026-11-18) Cat MANH: padding doc chip 7->4dp (chip 27,4->21,4dp).
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
                 ) {
                     Text(
                         if (contactOpen) "MỞ" else "ĐÓNG",
@@ -1191,14 +1204,15 @@ fun DeviceRow(
                             // iOS HomeRooms.swift:805 .frame(minHeight: 40)
                             // — Android cu: labelMedium 12/16 + padding 20
                             // = 36dp, thap hon iOS 4dp.
+                            // (2026-11-18) Cat MANH: minHeight 40->32dp, padding doc 10->6dp.
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .heightIn(min = 40.dp)
+                                    .heightIn(min = 32.dp)
                                     .clip(CircleShape)
                                     .background(cs.surfaceContainerHigh)
                                     .clickable { isConfirming = false }
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                             ) {
                                 Text(
                                     "Hủy",
@@ -1216,17 +1230,18 @@ fun DeviceRow(
                             }
                             // Nut Xac nhan (do)
                             // iOS HomeRooms.swift:819 .frame(minHeight: 40).
+                            // (2026-11-18) Cat MANH: minHeight 40->32dp, padding doc 10->6dp.
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .heightIn(min = 40.dp)
+                                    .heightIn(min = 32.dp)
                                     .clip(CircleShape)
                                     .background(cs.error)
                                     .clickable {
                                         isConfirming = false
                                         onToggle()
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                             ) {
                                 Text(
                                     "Xác nhận",
@@ -1256,7 +1271,8 @@ fun DeviceRow(
                 exit = shrinkVertically(tween(700, easing = M3EMotion.spring)) +
                     fadeOut(tween(700, easing = M3EMotion.spring)),
             ) {
-                Column(modifier = Modifier.padding(top = 12.dp)) {
+                // (2026-11-18) Cat MANH: khe tren slot mo rong 12->6dp.
+                Column(modifier = Modifier.padding(top = 6.dp)) {
                     expandedContent()
                 }
             }
