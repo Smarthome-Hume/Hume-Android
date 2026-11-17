@@ -56,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -149,7 +150,7 @@ fun M3ERootScreen(
             appAlertContext,
             ha.entities.value[PumpAlertMonitor.PUMP_ENTITY_ID]?.state,
         )
-        kotlinx.coroutines.launch {
+        launch {
             ha.entityUpdated.collect { id ->
                 if (id == PumpAlertMonitor.PUMP_ENTITY_ID) {
                     PumpAlertMonitor.update(
@@ -159,7 +160,7 @@ fun M3ERootScreen(
                 }
             }
         }
-        kotlinx.coroutines.launch {
+        launch {
             HumeGraph.get().energyRepository.energyState.collect { state ->
                 // Lan dau + moi lan len foreground: sync baseline, khong bao
                 // (port iOS GridAlertMonitor.sync); cac lan sau moi bao.
@@ -626,7 +627,7 @@ private fun Modifier.briefEdgeSwipe(
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == down.id }
                             ?: continue
-                        if (change.changedToUpOrCanceled()) {
+                        if (change.changedToUpIgnoreConsumed()) {
                             done = true
                             continue
                         }
