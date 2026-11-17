@@ -73,7 +73,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -82,6 +81,7 @@ import kotlin.math.abs
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
@@ -171,7 +171,7 @@ fun GenericExpandedView(
         ?: if (device.isOn) "on" else "off"
     val entity = entityStates[device.entityId]
     // (2026-11-18) Cat MANH: khe giua cac dong generic 8->4dp.
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs)) {
         ExpandedInfoRow(
             label = "Trạng thái",
             value = when (stateRaw) {
@@ -347,7 +347,7 @@ fun DishwasherExpandedView(
     }
 
     // (2026-11-18) Cat MANH: khe doc tong the rua bat 14->8dp (-6dp/khe, ~9 khe).
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
         // Hero: trai = nhan + gio lon, phai = nhiet do + nhan.
         Row(verticalAlignment = Alignment.Top) {
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -358,15 +358,19 @@ fun DishwasherExpandedView(
                     // 82dp -> 80,6dp (van ngan hon iOS 86,1dp vi
                     // displayLarge theme 64sp < tu nhien iOS 69,5).
                     style = MaterialTheme.typography.bodySmall.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        fontSize = M3ETokens.Text.BodySmall.fontSize,
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                     ),
                     color = cs.onSurfaceVariant,
                 )
                 Text(
                     heroTime,
-                    // (2026-11-18) Cat MANH: lineHeight gio lon 64->52sp
-                    // (-12dp; chi gom chu so + ":", khong chan duoi).
-                    style = MaterialTheme.typography.displayLarge.copy(lineHeight = 52.sp),
+                    // (18/11 token) LH tu dat 52sp -> 69,5sp (DisplayHero):
+                    // LH = 57 x 1,219; hero cao them 17,5dp (xem bao cao vong token).
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = M3ETokens.Text.DisplayHero.fontSize,
+                        lineHeight = M3ETokens.Text.DisplayHero.lineHeight,
+                    ),
                     color = cs.onSurface,
                 )
             }
@@ -382,7 +386,7 @@ fun DishwasherExpandedView(
                         // (iOS titleLarge 22pt tu nhien ~26,8): chi dong
                         // nhat chu, khong doi chieu cao hero (cot trai ap dao).
                         style = MaterialTheme.typography.titleLarge.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            lineHeight = M3ETokens.naturalLineHeight(22.sp),
                         ),
                         color = cs.onSurface,
                     )
@@ -392,7 +396,8 @@ fun DishwasherExpandedView(
                         // (iOS bodySmall 12pt tu nhien ~14,6): cot phai
                         // 46dp -> 43,4dp nhu iOS.
                         style = MaterialTheme.typography.bodySmall.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.BodySmall.fontSize,
+                            lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                         ),
                         color = cs.onSurfaceVariant,
                     )
@@ -407,7 +412,8 @@ fun DishwasherExpandedView(
             // (Viec 5) lineHeight tu nhien 19,5 thay vi M3 24sp (-4,5dp):
             // iOS titleMedium 16pt tu nhien.
             style = MaterialTheme.typography.titleMedium.copy(
-                lineHeight = TextUnit.Unspecified,
+                fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
             ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
@@ -445,7 +451,8 @@ fun DishwasherExpandedView(
                     // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp:
                     // iOS labelSmall 11pt tu nhien.
                     style = MaterialTheme.typography.labelSmall.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        fontSize = M3ETokens.Text.Caption.fontSize,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     letterSpacing = 0.5.sp,
                     color = cs.onSurfaceVariant,
@@ -457,7 +464,7 @@ fun DishwasherExpandedView(
                         .clip(CircleShape)
                         .background(cs.primaryContainer)
                         // (2026-11-18) Cat MANH: padding doc chip chuong trinh 4->3dp.
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                        .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = 3.dp),
                 ) {
                     if (selectedProgram != null) {
                         Icon(
@@ -475,13 +482,14 @@ fun DishwasherExpandedView(
                         // iOS labelLarge 14pt tu nhien; chip 28dp -> 25,1dp,
                         // hang tieu de chuong trinh 28dp -> 25,1dp (-2,9dp).
                         style = MaterialTheme.typography.labelLarge.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.ButtonText.fontSize,
+                            lineHeight = M3ETokens.Text.ButtonText.lineHeight,
                         ),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimaryContainer,
                     )
                 }
-                Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(M3ETokens.Spacing.Sm))
                 // iOS RoomExpandedCards.swift:200 chevron
                 // .font(.system(size: 12)) — Android cu: 14dp.
                 Icon(
@@ -498,7 +506,7 @@ fun DishwasherExpandedView(
                     fadeIn(tween(450, easing = M3EMotion.spring)),
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
@@ -525,7 +533,7 @@ fun DishwasherExpandedView(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     // (2026-11-18) Cat MANH: vong tron chuong trinh 56->44dp, icon 26->20dp.
-                                    .size(44.dp)
+                                    .size(M3ETokens.Icon.IconBox)
                                     .clip(CircleShape)
                                     .background(
                                         if (isCurrent) cs.primaryContainer
@@ -545,7 +553,8 @@ fun DishwasherExpandedView(
                                 // 16sp (-2,6dp): iOS labelSmall 11pt tu nhien;
                                 // item chuong trinh 76dp -> 73,4dp nhu iOS.
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    lineHeight = TextUnit.Unspecified,
+                                    fontSize = M3ETokens.Text.Caption.fontSize,
+                                    lineHeight = M3ETokens.Text.Caption.lineHeight,
                                 ),
                                 color = cs.onSurfaceVariant,
                                 maxLines = 1,
@@ -561,7 +570,7 @@ fun DishwasherExpandedView(
         // 3 o tang cuong: o vuong 76dp, vong tron trang 40dp + icon 18dp.
         // Thu tu iOS: chong dia (DP 102) — hoi nuoc (DP 108) — say chong
         // khuan (DP 101, entity goc _khoa_tre_em).
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
             DishwasherBoostButton(
                 label = "Rửa tăng cường",
                 icon = Icons.Outlined.Layers,
@@ -596,7 +605,8 @@ fun DishwasherExpandedView(
                 // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp (-2,6dp):
                 // iOS labelSmall 11pt tu nhien.
                 style = MaterialTheme.typography.labelSmall.copy(
-                    lineHeight = TextUnit.Unspecified,
+                    fontSize = M3ETokens.Text.Caption.fontSize,
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
                 ),
                 letterSpacing = 0.5.sp,
                 color = cs.onSurfaceVariant,
@@ -611,7 +621,7 @@ fun DishwasherExpandedView(
                         softSlider = v.toFloat()
                     },
                 )
-                Spacer(Modifier.size(12.dp))
+                Spacer(Modifier.size(M3ETokens.Spacing.Md))
                 Slider(
                     value = softSlider,
                     onValueChange = {
@@ -631,7 +641,7 @@ fun DishwasherExpandedView(
                     ),
                     modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.size(12.dp))
+                Spacer(Modifier.size(M3ETokens.Spacing.Md))
                 DishwasherStepperButton(
                     icon = Icons.Outlined.Add,
                     enabled = softLevel < 15,
@@ -641,7 +651,7 @@ fun DishwasherExpandedView(
                         softSlider = v.toFloat()
                     },
                 )
-                Spacer(Modifier.size(12.dp))
+                Spacer(Modifier.size(M3ETokens.Spacing.Md))
                 Row {
                     Text(
                         "$softLevel",
@@ -649,7 +659,7 @@ fun DishwasherExpandedView(
                         // (iOS displaySmall 36pt tu nhien ~43,9): chi dong
                         // nhat chu, khong doi chieu cao hang (stepper 56dp ap dao).
                         style = MaterialTheme.typography.displaySmall.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            lineHeight = M3ETokens.naturalLineHeight(36.sp),
                         ),
                         color = cs.onSurface,
                         modifier = Modifier.alignByBaseline(),
@@ -659,7 +669,8 @@ fun DishwasherExpandedView(
                         // (Viec 5) lineHeight tu nhien thay vi M3 20sp
                         // (iOS bodyMedium 14pt tu nhien ~17,1): nhu tren.
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.Body.fontSize,
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
                         ),
                         color = cs.onSurfaceVariant,
                         modifier = Modifier.alignByBaseline(),
@@ -678,7 +689,8 @@ fun DishwasherExpandedView(
                 // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp (-2,6dp):
                 // iOS labelSmall 11pt tu nhien.
                 style = MaterialTheme.typography.labelSmall.copy(
-                    lineHeight = TextUnit.Unspecified,
+                    fontSize = M3ETokens.Text.Caption.fontSize,
+                    lineHeight = M3ETokens.Text.Caption.lineHeight,
                 ),
                 letterSpacing = 0.5.sp,
                 color = cs.onSurfaceVariant,
@@ -701,7 +713,7 @@ fun DishwasherExpandedView(
                     // (iOS displaySmall 36pt tu nhien ~43,9): chi dong
                     // nhat chu, khong doi chieu cao hang (stepper 56dp ap dao).
                     style = MaterialTheme.typography.displaySmall.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        lineHeight = M3ETokens.naturalLineHeight(36.sp),
                     ),
                     color = cs.onSurface,
                 )
@@ -726,13 +738,13 @@ fun DishwasherExpandedView(
         // dung khong).
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     // (2026-11-18) Cat MANH: nut nguon rua bat 56->44dp.
-                    .size(44.dp)
+                    .size(M3ETokens.Icon.IconBox)
                     .clip(CircleShape)
                     .background(
                         if (statusRaw != "Power_off") cs.primaryContainer
@@ -744,7 +756,7 @@ fun DishwasherExpandedView(
                     Icons.Outlined.PowerSettingsNew, null,
                     tint = if (statusRaw != "Power_off") cs.onPrimaryContainer
                     else cs.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(M3ETokens.Icon.Standard),
                 )
             }
             // Dung: CHUA noi HA — khong co DP chac chan ket thuc chu trinh.
@@ -754,7 +766,7 @@ fun DishwasherExpandedView(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     // (2026-11-18) Cat MANH: nut Dung 60->44dp (-16dp hang nut).
-                    .size(44.dp)
+                    .size(M3ETokens.Icon.IconBox)
                     .clip(CircleShape)
                     .background(
                         if (running) cs.errorContainer
@@ -766,7 +778,7 @@ fun DishwasherExpandedView(
                     Icons.Filled.Stop, null,
                     tint = if (running) cs.onErrorContainer
                     else cs.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(M3ETokens.Icon.Standard),
                 )
             }
             Box(
@@ -777,11 +789,11 @@ fun DishwasherExpandedView(
                     .background(cs.primary)
                     .clickable { actions.onToggle(p.startSwitch) }
                     // (2026-11-18) Cat MANH: padding doc nut Bat dau 16->10dp.
-                    .padding(vertical = 10.dp),
+                    .padding(vertical = M3ETokens.Spacing.RowGap),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
                 ) {
                     Icon(
                         if (statusRaw == "Run") Icons.Outlined.Pause
@@ -797,7 +809,8 @@ fun DishwasherExpandedView(
                         // 52dp -> 49,1dp; hang nut van cao 60dp (nut Dung
                         // ap dao) nen khong doi chieu cao hang.
                         style = MaterialTheme.typography.labelLarge.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.ButtonText.fontSize,
+                            lineHeight = M3ETokens.Text.ButtonText.lineHeight,
                         ),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onPrimary,
@@ -821,14 +834,14 @@ private fun DishwasherSegmentFlow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(4.dp)
+                .height(M3ETokens.Spacing.Xs)
                 .clip(CircleShape)
                 .background(cs.surfaceContainerHigh),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(progress.coerceIn(0f, 1f))
-                    .height(4.dp)
+                    .height(M3ETokens.Spacing.Xs)
                     .clip(CircleShape)
                     .background(cs.primary),
             )
@@ -839,7 +852,7 @@ private fun DishwasherSegmentFlow(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     // (2026-11-18) Cat MANH: khe icon-nhan doan 6->4dp, icon 24->20dp.
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs),
                     modifier = Modifier.weight(1f),
                 ) {
                     // Moi buoc 1 icon; trang thai bang mau nen cham:
@@ -866,7 +879,8 @@ private fun DishwasherSegmentFlow(
                         // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp
                         // (-2,6dp): iOS labelSmall 11pt tu nhien.
                         style = MaterialTheme.typography.labelSmall.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.Caption.fontSize,
+                            lineHeight = M3ETokens.Text.Caption.lineHeight,
                         ),
                         color = if (i == current) cs.onSurface
                         else cs.onSurfaceVariant,
@@ -887,7 +901,7 @@ private fun DishwasherMetaPill(icon: ImageVector, value: String) {
         modifier = Modifier
             .clip(CircleShape)
             .background(cs.surfaceContainerHigh)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
+            .padding(horizontal = M3ETokens.Spacing.Md, vertical = 5.dp),
     ) {
         Icon(icon, null, tint = cs.primary, modifier = Modifier.size(12.dp))
         Text(
@@ -896,7 +910,8 @@ private fun DishwasherMetaPill(icon: ImageVector, value: String) {
             // iOS labelLarge 14pt tu nhien; pill 36dp -> 33,1dp nhu iOS.
             // (2026-11-18) Cat MANH: padding doc pill 8->5dp (pill 33,1->27,1dp).
             style = MaterialTheme.typography.labelLarge.copy(
-                lineHeight = TextUnit.Unspecified,
+                fontSize = M3ETokens.Text.ButtonText.fontSize,
+                lineHeight = M3ETokens.Text.ButtonText.lineHeight,
             ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
@@ -923,7 +938,7 @@ private fun RowScope.DishwasherBoostButton(
             .weight(1f)
             // (2026-11-18) Cat MANH: o tang cuong 76->56dp (-20dp).
             .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(if (isOn) cs.primaryContainer else cs.surfaceContainerHigh)
             .alpha(if (known) 1f else 0.5f)
             .clickable { onToggle(entity) },
@@ -957,7 +972,7 @@ private fun DishwasherStepperButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             // (2026-11-18) Cat MANH: nut stepper rua bat 56->44dp, icon 20->18dp.
-            .size(44.dp)
+            .size(M3ETokens.Icon.IconBox)
             .clip(CircleShape)
             .background(cs.surfaceContainerHigh)
             .alpha(if (enabled) 1f else 0.4f)
@@ -973,13 +988,13 @@ fun ExpandedInfoRow(label: String, value: String) {
         Text(
             label,
             // (2026-11-17) lineHeight tu nhien 17,1 thay vi M3 20 (-2,9dp/dong).
-            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = M3ETokens.Text.Body.lineHeight),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.weight(1f))
         Text(
             value,
-            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = M3ETokens.Text.Body.lineHeight),
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -1108,7 +1123,7 @@ fun LightExpandedView(
 
     // (2026-11-18) Cat MANH: khe doc tong the den 14->8dp. Hang Slider do
     // sang KHONG DUNG (M3 min 48dp, can quyet rieng); khoi mau KHONG DUNG.
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
         // Do sang.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -1116,7 +1131,7 @@ fun LightExpandedView(
                 tint = cs.primary,
                 modifier = Modifier.size(18.dp),
             )
-            Spacer(Modifier.size(12.dp))
+            Spacer(Modifier.size(M3ETokens.Spacing.Md))
             Slider(
                 value = brightness,
                 onValueChange = {
@@ -1136,7 +1151,7 @@ fun LightExpandedView(
                 ),
                 modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.size(12.dp))
+            Spacer(Modifier.size(M3ETokens.Spacing.Md))
             Text(
                 "${brightness.toInt()}%",
                 // (Viec 5) lineHeight tu nhien thay vi M3 20sp
@@ -1145,7 +1160,8 @@ fun LightExpandedView(
                 // xem bao cao: iOS Slider ~31pt, phan thua 17dp nay can
                 // quyet dinh rieng truoc khi cat).
                 style = MaterialTheme.typography.labelLarge.copy(
-                    lineHeight = TextUnit.Unspecified,
+                    fontSize = M3ETokens.Text.ButtonText.fontSize,
+                    lineHeight = M3ETokens.Text.ButtonText.lineHeight,
                 ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
@@ -1159,7 +1175,7 @@ fun LightExpandedView(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Màu sắc",
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = M3ETokens.Text.Body.lineHeight),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
@@ -1217,11 +1233,11 @@ fun LightExpandedView(
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(
                     "Hiệu ứng",
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 17.1.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = M3ETokens.Text.Body.lineHeight),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
                     items(effectList, key = { it }) { eff ->
                         val selected = eff == currentEffect
                         Box(
@@ -1236,12 +1252,12 @@ fun LightExpandedView(
                                     actions.onSetLightEffect(entityId, eff)
                                 }
                                 // (2026-11-18) Cat MANH: padding doc chip hieu ung 8->5dp (chip 30,6->24,6dp).
-                                .padding(horizontal = 12.dp, vertical = 5.dp),
+                                .padding(horizontal = M3ETokens.Spacing.Md, vertical = 5.dp),
                         ) {
                             Text(
                                 effectDisplay(eff),
                                 // (2026-11-17) lineHeight tu nhien 14,6 thay vi M3 16 (-1,4dp).
-                                style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+                                style = MaterialTheme.typography.labelMedium.copy(lineHeight = M3ETokens.Text.ButtonTextSmall.lineHeight),
                                 color = if (selected) cs.onPrimaryContainer
                                 else cs.onSurfaceVariant,
                             )

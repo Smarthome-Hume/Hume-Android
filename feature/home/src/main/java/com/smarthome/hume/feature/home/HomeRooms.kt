@@ -73,7 +73,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.model.ClimateUi
@@ -90,6 +89,7 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.rememberNeighborPress
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.util.Locale
 
 /**
@@ -121,9 +121,9 @@ fun RoomGrid(
     onToggleLights: ((List<String>) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
         rooms.chunked(2).forEachIndexed { ri, row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
                 row.forEachIndexed { ci, room ->
                     RoomCard(
                         room = room,
@@ -174,8 +174,8 @@ private fun RoomCard(
         modifier = modifier
             .pressMorphCard(
                 pressedScale = 0.95f,
-                corner = 28.dp,
-                pressedCorner = 20.dp,
+                corner = M3ETokens.Corner.Card,
+                pressedCorner = M3ETokens.Corner.SheetInner,
                 onClick = {
                     if (SystemClock.uptimeMillis() - lastLightTapMs > 400) {
                         haptic(); onOpen()
@@ -199,7 +199,7 @@ private fun RoomCard(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(M3ETokens.Icon.IconBoxLarge)
                             .clip(CircleShape)
                             .background(
                                 if (room.lightOn) cs.primary else cs.surfaceContainer,
@@ -214,7 +214,7 @@ private fun RoomCard(
                             M3EIcons.room(room.iconKey), null,
                             tint = if (room.lightOn) cs.onPrimary
                             else cs.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(M3ETokens.Icon.Standard),
                         )
                     }
                     // Nhiet do sat icon; do chinh xac chuoi de chon co chu lon nhat
@@ -235,8 +235,8 @@ private fun RoomCard(
                             // tao cung khoang cach den tieu de cho ca icon va gia tri.
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(start = 10.dp)
-                                .height(48.dp),
+                                .padding(start = M3ETokens.Spacing.RowGap)
+                                .height(M3ETokens.Icon.IconBoxLarge),
                         ) {
                             val maxTextWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) {
                                 maxWidth.roundToPx()
@@ -245,7 +245,7 @@ private fun RoomCard(
                                 .firstOrNull { fontSize ->
                                     val candidateStyle = baseTemperatureStyle.copy(
                                         fontSize = fontSize.sp,
-                                        lineHeight = (fontSize + 6).sp,
+                                        lineHeight = M3ETokens.naturalLineHeight(fontSize.sp),
                                     )
                                     !textMeasurer.measure(
                                         text = AnnotatedString(temperatureText),
@@ -255,12 +255,12 @@ private fun RoomCard(
                                         maxLines = 1,
                                         constraints = Constraints(maxWidth = maxTextWidthPx),
                                     ).hasVisualOverflow
-                                }?.sp ?: 12.sp
+                                }?.sp ?: M3ETokens.Text.BodySmall.fontSize
                             Text(
                                 temperatureText,
                                 style = baseTemperatureStyle.copy(
                                     fontSize = temperatureFontSize,
-                                    lineHeight = (temperatureFontSize.value + 6f).sp,
+                                    lineHeight = M3ETokens.naturalLineHeight(temperatureFontSize),
                                 ),
                                 fontWeight = FontWeight.Light,
                                 color = if (room.lightOn) cs.onPrimaryContainer
@@ -336,7 +336,7 @@ private fun RoomCard(
                     fontFeatureSettings = "",
                     // (2026-11-17) lineHeight tu nhien 14,6sp (= 12 x 1,219):
                     // M3 bodySmall 16dp thua 1,4dp/the so voi iOS.
-                    lineHeight = 14.6.sp,
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                 )
                 // (2026-11-17, LỖI 3 vòng fix 2: sub vẫn bị "N ..." — ảnh 4842)
                 // iOS sub thẻ phòng là Font.custom 12pt CỨNG (M3EType.bodySmall,
@@ -383,7 +383,7 @@ private fun RoomCard(
                             softWrap = false,
                             maxLines = 1,
                             constraints = Constraints(maxWidth = maxWpx),
-                        ).hasVisualOverflow) 11.sp else 12.sp
+                        ).hasVisualOverflow) M3ETokens.Text.Caption.fontSize else M3ETokens.Text.BodySmall.fontSize
                         val sizedSubStyle = subStyle.copy(fontSize = subFontSize)
                         if (room.roomPowerW > 0) {
                             Row(
@@ -434,7 +434,7 @@ private fun RoomCard(
 internal fun GrabHandle() {
     Box(
         modifier = Modifier
-            .padding(top = 4.dp, bottom = 16.dp)
+            .padding(top = M3ETokens.Spacing.Xs, bottom = M3ETokens.Spacing.Lg)
             .size(44.dp, 5.dp)
             .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.outline),
@@ -526,8 +526,8 @@ fun RoomSheet(
     // (KHONG hardcode 411/826): rong = screenW - 2*8,
     // cao = screenH - 183 - 8.
     val screenH = LocalConfiguration.current.screenHeightDp.dp
-    val sheetMargin = 8.dp
-    val topGap = 183.dp
+    val sheetMargin = M3ETokens.Spacing.Sm
+    val topGap = M3ETokens.Height.SheetTopGap
     val cardH = screenH - topGap - sheetMargin
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -563,14 +563,14 @@ fun RoomSheet(
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
                     .height(cardH)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                     .background(cs.surfaceContainer),
             ) {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = M3ETokens.Spacing.Xl),
                     // (N-07) Top inset 93dp (= dai header 25 GrabHandle +
                     // 56 header + 12 gap) de tile dau tien bat dau duoi
                     // header co dinh (iOS HomeRooms.swift:355).
@@ -578,11 +578,11 @@ fun RoomSheet(
                     // 24dp nho item Spacer cuoi list.
                     contentPadding = PaddingValues(top = 93.dp, bottom = 0.dp),
                     // (2026-11-18) Cat MANH: khe doc giua cac the con 12->8dp.
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
                 ) {
                 // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.RowGap)) {
                         EnvTile(
                             icon = Icons.Outlined.Thermostat, label = "Nhiệt độ",
                             value = room.tempC?.let { "%.1f°".format(Locale.US, it) } ?: "—",
@@ -609,7 +609,8 @@ fun RoomSheet(
                         Text(
                             "Thiết bị",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                lineHeight = TextUnit.Unspecified,
+                                fontSize = M3ETokens.Text.Body.fontSize,
+                                lineHeight = M3ETokens.Text.Body.lineHeight,
                             ),
                             fontWeight = FontWeight.SemiBold,
                             color = cs.onSurface,
@@ -659,8 +660,8 @@ fun RoomSheet(
                             // (N-07) Bo the 6dp nen goc tren bo nhe
                             // hon — doi header sang phai 8dp cho khoi sat
                             // mep cong (iOS v59).
-                            .padding(start = 8.dp)
-                            .padding(horizontal = 20.dp),
+                            .padding(start = M3ETokens.Spacing.Sm)
+                            .padding(horizontal = M3ETokens.Spacing.Xl),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             MsIcon(
@@ -668,11 +669,12 @@ fun RoomSheet(
                                 tint = cs.primary,
                                 modifier = Modifier.size(30.dp),
                             )
-                            Spacer(Modifier.width(10.dp))
+                            Spacer(Modifier.width(M3ETokens.Spacing.RowGap))
                             Text(
                                 room.name,
                                 style = MaterialTheme.typography.headlineMedium.copy(
-                                    lineHeight = TextUnit.Unspecified,
+                                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
                                 ),
                                 fontWeight = FontWeight.Medium,
                                 color = cs.onSurface,
@@ -695,11 +697,11 @@ fun RoomSheet(
                                     formatRoomPowerText(room.roomPowerW),
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontFeatureSettings = "",
-                                    lineHeight = 14.6.sp,
+                                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                                 ),
                                 fontWeight = FontWeight.Medium,
                                 color = cs.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                                modifier = Modifier.padding(top = M3ETokens.Spacing.Xs, bottom = M3ETokens.Spacing.Xs),
                             )
                         }
                     }
@@ -726,23 +728,23 @@ private fun EnvTile(
     val cs = MaterialTheme.colorScheme
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(30.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.EnvTile)) // NGOAI LE: bo 30dp giu nguyen (iOS 24pt, audit 11.5)
             .background(cs.surfaceContainerHighest)
             // (2026-11-18) Cat MANH: padding EnvTile 14->8dp (-12dp). Bo 30dp GIU NGUYEN.
-            .padding(8.dp),
+            .padding(M3ETokens.Spacing.Sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     // (2026-11-18) Cat MANH: vong tron icon EnvTile 48->36dp, icon 24->20dp.
-                    .size(36.dp)
+                    .size(M3ETokens.Icon.EnvTileBox)
                     .clip(CircleShape)
                     .background(container),
             ) {
-                Icon(icon, null, tint = onContainer, modifier = Modifier.size(20.dp))
+                Icon(icon, null, tint = onContainer, modifier = Modifier.size(M3ETokens.Icon.EnvTile))
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(M3ETokens.Spacing.Md))
             Column {
                 Text(
                     value,
@@ -750,7 +752,8 @@ private fun EnvTile(
                     // HomeRooms.swift:490 (comment iOS :473 ghi titleLarge
                     // la sai so voi code).
                     style = MaterialTheme.typography.titleMedium.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        fontSize = M3ETokens.Text.StatValue.fontSize,
+                        lineHeight = M3ETokens.Text.StatValue.lineHeight,
                     ),
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurface,
@@ -761,11 +764,13 @@ private fun EnvTile(
                     // (iOS bodySmall 12pt tu nhien ~14,6): chi dong nhat
                     // chu, khong doi chieu cao the (icon 48dp ap dao).
                     style = MaterialTheme.typography.bodySmall.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        fontSize = M3ETokens.Text.BodySmall.fontSize,
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                     ),
                     fontWeight = FontWeight.Medium,
                     color = cs.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
+                    // Khe nhan->gia tri 2->3dp = 0,20 x 16sp (Ratio.LabelToValue).
+                    modifier = Modifier.padding(top = 3.dp),
                 )
             }
         }
@@ -800,10 +805,10 @@ private fun ClimateCard(
         modifier = Modifier
             .fillMaxWidth()
             .alpha(dim)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.ClimateBox))
             .background(cs.surfaceContainerHighest)
             // (2026-11-18) Cat MANH: padding doc 14->8dp, ngang 16->12dp (-12dp).
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = M3ETokens.Spacing.Md, vertical = M3ETokens.Spacing.Sm),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -816,11 +821,11 @@ private fun ClimateCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 // (2026-11-18) Cat MANH: khe stepper 12->8dp, padding 6->4dp.
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(cs.surfaceContainer)
-                    .padding(4.dp),
+                    .padding(M3ETokens.Spacing.Xs),
             ) {
                 StepperButton(Icons.Outlined.Remove, enabled = c.isOn) {
                     haptic()
@@ -833,13 +838,13 @@ private fun ClimateCard(
                     // chu, khong doi chieu cao the (nut stepper 42dp ap dao).
                     "%.0f°C".format(target),
                     style = MaterialTheme.typography.titleLarge.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        lineHeight = M3ETokens.naturalLineHeight(22.sp),
                     ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                     maxLines = 1,
                     softWrap = false,
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.padding(horizontal = M3ETokens.Spacing.Xs),
                 )
                 StepperButton(Icons.Outlined.Add, enabled = c.isOn) {
                     haptic()
@@ -851,7 +856,7 @@ private fun ClimateCard(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     // (2026-11-18) Cat MANH: nut nguon dieu hoa 54->40dp, icon 26->20dp.
-                    .size(40.dp)
+                    .size(M3ETokens.Icon.ClimatePowerButton)
                     .clip(CircleShape)
                     .background(if (c.isOn) cs.primaryContainer else cs.surfaceContainer)
                     .pressMorph(pressedScale = 0.88f) {
@@ -862,7 +867,7 @@ private fun ClimateCard(
                 Icon(
                     Icons.Outlined.PowerSettingsNew, null,
                     tint = if (c.isOn) cs.onPrimaryContainer else cs.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(M3ETokens.Icon.ClimatePowerIcon),
                 )
             }
         }
@@ -874,9 +879,9 @@ private fun ClimateCard(
         modifier = Modifier
             .fillMaxWidth()
             .alpha(dim)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.ClimateBox))
             .background(cs.surfaceContainerHighest)
-            .padding(8.dp),
+            .padding(M3ETokens.Spacing.Sm),
     ) {
         ClimateModeGroup(c = c, enabled = c.isOn, onMode = onMode)
     }
@@ -894,7 +899,7 @@ private fun StepperButton(
         modifier = Modifier
             // (GAP-28) Port iOS HomeRooms.swift:580-592: nut stepper tron 42pt, icon 22.
             // (2026-11-18) Cat MANH: nut 42->34dp, icon 22->18dp.
-            .size(34.dp)
+            .size(M3ETokens.Icon.ClimateStepperButton)
             .clip(CircleShape)
             .background(cs.surfaceContainerHighest)
             .pressMorph(pressedScale = 0.85f, onClick = if (enabled) onClick else null),
@@ -902,7 +907,7 @@ private fun StepperButton(
         Icon(
             icon, null,
             tint = cs.onSurface,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(M3ETokens.Icon.ClimateStepperIcon),
         )
     }
 }
@@ -946,7 +951,7 @@ private fun ClimateModeGroup(
                 modifier = Modifier
                     .weight(w)
                     // (2026-11-18) Cat MANH: chip che do 44->34dp (-10dp).
-                    .height(34.dp)
+                    .height(M3ETokens.MinHeight.ModeChip)
                     .graphicsLayer(scaleX = scale, scaleY = scale)
                     .clip(RoundedCornerShape(18.dp))
                     .background(if (sel) cs.primaryContainer else cs.surfaceContainer)
@@ -974,7 +979,8 @@ private fun ClimateModeGroup(
                     // (iOS labelSmall 11pt tu nhien ~13,4): chi dong nhat
                     // chu, khong doi chieu cao the (nut cao co dinh 44dp).
                     style = MaterialTheme.typography.labelSmall.copy(
-                        lineHeight = TextUnit.Unspecified,
+                        fontSize = M3ETokens.Text.Caption.fontSize,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     fontWeight = FontWeight.SemiBold,
                     color = if (sel) cs.onPrimaryContainer else cs.onSurfaceVariant,
@@ -1044,13 +1050,13 @@ fun DeviceRow(
             .fillMaxWidth()
             .pressMorphCard(
                 pressedScale = 1f,
-                corner = 28.dp,
+                corner = M3ETokens.Corner.Card,
                 pressedCorner = 18.dp,
                 onClick = null,
             )
             .background(cs.surfaceContainerHighest)
             // (2026-11-18) Cat MANH: padding doc DeviceRow 14->8dp (-12dp).
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Sm),
     ) {
         // (GAP-29) Tap than the (hang header, ngoai cum icon+ten) huy
         // xac nhan — port iOS HomeRooms.swift:833-837. Tap vao cum
@@ -1105,7 +1111,8 @@ fun DeviceRow(
                     Text(
                         d.label,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.Body.fontSize,
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
                         ),
                         fontWeight = FontWeight.SemiBold,
                         color = cs.onSurface,
@@ -1123,11 +1130,13 @@ fun DeviceRow(
                             " · ${if (powerW >= 1000) "%.1f kW".format(powerW / 1000) else "%.0f W".format(powerW)}"
                         else "") + roomSuffix,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.BodySmall.fontSize,
+                            lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                         ),
                         fontWeight = FontWeight.Medium,
                         color = cs.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
+                        // Khe ten->trang thai 2->3dp = 0,20 x 14sp (Ratio.LabelToValue).
+                        modifier = Modifier.padding(top = 3.dp),
                     )
                 }
             }
@@ -1142,7 +1151,7 @@ fun DeviceRow(
                             else cs.surfaceContainer,
                         )
                         // (2026-11-18) Cat MANH: padding doc chip 7->4dp (chip 27,4->21,4dp).
-                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                        .padding(horizontal = 14.dp, vertical = M3ETokens.Spacing.Xs),
                 ) {
                     Text(
                         if (contactOpen) "MỞ" else "ĐÓNG",
@@ -1151,7 +1160,8 @@ fun DeviceRow(
                         // 30dp -> 27,4dp nhu iOS; khong doi chieu cao the
                         // (icon 48dp ap dao).
                         style = MaterialTheme.typography.labelSmall.copy(
-                            lineHeight = TextUnit.Unspecified,
+                            fontSize = M3ETokens.Text.ChipText.fontSize,
+                            lineHeight = M3ETokens.Text.ChipText.lineHeight,
                         ),
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp,
@@ -1199,7 +1209,7 @@ fun DeviceRow(
                             scaleOut(tween(350, easing = M3EMotion.spring)),
                     ) {
                         // 2 nut xac nhan inline (thay popup, user 2026-10-09)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
                             // Nut Huy
                             // iOS HomeRooms.swift:805 .frame(minHeight: 40)
                             // — Android cu: labelMedium 12/16 + padding 20
@@ -1208,11 +1218,11 @@ fun DeviceRow(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .heightIn(min = 32.dp)
+                                    .heightIn(min = M3ETokens.MinHeight.ConfirmCancelButton)
                                     .clip(CircleShape)
                                     .background(cs.surfaceContainerHigh)
                                     .clickable { isConfirming = false }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = 6.dp),
                             ) {
                                 Text(
                                     "Hủy",
@@ -1221,7 +1231,8 @@ fun DeviceRow(
                                     // dung 36dp -> 34,6dp; nut van minHeight 40dp
                                     // nhu iOS nen khong doi chieu cao nut.
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        lineHeight = TextUnit.Unspecified,
+                                        fontSize = M3ETokens.Text.ButtonTextSmall.fontSize,
+                                        lineHeight = M3ETokens.Text.ButtonTextSmall.lineHeight,
                                     ),
                                     fontWeight = FontWeight.SemiBold,
                                     color = cs.onSurface,
@@ -1234,14 +1245,14 @@ fun DeviceRow(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .heightIn(min = 32.dp)
+                                    .heightIn(min = M3ETokens.MinHeight.ConfirmCancelButton)
                                     .clip(CircleShape)
                                     .background(cs.error)
                                     .clickable {
                                         isConfirming = false
                                         onToggle()
                                     }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = 6.dp),
                             ) {
                                 Text(
                                     "Xác nhận",
@@ -1249,7 +1260,8 @@ fun DeviceRow(
                                     // (iOS labelMedium 12pt tu nhien ~14,6): nhu
                                     // nut Huy — nut van minHeight 40dp nhu iOS.
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        lineHeight = TextUnit.Unspecified,
+                                        fontSize = M3ETokens.Text.ButtonTextSmall.fontSize,
+                                        lineHeight = M3ETokens.Text.ButtonTextSmall.lineHeight,
                                     ),
                                     fontWeight = FontWeight.SemiBold,
                                     color = cs.onError,

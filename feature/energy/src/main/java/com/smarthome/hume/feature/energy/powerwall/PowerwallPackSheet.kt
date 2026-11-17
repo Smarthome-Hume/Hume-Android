@@ -44,6 +44,7 @@ import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlin.math.roundToInt
 
 /**
@@ -98,8 +99,8 @@ fun PowerwallPackSheet(
     // theo iOS), the cao = screenH - 183 - 8, cach deu 3 canh 8dp.
     // Kich thuoc suy ra tu gia tri runtime (KHONG hardcode man hinh).
     val screenH = LocalConfiguration.current.screenHeightDp.dp
-    val sheetMargin = 8.dp
-    val topGap = 183.dp
+    val sheetMargin = M3ETokens.Spacing.Sm
+    val topGap = M3ETokens.Height.SheetTopGap
     val cardH = screenH - topGap - sheetMargin
 
     ModalBottomSheet(
@@ -133,7 +134,7 @@ fun PowerwallPackSheet(
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
                     .height(cardH)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                     .background(cs.surfaceContainer),
             ) {
             Column(
@@ -148,9 +149,9 @@ fun PowerwallPackSheet(
                     // 24dp (93-25-44), gap doi Room (12dp). 81dp =
                     // 25 grab + 44 header + 12 khe — khe duoi header
                     // bang Room, dong thoi la so goc iOS PackSheet.
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = M3ETokens.Spacing.Xl)
                     .padding(top = 81.dp, bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
             ) {
                 OverviewGrid(pack, cs, extra)
                 CellChartCard(pack, cs, extra)
@@ -184,7 +185,7 @@ fun PowerwallPackSheet(
                 // (.horizontal 16 + .leading 8).
                 PackHeader(
                     pack, packName, cs,
-                    Modifier.padding(start = 8.dp).padding(horizontal = 20.dp),
+                    Modifier.padding(start = M3ETokens.Spacing.Sm).padding(horizontal = M3ETokens.Spacing.Xl),
                 )
             }
             }
@@ -202,7 +203,7 @@ fun PowerwallPackSheet(
 internal fun PowerwallGrabHandle() {
     Box(
         modifier = Modifier
-            .padding(top = 4.dp, bottom = 16.dp)
+            .padding(top = M3ETokens.Spacing.Xs, bottom = M3ETokens.Spacing.Lg)
             .size(44.dp, 5.dp)
             .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.outline),
@@ -225,20 +226,23 @@ private fun PackHeader(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(44.dp)
+                .size(M3ETokens.Icon.IconBox)
                 .clip(RoundedCornerShape(14.dp))
                 .background(cs.primaryContainer),
         ) {
-            MsIcon(M3EIcons.Battery, null, tint = cs.primary, modifier = Modifier.size(26.dp))
+            MsIcon(M3EIcons.Battery, null, tint = cs.primary, modifier = Modifier.size(M3ETokens.Icon.PackHeader))
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(M3ETokens.Spacing.Md))
         Text(
             packName,
             // (18/11) Title the 17pt theo lenh user — nhu title the
             // trong vong nay (headlineSmall 17sp/20.7sp); iOS dung
             // M3EType.cardTitle cho ten pack o header. Chieu cao
             // header khong doi (o icon 44dp ap dao).
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = M3ETokens.Text.CardTitle.fontSize,
+                lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+            ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )
@@ -257,14 +261,17 @@ private fun ModePill(pack: Map<String, Any?>, cs: androidx.compose.material3.Col
     }
     Text(
         mode.uppercase(),
-        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontSize = M3ETokens.Text.BodySmall.fontSize,
+            lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+        ),
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 1.2.sp,
         color = fg,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(bg)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = M3ETokens.Spacing.Md, vertical = 6.dp),
     )
 }
 
@@ -276,12 +283,12 @@ private fun OverviewGrid(
     cs: androidx.compose.material3.ColorScheme,
     extra: com.smarthome.hume.core.ui.theme.HumeExtraColors,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
             SocCell(pack, cs, extra, Modifier.weight(1f))
             ValueCellNum(Ms.bolt, "Điện áp", pack.d("volt"), 2, " V", cs, Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
             ValueCellNum(
                 M3EIcons.ElectricMeter, "Dòng điện", pack.d("curr"), 1, " A", cs, Modifier.weight(1f),
             )
@@ -314,9 +321,9 @@ private fun SocCell(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
             .background(cs.surfaceContainerHighest) // iOS PackSheet:124 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
-            .padding(vertical = 12.dp),
+            .padding(vertical = M3ETokens.Spacing.Md),
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
             val track = cs.surfaceContainerHigh
@@ -349,14 +356,20 @@ private fun SocCell(
             }
             Text(
                 "$socInt%",
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 15.sp,
+                    lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
         }
         Text(
             "SOC",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = M3ETokens.Text.BodySmall.fontSize,
+                lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+            ),
             fontWeight = FontWeight.Medium,
             color = cs.onSurfaceVariant,
         )
@@ -377,15 +390,18 @@ private fun ValueCellNum(
     Column(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
             .background(cs.surfaceContainerHighest) // iOS PackSheet:144 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MsIcon(icon, null, tint = cs.primary, modifier = Modifier.size(13.dp))
+            MsIcon(icon, null, tint = cs.primary, modifier = Modifier.size(M3ETokens.Icon.ValueCell))
             Text(
                 label,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = M3ETokens.Text.BodySmall.fontSize,
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                ),
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
             )
@@ -394,7 +410,10 @@ private fun ValueCellNum(
             value = value,
             decimals = decimals,
             unit = unit,
-            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = M3ETokens.Text.StatValueLarge.fontSize,
+                lineHeight = M3ETokens.Text.StatValueLarge.lineHeight,
+            ),
             color = cs.onSurface,
         )
     }
@@ -414,7 +433,10 @@ private fun CellChartCard(
         if (vals.isEmpty()) {
             Text(
                 "Không rõ",
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = M3ETokens.Text.Body.fontSize,
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -430,7 +452,7 @@ private fun CellChartCard(
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(76.dp),
+                    .height(M3ETokens.Height.CellChart),
             ) {
                 // 16 cot, goi CellBar vo dieu kien cho ca 16 o (ke ca o
                 // thieu du lieu) de slot table on dinh khi du lieu doi.
@@ -445,7 +467,7 @@ private fun CellChartCard(
                     CellBar(v = v, lo = lo2, hi = hi2, color = barColor, modifier = Modifier.weight(1f))
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
                 // v66: 3 chip min/max/lech tween so (3 chu so thap phan).
                 CapChipNum("Cao nhất", mx, cs, extra)
                 CapChipNum("Thấp nhất", mn, cs, extra)
@@ -473,7 +495,7 @@ private fun CellBar(
     )
     Box(
         modifier
-            .height(if (v == null) 8.dp else h.dp)
+            .height(if (v == null) M3ETokens.Spacing.Sm else h.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(color),
     )
@@ -489,15 +511,18 @@ private fun CapChipNum(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs),
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(cs.surfaceContainerHigh)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = M3ETokens.Spacing.Sm, vertical = M3ETokens.Spacing.Xs),
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = M3ETokens.Text.ChipText.fontSize,
+                lineHeight = M3ETokens.Text.ChipText.lineHeight,
+            ),
             fontWeight = FontWeight.Medium,
             color = cs.onSurfaceVariant,
         )
@@ -505,7 +530,10 @@ private fun CapChipNum(
             value = value,
             decimals = 3,
             unit = " V",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = M3ETokens.Text.ChipText.fontSize,
+                lineHeight = M3ETokens.Text.ChipText.lineHeight,
+            ),
             color = cs.onSurface,
         )
     }
@@ -573,8 +601,8 @@ private fun ParamsCard(
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
+            modifier = Modifier.padding(top = M3ETokens.Spacing.Xs),
         ) {
             MsIcon(
                 if (err == 0) M3EIcons.Check else Ms.error,
@@ -584,7 +612,10 @@ private fun ParamsCard(
             )
             Text(
                 if (err == 0) "Không có lỗi" else "Mã lỗi $err",
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = M3ETokens.Text.Body.fontSize,
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = if (err == 0) extra.success else cs.error,
             )
@@ -604,14 +635,14 @@ private fun InnerCard(
     content: @Composable () -> Unit,
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.InnerCard))
             .background(cs.surfaceContainerHighest) // iOS PackSheet:283 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
-            .padding(16.dp),
+            .padding(M3ETokens.Spacing.Lg),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -619,7 +650,7 @@ private fun InnerCard(
                     .clip(RoundedCornerShape(50))
                     .background(cs.primaryContainer),
             ) {
-                MsIcon(icon, null, tint = cs.primary, modifier = Modifier.size(15.dp))
+                MsIcon(icon, null, tint = cs.primary, modifier = Modifier.size(M3ETokens.Icon.InnerCard))
             }
             Text(
                 title,
@@ -627,7 +658,10 @@ private fun InnerCard(
                 // trong vong nay (headlineSmall 17sp/20.7sp); iOS dung
                 // M3EType.cardTitle cho title the con. Chieu cao hang
                 // title khong doi (o icon 30dp ap dao).
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
@@ -642,16 +676,23 @@ private fun Kv(
     value: String,
     cs: androidx.compose.material3.ColorScheme,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.fillMaxWidth()) {
+    // Khe nhan->gia tri 2->3dp = 0,20 x 15sp (Ratio.LabelToValue).
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.fillMaxWidth()) {
         Text(
             label,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = M3ETokens.Text.BodySmall.fontSize,
+                lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+            ),
             fontWeight = FontWeight.Medium,
             color = cs.onSurfaceVariant,
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 15.sp,
+                lineHeight = M3ETokens.naturalLineHeight(15.sp),
+            ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )
@@ -668,10 +709,14 @@ private fun KvNum(
     cs: androidx.compose.material3.ColorScheme,
     suffix: String = "",
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.fillMaxWidth()) {
+    // Khe nhan->gia tri 2->3dp = 0,20 x 15sp (Ratio.LabelToValue).
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.fillMaxWidth()) {
         Text(
             label,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = M3ETokens.Text.BodySmall.fontSize,
+                lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+            ),
             fontWeight = FontWeight.Medium,
             color = cs.onSurfaceVariant,
         )
@@ -680,13 +725,19 @@ private fun KvNum(
                 value = value,
                 decimals = decimals,
                 unit = unit,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 15.sp,
+                    lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                ),
                 color = cs.onSurface,
             )
             if (suffix.isNotEmpty()) {
                 Text(
                     suffix,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 15.sp,
+                        lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
@@ -698,9 +749,9 @@ private fun KvNum(
 /** Luoi 2 cot (nhu LazyVGrid 2 flexible cua iOS, spacing 10). */
 @Composable
 private fun TwoColGrid(items: List<@Composable () -> Unit>) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.RowGap)) {
         for (row in items.chunked(2)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.RowGap)) {
                 for (item in row) {
                     Box(Modifier.weight(1f)) { item() }
                 }

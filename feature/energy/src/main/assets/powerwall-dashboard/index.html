@@ -58,12 +58,13 @@
     color:var(--text);
   }
   /* (18/11) padding 20->16px: bang the info/inner-card cung trang + cung huong cat padding cua app; bo 18px giu nguyen (lech co chu dich theo ESP32, xem header file). */
+  /* (18/11 token) bo 18px = Corner.InnerCard, padding 16px = Spacing.Lg. */
   .espui .pack-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--shadow);cursor:pointer;transition:opacity .25s}
   .espui .pack-card.ov{cursor:default}
   .espui #card-pack:active{opacity:.85}
   .espui .pack-head{display:flex;justify-content:space-between;align-items:center}
   /* (18/11) title the 17px: title the trong app ve 17pt theo lenh user 18/11 (tu 20px = cardTitle iOS); giu pill + padding 6px 14px. */
-  .espui .pack-name{position:relative;display:inline-block;font-size:17px;font-weight:600;letter-spacing:-.1px;background:var(--card2);border-radius:999px;padding:6px 14px}
+  .espui .pack-name{position:relative;display:inline-block;font-size:17px;line-height:20.7px;font-weight:600;letter-spacing:-.1px;background:var(--card2);border-radius:999px;padding:6px 14px}
   .espui .dot{width:11px;height:11px;border-radius:50%;flex:none}
   .espui .pack-name .dot{position:absolute;top:-5px;right:-6px}
   .espui .dot-green{background:var(--ok);box-shadow:0 0 6px 2px rgba(34,197,94,.45)}
@@ -74,49 +75,50 @@
   .espui .ic-sm{width:16px;height:16px}
   .espui .ic-lg{width:24px;height:24px}
   .espui .ic-xl{width:30px;height:30px}
-  .espui .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:6px 12px;border-radius:999px;margin-top:10px}
+  .espui .pill{display:inline-block;font-size:12px;line-height:14.6px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:6px 12px;border-radius:999px;margin-top:10px}
   .espui .pill-charge{background:var(--primary-c);color:var(--on-primary-c)}
   .espui .pill-discharge{background:var(--sec-cont);color:var(--on-sec-cont)}
   .espui .pill-rest{background:var(--card2);color:var(--muted)}
-  .espui .pack-soc{font-size:45px;font-weight:300;letter-spacing:-.5px;margin:2px 0 8px;line-height:1.2}
+  .espui .pack-soc{font-size:45px;font-weight:300;letter-spacing:-.5px;margin:2px 0 8px;line-height:54.9px}
   .espui .pack-soc-row{display:flex;align-items:center;justify-content:space-between}
   .espui .pack-soc-row .pill{margin-top:0}
   .espui .ov-soc{display:flex;align-items:baseline;justify-content:space-between}
-  .espui .soc-soh{font-size:20px;font-weight:600;white-space:nowrap}
-  .espui .info-unit{font-size:14px;font-weight:600;color:var(--muted)}
+  .espui .soc-soh{font-size:20px;line-height:24.4px;font-weight:600;white-space:nowrap}
+  .espui .info-unit{font-size:14px;line-height:17.1px;font-weight:600;color:var(--muted)}
   .espui .pack-bar{height:8px;background:var(--chip);border-radius:999px;overflow:hidden}
   .espui .pack-bar>div{height:100%;background:var(--primary)}
   .espui .grid3{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
   .espui .ov-cells,.espui .pack-cells{margin-top:10px}
   .espui .pair-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;grid-column:1/-1}
-  .espui .val-label{font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
-  .espui .val-value{font-size:16px;font-weight:600;margin-top:2px}
-  .espui .info-sub{font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
+  .espui .val-label{font-size:12px;line-height:14.6px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .espui .val-value{font-size:16px;line-height:19.5px;font-weight:600;margin-top:3px}
+  .espui .info-sub{font-size:12px;line-height:14.6px;font-weight:500;color:var(--muted);margin-top:2px}
   .espui .err-block{margin-top:12px;border-radius:16px;padding:12px 14px;background:var(--card2);border-left:4px solid var(--ok)}
   .espui .err-block.err-warn{border-left-color:var(--warn)}
   .espui .err-block.err-fault,.espui .err-block.err-fail{border-left-color:var(--err)}
   .espui .err-block.err-fail{background:rgba(239,68,68,.10)}
-  .espui .err-head{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+  .espui .err-head{display:flex;align-items:center;gap:8px;font-size:15px;line-height:18.3px;font-weight:600}
   .espui .err-ic{display:flex;flex:none;color:var(--ok)}
   .espui .err-warn .err-ic{color:var(--warn)}
   .espui .err-fault .err-ic,.espui .err-fail .err-ic{color:var(--err)}
-  .espui .err-sev{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 8px;border-radius:999px;white-space:nowrap}
+  .espui .err-sev{margin-left:auto;font-size:11px;line-height:13.4px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 8px;border-radius:999px;white-space:nowrap}
   .espui .err-sev-warning{background:var(--warn);color:#1A1D26}
   .espui .err-sev-fault,.espui .err-sev-failure{background:var(--err);color:#fff}
-  .espui .err-sub{font-size:12px;font-weight:500;color:var(--muted);margin-top:4px}
+  .espui .err-sub{font-size:12px;line-height:14.6px;font-weight:500;color:var(--muted);margin-top:4px}
   /* v65: modal HTML đã bỏ hẳn (pack sang sheet native từ v52, setting
      sang sheet native từ v65) — CSS .modal/.modal-box/.grab/.modal-head/
      .modal-scrim/scrim-white/.val-grid chỉ phục vụ modal setting nên
      xóa theo. */
   .espui .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:0 0 14px}
+  /* (18/11 token) bo 24px = Corner.ClimateBox, padding 16px = Spacing.Lg. */
   .espui .info-card{background:var(--card);border-radius:24px;padding:16px;margin:0 0 14px}
   .espui .grid2 .info-card{margin:0}
   .espui .inner-card{background:var(--card);border-radius:24px;padding:16px;margin:0 0 14px}
   .espui .info-head{display:flex;align-items:center;gap:8px}
-  .espui .info-label{font-size:12px;font-weight:600;color:var(--muted)}
+  .espui .info-label{font-size:12px;line-height:14.6px;font-weight:600;color:var(--muted)}
   .espui .info-label.center{text-align:center}
-  .espui .info-value{font-size:32px;font-weight:600;letter-spacing:-.3px;margin-top:10px}
-  .espui .info-value.md{font-size:24px}
+  .espui .info-value{font-size:32px;line-height:39px;font-weight:600;letter-spacing:-.3px;margin-top:10px}
+  .espui .info-value.md{font-size:24px;line-height:29.3px}
   .espui .info-value .info-unit{margin-left:5px}
   .espui .ring-wrap{display:flex;justify-content:center}
   .espui .ring{width:72px;height:72px}
@@ -124,12 +126,12 @@
   .espui .ring-fg{fill:none;stroke:var(--primary);stroke-width:7;stroke-linecap:round}
   .espui .ring-text{font-size:20px;font-weight:700;text-anchor:middle;fill:var(--text)}
   .espui .card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-  .espui .card-head h2{background:var(--card2);border-radius:999px;padding:4px 10px;font-size:16px;font-weight:600;margin:0}
+  .espui .card-head h2{background:var(--card2);border-radius:999px;padding:4px 10px;font-size:16px;line-height:19.5px;font-weight:600;margin:0}
   .espui .cells{width:100%;height:auto;display:block}
   .espui .cells .bar{fill:var(--primary)}
   .espui .cells .bar-max{fill:var(--ok)}
   .espui .cells .bar-min{fill:var(--err)}
-  .espui .chart-cap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:6px}
+  .espui .chart-cap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;font-size:12px;line-height:14.6px;color:var(--muted);margin-top:6px}
   .espui .cap-chip{display:inline-flex;align-items:center;gap:5px;font-weight:600}
   .espui .cap-chip b{font-weight:700;color:var(--text)}
   .espui .fw-row{display:flex;gap:10px;flex-wrap:wrap}
