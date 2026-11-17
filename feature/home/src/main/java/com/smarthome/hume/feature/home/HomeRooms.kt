@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,6 +60,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -351,6 +351,16 @@ fun RoomSheet(
         if (idx >= 0) listState.animateScrollToItem(idx)
     }
     // Thiet bi switch dang cho xac nhan tat (bao ve Zigbee mesh, port iOS 0e855dd).
+    // (N-07b) Chieu cao sheet tinh TU MAN HINH (screenHeightDp * 0.85),
+    // khong dung fillMaxHeight(0.85f): fillMaxHeight lay ti le theo
+    // constraint noi dung ma M3 cap cho ModalBottomSheet — do tu anh may
+    // that 4829 (S26U, APK 0672d8d): top gap chi ~110dp thay vi 124dp
+    // (0.15 x 826dp), tuc sheet cao hon detent 0.85 cua iOS ~15dp.
+    // Cach nay giong het PackSheet / ChartDetailSheet / LightsSheet
+    // (heightIn(max = screenHeightDp * 0.85)); dung height() chinh xac
+    // (khong phai heightIn(max)) de giu detent cung 0.85 ke ca phong it
+    // thiet bi — nhu iOS .presentationDetents([.fraction(0.85)]).
+    val sheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -368,7 +378,7 @@ fun RoomSheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.85f),
+                .height(sheetH),
         ) {
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(
