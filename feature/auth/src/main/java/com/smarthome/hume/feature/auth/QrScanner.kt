@@ -1,9 +1,15 @@
 package com.smarthome.hume.feature.auth
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -12,13 +18,20 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +56,8 @@ import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import com.smarthome.hume.core.ui.components.Ms
+import com.smarthome.hume.core.ui.components.MsIcon
 
 /**
  * Quet QR bang camera: CameraX Preview + ImageAnalysis -> MLKit BarcodeScanning.
@@ -70,83 +85,132 @@ fun QrScanner(
         if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
-    if (!hasPermission) {
-        Text(
-            text = "Cần quyền camera để quét mã QR. Hãy cấp quyền rồi mở lại tab Quét.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(vertical = 32.dp, horizontal = 16.dp),
-        )
-        return
-    }
-
     // Da quet xong -> khong goi onScanned them lan nua.
     var consumed by remember { mutableStateOf(false) }
     val latestOnScanned by rememberUpdatedState(onScanned)
+    // Loi khi anh thu vien khong co ma QR (iOS: error = "Không tìm thấy
+    // mã QR trong ảnh đã chọn.").
+    var pickError by remember { mutableStateOf<String?>(null) }
+
+    // (GAP-43, port iOS M3ELoginView QrImagePicker + decodeQr) Chon anh QR
+    // tu thu vien: Photo Picker neu co, fallback GetContent — dung pattern
+    // MeScreen (pickWallpaper/launchImagePicker).
+    val pickerAvailable = remember { PickVisualMedia.isPhotoPickerAvailable(context) }
+    val onQrImagePicked: (Uri) -> Unit = { uri ->
+        decodeQrFromUri(
+            context = context,
+            uri = uri,
+            onFound = { raw ->
+                if (!consumed) {
+                    consumed = true
+                    latestOnScanned(raw)
+                }
+            },
+            onNotFound = { pickError = "Không tìm thấy mã QR trong ảnh đã chọn." },
+        )
+    }
+    val pickQrImage = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri -> uri?.let(onQrImagePicked) }
+    val getQrImage = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent(),
+    ) { uri -> uri?.let(onQrImagePicked) }
+    fun launchQrPicker() {
+        pickError = null
+        if (pickerAvailable) {
+            pickQrImage.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+        } else {
+            getQrImage.launch("image/*")
+        }
+    }
+
+    if (!hasPermission) {
+        // Chon anh thu vien khong can quyen camera nen van hien nut nay.
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 32.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "Cần quyền camera để quét mã QR. Hãy cấp quyền rồi mở lại tab Quét.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(10.dp))
+            QrLibraryPickButton(onLaunchPicker = ::launchQrPicker, error = pickError)
+        }
+        return
+    }
+
     var cameraProviderRef by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     // Chi bind camera 1 lan (update chay lai moi recompose).
     var cameraBound by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(MaterialTheme.shapes.small),
-    ) {
-        AndroidView(
-            factory = { ctx ->
-                PreviewView(ctx).apply {
-                    scaleType = PreviewView.ScaleType.FILL_CENTER
-                }
-            },
-            update = { previewView ->
-                if (cameraBound) return@AndroidView
-                cameraBound = true
-                val future = ProcessCameraProvider.getInstance(context)
-                future.addListener({
-                    val provider = future.get()
-                    cameraProviderRef = provider
-                    val preview = Preview.Builder().build().also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
+    Column(modifier = modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(MaterialTheme.shapes.small),
+        ) {
+            AndroidView(
+                factory = { ctx ->
+                    PreviewView(ctx).apply {
+                        scaleType = PreviewView.ScaleType.FILL_CENTER
                     }
-                    val scanner = BarcodeScanning.getClient()
-                    val analysis = ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build()
-                        .also { ia ->
-                            ia.setAnalyzer(
-                                ContextCompat.getMainExecutor(context),
-                            ) { imageProxy ->
-                                if (consumed) {
-                                    imageProxy.close()
-                                    return@setAnalyzer
-                                }
-                                processImageProxy(scanner, imageProxy) { raw ->
-                                    consumed = true
-                                    latestOnScanned(raw)
+                },
+                update = { previewView ->
+                    if (cameraBound) return@AndroidView
+                    cameraBound = true
+                    val future = ProcessCameraProvider.getInstance(context)
+                    future.addListener({
+                        val provider = future.get()
+                        cameraProviderRef = provider
+                        val preview = Preview.Builder().build().also {
+                            it.setSurfaceProvider(previewView.surfaceProvider)
+                        }
+                        val scanner = BarcodeScanning.getClient()
+                        val analysis = ImageAnalysis.Builder()
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                            .build()
+                            .also { ia ->
+                                ia.setAnalyzer(
+                                    ContextCompat.getMainExecutor(context),
+                                ) { imageProxy ->
+                                    if (consumed) {
+                                        imageProxy.close()
+                                        return@setAnalyzer
+                                    }
+                                    processImageProxy(scanner, imageProxy) { raw ->
+                                        consumed = true
+                                        latestOnScanned(raw)
+                                    }
                                 }
                             }
+                        try {
+                            provider.unbindAll()
+                            provider.bindToLifecycle(
+                                lifecycleOwner,
+                                CameraSelector.DEFAULT_BACK_CAMERA,
+                                preview,
+                                analysis,
+                            )
+                        } catch (_: Exception) {
+                            // Camera ban hoac dang duoc app khac giu — giu preview trong.
                         }
-                    try {
-                        provider.unbindAll()
-                        provider.bindToLifecycle(
-                            lifecycleOwner,
-                            CameraSelector.DEFAULT_BACK_CAMERA,
-                            preview,
-                            analysis,
-                        )
-                    } catch (_: Exception) {
-                        // Camera ban hoac dang duoc app khac giu — giu preview trong.
-                    }
-                }, ContextCompat.getMainExecutor(context))
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        // Khung ngam can giua.
-        ScanFrameOverlay(Modifier.matchParentSize())
+                    }, ContextCompat.getMainExecutor(context))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            // Khung ngam can giua.
+            ScanFrameOverlay(Modifier.matchParentSize())
+        }
+        Spacer(Modifier.height(10.dp))
+        QrLibraryPickButton(onLaunchPicker = ::launchQrPicker, error = pickError)
     }
 
     DisposableEffect(Unit) {
@@ -209,5 +273,105 @@ fun QrScanHint(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/**
+ * Nut "Chon anh ma QR tu thu vien" (GAP-43, port iOS M3ELoginView:410-423):
+ * icon Ms.photo_library 22 + labelLarge, full width, padding doc 14,
+ * nen primaryContainer, bo 20 — giong nut "Mo camera quet ma QR" tren iOS.
+ * [error] hien khi anh da chon khong co ma QR (iOS: error = "Không tìm
+ * thấy mã QR trong ảnh đã chọn.").
+ */
+@Composable
+private fun QrLibraryPickButton(
+    onLaunchPicker: () -> Unit,
+    error: String?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Button(
+            onClick = onLaunchPicker,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+            contentPadding = PaddingValues(vertical = 14.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MsIcon(
+                    glyph = Ms.photo_library,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                Text(
+                    text = "Chọn ảnh mã QR từ thư viện",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+        if (error != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/**
+ * Doc ma QR tu anh tinh trong thu vien (iOS: decodeQr bang CIDetector).
+ * Android dung chung MLKit BarcodeScanning nhu quet camera, qua
+ * InputImage.fromBitmap — cung client, cung loai barcode; ket qua di vao
+ * onScanned nhu quet camera (qua [onFound]).
+ */
+private fun decodeQrFromUri(
+    context: Context,
+    uri: Uri,
+    onFound: (String) -> Unit,
+    onNotFound: () -> Unit,
+) {
+    val bitmap = runCatching { decodeSampledBitmap(context, uri) }.getOrNull()
+    if (bitmap == null) {
+        onNotFound()
+        return
+    }
+    val image = InputImage.fromBitmap(bitmap, 0)
+    BarcodeScanning.getClient().process(image)
+        .addOnSuccessListener { barcodes ->
+            val raw = barcodes.firstOrNull()?.rawValue
+            if (!raw.isNullOrBlank()) onFound(raw) else onNotFound()
+        }
+        .addOnFailureListener { onNotFound() }
+        .addOnCompleteListener { bitmap.recycle() }
+}
+
+/** Doc bitmap tu Uri, downscale ve toi da 2048px canh dai de MLKit xu ly
+ * nhanh (anh chup dien thoai thuong 3000-4000px). */
+private fun decodeSampledBitmap(context: Context, uri: Uri): Bitmap? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    context.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, bounds)
+    }
+    val maxSide = maxOf(bounds.outWidth, bounds.outHeight)
+    var sampleSize = 1
+    while (maxSide / sampleSize > 2048) sampleSize *= 2
+    val opts = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+    return context.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, opts)
     }
 }

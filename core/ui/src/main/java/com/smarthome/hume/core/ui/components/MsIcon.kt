@@ -216,6 +216,13 @@ object Ms {
     val person = "\uE7FD"
     val person_search = "\uF106"
     val photo_camera = "\uE3B0"
+    // (2026-11-17, GAP-43) photo_library: codepoint lay tu cmap font goc
+    // Material Symbols Rounded v2.978 theo ten glyph (U+E413) + regen subset.
+    // LUU Y: U+E87D KHONG phai photo_library — trong cmap font goc E87D la
+    // "favorite" (alias legacy cua Material Icons); dung E87D se hien icon
+    // trai tim thay cho thu vien. Da doi chieu fontTools: 150 glyph cu
+    // 0 diff o ca 2 bien the (wght200/FILL0 + wght400/FILL1).
+    val photo_library = "\uE413"
     val play_circle = "\uE038"
     val power = "\uE63C"
     val power_settings_new = "\uE8AC"
