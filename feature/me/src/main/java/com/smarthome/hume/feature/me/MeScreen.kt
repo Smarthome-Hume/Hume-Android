@@ -95,6 +95,7 @@ import com.smarthome.hume.core.ui.avatar.AvatarStore
 import com.smarthome.hume.core.ui.avatar.ProfileAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.M3EConnectedButtonGroup
+import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
@@ -226,6 +227,9 @@ fun MeScreen(
     // de scroll lien mach (nhu tab Nha).
     val statusBarTop =
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    // (N-06) Box chua noi dung cuon + fade + pill title co dinh (port
+    // iOS M3EMeView.swift:252 + header co dinh).
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
@@ -233,26 +237,10 @@ fun MeScreen(
             .padding(horizontal = 18.dp)
             .m3ePageBottomPadding(),
     ) {
-        Spacer(Modifier.height(statusBarTop + 8.dp))
-        // Title: chi title duoc boc nen
-        Column(Modifier.fillMaxWidth()) {
-            Box(
-                Modifier
-                    .riseEntrance(0)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
-            ) {
-                // demo .phdr h2: 26px/700 ls -.3px
-                Text(
-                    "Thông tin",
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = (-0.3).sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-        }
+        // (N-06) Chua dung chieu cao pill title co dinh 66dp nhu iOS
+        // (M3EMeView.swift: padding top 66 = top 8 + pill ~50 + gap 8);
+        // pill that nam o lop co dinh ben duoi.
+        Spacer(Modifier.height(statusBarTop + 66.dp))
 
         Box(Modifier.riseEntrance(400)) { M3ESectionTitle("Ảnh đại diện", modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) }
 
@@ -342,6 +330,41 @@ fun MeScreen(
                 current = vm.fontFamily.collectAsState().value,
                 onOpen = { showFontSheet = true },
             )
+        }
+    }
+
+        // (N-06) Fade gradient + pill title co dinh (port iOS
+        // M3EMeView.swift:252 + header co dinh): chi pill title co dinh,
+        // noi dung cuon ben duoi tan dan qua lop fade.
+        M3EHeaderFade(
+            color = MaterialTheme.colorScheme.surface,
+            height = statusBarTop + 66.dp,
+            modifier = Modifier.align(Alignment.TopStart),
+        )
+        // Title: chi title duoc boc nen
+        Box(
+            Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .padding(top = statusBarTop + 8.dp),
+        ) {
+            Box(
+                Modifier
+                    .riseEntrance(0)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
+            ) {
+                // demo .phdr h2: 26px/700 ls -.3px
+                Text(
+                    "Thông tin",
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
         }
     }
 

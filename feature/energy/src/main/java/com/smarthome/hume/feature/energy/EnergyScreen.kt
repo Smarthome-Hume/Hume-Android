@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
+import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
@@ -181,36 +182,14 @@ fun EnergyScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface),
         contentPadding = PaddingValues(
-            top = statusBarTop + 8.dp, start = 18.dp, end = 18.dp,
+            // (N-06) Chua dung chieu cao pill title co dinh 76dp nhu iOS
+            // (M3EEnergyView.swift: padding top 76 = top 12 + pill ~50
+            // + bottom 6 + gap 8); pill that nam o lop co dinh ben duoi.
+            top = statusBarTop + 76.dp, start = 18.dp, end = 18.dp,
             bottom = 120.dp,
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            // Title boc boi nen card
-            // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp, bottom = 6.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                        .riseOnce("hdr", 0, risePlayed),
-                ) {
-                    Text(
-                        "Năng lượng",
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.3).sp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-            }
-        }
         item {
             EsubGroup(
                 // Thu tu + ten theo iOS (solar -> electric -> water, batch C them "Nước RO").
@@ -259,6 +238,38 @@ fun EnergyScreen(
         }
         item { Spacer(Modifier.height(8.dp)) }
     }
+        // (N-06) Fade gradient + pill title co dinh (port iOS
+        // M3EEnergyView.swift:203 + header co dinh): chi pill title co
+        // dinh, noi dung cuon ben duoi tan dan qua lop fade.
+        M3EHeaderFade(
+            color = MaterialTheme.colorScheme.surface,
+            height = statusBarTop + 76.dp,
+            modifier = Modifier.align(Alignment.TopStart),
+        )
+        // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .padding(top = statusBarTop + 12.dp, bottom = 6.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .riseOnce("hdr", 0, risePlayed),
+            ) {
+                Text(
+                    "Năng lượng",
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
         // Popup tai cho (muc 14): phu len noi dung tab, khong dieu huong
         InsightPopupOverlay(
             popup = insightPopup,

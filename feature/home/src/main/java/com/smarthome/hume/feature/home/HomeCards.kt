@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,17 +55,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.TextButton
 import com.smarthome.hume.core.data.HumeGraph
-import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.cameraKeyForSensor
 import com.smarthome.hume.core.model.roomNameForSensor
@@ -79,7 +74,6 @@ import com.smarthome.hume.core.ui.components.MarqueeText
 import com.smarthome.hume.core.ui.components.M3ECard
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.WeekChartD
-import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.data.AiTip
@@ -115,8 +109,6 @@ fun HomeHeader(
     userAvatar: UserAvatar? = null,
     onAvatarTap: () -> Unit = {},
     onAvatarPositioned: (Rect) -> Unit = {},
-    onSearch: () -> Unit,
-    onNotif: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -250,66 +242,8 @@ fun HomeHeader(
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        // Nut tim kiem tron 46px, nen surfaceHighest, icon 22px
-        Spacer(Modifier.width(10.dp))
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .background(extra.surfaceHighest)
-                .pressMorph(pressedScale = 0.88f, onClick = onSearch),
-        ) {
-            MsIcon(
-                Ms.search, null,
-                tint = cs.onSurfaceVariant,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Spacer(Modifier.width(10.dp))
-        // Chuong 46px + badge custom (error, 18px, 11px/700, top/right -2px)
-        Box(Modifier.size(46.dp)) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape)
-                    .background(extra.surfaceHighest)
-                    .pressMorph(pressedScale = 0.88f, onClick = onNotif),
-            ) {
-                MsIcon(
-                    Ms.notifications, null,
-                    tint = cs.onSurface,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-            if (state.notifications.isNotEmpty()) {
-                // Badge tron co dinh 20.dp (khong gian theo so chu so nhu pill).
-                // lineHeight = fontSize de glyph can giua doc chuan (khong lech do font metrics).
-                val count = state.notifications.size.coerceAtMost(99)
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 2.dp, y = (-2).dp)
-                        .size(20.dp)
-                        .clip(CircleShape)
-                        // User 2026-09-29: badge dung mau theme (primary),
-                        // khong dung do (error).
-                        .background(cs.primary),
-                ) {
-                    Text(
-                        "$count",
-                        style = MaterialTheme.typography.labelSmall,
-                        lineHeight = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = cs.onPrimary,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
+        // (GAP-12) Da xoa nut tim kiem + chuong thong bao khoi header
+        // (port iOS 487946e: HomeHeader chi con avatar 55 + ten + loi chao).
     }
 }
 
@@ -844,93 +778,3 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * The thong bao moi nhat - dat duoi "Goi y cho ban" de truy cap nhanh.
- * Neu AI duoc cau hinh, hien tom tat AI ve thong bao.
- */
-@Composable
-fun NotificationCard(
-    notifications: List<HomeNotification>,
-    aiSummary: String?,
-    onViewAll: () -> Unit,
-    onDismiss: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val cs = MaterialTheme.colorScheme
-    val latest = notifications.firstOrNull() ?: return
-
-    M3ECard(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(30.dp),
-        contentPadding = 18.dp,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(cs.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.Icon(
-                    imageVector = M3EIcons.BellVector,
-                    contentDescription = null,
-                    tint = cs.onPrimaryContainer,
-                    modifier = Modifier.size(28.dp),
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    latest.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cs.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    "${latest.body} · ${latest.timeText}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = cs.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
-                // Tom tat AI (neu co)
-                aiSummary?.let { summary ->
-                    Text(
-                        summary,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = cs.primary,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
-                if (notifications.size > 1) {
-                    TextButton(onClick = onViewAll) {
-                        Text(
-                            "Xem tất cả (${notifications.size})",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                }
-            }
-            IconButton(onClick = { onDismiss(latest.id) }) {
-                MsIcon(
-                    M3EIcons.Close,
-                    contentDescription = "Bỏ qua",
-                    tint = cs.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-    }
-}

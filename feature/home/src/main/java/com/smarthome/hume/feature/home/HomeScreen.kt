@@ -63,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -70,8 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.data.HumeGraph
-import com.smarthome.hume.core.model.DeviceKind
 import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
+import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.rememberHaptic
@@ -182,6 +183,12 @@ fun HomeScreen(
         // exit animation 300ms de len scroll gay rot frame. Scroll stop ->
         // debounce 350ms (user cham lai thi huy) -> thu.
         val listState = rememberLazyListState()
+        // (N-06) Chieu cao cum header co dinh (HomeHeader + PillsRow), do
+        // that bang onGloballyPositioned nhu iOS onGeometryChange
+        // (M3EHomeView.swift:16,117-118) — PillsRow cao them khi mo cum an
+        // ninh nen khong dung so cung; LazyColumn chua dung bang chieu cao nay.
+        var headerHeight by remember { mutableStateOf(180.dp) }
+        val density = LocalDensity.current
         var collapseArmed by remember { mutableStateOf(false) }
         LaunchedEffect(listState.isScrollInProgress) {
             if (listState.isScrollInProgress) {
@@ -220,7 +227,10 @@ fun HomeScreen(
                     flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
                         start = 18.dp, end = 18.dp,
-                        top = statusBarTop + 8.dp,
+                        // (N-06) Chua dung chieu cao header co dinh (do
+                        // that, gom status bar) nhu iOS padding top =
+                        // headerHeight (M3EHomeView.swift:72).
+                        top = headerHeight,
                         bottom = 120.dp,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
@@ -232,46 +242,6 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize(),
                 ) {
-                    item {
-                        Column(Modifier.padding(bottom = 14.dp)) {
-                            HomeHeader(
-                                state = state,
-                                avatarUrl = state.avatarUrl,
-                                userAvatar = userAvatar,
-                                onAvatarTap = {
-                                    // Mo viewer o tang root: mo + blur phu ca navbar
-                                    onOpenAvatarViewer(
-                                        AvatarViewerRequest(
-                                            name = state.userName.ifBlank { "Gia đình" },
-                                            avatar = userAvatar,
-                                            haAvatarUrl = state.avatarUrl,
-                                            targetRect = avatarRectRef.rect,
-                                        ),
-                                    )
-                                },
-                                onAvatarPositioned = {
-                                    avatarRectRef.rect = it
-                                    onAvatarPositioned(it)
-                                },
-                                onSearch = { viewModel.openSearch(true) },
-                                onNotif = { viewModel.openNotif(true) },
-                            )
-                        }
-                    }
-                    item {
-                        Column(Modifier.padding(bottom = 20.dp)) {
-                            PillsRow(
-                                alarm = state.alarm,
-                                lightsOnCount = state.lightsOn.size,
-                                securityExpanded = ui.securityExpanded,
-                                onToggleSecurity = { viewModel.toggleSecurity() },
-                                onAutoCollapse = { viewModel.collapseSecurity() },
-                                onArm = { mode, label -> viewModel.armAlarm(mode, label) },
-                                onDisarm = { viewModel.disarmAlarm() },
-                                onLights = { viewModel.openLights(true) },
-                            )
-                        }
-                    }
                     if (tips.isNotEmpty() || aiTips.isNotEmpty()) {
                         item {
                             Column(Modifier.padding(bottom = 12.dp)) {
@@ -334,6 +304,62 @@ fun HomeScreen(
                     }
                 }
 
+                // (N-06) Fade gradient + cum header co dinh phu tren noi
+                // dung cuon (port iOS M3EHomeView.swift:102-118): chi
+                // HomeHeader + PillsRow co dinh, Suggest cuon cung noi
+                // dung; header KHONG nen dac, chi cac phan tu header che
+                // noi dung ben duoi qua lop fade.
+                M3EHeaderFade(
+                    color = cs.surface,
+                    height = headerHeight,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+                Column(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp)
+                        .padding(top = statusBarTop + 8.dp)
+                        .onGloballyPositioned {
+                            headerHeight = with(density) { it.size.height.toDp() }
+                        },
+                ) {
+                    Column(Modifier.padding(bottom = 14.dp)) {
+                        HomeHeader(
+                            state = state,
+                            avatarUrl = state.avatarUrl,
+                            userAvatar = userAvatar,
+                            onAvatarTap = {
+                                // Mo viewer o tang root: mo + blur phu ca navbar
+                                onOpenAvatarViewer(
+                                    AvatarViewerRequest(
+                                        name = state.userName.ifBlank { "Gia đình" },
+                                        avatar = userAvatar,
+                                        haAvatarUrl = state.avatarUrl,
+                                        targetRect = avatarRectRef.rect,
+                                    ),
+                                )
+                            },
+                            onAvatarPositioned = {
+                                avatarRectRef.rect = it
+                                onAvatarPositioned(it)
+                            },
+                        )
+                    }
+                    Column(Modifier.padding(bottom = 20.dp)) {
+                        PillsRow(
+                            alarm = state.alarm,
+                            lightsOnCount = state.lightsOn.size,
+                            securityExpanded = ui.securityExpanded,
+                            onToggleSecurity = { viewModel.toggleSecurity() },
+                            onAutoCollapse = { viewModel.collapseSecurity() },
+                            onArm = { mode, label -> viewModel.armAlarm(mode, label) },
+                            onDisarm = { viewModel.disarmAlarm() },
+                            onLights = { viewModel.openLights(true) },
+                        )
+                    }
+                }
+
                 // (FAB speed-dial tam xoa theo yeu cau 29/09)
 
                 // Sheet phong (ModalBottomSheet cua M3: giu day du chuc nang
@@ -371,12 +397,6 @@ fun HomeScreen(
                         ),
                     )
                 }
-                if (ui.notifOpen) {
-                    NotificationSheet(
-                        notifications = state.notifications,
-                        onDismiss = { viewModel.openNotif(false) },
-                    )
-                }
                 // Sheet bieu do chi tiet (cham the Pin / Dien mat troi)
                 chartDetail?.let { type ->
                     ChartDetailSheet(
@@ -390,28 +410,6 @@ fun HomeScreen(
                         lights = state.lightsOn,
                         onDismiss = { viewModel.openLights(false) },
                         onToggle = { viewModel.toggle(it) },
-                    )
-                }
-                if (ui.searchOpen) {
-                    // Demo: query rong hien TOAN BO thiet bi
-                    val q = ui.searchQuery.trim().lowercase()
-                    val results = viewModel.searchableDevices().filter {
-                        q.isEmpty() ||
-                            it.label.lowercase().contains(q) ||
-                            it.sub.lowercase().contains(q) ||
-                            it.entityId.lowercase().contains(q)
-                    }.take(50)
-                    DeviceSearchView(
-                        query = ui.searchQuery,
-                        onQuery = { viewModel.onSearchQuery(it) },
-                        results = results,
-                        onToggle = { id ->
-                            // Dieu hoa dung toggleClimate, thiet bi thuong dung toggle
-                            if (results.any { d -> d.entityId == id && d.kind == DeviceKind.Climate })
-                                viewModel.toggleClimate(id)
-                            else viewModel.toggle(id)
-                        },
-                        onBack = { viewModel.openSearch(false) },
                     )
                 }
                 // (Dialog tiet kiem dien di kem FAB — tam xoa theo)

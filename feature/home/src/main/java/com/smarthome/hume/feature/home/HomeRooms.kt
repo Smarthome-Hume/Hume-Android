@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -73,6 +74,7 @@ import com.smarthome.hume.core.model.HomeNotification
 import com.smarthome.hume.core.model.RoomUi
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.DeviceIcon
+import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.M3EMotion
@@ -304,10 +306,11 @@ fun RoomSheet(
     // nho theo entityId nhu iOS expandedDevice (HomeRooms.swift).
     var expandedDeviceId by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
-    // Vi tri item cua thiet bi trong LazyColumn: header(0) + env(1) +
-    // climate?(1) + tieu de "Thiet bi"(1) + vi tri thiet bi.
+    // Vi tri item cua thiet bi trong LazyColumn (N-07: header da doi ra
+    // dai co dinh nen khong con item header): env(0) + climate?(1) +
+    // tieu de "Thiet bi"(1) + vi tri thiet bi.
     val deviceItemIndex: (String) -> Int = { id ->
-        val base = 2 + (if (room.climate != null) 1 else 0) +
+        val base = 1 + (if (room.climate != null) 1 else 0) +
             (if (room.devices.isNotEmpty()) 1 else 0)
         base + room.devices.indexOfFirst { it.entityId == id }
     }
@@ -325,97 +328,137 @@ fun RoomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
+        // (N-07) Detent 0.85 + bo 60dp nhu iOS HomeRooms.swift:426-427
+        // (.presentationDetents([.fraction(0.85)]) +
+        // .presentationCornerRadius(60)); cac sheet khac GIU 44dp
+        // (iOS M3EShape.sheet = 44).
+        shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp),
         containerColor = cs.surfaceContainer,
-        dragHandle = { GrabHandle() },
+        // (N-07) Khong dung dragHandle slot cua M3: GrabHandle nam trong
+        // dai header co dinh de fade 93dp phu kin tu dinh sheet nhu iOS
+        // (GrabHandle + header trong VStack co dinh, HomeRooms.swift:376-377).
+        dragHandle = null,
     ) {
-        // (Batch D, GAP-26) Full-height nhu iOS .large — bo cap 0.85 cu:
-        // the rua bat mo rong cao hon man hinh se cat hang nut cuoi.
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f),
         ) {
-            item {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        MsIcon(
-                            M3EIcons.room(room.iconKey), null,
-                            tint = cs.primary,
-                            modifier = Modifier.size(30.dp),
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    // (N-07) Top inset 93dp (= dai header 25 GrabHandle +
+                    // 56 header + 12 gap) de tile dau tien bat dau duoi
+                    // header co dinh (iOS HomeRooms.swift:355).
+                    contentPadding = PaddingValues(top = 93.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        EnvTile(
+                            icon = Icons.Outlined.Thermostat, label = "Nhiệt độ",
+                            value = room.tempC?.let { "%.1f°".format(Locale.US, it) } ?: "—",
+                            container = cs.primaryContainer,
+                            onContainer = cs.onPrimaryContainer,
+                            modifier = Modifier.weight(1f),
                         )
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            room.name,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = cs.onSurface,
+                        EnvTile(
+                            icon = Icons.Outlined.WaterDrop, label = "Độ ẩm",
+                            value = room.humidityPct?.let { "%.0f%%".format(it) } ?: "—",
+                            container = LocalHumeExtraColors.current.infoContainer,
+                            onContainer = LocalHumeExtraColors.current.onInfoContainer,
+                            modifier = Modifier.weight(1f),
                         )
                     }
-                    Text(
-                        "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = cs.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-                    )
+                }
+                // Dieu hoa
+                room.climate?.let { c ->
+                    item { ClimateCard(c, onClimateTemp, onHvacMode, onToggleClimate) }
+                }
+                // Thiet bi
+                if (room.devices.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Thiết bị",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = cs.onSurface,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    items(room.devices, key = { it.entityId }) { d ->
+                        DeviceRow(
+                            d,
+                            contactOpen = contactOpenForDevice(d.iconKey, d.label, notifications),
+                            onToggle = { onToggle(d.entityId) },
+                            expanded = expandedDeviceId == d.entityId,
+                            onToggleExpand = {
+                                // Mo/thu dung curve the an ninh: mo 450ms,
+                                // dong 700ms (iOS spring 0.45 / 0.7).
+                                val willOpen = expandedDeviceId != d.entityId
+                                expandedDeviceId = if (willOpen) d.entityId else null
+                            },
+                            expandedContent = {
+                                RoomExpandedContent(d, entityStates, expandedActions)
+                            },
+                        )
+                    }
+                }
+                item { Spacer(Modifier.height(24.dp)) }
+                }
+                // (N-07) Fade gradient kieu Zalo o dai top
+                // (M3EHeaderFade, iOS HomeRooms.swift:376-377).
+                M3EHeaderFade(
+                    color = cs.surfaceContainer,
+                    height = 93.dp,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+                // (N-07) Dai top co dinh — GrabHandle + header, noi dung
+                // cuon ben duoi tan dan qua lop fade (iOS v62/v63).
+                Column(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    GrabHandle()
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            // (N-07) Bo sheet 60dp nen goc tren bo rong
+                            // hon — doi header sang phai 8dp cho khoi sat
+                            // mep cong (iOS v59).
+                            .padding(start = 8.dp)
+                            .padding(horizontal = 20.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MsIcon(
+                                M3EIcons.room(room.iconKey), null,
+                                tint = cs.primary,
+                                modifier = Modifier.size(30.dp),
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                room.name,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = cs.onSurface,
+                            )
+                        }
+                        Text(
+                            "${room.deviceCount} thiết bị · ${room.devicesOn} đang bật",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = cs.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                        )
+                    }
                 }
             }
-            // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    EnvTile(
-                        icon = Icons.Outlined.Thermostat, label = "Nhiệt độ",
-                        value = room.tempC?.let { "%.1f°".format(Locale.US, it) } ?: "—",
-                        container = cs.primaryContainer,
-                        onContainer = cs.onPrimaryContainer,
-                        modifier = Modifier.weight(1f),
-                    )
-                    EnvTile(
-                        icon = Icons.Outlined.WaterDrop, label = "Độ ẩm",
-                        value = room.humidityPct?.let { "%.0f%%".format(it) } ?: "—",
-                        container = LocalHumeExtraColors.current.infoContainer,
-                        onContainer = LocalHumeExtraColors.current.onInfoContainer,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-            // Dieu hoa
-            room.climate?.let { c ->
-                item { ClimateCard(c, onClimateTemp, onHvacMode, onToggleClimate) }
-            }
-            // Thiet bi
-            if (room.devices.isNotEmpty()) {
-                item {
-                    Text(
-                        "Thiết bị",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = cs.onSurface,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
-                items(room.devices, key = { it.entityId }) { d ->
-                    DeviceRow(
-                        d,
-                        contactOpen = contactOpenForDevice(d.iconKey, d.label, notifications),
-                        onToggle = { onToggle(d.entityId) },
-                        expanded = expandedDeviceId == d.entityId,
-                        onToggleExpand = {
-                            // Mo/thu dung curve the an ninh: mo 450ms,
-                            // dong 700ms (iOS spring 0.45 / 0.7).
-                            val willOpen = expandedDeviceId != d.entityId
-                            expandedDeviceId = if (willOpen) d.entityId else null
-                        },
-                        expandedContent = {
-                            RoomExpandedContent(d, entityStates, expandedActions)
-                        },
-                    )
-                }
-            }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
@@ -662,12 +705,13 @@ private fun ClimateModeGroup(
 }
 
 /**
- * Kiem tra thiet bi co phai o cam khong (de hien xac nhan inline khi tat).
- * Chi ap dung cho o cam, khong phai moi switch (user 2026-10-14).
+ * Kiem tra thiet bi co can xac nhan inline khi tat khong (GAP-10, port
+ * 1:1 iOS HomeRooms.swift:858): MOI switch (switch.*) deu can xac nhan
+ * vi switch Zigbee la router mesh (user 2026-10-09); den (light.*)
+ * khong anh huong mesh nen toggle truc tiep.
  */
-private fun isOutlet(d: DeviceUi): Boolean {
-    val id = d.entityId.lowercase()
-    return "plug" in id || "o_cam" in id || "socket" in id || "outlet" in id
+private fun needsConfirmOff(d: DeviceUi): Boolean {
+    return d.entityId.startsWith("switch.")
 }
 
 /**
@@ -694,8 +738,9 @@ fun DeviceRow(
     val cs = MaterialTheme.colorScheme
     val extra = LocalHumeExtraColors.current
     val haptic = rememberHaptic()
-    // Xac nhan tat o cam inline (port iOS HomeDeviceRow, user 2026-10-14):
-    // chi o cam can xac nhan, hien 2 nut ngay trong the thay vi popup.
+    // Xac nhan tat switch inline (port iOS HomeDeviceRow, user 2026-10-09):
+    // switch Zigbee la router mesh nen tat can xac nhan, hien 2 nut ngay
+    // trong the thay vi popup.
     var isConfirming by remember { mutableStateOf(false) }
     // (Batch D, GAP-29) Switch mo dan bang opacity + scale 0.7 khi chuyen
     // sang cum xac nhan (iOS spring 0.3/0.85).
@@ -818,8 +863,9 @@ fun DeviceRow(
                             onCheckedChange = {
                                 if (isConfirming) return@M3ESwitch
                                 haptic()
-                                // Chi o cam can xac nhan khi tat (user 2026-10-14)
-                                if (isOutlet(d) && d.isOn) {
+                                // Switch (switch.*) can xac nhan khi tat —
+                                // router mesh (user 2026-10-09)
+                                if (needsConfirmOff(d) && d.isOn) {
                                     isConfirming = true
                                 } else {
                                     onToggle()
@@ -834,7 +880,7 @@ fun DeviceRow(
                         exit = fadeOut(tween(350, easing = M3EMotion.spring)) +
                             scaleOut(tween(350, easing = M3EMotion.spring)),
                     ) {
-                        // 2 nut xac nhan inline (thay popup, user 2026-10-14)
+                        // 2 nut xac nhan inline (thay popup, user 2026-10-09)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Nut Huy
                             Box(
@@ -895,3 +941,4 @@ fun DeviceRow(
         }
     }
 }
+

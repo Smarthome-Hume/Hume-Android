@@ -10,7 +10,6 @@ import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.data.AiTip
 import com.smarthome.hume.core.data.HomeRepository
 import com.smarthome.hume.core.data.HumeGraph
-import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeUiState
 import com.smarthome.hume.core.model.RoomUi
 import kotlinx.coroutines.CancellationException
@@ -38,10 +37,7 @@ data class Snack(
 )
 
 data class HomeScreenUi(
-    val searchOpen: Boolean = false,
-    val searchQuery: String = "",
     val selectedRoom: RoomUi? = null,
-    val notifOpen: Boolean = false,
     val lightsOpen: Boolean = false,
     val securityExpanded: Boolean = false,
     val snackbar: Snack? = null,
@@ -243,23 +239,13 @@ class HomeViewModel(
     }
 
     // ----- ui state -----
-    fun openSearch(v: Boolean) = _ui.update { it.copy(searchOpen = v, searchQuery = "") }
-    fun onSearchQuery(q: String) = _ui.update { it.copy(searchQuery = q) }
     fun selectRoom(room: RoomUi?) = _ui.update { it.copy(selectedRoom = room) }
-    fun openNotif(v: Boolean) = _ui.update { it.copy(notifOpen = v) }
     fun openLights(v: Boolean) = _ui.update { it.copy(lightsOpen = v) }
     fun toggleSecurity() = _ui.update { it.copy(securityExpanded = !it.securityExpanded) }
     fun collapseSecurity() = _ui.update { it.copy(securityExpanded = false) }
     fun showSnack(msg: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) =
         _ui.update { it.copy(snackbar = Snack(msg, actionLabel, onAction)) }
     fun clearSnack() = _ui.update { it.copy(snackbar = null) }
-
-    /** Tat ca thiet bi toggle duoc (den/cong tac) de tim kiem. */
-    fun searchableDevices(): List<DeviceUi> {
-        // Danh sach day du do AppHomeRepository build: gom climate + entity
-        // ngoai config tinh, da phan loai dung.
-        return state.value.searchDevices
-    }
 
     companion object {
         fun factory(): ViewModelProvider.Factory = viewModelFactory {

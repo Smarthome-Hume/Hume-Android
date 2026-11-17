@@ -73,6 +73,7 @@ import com.smarthome.hume.core.model.SensorUi
 import com.smarthome.hume.core.ui.camera.CameraFeedCard
 import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.components.M3ECard
+import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionHeader
@@ -122,25 +123,10 @@ fun SecurityScreen(
                 .padding(horizontal = 18.dp)
                 .m3ePageBottomPadding(),
         ) {
-            Spacer(Modifier.height(statusBarTop + 8.dp))
-            // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
-            Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp)) {
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(cs.primaryContainer)
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                        .riseIn(0),
-                ) {
-                    Text(
-                        "An ninh",
-                        color = cs.onPrimaryContainer,
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.3).sp,
-                    )
-                }
-            }
+            // (N-06) Chua dung chieu cao pill title co dinh 66dp nhu iOS
+            // (M3ESecurityView.swift: padding top 66 = top 8 + pill ~50
+            // + gap 8); pill that nam o lop co dinh ben duoi.
+            Spacer(Modifier.height(statusBarTop + 66.dp))
 
             // Camera picker (demo .esub: margin-bottom 14px; rise .42s)
             // Hien icon thay chu vi khong du chieu dai
@@ -223,6 +209,39 @@ fun SecurityScreen(
             SensorGrid(sensors = motionSensors)
             M3ESectionHeader(title = "Môi trường", delayMs = 540)
             SensorGrid(sensors = state.envSensors)
+        }
+
+        // (N-06) Fade gradient + pill title co dinh (port iOS
+        // M3ESecurityView.swift:69 + header co dinh): chi pill title co
+        // dinh, noi dung cuon ben duoi tan dan qua lop fade.
+        M3EHeaderFade(
+            color = cs.surface,
+            height = statusBarTop + 66.dp,
+            modifier = Modifier.align(Alignment.TopStart),
+        )
+        // Header: chi title duoc boc nen (subtitle de ngoai, khong nen)
+        Box(
+            Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .padding(top = statusBarTop + 8.dp),
+        ) {
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(cs.primaryContainer)
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .riseIn(0),
+            ) {
+                Text(
+                    "An ninh",
+                    color = cs.onPrimaryContainer,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
+                )
+            }
         }
 
         // Clip viewer — Dialog full-screen: phu ca navbar (demo .clipov position:fixed z-index:200)

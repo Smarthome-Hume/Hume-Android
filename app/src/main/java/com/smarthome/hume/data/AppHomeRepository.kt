@@ -593,7 +593,8 @@ class AppHomeRepository(
     }
 
     /**
-     * Danh sach tim kiem day du cho DeviceSearchView.
+     * Danh sach thiet bi day du (tung phuc vu tim kiem thiet bi, da xoa
+     * theo GAP-12 — port iOS 487946e).
      * 1. Thiet bi tu config tinh (label dep) + climate moi phong.
      * 2. Tat ca entity light/switch/fan/cover/lock/climate con lai -> tu dong
      *    phan loai dung (dieu hoa / den / o cam / cong tac / quat / rem / khoa).
