@@ -881,12 +881,8 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         ) {
             Text(
                 "Điện mặt trời",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich
-                // (truoc day unify 20sp/24,4 o vong 17/11, nay user giam ve 13pt).
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontSize = 13.sp,
-                    lineHeight = 15.8.sp,
-                ),
+                // Title 17pt theo lenh user 18/11.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,

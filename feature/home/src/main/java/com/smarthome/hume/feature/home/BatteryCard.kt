@@ -82,8 +82,8 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 "Hiệu năng pin",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                // Title 17pt theo lenh user 18/11.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )

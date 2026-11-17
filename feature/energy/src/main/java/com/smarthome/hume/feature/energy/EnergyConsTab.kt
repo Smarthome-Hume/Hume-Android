@@ -124,8 +124,8 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Sử dụng",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                // Title 17pt theo lenh user 18/11.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -182,9 +182,8 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     ) {
         Text(
             "Chi phí điện",
-            // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich
-            // (truoc day unify 20sp/24,4 o vong 17/11, nay user giam ve 13pt).
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+            // Title 17pt theo lenh user 18/11.
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -292,9 +291,8 @@ private fun PowerCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     ) {
         Text(
             "Công suất hoạt động",
-            // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich
-            // (truoc day unify 20sp/24,4 o vong 17/11, nay user giam ve 13pt).
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+            // Title 17pt theo lenh user 18/11.
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
         )
         Spacer(Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -424,9 +422,8 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             // (port iOS EnergyConsumeTab+Cards.swift:190-196).
             Text(
                 "Cơ cấu tiêu thụ",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich
-                // (luc rong; truoc day unify 20sp/24,4 o vong 17/11).
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                // Title 17pt theo lenh user 18/11 (luc rong).
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
             )
             Text(
                 "Chưa có dữ liệu tiêu thụ",
@@ -447,10 +444,9 @@ private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
             Column {
                 Text(
                     "Cơ cấu tiêu thụ",
-                    // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu
-                    // dich (luc co data; truoc day unify 20sp/24,4 o vong
-                    // 17/11). Mau giu onSurface nhu title the (doi o vong 17/11).
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                    // Title 17pt theo lenh user 18/11 (luc co data; mau giu
+                    // onSurface nhu title the).
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Row {
@@ -605,8 +601,8 @@ private fun DevicesCard(
             ) {
                 Text(
                     "Thiết bị",
-                    // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                    // Title 17pt theo lenh user 18/11.
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 )
                 Row(
                     modifier = Modifier
@@ -762,9 +758,8 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
         ) {
             Text(
                 "Pin thiết bị yếu",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich
-                // (truoc day unify 20sp/24,4 o vong 17/11, nay user giam ve 13pt).
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                // Title 17pt theo lenh user 18/11.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
             )
             if (state.lowBatteries.isEmpty()) {

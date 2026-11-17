@@ -163,8 +163,8 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Tải tiêu thụ",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                // Title 17pt theo lenh user 18/11.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 modifier = Modifier.alignByBaseline(),
             )
             Row(
@@ -246,8 +246,8 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         ) {
             Text(
                 "Pin S6",
-                // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu dich.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                // Title 17pt theo lenh user 18/11.
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
             )
             Text(
                 "SOC ${state.battery.soc.roundToInt()}%",
@@ -406,10 +406,9 @@ private fun Expander(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    // Title 13pt theo lenh user 18/11, lech iOS 20pt co chu
-                    // dich (truoc day unify 20sp/24,4 o vong 17/11; iOS
-                    // SolisExpander dung titleSmall 14pt).
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 13.sp, lineHeight = 15.8.sp),
+                    // Title 17pt theo lenh user 18/11 (iOS SolisExpander
+                    // dung titleSmall 14pt).
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
