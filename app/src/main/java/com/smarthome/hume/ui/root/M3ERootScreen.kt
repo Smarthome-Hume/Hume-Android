@@ -645,7 +645,15 @@ private fun M3ENavBar(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val pill = RoundedCornerShape(34.dp)
+    // (navbar 21:24) Bo nen ngoai 30dp = bo nen active 20dp + khe 10dp
+    // (nguyen tac dong tam: R_ngoai - R_active = khe giua 2 nen).
+    // Android cu 34dp (= 20 + 14, khop khe tren/duoi cu 14dp nhung
+    // lech khe canh 10dp). Sau khi giam chieu cao, khe tren/duoi =
+    // khe canh = 10dp nen R_ngoai = 30dp. Luu y: user noi nen active
+    // bo 16dp nhung code hien tai la RoundedCornerShape(20.dp) —
+    // lay so tu code (20dp); neu muon doi active ve 16dp thi
+    // R_ngoai phai tinh lai = 26dp.
+    val pill = RoundedCornerShape(30.dp)
     val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
     // Vuot ngang sang phai tren navbar -> mo trang Brief (2026-09-30, user
@@ -691,7 +699,12 @@ private fun M3ENavBar(
                 // (fix 3) iOS M3ERootView.swift:248: navbar = surfaceContainerLowest.
                 // Truoc day extra.surfaceLowest — fallback Cam 28211B khi seed Indigo/Lime.
                 .background(cs.surfaceContainerLowest.copy(alpha = 0.98f))
-                .padding(10.dp),
+                // (navbar 21:24) Padding doc 10 -> 6dp: khe tren/duoi
+                // (nen active -> mep nen ngoai) cu = 10 (Row) + 4 (item)
+                // = 14dp, lon hon khe canh = 10dp (Row ngang). Giam de
+                // khe tren/duoi = 6 + 4 = 10dp = khe canh. Chieu cao
+                // navbar 86 -> 78dp. Padding ngang giu 10dp.
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
             navItems.forEachIndexed { i, item ->
                 val isSel = i == selected
