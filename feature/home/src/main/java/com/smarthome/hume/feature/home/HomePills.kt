@@ -92,7 +92,7 @@ private val ExpandedPillContentGap = 4.dp
 /**
  * Hang pills trang Nha theo demo rev12 (.pills/.pill/.secmodes/.smode):
  * - .pills{gap:10px;mb:14px}: [secPill .pill][secmodes][bulbPill .pill].
- * - .pill: flex:1, surfaceHighest, bo 28px, padding 14px, gap 11px;
+ * - .pill: flex:1, surfaceContainerHighest, bo 28px, padding 14px, gap 11px;
  *   .pic 44px tron; .pl 14px/700; .ps 12px/500.
  * - SecPill doi theo mode (chi .pic + icon + ps): CFG nhu demo.
  * - Expanded (.pills.secon): ca hang scroll-x; secpill 100dp, bulb 84dp,
@@ -347,7 +347,7 @@ fun PillsRow(
     }
 }
 
-/** .pill.secpill: nen surfaceHighest co dinh; chi .pic/icon/ps doi theo mode.
+/** .pill.secpill: nen surfaceContainerHighest co dinh; chi .pic/icon/ps doi theo mode.
  * :active = scale(.93) + bo 28->18 + nen primaryContainer (nhu demo).
  * (2026-09-30) revert animateContentSize: no canh tranh voi exit animation
  * cua secmodes + horizontalScroll, gay remeasure moi frame khi scroll. */
@@ -388,7 +388,10 @@ private fun SecPill(
         label = "pillRadius",
     )
     val bg by animateColorAsState(
-        targetValue = if (pressed) cs.primaryContainer else extra.surfaceHighest,
+        // iOS HomePills.swift:186: idleBg = c.surfaceContainerHighest.
+        // Truoc day extra.surfaceHighest — voi seed Indigo/Lime, extra
+        // fallback ve Cam nen pill nau 35302A thay vi cham 1A203B.
+        targetValue = if (pressed) cs.primaryContainer else cs.surfaceContainerHighest,
         animationSpec = tween(300),
         label = "pillBg",
     )
@@ -524,7 +527,6 @@ private fun BulbPill(
     expanded: Boolean = false,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = LocalHumeExtraColors.current
     val haptic = rememberHaptic()
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -544,7 +546,9 @@ private fun BulbPill(
         label = "bulbRadius",
     )
     val bg by animateColorAsState(
-        targetValue = if (pressed) cs.primaryContainer else extra.surfaceHighest,
+        // iOS HomePills.swift:215: idleBg = c.surfaceContainerHighest.
+        // Truoc day extra.surfaceHighest — kẹt Cam khi seed Indigo/Lime.
+        targetValue = if (pressed) cs.primaryContainer else cs.surfaceContainerHighest,
         animationSpec = tween(300),
         label = "bulbBg",
     )
@@ -620,7 +624,6 @@ private fun SecModeCard(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = LocalHumeExtraColors.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     var vis by remember { mutableStateOf(false) }
@@ -651,7 +654,7 @@ private fun SecModeCard(
                 .width(88.dp)
                 .height(60.dp)
                 .clip(RoundedCornerShape(26.dp))
-                .background(if (selected) cs.primaryContainer else extra.surfaceHighest)
+                .background(if (selected) cs.primaryContainer else cs.surfaceContainerHighest)
                 .pressMorph(
                     pressedScale = 0.92f,
                     onClick = {

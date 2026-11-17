@@ -92,7 +92,6 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.avatar.LoopingVideoAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.MsIcon
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -122,14 +121,13 @@ fun HomeHeader(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val extra = LocalHumeExtraColors.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 8.dp, bottom = 2.dp, start = 2.dp, end = 2.dp),
     ) {
-        // .hava 55px surfaceHighest + .pdot 16px + vien ngoai 3px = 22px
+        // .hava 55px surfaceContainerHighest + .pdot 16px + vien ngoai 3px = 22px
         // Nhan vao avatar -> phong to kieu kinh lup (giong trang Thong tin).
         // KHONG clip tron o Box ngoai: cham trang thai o TopEnd tran ra ngoai
         // vien tron, bi clip cat mat mot phan. Box anh ben trong tu clip tron.
@@ -144,7 +142,11 @@ fun HomeHeader(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
-                    .background(extra.surfaceHighest),
+                    // iOS HomeHeader.swift:96,133: Circle().fill(c.surfaceContainerHighest).
+                    // Truoc day extra.surfaceHighest — voi seed Indigo/Lime, extra
+                    // fallback ve Cam (M3ERawTokens thieu key) nen avatar co nen
+                    // nau 35302A thay vi cham 1A203B.
+                    .background(cs.surfaceContainerHighest),
             ) {
                 // Uu tien: anh/video user upload > anh HA > icon mac dinh
                 when {
