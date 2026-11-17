@@ -28,4 +28,9 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:model"))
     implementation(project(":core:datastore"))
+    // RoomExpandedCards.kt import truc tiep kotlinx.serialization.json
+    // (JsonPrimitive/JsonArray/doubleOrNull/contentOrNull) nen module nay
+    // phai khai truc tiep, khong an theo :core:model (implementation khong
+    // truyen classpath sang module phu thuoc).
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 }

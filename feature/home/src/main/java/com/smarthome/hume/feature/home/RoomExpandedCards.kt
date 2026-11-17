@@ -82,6 +82,7 @@ import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.model.HomeEntity
 import com.smarthome.hume.core.ui.components.M3EMotion
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 
 /**
@@ -215,7 +216,7 @@ fun GenericExpandedView(
 //  - nut Dung: INERT nhu iOS (khong co DP chac chan ket thuc chu trinh).
 // ══════════════════════════════════════════════════════════════════
 
-private data class DishwasherProgram(
+internal data class DishwasherProgram(
     val display: String,
     val icon: ImageVector,
     val machineValue: String?,
