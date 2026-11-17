@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -812,7 +813,7 @@ fun DeviceRow(
             modifier = Modifier.clickable {
                 if (isConfirming) isConfirming = false
             },
-        ) {
+        ) headerRow@ {
             // Vung tap mo/thu: CHI cum icon+ten (khong gom vung switch,
             // de bam switch khong bi hieu thanh mo the). Dang xac nhan
             // tat thi tap nay CHI huy xac nhan, khong mo the (GAP-29).
@@ -922,7 +923,10 @@ fun DeviceRow(
                             },
                         )
                     }
-                    AnimatedVisibility(
+                    // Receiver tuong minh: AnimatedVisibility o day nam trong
+                    // Box (BoxScope) long trong Row — overload RowScope chi
+                    // goi duoc qua receiver hien, khong goi kieu implicit.
+                    this@headerRow.AnimatedVisibility(
                         visible = isConfirming,
                         enter = fadeIn(tween(350, easing = M3EMotion.spring)) +
                             scaleIn(tween(350, easing = M3EMotion.spring)),
