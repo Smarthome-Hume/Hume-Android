@@ -1401,6 +1401,7 @@ private fun SeedDot(
             )
         }
     }
+}
 
 /**
  * Card mo Quan ly phong & thiet bi (port iOS RoomManagementView).
@@ -1456,6 +1457,4 @@ private fun RoomManagementCard(onOpen: () -> Unit) {
             )
         }
     }
-}
-
 }

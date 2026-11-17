@@ -28,4 +28,10 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:model"))
     implementation(project(":core:datastore"))
+    // MeScreen mo RoomManagementScreen + dung RoomStore/PickerEntity (type
+    // cua :feature:home, truyen tu M3ERootScreen o :app). Them dep nay de
+    // het 3 loi 'home' unresolved o MeScreen.kt (2026-11-17). Day la dep
+    // feature->feature dau tien trong project; chieu 1 chieu, :feature:home
+    // khong depend :feature:me nen khong tao vong tron.
+    implementation(project(":feature:home"))
 }
