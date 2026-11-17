@@ -903,7 +903,6 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
                 // Nhom 11: hien luon so hom nay tren cot cuoi (khop title 14.5 kWh);
                 // WeekChartD goc chi hien so khi cham cot (tooltip) nen cot hom
                 // nay trong anh user khong co chi so.
-                showTodayValue = true,
             )
         } else {
             Text(

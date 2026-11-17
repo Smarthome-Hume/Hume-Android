@@ -54,14 +54,6 @@ fun WeekChartD(
     modifier: Modifier = Modifier,
     /** Don vi hien trong tooltip (GAP-24): mac dinh kWh, tab Nuoc truyen "L". */
     unit: String = "kWh",
-    /**
-     * Hien luon gia tri tren cot hom nay (cot cuoi) — nhom 11, 17/11/2026:
-     * WeekChartD goc chi hien gia tri khi CHAM cot (tooltip pill); khong cot
-     * nao co nhan so co dinh, nen cot hom nay trong anh user khong co chi so
-     * du title van hien 14.5 kWh (cung nguon live). Mac dinh false de khong
-     * doi cac tab khac (Su dung / Nuoc) khi chua co lenh.
-     */
-    showTodayValue: Boolean = false,
 ) {
     val cs = MaterialTheme.colorScheme
     var selected by remember { mutableStateOf<Int?>(null) }
@@ -116,7 +108,6 @@ fun WeekChartD(
             chaosFactors = List(vals.size) { 1f }
         }
         vals.forEachIndexed { i, v ->
-            val today = i == vals.lastIndex
             val top = y(v)
             val baseH = (140.dp - top).coerceAtLeast(4.dp)
             val chaos = chaosFactors.getOrElse(i) { 1f }
@@ -145,26 +136,6 @@ fun WeekChartD(
                         })
                     },
             )
-            if (showTodayValue && today) {
-                // Nhan gia tri THAT tren cot hom nay (vals.last = live PV_TODAY,
-                // cung nguon voi title o SolarWeekCard) — khong them don vi de gon.
-                // top on dinh theo v (khong theo chaos) nen nhan khong nhay.
-                Box(
-                    modifier = Modifier
-                        .offset(x = x(i) - 30.dp, y = (top - 20.dp).coerceAtLeast(0.dp))
-                        .width(60.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "%.1f".format(v),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = cs.primary,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                    )
-                }
-            }
             if (selected == i) {
                 // Tooltip dang pill M3E: vien thuoc tron hoan toan, nen dac
                 // surfaceContainerHigh + bong do (khong dung nen mo glass).

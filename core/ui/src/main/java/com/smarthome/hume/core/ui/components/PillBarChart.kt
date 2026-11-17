@@ -31,7 +31,6 @@ fun PillBarChart(
     maxHeight: Dp = 120.dp,
     barWidth: Dp = 30.dp,
     todayIndex: Int = values.size - 1,
-    valueLabel: (Float) -> String = { "" },
 ) {
     val max = (values.maxOrNull() ?: 1f).coerceAtLeast(0.001f)
     val pill = RoundedCornerShape(50)
@@ -48,14 +47,8 @@ fun PillBarChart(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom,
-                    modifier = Modifier.height(maxHeight + 20.dp),
+                    modifier = Modifier.height(maxHeight),
                 ) {
-                    val lbl = valueLabel(v)
-                    if (lbl.isNotEmpty()) {
-                        Text(lbl, style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Spacer(Modifier.height(4.dp))
                     Box(
                         Modifier
                             .width(barWidth)
