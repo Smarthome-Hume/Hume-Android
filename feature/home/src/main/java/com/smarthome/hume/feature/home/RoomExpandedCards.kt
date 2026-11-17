@@ -206,7 +206,7 @@ fun GenericExpandedView(
 //  - switch: nguon DP 1, bat dau DP 2 (CHUA TUNG TEST TU HA),
 //    hoi nuoc DP 108, chong dia DP 102, khoa tre em DP 101 (o "Say chong
 //    khuan" — ten entity goc la khoa tre em, iOS dung lam tang cuong)
-//  - number: hen gio DP 8 (phut, 0–1440), nuoc mem DP 106 (1–15)
+//  - number: hen gio DP 8 (phut, 0–1440), nuoc mem DP 106 (3–15)
 //  - localtuya device_id: eb37b93fb51d417056uicd
 //  - chuong trinh: CHI 3 ma da biet duoc gui qua localtuya.set_dp DP 6
 //    (Intensive/Auto do truc tiep, Eco suy tu ten demo REA — can 1 lan
@@ -222,7 +222,7 @@ private data class DishwasherProgram(
     val durationMin: Int?,
 )
 
-private object DishwasherPrograms {
+internal object DishwasherPrograms {
     const val deviceId = "eb37b93fb51d417056uicd"
 
     const val statusEntity = "sensor.texgio_tgfpcm795b_g_trang_thai"
@@ -238,6 +238,14 @@ private object DishwasherPrograms {
     const val antibacSwitch = "switch.texgio_tgfpcm795b_g_khoa_tre_em"
     const val timerNumber = "number.texgio_tgfpcm795b_g_hen_gio"
     const val softNumber = "number.texgio_tgfpcm795b_g_nuoc_mem"
+
+    /** Toan bo 12 entity the rua bat doc (iOS DishwasherLiveManager.cardEntities)
+     * — HomeViewModel dung de nhan biet lenh rua bat va refetch sau lenh (N-09). */
+    val cardEntityIds: Set<String> = setOf(
+        statusEntity, stageEntity, remainingEntity, tempEntity, programEntity,
+        powerSwitch, startSwitch, steamSwitch, stackSwitch, antibacSwitch,
+        timerNumber, softNumber,
+    )
 
     val all: List<DishwasherProgram> = listOf(
         DishwasherProgram("Tiết kiệm", Icons.Outlined.Eco, "Eco", null),
@@ -329,10 +337,10 @@ fun DishwasherExpandedView(
         animationSpec = tween(450, easing = M3EMotion.spring),
         label = "dwChevron",
     )
-    var softSlider by remember { mutableFloatStateOf(softLevel.toFloat().coerceIn(1f, 15f)) }
+    var softSlider by remember { mutableFloatStateOf(softLevel.toFloat().coerceIn(3f, 15f)) }
     var draggingSoft by remember { mutableStateOf(false) }
     LaunchedEffect(softLevel) {
-        if (!draggingSoft) softSlider = softLevel.toFloat().coerceIn(1f, 15f)
+        if (!draggingSoft) softSlider = softLevel.toFloat().coerceIn(3f, 15f)
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -533,7 +541,7 @@ fun DishwasherExpandedView(
 
         HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
 
-        // NUOC MEM: nhan + nut -/+ 56dp + slider 1–15, gui khi tha tay
+        // NUOC MEM: nhan + nut -/+ 56dp + slider 3–15, gui khi tha tay
         // qua number.set_value DP 106, hien thi "x/15".
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
@@ -545,9 +553,9 @@ fun DishwasherExpandedView(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 DishwasherStepperButton(
                     icon = Icons.Outlined.Remove,
-                    enabled = softLevel > 1,
+                    enabled = softLevel > 3,
                     onClick = {
-                        val v = maxOf(1, softLevel - 1)
+                        val v = maxOf(3, softLevel - 1)
                         actions.onSetNumber(p.softNumber, v.toDouble())
                         softSlider = v.toFloat()
                     },
@@ -559,8 +567,8 @@ fun DishwasherExpandedView(
                         softSlider = it
                         draggingSoft = true
                     },
-                    valueRange = 1f..15f,
-                    steps = 13,
+                    valueRange = 3f..15f,
+                    steps = 11,
                     onValueChangeFinished = {
                         draggingSoft = false
                         actions.onSetNumber(p.softNumber, softSlider.toInt().toDouble())

@@ -400,6 +400,17 @@ class HomeAssistantRepository {
         if (entityId == "sensor.solis_s6_eh1p_status_string_3" ||
             entityId == "sensor.solis_s6_eh1p_meter_active_power"
         ) return UpdateBucket.REALTIME
+        // (N-10, port iOS HomeAssistantManager.updateBucket) The rua bat:
+        // 5 sensor texgio phai REALTIME de nut va so tren the doi theo
+        // ngay (khong roi bucket TEN_SECONDS cua sensor.*). 7 entity
+        // con lai cua the (switch/number) da REALTIME theo nhanh
+        // discrete o cuoi ham, nen khong can liet ke them.
+        if (entityId == "sensor.texgio_tgfpcm795b_g_trang_thai" ||
+            entityId == "sensor.texgio_tgfpcm795b_g_giai_doan_rua" ||
+            entityId == "sensor.texgio_tgfpcm795b_g_thoi_gian_con_lai" ||
+            entityId == "sensor.texgio_tgfpcm795b_g_nhiet_do" ||
+            entityId == "sensor.texgio_tgfpcm795b_g_chuong_trinh"
+        ) return UpdateBucket.REALTIME
         return if (entityId.startsWith("sensor.")) UpdateBucket.TEN_SECONDS
         else UpdateBucket.REALTIME
     }
@@ -748,6 +759,64 @@ class HomeAssistantRepository {
             }
         } catch (t: Throwable) {
             Log.e(TAG, "fetchEntityState failed for $url", t)
+        }
+    }
+
+    /**
+     * (N-09) 12 entity the rua bat — 1 nguon su that duy nhat cho refetch
+     * sau lenh, port iOS DishwasherLiveManager.cardEntities (5 sensor +
+     * 7 switch/number). Cung danh sach voi AppHomeRepository (watched) va
+     * RoomExpandedCards.DishwasherPrograms.cardEntityIds.
+     */
+    val dishwasherEntityIds: Set<String> = setOf(
+        "sensor.texgio_tgfpcm795b_g_trang_thai",
+        "sensor.texgio_tgfpcm795b_g_giai_doan_rua",
+        "sensor.texgio_tgfpcm795b_g_thoi_gian_con_lai",
+        "sensor.texgio_tgfpcm795b_g_nhiet_do",
+        "sensor.texgio_tgfpcm795b_g_chuong_trinh",
+        "switch.texgio_tgfpcm795b_g_may_rua_bat",
+        "switch.texgio_tgfpcm795b_g_bat_dau",
+        "switch.texgio_tgfpcm795b_g_hoi_nuoc",
+        "switch.texgio_tgfpcm795b_g_chong_dia",
+        "switch.texgio_tgfpcm795b_g_khoa_tre_em",
+        "number.texgio_tgfpcm795b_g_hen_gio",
+        "number.texgio_tgfpcm795b_g_nuoc_mem",
+    )
+
+    /**
+     * (N-09) Port iOS HomeAssistantManager.refreshStates(ids:) — GET
+     * /api/states, loc dung 12 entity rua bat roi merge. applyUpdates chi
+     * phat entityUpdated cho entity doi state/attributes (nhu iOS: chi
+     * send khi prev != state), entity khong doi giu nguyen instance.
+     */
+    suspend fun refreshDishwasherStates() = withContext(Dispatchers.IO) {
+        val url = "${endpoint.currentBaseUrl}/api/states"
+        try {
+            val req = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) return@use
+                val body = resp.body?.string().orEmpty()
+                val arr = json.decodeFromString<List<HAEntity>>(body)
+                val fresh = arr.filter { it.entityId in dishwasherEntityIds }
+                    .associate { it.entityId to it.toHomeEntity() }
+                if (fresh.isNotEmpty()) applyUpdates(fresh)
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "refreshDishwasherStates failed for $url", t)
+        }
+    }
+
+    /**
+     * (N-09) Port iOS RoomExpandedCards.refreshAfterCommand() — fetch lai
+     * state that o 1s + 4s sau moi lenh rua bat, chay nen tren scope IO,
+     * khong block UI.
+     */
+    fun refreshDishwasherAfterCommand() {
+        scope.launch {
+            delay(1_000)
+            refreshDishwasherStates()
+            delay(3_000)
+            refreshDishwasherStates()
         }
     }
 

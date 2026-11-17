@@ -22,6 +22,9 @@ interface HomeRepository {
     fun setNumber(entityId: String, value: Double)
     /** (Batch D, GAP-08) Gui datapoint LocalTuya (chi ma da biet). */
     fun setLocalTuyaDp(deviceId: String, dp: Int, value: String)
+    /** (N-09) Refetch 12 entity rua bat o 1s + 4s sau lenh — port iOS
+     * RoomExpandedCards.refreshAfterCommand(). Khong block UI. */
+    fun refreshDishwasherAfterCommand()
     fun setLightBrightness(entityId: String, percent: Int)
     /** (Batch D, GAP-09) Mau RGB + hieu ung cho the den mo rong. */
     fun setLightRgb(entityId: String, r: Int, g: Int, b: Int)

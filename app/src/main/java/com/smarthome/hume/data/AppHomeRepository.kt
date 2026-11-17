@@ -282,6 +282,7 @@ class AppHomeRepository(
         ha.setLightEffect(entityId, effect)
     override fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
         ha.setLocalTuyaDp(deviceId, dp, value)
+    override fun refreshDishwasherAfterCommand() = ha.refreshDishwasherAfterCommand()
     override fun setClimateTemp(entityId: String, tempC: Double) =
         ha.setClimateTemperature(entityId, tempC)
     override fun setHvacMode(entityId: String, mode: String) = ha.setHvacMode(entityId, mode)

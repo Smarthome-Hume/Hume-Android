@@ -144,11 +144,23 @@ class HomeViewModel(
     }
 
     // ----- actions (uy thac xuong repo) -----
-    fun toggle(entityId: String) = repo.toggle(entityId)
+    fun toggle(entityId: String) {
+        repo.toggle(entityId)
+        // (N-09) Len rua bat (nguon/bat dau/3 tang cuong): refetch 12 entity
+        // o 1s + 4s sau lenh, nhu iOS refreshAfterCommand(). Len khac khong refetch.
+        if (entityId in DishwasherPrograms.cardEntityIds) repo.refreshDishwasherAfterCommand()
+    }
     /** (Batch D, GAP-08) Ghi number + datapoint LocalTuya cho the rua bat. */
-    fun setNumber(entityId: String, value: Double) = repo.setNumber(entityId, value)
-    fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) =
+    fun setNumber(entityId: String, value: Double) {
+        repo.setNumber(entityId, value)
+        // (N-09) Len rua bat (nuoc mem DP 106 / hen gio DP 8): refetch nhu tren.
+        if (entityId in DishwasherPrograms.cardEntityIds) repo.refreshDishwasherAfterCommand()
+    }
+    fun setLocalTuyaDp(deviceId: String, dp: Int, value: String) {
         repo.setLocalTuyaDp(deviceId, dp, value)
+        // (N-09) Chon chuong trinh rua bat (DP 6): refetch nhu tren.
+        if (deviceId == DishwasherPrograms.deviceId) repo.refreshDishwasherAfterCommand()
+    }
     fun setBrightness(entityId: String, percent: Int) = repo.setLightBrightness(entityId, percent)
     /** (Batch D, GAP-09) Mau RGB + hieu ung cho the den mo rong. */
     fun setLightRgb(entityId: String, r: Int, g: Int, b: Int) = repo.setLightRgb(entityId, r, g, b)
