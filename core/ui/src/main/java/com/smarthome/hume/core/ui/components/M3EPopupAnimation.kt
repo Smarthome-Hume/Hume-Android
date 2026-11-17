@@ -122,7 +122,7 @@ object M3EPopupAnimation {
  * @param visible hien/ẩn popup.
  * @param onDismissRequest null → scrim khong bat tap.
  * @param scrimAlpha do mo cua scrim (0..1), mac dinh 0.45 nhu iOS.
- * @param sourceRectDp Rect (dp, toa do root) cua nut bam de popup phong ra tu do.
+ * @param sourceRectDp Rect (px, toa do root — geometry Rect, vd boundsInRoot) cua nut bam de popup phong ra tu do. (Ten cu ghi "dp" la sai: geometry Rect luon la px.)
  * @param contentAlignment can chinh content, mac dinh giua.
  */
 @Composable
@@ -217,12 +217,10 @@ private fun PopupRectContent(
         // Source: rect nut bam, hoac 40dp tai giua (fallback nhu iOS)
         val startRect = remember(sourceRectDp, maxW, maxH) {
             sourceRectDp?.let {
-                with(density) {
-                    Rect(
-                        it.left.toPx(), it.top.toPx(),
-                        it.right.toPx(), it.bottom.toPx(),
-                    )
-                }
+                // (2026-11-17) geometry Rect da la px (left/top/right/bottom
+                // la Float) — khong goi .toPx() nua: Float khong co toPx(),
+                // chi Dp/TextUnit co (loi build Dell: receiver type mismatch).
+                Rect(it.left, it.top, it.right, it.bottom)
             } ?: with(density) {
                 val cx = maxW.toPx() / 2
                 val cy = maxH.toPx() / 2

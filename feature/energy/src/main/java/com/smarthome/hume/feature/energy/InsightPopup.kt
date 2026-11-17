@@ -71,8 +71,9 @@ fun InsightPopupOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     /**
-     * Rect (dp, toa do root) cua nut bam de popup phong ra tu do
-     * (port iOS 58a3542). Null = phong tu diem giua.
+     * Rect (px, toa do root — geometry Rect) cua nut bam de popup phong ra
+     * tu do (port iOS 58a3542). Null = phong tu diem giua.
+     * (2026-11-17: sua doc — truoc ghi "dp" la sai, geometry Rect la px.)
      */
     sourceRectDp: androidx.compose.ui.geometry.Rect? = null,
     cost: com.smarthome.hume.core.model.EnergyCost? = null,
