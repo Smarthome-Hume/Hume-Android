@@ -365,7 +365,15 @@ class AppEnergyRepository(
         val candidates: List<LegacyEntity> = entities.values
             .filter { e ->
                 e.id.startsWith("sensor.") && e.id.endsWith("_power") &&
-                    powerNoise.none { e.id.contains(it) }
+                    powerNoise.none { e.id.contains(it) } &&
+                    // (Viec 4 — xoa Powerwall khoi list cong suat/nang luong/donut)
+                    // powerNoise cu chi chan "solis"/"battery" nen sensor he pin/
+                    // bien tan co id chua "powerwall"/"bms"/... van lot vao day
+                    // (vd sensor.powerwall_bms_*_power hoac sensor dan xuat
+                    // *_power cua he pin). Chan o nguon candidates thi ca
+                    // powerDevices, energyDevices va donut (lay tu energyDevices)
+                    // deu sach Powerwall.
+                    !e.isBatterySystemSensor()
             }
 
         val prefixLookup = entities.keys.mapNotNull { id ->
@@ -429,6 +437,15 @@ class AppEnergyRepository(
                     ?: prefixLookup[e.id.removeSuffix("_power")]
                     ?: return@mapNotNull null
                 entities[energyId] ?: return@mapNotNull null
+            }
+            // (Viec 4) Chong lot qua sensor nang luong dich: candidate trung
+            // tinh co the map (qua energyByName/prefixLookup) sang sensor nang
+            // luong cua he pin/bien tan (vd sensor nang luong Powerwall) thi
+            // kWh pin van lot vao energyDevices -> donut. Bo khi dich thuoc
+            // he pin/bien tan (powerNoise cu "solis"/"battery"/... hoac
+            // isBatterySystemSensor "powerwall"/"bms"/...).
+            if (powerNoise.any { target.id.contains(it) } || target.isBatterySystemSensor()) {
+                return@mapNotNull null
             }
             val kwh = target.kwh() ?: return@mapNotNull null
             if (kwh <= 0) return@mapNotNull null
@@ -522,6 +539,28 @@ private fun LegacyEntity.deviceClass(): String? = attr("device_class")
 private fun LegacyEntity.unitOfMeasurement(): String? = attr("unit_of_measurement")
 
 private fun LegacyEntity.unitRaw(): String? = unitOfMeasurement()?.trim()
+
+// (Viec 4 — xoa Powerwall khoi list cong suat/nang luong/donut) Nhan dien
+// sensor thuoc he pin/bien tan Powerwall/Solis:
+// - id: sensor.powerwall_bms_{master,pack_1,pack_3,pack_4}_* (ESP32 BMS, 4
+//   pack — port PowerwallLiveData.entityIds / AppHomeRepository
+//   POWERWALL_ENTITY_IDS, 205 entity; pack 2 la slot trong, khong co) va
+//   sensor dan xuat *_power cua he pin/bien tan co id chua "powerwall",
+//   "bms", "pylontech" (giao tiep Pylontech cua master) hoac "inverter".
+//   Sensor Solis sensor.solis_s6_eh1p_battery_power_2 va
+//   sensor.battery_power_flow (HumeConfig.BATTERY_POWER) da bi powerNoise
+//   chan boi "solis"/"battery" nen khong can lap lai o day.
+// - friendly_name: bat truong hop id trung tinh nhung ten hien thi la
+//   "Powerwall..." (ten nay la cai user thay trong list).
+// Chi khop cac tu khoa he pin/bien tan nen khong cham thiet bi thuong
+// (dieu_hoa/air_condition, o_cam_may_giat, o_cam_tu_lanh, den...).
+private fun LegacyEntity.isBatterySystemSensor(): Boolean {
+    val lowerId = id.lowercase()
+    if (lowerId.contains("powerwall") || lowerId.contains("bms") ||
+        lowerId.contains("pylontech") || lowerId.contains("inverter")
+    ) return true
+    return friendly().contains("powerwall", ignoreCase = true)
+}
 
 // (GAP-25 — port iOS discoverDevices) iOS khong match theo unit/device_class
 // cho power: moi sensor.*_power deu la candidate, doi don vi bang toWatts
