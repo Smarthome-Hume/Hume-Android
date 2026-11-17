@@ -100,6 +100,8 @@ fun HomeScreen(
     onOpenEnergy: () -> Unit = {},
     /** Bam "Xem pin" o the goi y -> sang tab Nang luong, cuon toi the pin. */
     onOpenEnergyBattery: () -> Unit = {},
+    /** (N-05) An the pin -> mo trang Powerwall (port iOS M3EHomeView.swift:62,147). */
+    onOpenPowerwall: () -> Unit = {},
     loadChartHistory: ChartHistoryLoader = { _, _, _ -> emptyList() },
     /**
      * Mo viewer avatar / popup camera o tang root (M3ERootScreen) de lop mo +
@@ -285,7 +287,7 @@ fun HomeScreen(
                         Column(Modifier.padding(bottom = 20.dp)) {
                             BatteryCard(
                                 state.battery,
-                                onClick = { chartDetail = ChartDetailType.Battery },
+                                onClick = onOpenPowerwall,
                             )
                         }
                     }
@@ -300,6 +302,9 @@ fun HomeScreen(
                             notifications = state.notifications,
                             onRoom = { viewModel.selectRoom(it) },
                             onToggleLight = { viewModel.toggle(it) },
+                            // (GAP-30) Nut den 1 lenh: gui TOAN BO light.* cua phong
+                            // trong 1 lenh batch (GAP-28: HomeViewModel.toggleRoomLights).
+                            onToggleLights = { viewModel.toggleRoomLights(it) },
                         )
                     }
                 }

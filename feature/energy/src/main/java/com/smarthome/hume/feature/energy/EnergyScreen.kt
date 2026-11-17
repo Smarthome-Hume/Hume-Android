@@ -91,6 +91,8 @@ fun EnergyScreen(
     /** Deep-link tu the goi y ("battery"): mo sub-tab Dien mat troi + cuon toi the nang luong. */
     deepLink: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    /** (N-05) An node Pin tren flow card -> mo trang Powerwall (port iOS M3EEnergyView.swift:172,227). */
+    onOpenPowerwall: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
     val ui by vm.ui.collectAsState()
@@ -119,7 +121,9 @@ fun EnergyScreen(
         }
     }
 
-    // Popup tai cho tu goi y nang luong / node pin flow card (muc 14)
+    // Popup tai cho tu goi y nang luong (muc 14) — GIU cho
+    // InsightActionTarget.BatteryPopup; node pin flow card KHONG dung
+    // popup nay nua, mo trang Powerwall (N-05, port iOS v69).
     var insightPopup by remember { mutableStateOf<InsightPopup?>(null) }
 
     // Banner bao doi trang thai luoi (port iOS M3EEnergyView gridAlert):
@@ -247,7 +251,7 @@ fun EnergyScreen(
                     EnergySubTab.Solar -> EnergySolarTab(
                         state = state, ui = ui, vm = vm, risePlayed = risePlayed,
                         energyBivr = energyBivr,
-                        onBatteryClick = { insightPopup = InsightPopup.Battery },
+                        onBatteryClick = onOpenPowerwall,
                     )
                     EnergySubTab.Water -> EnergyWaterTab(
                         state = state, risePlayed = risePlayed,

@@ -3,6 +3,7 @@ package com.smarthome.hume.ui.root
 import android.graphics.Bitmap
 import android.os.Build
 import android.view.View
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -87,6 +88,7 @@ import com.smarthome.hume.feature.home.ChartHistorySeries
 import com.smarthome.hume.feature.energy.EnergyNotifier
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
 import com.smarthome.hume.feature.energy.PumpAlertMonitor
+import com.smarthome.hume.feature.energy.powerwall.PowerwallScreen
 import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
 import kotlinx.coroutines.flow.map
@@ -208,12 +210,14 @@ fun M3ERootScreen(
         // (2026-09-30, user chon thay cho vuot canh trai de tranh nham voi
         // system back gesture cua thiet bi).
         var briefOpen by rememberSaveable { mutableStateOf(false) }
-        // (GAP-37) Trang mo phong Powerwall 3D dang mo — chan vuot mep mo Brief
+        // (GAP-37 + N-05) Trang mo phong Powerwall 3D dang mo — chan vuot mep mo Brief
         // (port iOS M3ERootView.swift:47-48,52-66: if powerwallShown { return }).
-        // Android: trang Powerwall (feature/energy/powerwall/PowerwallRoute)
-        // hien CHUA noi vao dieu huong cua root (grep: khong caller nao
-        // navigate toi route nay) nen co nay tam luon false; khi noi trang
-        // vao (mo bang navigationDestination nhu iOS) thi set true luc mo.
+        // (N-05) Root Android KHONG co NavHost (tab chuyen bang `when (selected)`
+        // ben duoi, khong phai navigation-compose) nen trang Powerwall duoc mo
+        // bang co boolean nay — tuong duong iOS `.navigationDestination(
+        // isPresented: showPowerwall)` (M3EHomeView.swift:147,
+        // M3EEnergyView.swift:227): the pin / node pin goi onOpenPowerwall
+        // -> set true; pill title "Powerwall" hoac back he thong -> false.
         var powerwallShown by remember { mutableStateOf(false) }
         // Overlay toan man hinh (viewer avatar / popup camera): ve o tang root,
         // TREN navbar, de lop mo + blur phu ca navbar chu khong chi vung content.
@@ -297,6 +301,8 @@ fun M3ERootScreen(
                             selected = 1
                             energyDeepLink = "battery"
                         },
+                        // (N-05) An the pin -> mo trang Powerwall (iOS M3EHomeView.swift:62).
+                        onOpenPowerwall = { powerwallShown = true },
                         onOpenAvatarViewer = { req ->
                             bgSnapshot = captureSnapshot(req.targetRect)
                             avatarViewer = req
@@ -321,6 +327,9 @@ fun M3ERootScreen(
                     HumeTab.Energy -> M3EEnergyScreen(
                         deepLink = energyDeepLink,
                         onDeepLinkConsumed = { energyDeepLink = null },
+                        // (N-05) An node Pin tren flow card -> mo trang Powerwall
+                        // (iOS M3EEnergyView.swift:172).
+                        onOpenPowerwall = { powerwallShown = true },
                     )
                     HumeTab.Security -> M3ESecurityScreen(
                         onDownloadClip = { clip ->
@@ -414,12 +423,16 @@ fun M3ERootScreen(
                     ),
             )
             // (2026-10-01) Bo fadeBottom theo user "ko them fade".
-            M3ENavBar(
-                selected = selected,
-                onSelect = { selected = it },
-                onSwipeOpenBrief = { briefOpen = true },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+            // (N-05) Trang Powerwall mo thi an navbar (port iOS
+            // M3ERootView.swift:86-87: opacity 0 + allowsHitTesting false).
+            if (!powerwallShown) {
+                M3ENavBar(
+                    selected = selected,
+                    onSelect = { selected = it },
+                    onSwipeOpenBrief = { briefOpen = true },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
             // Lop nen mo blur + overlay: ve SAU navbar de phu toan man hinh.
             // Dung anh chup tinh (khong blur live) nen mo/dong/keo khong khựng.
             if (overlayOpen) {
@@ -466,6 +479,15 @@ fun M3ERootScreen(
                 open = briefOpen,
                 onOpenChange = { briefOpen = it },
             )
+            // (N-05) Trang Powerwall 3D — mo bang co powerwallShown (tuong duong
+            // iOS .navigationDestination(isPresented: showPowerwall)); lop tren
+            // cung, phu ca navbar (navbar da an o tren). Ve bang pill title
+            // "Powerwall" (onBack) hoac back he thong (BackHandler — tuong duong
+            // back cua NavHost, vi root khong co NavHost).
+            BackHandler(enabled = powerwallShown) { powerwallShown = false }
+            if (powerwallShown) {
+                PowerwallScreen(onBack = { powerwallShown = false })
+            }
         }
     }
 }
