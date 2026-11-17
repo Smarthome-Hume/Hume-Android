@@ -22,13 +22,13 @@ android {
         // bang debug key de Macrobenchmark cai duoc len may that ma khong can
         // keystore release (theo doc Macrobenchmark). Module :baselineprofile
         // nham toi variant nay qua testBuildType = "benchmark".
-        // baselineProfile.automaticGenerationDuringBuild: tuy chon theo doc
-        // Macrobenchmark hien tai; neu Gradle sync bao khong co property nay
-        // thi xoa dong do, khong anh huong do frame time.
+        // (2026-11-17, xoa theo fallback Batch 1) Gradle 9.7.1 + AGP 9.4.1
+        // bao `baselineProfile.automaticGenerationDuringBuild` la unresolved
+        // reference (build Dell gãy 17s ở dòng này) — đã xóa, không ảnh hưởng
+        // đo frame time; profile vẫn sinh bằng task generateBenchmarkBaselineProfile.
         create("benchmark") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
-            baselineProfile.automaticGenerationDuringBuild = true
         }
         release {
             // R8 + rut gon tai nguyen: APK release nho hon dang ke va bo bot
