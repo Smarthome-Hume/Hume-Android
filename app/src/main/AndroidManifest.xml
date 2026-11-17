@@ -3,6 +3,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Brief sang: thoi tiet theo vi tri (chi can do chinh xac cap thanh pho). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- GAP-42 ZoneArrival: GeofencingClient BAT BUOC ACCESS_FINE_LOCATION
+         (khong co la khong dang ky duoc geofence), + ACCESS_BACKGROUND_LOCATION
+         de geofence kich hoat khi app khong chay foreground. Khai bao manifest
+         chi la dieu kien can — van phai xin quyen runtime khi chay; khong co
+         quyen thi ZoneArrivalManager chi log + khong dang ky, khong crash. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <!-- Chi dung lam duong lui khi performHapticFeedback bi he thong tu choi. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
     <application

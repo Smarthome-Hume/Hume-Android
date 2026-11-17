@@ -12,7 +12,7 @@ data class BatteryUi(
     val powerKw: Double = 0.0,
     val powerW: Double = 0.0, // cong suat W de xac dinh 3 trang thai
     val backupSoc: Int = 20, // number.solis_s6_eh1p_backup_soc_2, mac dinh 20
-    val timeText: String? = null, // friendly_time cua sensor runtime
+    val timeText: String? = null, // thoi gian sac/xa con lai theo BatteryTimeCalc v70 (N-03), vd "3h12m" / "—" / "Đã đầy"
     val endTime: String? = null, // "14:30" - gio ket thuc sac/xa
     /**
      * Limit hieu dung cho thanh pin (port iOS f251d8e):

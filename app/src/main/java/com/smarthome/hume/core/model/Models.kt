@@ -13,27 +13,8 @@ data class HAEntity(
     @SerialName("last_updated") val lastUpdated: String? = null,
 )
 
-data class HomeEntity(
-    val id: String,
-    val state: String,
-    val attributes: Map<String, JsonElement> = emptyMap(),
-    val lastChanged: String? = null,
-    val lastUpdated: String? = null,
-) {
-    val entityId: String get() = id
-    val isOn: Boolean get() = state == "on"
-    val numericState: Double? get() = state.toDoubleOrNull()
-
-    /** HomeEntity.minutesAgo() in Models.swift. */
-    fun minutesAgo(): Int? {
-        val changed = lastChanged ?: return null
-        val millis = runCatching { java.time.Instant.parse(changed).toEpochMilli() }
-            .recoverCatching { java.time.OffsetDateTime.parse(changed).toInstant().toEpochMilli() }
-            .getOrNull() ?: return null
-        return ((System.currentTimeMillis() - millis) / 60_000L).toInt()
-    }
-}
-
+// HomeEntity da doi sang :core:model (HomeEntity.kt) — xem comment lich su
+// o file do. Chi giu toHomeEntity o day vi no can HAEntity (chi :app dung).
 fun HAEntity.toHomeEntity() = HomeEntity(entityId, state, attributes, lastChanged, lastUpdated)
 
 enum class HumeTab(val label: String) { Home("Nh\u00e0"), Energy("N\u0103ng l\u01b0\u1ee3ng"), Security("An ninh"), Profile("H\u1ed3 s\u01a1") }

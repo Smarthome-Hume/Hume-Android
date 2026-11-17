@@ -343,7 +343,7 @@ private fun FlowArea(
             badge = if (charging) "Đang sạc" else "Đang xả",
             badgeBg = battFg.copy(alpha = 0.16f),
             badgeFg = battFg,
-            // Bam node pin -> popup pin tai cho (muc 14; iOS de onTap rong)
+            // Bam node pin -> mo trang Powerwall 3D (N-05, port iOS v69 4d6aa26).
             onClick = onBatteryClick,
             modifier = Modifier,
         ) {
