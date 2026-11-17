@@ -35,6 +35,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.OvershootNumber
 import com.smarthome.hume.core.ui.components.WavyBatteryBar
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * The pin — LAYOUT theo anh mau user gui, MAU SAC + CHU + WAVY giu theo M3E:
@@ -70,8 +71,8 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
     // SAC/XA 230.1dp = iOS (20 pad + 48 + 10 + 26.6 pill + [2 + 54.9 gio
     // lon] + 10 + 14 bar + 10 + 14.6 legend + 20 pad).
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
     ) {
@@ -82,8 +83,11 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
         ) {
             Text(
                 "Hiệu năng pin",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 -> token CardTitle 17/20,7.
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
@@ -91,18 +95,23 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(M3ETokens.Icon.IconBoxLarge)
                     .clip(CircleShape)
                     .background(cs.primaryContainer),
             ) {
                 HorizontalBatteryIcon(
                     soc = soc,
                     color = cs.onPrimaryContainer,
-                    modifier = Modifier.size(width = 30.dp, height = 18.dp),
+                    modifier = Modifier.size(
+                        width = M3ETokens.Icon.BatteryIconWidth,
+                        height = M3ETokens.Icon.BatteryIconHeight,
+                    ),
                 )
             }
         }
-        Spacer(Modifier.height(10.dp))
+        // Token hoa 18/11: khe title->pill 10dp = Spacing.CardGap
+        // (0,60 x title 17 = 10,2 -> 10dp, dung ti le Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         // Trang thai 3 che do theo entity: DANG SAC / DANG XA / NGHI.
         // Pill dung mau theme (khong hardcode xanh/cam) de dong bo voi seed dang chon.
         val (pillBg, pillFg) = when {
@@ -115,7 +124,10 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .background(pillBg)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(
+                    horizontal = M3ETokens.Spacing.Md,
+                    vertical = 6.dp,
+                ),
         ) {
             Text(
                 battery.statusText,
@@ -165,13 +177,15 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             }
         }
         }
-        Spacer(Modifier.height(10.dp))
+        // Token hoa 18/11: khe gio lon->bar 10dp = Spacing.CardGap (khong doi so).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         // Thanh wavy M3E (giu nguyen kieu flat/wavy hien tai)
         // reserveLimit = limit hieu dung (backupSoc khi co dien, overdischarge_soc
         // khi mat dien) — port iOS d624be1: truyen limit, KHONG truyen min(soc,limit).
         // Thanh wavy M3E dung chung voi popup pin (core/ui WavyBatteryBar).
         WavyBatteryBar(soc = soc, reserveLimit = battery.effectiveLimit, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp))
+        // Token hoa 18/11: khe bar->legend 10dp = Spacing.CardGap (khong doi so).
+        Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
         // Legend (mau M3E, vi tri theo anh mau: trai/phai)
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -181,7 +195,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
-                        .size(8.dp)
+                        .size(M3ETokens.Spacing.Sm)
                         .clip(CircleShape)
                         .background(cs.primary),
                 )
@@ -204,7 +218,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                         lineHeight = TextUnit.Unspecified,
                     ),
                     color = cs.onSurface,
-                    modifier = Modifier.padding(start = 4.dp),
+                    modifier = Modifier.padding(start = M3ETokens.Spacing.Xs),
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -242,7 +256,7 @@ fun BatteryCard(battery: BatteryUi, modifier: Modifier = Modifier, onClick: (() 
                         lineHeight = TextUnit.Unspecified,
                     ),
                     color = cs.onSurface,
-                    modifier = Modifier.padding(start = 4.dp),
+                    modifier = Modifier.padding(start = M3ETokens.Spacing.Xs),
                 )
             }
         }

@@ -68,7 +68,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
@@ -80,6 +79,7 @@ import com.smarthome.hume.core.ui.avatar.AvatarStore
 import com.smarthome.hume.core.ui.avatar.AvatarViewerRequest
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -171,7 +171,7 @@ fun HomeScreen(
                 exit = fadeOut(tween(250)) + slideOutVertically(
                     tween(350, easing = M3EMotion.emphasizedAcc),
                 ) { with(density) { 16.dp.roundToPx() } },
-                modifier = Modifier.padding(horizontal = 16.dp).m3ePageBottomPadding(),
+                modifier = Modifier.padding(horizontal = M3ETokens.Spacing.Lg).m3ePageBottomPadding(),
             ) {
                 lastData?.let { M3ESnackbar(it) }
             }
@@ -246,12 +246,12 @@ fun HomeScreen(
                 ) {
                     if (tips.isNotEmpty() || aiTips.isNotEmpty()) {
                         item {
-                            Column(Modifier.padding(bottom = 12.dp)) {
+                            Column(Modifier.padding(bottom = M3ETokens.Spacing.Md)) {
                                 M3ESectionTitle("Gợi ý cho bạn")
                             }
                         }
                         item {
-                            Column(Modifier.padding(bottom = 10.dp)) {
+                            Column(Modifier.padding(bottom = M3ETokens.Spacing.CardGap)) {
                                 SuggestCard(
                                     state,
                                     aiTips = aiTips,
@@ -278,13 +278,13 @@ fun HomeScreen(
                     }
                     // (The thong bao da xoa theo yeu cau user - khong co tac dung)
                     item {
-                        Column(Modifier.padding(bottom = 10.dp)) {
+                        Column(Modifier.padding(bottom = M3ETokens.Spacing.CardGap)) {
                             SolarWeekCard(state)
                         }
                     }
                     // (The cong suat PV da xoa theo yeu cau user 2026-09-30)
                     item {
-                        Column(Modifier.padding(bottom = 20.dp)) {
+                        Column(Modifier.padding(bottom = M3ETokens.Spacing.Xl)) {
                             BatteryCard(
                                 state.battery,
                                 onClick = onOpenPowerwall,
@@ -292,7 +292,7 @@ fun HomeScreen(
                         }
                     }
                     item {
-                        Column(Modifier.padding(bottom = 12.dp)) {
+                        Column(Modifier.padding(bottom = M3ETokens.Spacing.Md)) {
                             M3ESectionTitle("Phòng")
                         }
                     }
@@ -338,9 +338,9 @@ fun HomeScreen(
                             headerHeight = with(density) { it.size.height.toDp() }
                         }
                         .padding(horizontal = 18.dp)
-                        .padding(top = statusBarTop + 8.dp),
+                        .padding(top = statusBarTop + M3ETokens.Spacing.Sm),
                 ) {
-                    Column(Modifier.padding(bottom = 10.dp)) {
+                    Column(Modifier.padding(bottom = M3ETokens.Spacing.CardGap)) {
                         HomeHeader(
                             state = state,
                             avatarUrl = state.avatarUrl,
@@ -362,7 +362,7 @@ fun HomeScreen(
                             },
                         )
                     }
-                    Column(Modifier.padding(bottom = 20.dp)) {
+                    Column(Modifier.padding(bottom = M3ETokens.Spacing.Xl)) {
                         PillsRow(
                             alarm = state.alarm,
                             lightsOnCount = state.lightsOn.size,
@@ -465,7 +465,7 @@ private fun BoxScope.MorphLoaderIndicator(
     val scale = if (isRefreshing) 1f else pull.coerceIn(0.2f, 1f)
     Box(
         modifier = modifier
-            .padding(top = 16.dp)
+            .padding(top = M3ETokens.Spacing.Lg)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -496,7 +496,10 @@ private fun M3ESnackbar(data: SnackbarData) {
         ) {
             Text(
                 data.visuals.message,
-                style = MaterialTheme.typography.bodyMedium,
+                // Token hoa 18/11: LH M3 20 -> Body 17,1 (14 x 1,219).
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),
@@ -504,7 +507,10 @@ private fun M3ESnackbar(data: SnackbarData) {
             data.visuals.actionLabel?.let { label ->
                 Text(
                     label,
-                    style = MaterialTheme.typography.bodyMedium,
+                    // Token hoa 18/11: LH M3 20 -> Body 17,1 (14 x 1,219).
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = M3ETokens.Text.Body.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.primary,
                     modifier = Modifier
@@ -512,7 +518,10 @@ private fun M3ESnackbar(data: SnackbarData) {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                         ) { data.performAction() }
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .padding(
+                            horizontal = M3ETokens.Spacing.Md,
+                            vertical = M3ETokens.Spacing.CardGap,
+                        ),
                 )
             }
         }
@@ -569,7 +578,7 @@ private fun EcoDialog(
                 ),
         ) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(M3ETokens.Corner.Card),
                 color = cs.surfaceContainerHigh,
                 shadowElevation = 12.dp,
                 modifier = Modifier
@@ -580,25 +589,31 @@ private fun EcoDialog(
                     MsIcon(
                         Ms.bolt, null,
                         tint = cs.secondary,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(M3ETokens.Icon.Dialog),
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(M3ETokens.Spacing.Lg))
                     Text(
                         "Bật tiết kiệm điện?",
-                        style = MaterialTheme.typography.headlineMedium,
+                        // Token hoa 18/11: title sheet 24/29,3 (LH M3 32 -> 29,3).
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                            lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                        ),
                         fontWeight = FontWeight.Medium,
                         color = cs.onSurface,
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(M3ETokens.Spacing.Md))
                     Text(
                         "Sẽ tắt các thiết bị không cần thiết và giảm độ sáng đèn còn 50%.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        lineHeight = 20.sp,
+                        // Token hoa 18/11: LH tu dat 20 -> Body 17,1 (14 x 1,219).
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = M3ETokens.Text.Body.lineHeight,
+                        ),
                         color = cs.onSurfaceVariant,
                     )
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(M3ETokens.Spacing.Xl))
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Spacer(Modifier.weight(1f))
@@ -630,11 +645,17 @@ private fun DialogButton(label: String, onClick: () -> Unit) {
                 haptic()
                 onClick()
             }
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(
+                horizontal = 14.dp,
+                vertical = M3ETokens.Spacing.CardGap,
+            ),
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.bodyMedium,
+            // Token hoa 18/11: LH M3 20 -> Body 17,1 (14 x 1,219).
+            style = MaterialTheme.typography.bodyMedium.copy(
+                lineHeight = M3ETokens.Text.Body.lineHeight,
+            ),
             fontWeight = FontWeight.SemiBold,
             color = cs.primary,
         )

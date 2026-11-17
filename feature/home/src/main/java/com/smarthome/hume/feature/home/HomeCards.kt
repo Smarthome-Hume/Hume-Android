@@ -93,6 +93,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.avatar.LoopingVideoAvatar
 import com.smarthome.hume.core.ui.avatar.UserAvatar
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -126,7 +127,7 @@ fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 2.dp, start = 2.dp, end = 2.dp),
+            .padding(top = M3ETokens.Spacing.Sm, bottom = 2.dp, start = 2.dp, end = 2.dp),
     ) {
         // .hava 55px surfaceContainerHighest + .pdot 16px + vien ngoai 3px = 22px
         // Nhan vao avatar -> phong to kieu kinh lup (giong trang Thong tin).
@@ -233,14 +234,20 @@ fun HomeHeader(
                 )
             }
         }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(M3ETokens.Spacing.RowGap))
         Column(
             Modifier.weight(1f),
         ) {
             val name = state.userName.ifBlank { "Gia đình" }
             Text(
                 text = "Hi, $name",
-                style = MaterialTheme.typography.titleLarge,
+                // Token hoa 18/11: LH M3 28 -> tu nhien 22 x 1,219 = 26,8
+                // (titleLarge 22sp khong co TextSpec rieng).
+                style = MaterialTheme.typography.titleLarge.copy(
+                    lineHeight = M3ETokens.naturalLineHeight(
+                        MaterialTheme.typography.titleLarge.fontSize,
+                    ),
+                ),
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.2).sp,
                 color = cs.onSurface,
@@ -249,7 +256,10 @@ fun HomeHeader(
             )
             Text(
                 text = greeting(),
-                style = MaterialTheme.typography.bodyMedium,
+                // Token hoa 18/11: LH M3 20 -> Body 17,1 (14 x 1,219).
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 fontWeight = FontWeight.Medium,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
@@ -532,7 +542,7 @@ fun SuggestCard(
                 )
             },
         containerColor = cs.tertiaryContainer,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(M3ETokens.Corner.Card),
         // (2026-11-17) Rut ngan them theo lenh user (vong 44d50c2 da chot
         // cat DUOI chuan iOS): padding DOC 16 -> 12dp (-8dp). iOS
         // contentPadding 16, Android moi thanh phan da <= iOS (icon 30<40,
@@ -545,7 +555,7 @@ fun SuggestCard(
         // title 14->13sp, sub 12->11sp (xem SuggestTipRow).
         contentPadding = 5.dp,
     ) {
-        Column(Modifier.padding(horizontal = 4.dp)) {
+        Column(Modifier.padding(horizontal = M3ETokens.Spacing.Xs)) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth(),
@@ -762,7 +772,7 @@ fun CameraPopupOverlay(
                     )
                     // Clip theo bo card de feed 16:9 khong tran ra ngoai
                     // giua chuyen dong (luc card chua dat ti le tu nhien).
-                    .clip(RoundedCornerShape(32.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.CardLarge))
                     // Chan tap xuyen qua the lam dong popup
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -796,13 +806,13 @@ private fun SuggestTipRow(
             MsIcon(
                 M3EIcons.batteryLevel(batterySoc), null,
                 tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(M3ETokens.Icon.SuggestCard),
             )
         } else {
             MsIcon(
                 Ms.auto_awesome, null,
                 tint = cs.onTertiaryContainer,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(M3ETokens.Icon.SuggestCard),
             )
         }
         // Viewport marquee keo dai den sat mep icon (bo Spacer): chu chay
@@ -821,14 +831,17 @@ private fun SuggestTipRow(
             MarqueeText(
                 text = tip.sub,
                 // (2026-11-18) Cat MANH: sub 12->11sp + khe tren 2->1dp.
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                // Token hoa 18/11: 11sp = Text.Caption (khong doi co chu).
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = M3ETokens.Text.Caption.fontSize,
+                ),
                 fontWeight = FontWeight.Medium,
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
                 modifier = Modifier.padding(top = 1.dp),
                 startPadding = 14.dp,
             )
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(M3ETokens.Spacing.Md))
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -849,11 +862,17 @@ private fun SuggestTipRow(
                 .alpha(if (done) 0.6f else 1f)
                 .background(cs.onTertiaryContainer)
                 // (2026-11-18) Cat MANH: padding doc nut 7->4dp (nut 31,1->25,1dp).
-                .padding(horizontal = 12.dp, vertical = 4.dp),
+                .padding(
+                    horizontal = M3ETokens.Spacing.Md,
+                    vertical = M3ETokens.Spacing.Xs,
+                ),
         ) {
             Text(
                 if (done) tip.doneLabel else tip.action,
-                style = MaterialTheme.typography.labelMedium,
+                // Token hoa 18/11: LH M3 16 -> ButtonTextSmall 14,6 (12 x 1,219).
+                style = MaterialTheme.typography.labelMedium.copy(
+                    lineHeight = M3ETokens.Text.ButtonTextSmall.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.tertiaryContainer,
             )
@@ -879,8 +898,8 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
 
     M3ECard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        contentPadding = 20.dp,
+        shape = RoundedCornerShape(M3ETokens.Corner.CardLarge),
+        contentPadding = M3ETokens.Spacing.Xl,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -888,8 +907,11 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         ) {
             Text(
                 "Điện mặt trời",
-                // Title 17pt theo lenh user 18/11.
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+                // Title 17pt theo lenh user 18/11 -> token CardTitle 17/20,7.
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.CardTitle.fontSize,
+                    lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 maxLines = 1,
@@ -908,11 +930,14 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
             )
             Text(
                 "kWh",
-                style = MaterialTheme.typography.bodyMedium,
+                // Token hoa 18/11: LH M3 20 -> Body 17,1 (14 x 1,219).
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier
-                    .padding(start = 4.dp)
+                    .padding(start = M3ETokens.Spacing.Xs)
                     .alignByBaseline(),
             )
         }
@@ -929,7 +954,10 @@ fun SolarWeekCard(state: HomeUiState, modifier: Modifier = Modifier) {
         } else {
             Text(
                 "Đang tải dữ liệu…",
-                style = MaterialTheme.typography.bodySmall,
+                // Token hoa 18/11: LH M3 16 -> BodySmall 14,6 (12 x 1,219).
+                style = MaterialTheme.typography.bodySmall.copy(
+                    lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                ),
                 color = cs.onSurfaceVariant,
             )
         }
