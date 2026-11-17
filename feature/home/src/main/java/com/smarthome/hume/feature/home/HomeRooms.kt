@@ -447,9 +447,10 @@ fun RoomSheet(
     // The nam TREN navbar (che navbar) — dung nhu iOS; ModalBottomSheet
     // (Dialog) da dat the tren navbar, GIU nguyen, khong refactor.
     // 3 canh (2 ben + day) cach deu mep man hinh 8dp (tinh toi bounding
-    // box), top gap giu 124dp. Bo 60dp ca 4 goc = iOS
-    // .presentationCornerRadius(60) 1:1 (do tu anh iOS: fit cung goc
-    // r~60pt, khe 8pt ca 3 canh; man iPhone 440x956pt). Kich thuoc the
+    // box), top gap giu 124dp. Bo 14dp ca 4 goc = theo nguyen tac dong
+    // tam cua user: R_man Samsung 22dp - khe 8dp = 14dp. KHONG copy
+    // bo 60pt cua iOS — man Samsung bo khac iPhone (man iPhone bo
+    // ~60pt, man S26U bo ~22dp). Kich thuoc the
     // suy ra tu gia tri runtime (KHONG hardcode 411/826): rong =
     // screenW - 2*8, cao = screenH - 124 - 8.
     val screenH = LocalConfiguration.current.screenHeightDp.dp
@@ -460,11 +461,11 @@ fun RoomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         // (fix 3d) Container M3 TRONG SUOT + hinh chu nhat: the NHIN THAY
-        // ve BEN TRONG content (bo 60dp ca 4 goc, nen surfaceContainer).
+        // ve BEN TRONG content (bo 14dp ca 4 goc, nen surfaceContainer).
         // Ly do: M3 neo day container vao mep duoi man hinh va container
         // full-width — muon the noi cach mep 8dp thi container phai trong
         // suot, the that nam trong. Shape container de chu nhat co tinh:
-        // neu de bo 60dp, Surface cat content theo shape se cat vao goc
+        // neu de bo 14dp, Surface cat content theo shape se cat vao goc
         // cua the. Scrim + vuot dong cua M3 giu nguyen.
         shape = RectangleShape,
         containerColor = Color.Transparent,
@@ -483,14 +484,14 @@ fun RoomSheet(
                 .height(screenH - topGap),
         ) {
             // The noi: rong = screenW - 2*8, cao = screenH - 124 - 8,
-            // bo 60dp CA 4 GOC (iOS .presentationCornerRadius(60) 1:1,
-            // xem (fix 3d) o tren), nen surfaceContainer.
+            // bo 14dp CA 4 GOC (dong tam goc man Samsung, xem (fix 3d)
+            // o tren), nen surfaceContainer.
             Box(
                 Modifier
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
                     .height(cardH)
-                    .clip(RoundedCornerShape(60.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .background(cs.surfaceContainer),
             ) {
                 LazyColumn(
