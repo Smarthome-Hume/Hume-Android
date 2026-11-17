@@ -74,6 +74,14 @@ import kotlin.math.roundToInt
  * RoomSheet), fade 93dp, GrabHandle CAN GIUA, header start 28dp/end
  * 20dp. Truoc day Pack dung so rieng cua iOS PackSheet (16/81/24dp,
  * GrabHandle lech trai) nen nhin van lech voi RoomSheet.
+ * (18/11, user: the pack chua chung nguyen tac vs app) 2 diem con
+ * lech da sua: (1) title 18sp -> 17pt (headlineSmall 17sp/20.7sp,
+ * nhu title the trong vong nay; ca ten pack o header — iOS dung
+ * M3EType.cardTitle cho ca 2 cho — va title 3 the con); (2) top
+ * inset/fade 93dp -> 81dp: header Pack cao 44dp (Room ~56dp) nen
+ * 93dp de khe duoi header 24dp, gap doi Room (12dp); 81dp = 25 grab
+ * + 44 header + 12 khe — khe duoi header bang Room, dong thoi la
+ * dung so goc cua iOS PackSheet (.padding top 81 + fade 81).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,16 +140,16 @@ fun PowerwallPackSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    // (Viec 3) Padding noi dung = RoomSheet: ngang 20dp
-                    // (cu 16dp), top 93dp (cu 81dp), bottom 0dp + Spacer
-                    // 24dp cuoi list (cu padding bottom 24dp) — dung co
-                    // che RoomSheet (LazyColumn bottom 0 + item Spacer 24dp).
-                    // LUU Y: header Pack cao 44dp (Room ~56dp) nen khe duoi
-                    // header Pack thanh 24dp (93-25-44), Room ~12dp — so
-                    // top inset/fade thi bang nhau, khe duoi header thi
-                    // lech do chieu cao header khac nhau (xem bao cao).
+                    // Padding noi dung = RoomSheet: ngang 20dp, bottom
+                    // 0dp + Spacer 24dp cuoi list — dung co che RoomSheet
+                    // (LazyColumn bottom 0 + item Spacer 24dp).
+                    // Top inset 81dp (18/11): header Pack cao 44dp (Room
+                    // ~56dp) nen top 93dp nhu Room de khe duoi header
+                    // 24dp (93-25-44), gap doi Room (12dp). 81dp =
+                    // 25 grab + 44 header + 12 khe — khe duoi header
+                    // bang Room, dong thoi la so goc iOS PackSheet.
                     .padding(horizontal = 20.dp)
-                    .padding(top = 93.dp, bottom = 0.dp),
+                    .padding(top = 81.dp, bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OverviewGrid(pack, cs, extra)
@@ -152,8 +160,11 @@ fun PowerwallPackSheet(
             }
             M3EHeaderFade(
                 color = cs.surfaceContainer,
-                // (Viec 3) Fade 93dp nhu RoomSheet (cu 81dp).
-                height = 93.dp,
+                // (18/11) Fade 81dp = top inset: phu kin grab + header
+                // (25+44=69dp) + 12dp khe — nhu RoomSheet (fade 93dp =
+                // 25+56+12 cua no). 93dp o Pack thua 12dp, noi dung
+                // cuon bi mo som hon can thiet.
+                height = 81.dp,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             Column(
@@ -223,7 +234,11 @@ private fun PackHeader(
         Spacer(Modifier.width(12.dp))
         Text(
             packName,
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+            // (18/11) Title the 17pt theo lenh user — nhu title the
+            // trong vong nay (headlineSmall 17sp/20.7sp); iOS dung
+            // M3EType.cardTitle cho ten pack o header. Chieu cao
+            // header khong doi (o icon 44dp ap dao).
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )
@@ -608,7 +623,11 @@ private fun InnerCard(
             }
             Text(
                 title,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                // (18/11) Title the 17pt theo lenh user — nhu title the
+                // trong vong nay (headlineSmall 17sp/20.7sp); iOS dung
+                // M3EType.cardTitle cho title the con. Chieu cao hang
+                // title khong doi (o icon 30dp ap dao).
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
