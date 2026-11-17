@@ -417,8 +417,11 @@ private fun Expander(
                 animationSpec = tween(500, easing = M3EMotion.emphasized)),
         ) {
             Column(
-                modifier = Modifier.padding(
-                    top = 2.dp, bottom = 16.dp, start = 20.dp, end = 20.dp),
+                // (Nhom 6, 17/11) Khop iOS SolisExpander
+                // (EnergySolarTab.swift): vung mo rong chi padding
+                // ngang 20, KHONG top 2 / bottom 16 — Android thua
+                // iOS 18dp moi expander khi mo.
+                modifier = Modifier.padding(horizontal = 20.dp),
             ) {
                 content()
             }
