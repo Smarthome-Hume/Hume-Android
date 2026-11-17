@@ -41,6 +41,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.io.File
+import java.io.IOException
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -122,8 +124,24 @@ class HomeAssistantRepository {
 
     private val bucketOverrides = HashMap<String, UpdateBucket>()
     private val pending = HashMap<String, HomeEntity>()
-    private val lastFlush = HashMap<UpdateBucket, Long>()
+    /**
+     * (GAP-40) iOS HomeAssistantManager.lastFlushSlot — interval -> slot
+     * wall-clock da flush gan nhat. Tick 1s chi flush bucket nao vua qua
+     * moc wall-clock (xem bucketSlot), khong phai sau moi intervalMs ke tu
+     * lan flush truoc.
+     */
+    private val lastFlushSlot = HashMap<UpdateBucket, Long>()
     private val registryRequests = HashMap<Int, String>()
+
+    /**
+     * (GAP-41c) Port iOS EntityObservation.GroupEntityReader uiThrottle
+     * (2.0s) — xem publishRealtime(). Chi ap dung cho sensor.* khong phai
+     * control; prefix control copy dung iOS (ke ca number.* la dieu khien).
+     */
+    private val uiThrottleLock = Any()
+    private val lastUiPublish = HashMap<String, Long>()
+    private val throttledLatest = HashMap<String, HomeEntity>()
+    private val pendingUiThrottle = HashMap<String, Job>()
 
     /**
      * Coalescing timer. Only alive while the app is in the foreground: the old
@@ -171,6 +189,14 @@ class HomeAssistantRepository {
     /** Set by HumeApplication so numeric readings land in the local sensor database. */
     var sensorSink: ((String, Double, Long) -> Unit)? = null
 
+    /**
+     * (GAP-39) Thu muc file noi bo (Application.filesDir), do HumeApplication
+     * gan — cung cho voi cach sensorSink duoc gan. Dung de doc/ghi
+     * states_snapshot.json (port iOS HomeAssistantManager.statesSnapshotURL).
+     * null = chua gan -> seed/snapshot tam tat (khong crash).
+     */
+    var snapshotDir: File? = null
+
     /* ---------------- configuration and lifecycle ---------------- */
 
     fun configure(localUrl: String, remoteUrl: String, token: String) {
@@ -202,6 +228,9 @@ class HomeAssistantRepository {
         closeSocket()
         scope.launch {
             val base = endpoint.resolve()
+            // (GAP-39) Seed tu states_snapshot.json truoc khi goi network,
+            // chi khi _entities dang rong (xem loadStatesSnapshot).
+            loadStatesSnapshot()
             fetchInitialStates()
             openSocket(base)
         }
@@ -259,6 +288,11 @@ class HomeAssistantRepository {
 
     private fun startFlushLoop() {
         if (flushJob?.isActive == true) return
+        // (GAP-40) iOS startBucketScheduler: khoi tao slot hien tai cua moi
+        // bucket de lan flush dau tien roi vao moc wall-clock ke tiep, khong
+        // flush ngay lap tuc khi loop start.
+        val nowMs = System.currentTimeMillis()
+        UpdateBucket.values().forEach { lastFlushSlot[it] = bucketSlot(it, nowMs) }
         flushJob = scope.launch {
             while (isActive) {
                 delay(1_000)
@@ -271,6 +305,13 @@ class HomeAssistantRepository {
     private fun stopFlushLoop() {
         flushJob?.cancel()
         flushJob = null
+        // (GAP-41c) iOS GroupEntityReader.cancelPendingUpdates onDisappear:
+        // khong con flush trailing khi app ngat ket noi / xuong background.
+        synchronized(uiThrottleLock) {
+            pendingUiThrottle.values.forEach { it.cancel() }
+            pendingUiThrottle.clear()
+            throttledLatest.clear()
+        }
     }
 
     private fun closeSocket() {
@@ -374,19 +415,39 @@ class HomeAssistantRepository {
     }
 
     /**
-     * The whole update policy, in two branches.
+     * Port 1:1 iOS HomeAssistantManager.updateBucket(for:)
+     * (HomeAssistantManager.swift:175-256).
      *
-     * An entity that some screen is actually rendering updates in realtime, with
-     * no throttling at all. Everything else is frozen for the UI, because
-     * repainting an entity nothing is showing only costs battery and frames.
+     * Thu tu uu tien (nhanh nhat wins trong cung 1 entity khong xay ra —
+     * ham return o nhanh khop dau tien):
+     *  1. Sensors sheet mo -> REALTIME (Android, giu nguyen)
+     *  2. bucketOverrides -> bucket da pin (Android, giu nguyen)
+     *  3. Chua watched -> ONE_DAY (freeze cua Android, giu nguyen)
+     *  4. scene.* -> REALTIME (iOS .trigger: khong auto-flush theo slot;
+     *     o Android REALTIME tuong duong vi event duoc publish ngay, nhu
+     *     iOS dua trigger vao pendingUpdates + liveTrigger)
+     *  5. input_number.* -> ONE_HOUR (iOS .h1)
+     *  6. sensor.frigate_* -> REALTIME (iOS)
+     *  7. 5 sensor rua bat (DishwasherLiveManager.watchedEntities) ->
+     *     REALTIME (N-10, giu nguyen)
+     *  8. Solis status_string_3 + meter_active_power -> REALTIME
+     *     (E6, giu nguyen; iOS cung co 2 nhanh nay)
+     *  9. 6 telemetry pin Solis -> FIVE_MINUTES (iOS .s60 = bucket 300s)
+     * 10. 16 sensor cong suat exact + suffix _power/_power_2 -> TEN_SECONDS
+     * 11. _temperature/_humidity + _pv_today_energy_generation_2 +
+     *     _today_energy -> THIRTY_MINUTES (iOS .min30)
+     * 12. _daily / _energy_daily / _daily_energy / grid_cost / home_cost /
+     *     _billing(_2) / grid_import_billing_2 / home_import_billing ->
+     *     ONE_HOUR (iOS .h1)
+     * 13. sensor.evn_current_unit_price -> TWO_HOURS (iOS .h2)
+     * 14. _yesterday_ -> ONE_DAY (iOS .h24)
+     * 15. Mac dinh: sensor.* -> TEN_SECONDS (iOS .s10); domain khac ->
+     *     REALTIME (iOS: chi sensor/input_number moi vao bucket, con lai
+     *     realtime — switch/light/binary_sensor/alarm/climate...).
      *
-     * (2026-09-30) Luat gom nhom thong nhat cho toan app:
-     * - Nhom discrete (switch/light/binary_sensor/alarm/climate...): REALTIME,
-     *   bam/mo phan hoi tuc thi, su kien an ninh khong tre.
-     * - Nhom telemetry: moi entity domain sensor.* (cong suat, PV, pin, nhiet do,
-     *   do am...) deu nhay so lien tuc vai giay/lan -> TEN_SECONDS. Mat nguoi xem
-     *   "2.5 kW" thi 10s van la realtime, nhung so lan rebuild state giam ~5x,
-     *   het khựng khi scroll.
+     * KHONG port nhanh TempAlertConfig.sensor -> trigger cua iOS: Android
+     * chua co TempAlertConfig (grep 0 hit); sensor do chua "_temperature"
+     * nen roi nhanh 11 (THIRTY_MINUTES) thay vi trigger.
      */
     fun bucketFor(entityId: String): UpdateBucket {
         // Sheet chi tiet cam bien mo: muon realtime het de xem so nhay —
@@ -394,12 +455,13 @@ class HomeAssistantRepository {
         if (_sensorsSheetOpen.value) return UpdateBucket.REALTIME
         bucketOverrides[entityId]?.let { return it }
         if (!_watched.value.contains(entityId)) return UpdateBucket.ONE_DAY
-        // (2026-10-22, E6 — port iOS 3af820b): trang thai luoi + cong suat
-        // meter phai REALTIME; de TEN_SECONDS thi badge Mat dien/Cap dien,
-        // switch household<->backup va node Luoi tre toi 10s so voi iOS.
-        if (entityId == "sensor.solis_s6_eh1p_status_string_3" ||
-            entityId == "sensor.solis_s6_eh1p_meter_active_power"
-        ) return UpdateBucket.REALTIME
+        // iOS: scene -> trigger (khong auto-flush; chi chay khi scene chay
+        // qua WS — o Android tuong duong REALTIME: publish ngay).
+        if (entityId.startsWith("scene.")) return UpdateBucket.REALTIME
+        // iOS: input_number — automation-managed accumulation -> 1h.
+        if (entityId.startsWith("input_number.")) return UpdateBucket.ONE_HOUR
+        // iOS: Frigate — security detection, immediate.
+        if (entityId.startsWith("sensor.frigate_")) return UpdateBucket.REALTIME
         // (N-10, port iOS HomeAssistantManager.updateBucket) The rua bat:
         // 5 sensor texgio phai REALTIME de nut va so tren the doi theo
         // ngay (khong roi bucket TEN_SECONDS cua sensor.*). 7 entity
@@ -411,6 +473,50 @@ class HomeAssistantRepository {
             entityId == "sensor.texgio_tgfpcm795b_g_nhiet_do" ||
             entityId == "sensor.texgio_tgfpcm795b_g_chuong_trinh"
         ) return UpdateBucket.REALTIME
+        // (2026-10-22, E6 — port iOS 3af820b): trang thai luoi + cong suat
+        // meter phai REALTIME; de TEN_SECONDS thi badge Mat dien/Cap dien,
+        // switch household<->backup va node Luoi tre toi 10s so voi iOS.
+        if (entityId == "sensor.solis_s6_eh1p_status_string_3" ||
+            entityId == "sensor.solis_s6_eh1p_meter_active_power"
+        ) return UpdateBucket.REALTIME
+        // iOS: 5 min — battery health telemetry (doi cham, uu tien UI thap).
+        // .s60 cua iOS la bucket 300s (flushBucket case 300 -> bucket60s).
+        if (entityId in MIN5_EXACT) return UpdateBucket.FIVE_MINUTES
+        // iOS: 10s — cong suat realtime (solar PV, pin, luoi, thiet bi).
+        if (entityId in S10_EXACT) return UpdateBucket.TEN_SECONDS
+        // iOS: 10s — tat ca sensor _power / _power_2 (aptomat, thiet bi).
+        if (entityId.hasSuffix("_power") || entityId.hasSuffix("_power_2")) {
+            return UpdateBucket.TEN_SECONDS
+        }
+        // iOS: nhiet do / do am -> 30 phut.
+        if (entityId.contains("_temperature") || entityId.contains("_humidity")) {
+            return UpdateBucket.THIRTY_MINUTES
+        }
+        if (entityId.hasSuffix("_pv_today_energy_generation_2")) {
+            return UpdateBucket.THIRTY_MINUTES
+        }
+        if (entityId.contains("_today_energy")) return UpdateBucket.THIRTY_MINUTES
+        // iOS: 1h — daily-energy kWh accumulators, cost sensors, billing.
+        if (entityId.hasSuffix("_daily")) return UpdateBucket.ONE_HOUR
+        if (entityId.contains("_energy_daily") || entityId.contains("_daily_energy")) {
+            return UpdateBucket.ONE_HOUR
+        }
+        if (entityId == "sensor.grid_cost" || entityId == "sensor.home_cost") {
+            return UpdateBucket.ONE_HOUR
+        }
+        if (entityId.hasSuffix("_billing") || entityId.hasSuffix("_billing_2")) {
+            return UpdateBucket.ONE_HOUR
+        }
+        if (entityId == "sensor.grid_import_billing_2" ||
+            entityId == "sensor.home_import_billing"
+        ) return UpdateBucket.ONE_HOUR
+        // iOS: 2h — EVN price (doi toi da vai lan moi chu ky).
+        if (entityId == "sensor.evn_current_unit_price") return UpdateBucket.TWO_HOURS
+        // iOS: 24h — yesterday historical data (chi doi luc nua dem).
+        if (entityId.contains("_yesterday_")) return UpdateBucket.ONE_DAY
+        // iOS: mac dinh sensor -> s10 (truoc day realtime -> moi sensor la
+        // deu vao duong nhanh, gay lag); domain khac sensor/input_number
+        // (switch/light/...) -> realtime.
         return if (entityId.startsWith("sensor.")) UpdateBucket.TEN_SECONDS
         else UpdateBucket.REALTIME
     }
@@ -421,7 +527,52 @@ class HomeAssistantRepository {
         if (bucketFor(entity.id) != UpdateBucket.REALTIME) {
             synchronized(pending) { pending[entity.id] = entity }
         } else {
-            applyUpdates(mapOf(entity.id to entity))
+            publishRealtime(entity)
+        }
+    }
+
+    /**
+     * (GAP-41c) Port iOS EntityObservation.GroupEntityReader uiThrottle
+     * (2.0s): sensor.* khong phai control chi publish toi da 1 lan / 2s;
+     * event den trong cua so cho thi giu gia tri MOI NHAT roi flush trailing
+     * khi het 2s (giong iOS pendingUiUpdates Task). Cung state cuoi, chi it
+     * rebuild hon — khong doi hanh vi hien thi. Entity dieu khien
+     * (CONTROL_PREFIXES, gom number.*) va cac domain discrete khac publish
+     * ngay lap tuc. logToSink o onIncomingState khong bi throttle (lich su
+     * sensor van ghi du).
+     */
+    private fun publishRealtime(entity: HomeEntity) {
+        val id = entity.id
+        val throttleable = (id.startsWith("sensor.") || id.startsWith("number.")) &&
+            CONTROL_PREFIXES.none { id.startsWith(it) }
+        if (!throttleable) {
+            applyUpdates(mapOf(id to entity))
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        val last = synchronized(uiThrottleLock) { lastUiPublish[id] ?: 0L }
+        if (now - last >= UI_THROTTLE_MS) {
+            synchronized(uiThrottleLock) {
+                lastUiPublish[id] = now
+                pendingUiThrottle.remove(id)?.cancel()
+                throttledLatest.remove(id)
+            }
+            applyUpdates(mapOf(id to entity))
+            return
+        }
+        synchronized(uiThrottleLock) {
+            throttledLatest[id] = entity
+            if (pendingUiThrottle.containsKey(id)) return
+            val waitMs = UI_THROTTLE_MS - (now - last)
+            pendingUiThrottle[id] = scope.launch {
+                delay(waitMs)
+                val latest = synchronized(uiThrottleLock) {
+                    pendingUiThrottle.remove(id)
+                    lastUiPublish[id] = SystemClock.elapsedRealtime()
+                    throttledLatest.remove(id)
+                }
+                if (latest != null) applyUpdates(mapOf(latest.id to latest))
+            }
         }
     }
 
@@ -440,8 +591,33 @@ class HomeAssistantRepository {
         scope.launch { runCatching { sink(entity.id, value, stamp) } }
     }
 
+    /**
+     * (GAP-40) Port iOS HomeAssistantManager.bucketSlot(for:at:) — slot hien
+     * tai cua 1 bucket theo wall-clock local: 10s -> :00,:10...; 300s -> moc
+     * 5 phut; 3600s -> dau gio; 86400s -> dau ngay. REALTIME khong co slot
+     * (khong bao gio vao pending) -> tra 0 phong thu.
+     */
+    private fun bucketSlot(bucket: UpdateBucket, nowMs: Long): Long {
+        if (bucket == UpdateBucket.REALTIME) return 0L
+        val zone = java.time.ZoneId.systemDefault()
+        val zoned = java.time.Instant.ofEpochMilli(nowMs).atZone(zone)
+        if (bucket == UpdateBucket.ONE_DAY) {
+            // iOS: startOfDay — so ngay tu epoch theo gio dia phuong.
+            return zoned.toLocalDate().toEpochDay()
+        }
+        val intervalSec = bucket.intervalMs / 1_000L
+        return (zoned.toLocalTime().toSecondOfDay() / intervalSec).toLong()
+    }
+
+    /**
+     * (GAP-40) Port iOS startBucketScheduler/flushBucket: tick 1s chi flush
+     * bucket nao vua qua moc wall-clock (slot doi so voi lan flush truoc),
+     * khong phai cu sau intervalMs ke tu lan flush truoc (khong drift tich
+     * luy nhu truoc). Gia tri moi nhat cua moi entity trong bucket duoc
+     * flush; bucket chua qua moc giu nguyen trong pending.
+     */
     private fun flushDueBuckets() {
-        val now = System.currentTimeMillis()
+        val nowMs = System.currentTimeMillis()
         val ready = HashMap<String, HomeEntity>()
         synchronized(pending) {
             if (pending.isEmpty()) return
@@ -450,14 +626,16 @@ class HomeAssistantRepository {
             while (iterator.hasNext()) {
                 val entry = iterator.next()
                 val bucket = bucketFor(entry.key)
-                val last = lastFlush[bucket] ?: 0L
-                if (now - last >= bucket.intervalMs) {
+                // REALTIME khong bao gio vao pending; phong thu thi flush ngay.
+                if (bucket == UpdateBucket.REALTIME ||
+                    lastFlushSlot[bucket] != bucketSlot(bucket, nowMs)
+                ) {
                     ready[entry.key] = entry.value
                     touched += bucket
                     iterator.remove()
                 }
             }
-            touched.forEach { lastFlush[it] = now }
+            touched.forEach { lastFlushSlot[it] = bucketSlot(it, nowMs) }
         }
         if (ready.isNotEmpty()) applyUpdates(ready)
     }
@@ -531,12 +709,51 @@ class HomeAssistantRepository {
             "auth_invalid" -> {
                 Log.e(TAG, "WebSocket auth_invalid: token rejected by Home Assistant")
                 _lastError.value = "WebSocket: token bi tu choi (auth_invalid)"
-                _connected.value = false
+                // (GAP-38) Port iOS HomeAssistantManager.swift:760 —
+                // disconnect(), khong giu retry token hong: wantConnection
+                // ve false nen scheduleReconnect/onFailure khong noi lai;
+                // chi noi lai khi dang nhap lai / doi token (connect()).
+                // onClosed(1000) tu closeSocket() cung khong reconnect.
+                disconnect()
             }
             "event" -> {
-                val newState = obj["event"]?.jsonObject?.get("data")?.jsonObject?.get("new_state") ?: return
-                val ent = runCatching { json.decodeFromJsonElement(HAEntity.serializer(), newState) }.getOrNull() ?: return
-                onIncomingState(ent.toHomeEntity())
+                // (GAP-41a) Port iOS v2.8 "LOC TRUOC KHI GIAI MA": parse
+                // entity_id + state truoc, chi decode full HAEntity
+                // (attributes) khi entity critical / Frigate / watched.
+                // Entity khong ai xem: lich su sensor chi can id + so nen
+                // van ghi qua logToSink; state doi thi van decode day du
+                // de _entities khong stale; chi attribute doi (state giong
+                // nhau) thi bo qua — applyUpdates cung drop truong hop
+                // state+attributes deu khong doi, va iOS drop luon event
+                // nay. PumpAlert (binary_sensor) la critical nen khong anh
+                // huong.
+                val data = obj["event"]?.jsonObject?.get("data")?.jsonObject ?: return
+                val entityId = data["entity_id"]?.jsonPrimitive?.contentOrNull ?: return
+                val newStateObj = data["new_state"]?.jsonObject ?: return
+                val state = newStateObj["state"]?.jsonPrimitive?.contentOrNull ?: return
+                val isCritical = entityId.startsWith("alarm_control_panel.") ||
+                    entityId.startsWith("binary_sensor.")
+                val isFrigate = entityId.startsWith("sensor.frigate_")
+                val isWatched = _watched.value.contains(entityId)
+                if (isCritical || isFrigate || isWatched) {
+                    val ent = runCatching {
+                        json.decodeFromJsonElement(HAEntity.serializer(), newStateObj)
+                    }.getOrNull() ?: return
+                    onIncomingState(ent.toHomeEntity())
+                    return
+                }
+                val cached = _entities.value[entityId]
+                if (cached == null || cached.state != state) {
+                    val ent = runCatching {
+                        json.decodeFromJsonElement(HAEntity.serializer(), newStateObj)
+                    }.getOrNull() ?: return
+                    onIncomingState(ent.toHomeEntity())
+                } else {
+                    // State khong doi: chi ghi lich su sensor, khong decode
+                    // attributes (attributes cua entity khong ai xem co the
+                    // stale toi lan REST snapshot ke — iOS cung drop event).
+                    logToSink(HomeEntity(id = entityId, state = state))
+                }
             }
             "result" -> {
                 val id = obj["id"]?.jsonPrimitive?.intOrNull ?: return
@@ -694,6 +911,27 @@ class HomeAssistantRepository {
         scope.launch { fetchInitialStates() }
     }
 
+    /**
+     * (GAP-39) Port iOS HomeAssistantManager.loadStatesSnapshot() —
+     * doc states_snapshot.json (raw /api/states lan truoc) de UI co data
+     * ngay khi mo app, khong cho network. Chi seed khi _entities dang
+     * rong (tranh de data cu len data tuoi); WS/REST sync de len sau.
+     * snapshotDir null (chua duoc HumeApplication gan) -> bo qua, khong crash.
+     */
+    private fun loadStatesSnapshot() {
+        val dir = snapshotDir ?: return
+        val file = File(dir, STATES_SNAPSHOT_FILE)
+        if (!file.exists()) return
+        runCatching {
+            val text = file.readText()
+            val arr = json.decodeFromString<List<HAEntity>>(text)
+            if (arr.isEmpty()) return
+            if (_entities.value.isNotEmpty()) return
+            _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
+            Log.i(TAG, "Seeded ${_entities.value.size} entities from $STATES_SNAPSHOT_FILE")
+        }.onFailure { Log.w(TAG, "loadStatesSnapshot failed: ${it.message}") }
+    }
+
     suspend fun fetchInitialStates() = withContext(Dispatchers.IO) {
         val url = "${endpoint.currentBaseUrl}/api/states"
         try {
@@ -704,6 +942,16 @@ class HomeAssistantRepository {
                 if (!resp.isSuccessful) {
                     _lastError.value = "REST ${resp.code}: ${body.take(200)}"
                     return@use
+                }
+                // (GAP-39) Port iOS fetchInitialStates: luu raw JSON
+                // /api/states xuong states_snapshot.json (ghi atomic qua
+                // file tam + rename) de lan mo app sau seed tu dia.
+                snapshotDir?.let { dir ->
+                    runCatching {
+                        val tmp = File(dir, "$STATES_SNAPSHOT_FILE.tmp")
+                        tmp.writeText(body)
+                        tmp.renameTo(File(dir, STATES_SNAPSHOT_FILE))
+                    }.onFailure { Log.w(TAG, "saveStatesSnapshot failed: ${it.message}") }
                 }
                 val arr = json.decodeFromString<List<HAEntity>>(body)
                 val snapshot = arr.associate { it.entityId to it.toHomeEntity() }
@@ -881,23 +1129,42 @@ class HomeAssistantRepository {
         scope.launch {
             val url = "${endpoint.currentBaseUrl}/api/services/$domain/$service"
             var accepted = false
-            try {
-                val body = dataJson.toRequestBody("application/json".toMediaType())
-                val req = Request.Builder().url(url)
-                    .header("Authorization", "Bearer $token")
-                    .post(body)
-                    .build()
-                client.newCall(req).execute().use { resp ->
-                    val text = resp.body?.string().orEmpty()
-                    Log.i(TAG, "POST /api/services/$domain/$service -> HTTP ${resp.code}, body=${text.take(200)}")
-                    accepted = resp.isSuccessful
-                    if (!resp.isSuccessful) {
-                        _lastError.value = "Service ${resp.code}: ${text.take(200)}"
+            var httpCode: Int? = null
+            var networkError: Throwable? = null
+            // (GAP-44) Port iOS HomeAssistantManager.restFallback "gui bu
+            // dung 1 lan": retry dung 1 lan sau ~500ms CHI khi loi
+            // network/timeout (IOException — gom SocketTimeoutException,
+            // UnknownHostException). HTTP tra ve (ke ca 4xx/5xx) va loi
+            // khac khong retry: 4xx retry cung hong nhu cu.
+            for (attempt in 0..1) {
+                try {
+                    val body = dataJson.toRequestBody("application/json".toMediaType())
+                    val req = Request.Builder().url(url)
+                        .header("Authorization", "Bearer $token")
+                        .post(body)
+                        .build()
+                    client.newCall(req).execute().use { resp ->
+                        val text = resp.body?.string().orEmpty()
+                        Log.i(TAG, "POST /api/services/$domain/$service -> HTTP ${resp.code}, body=${text.take(200)}")
+                        httpCode = resp.code
+                        accepted = resp.isSuccessful
+                        if (!resp.isSuccessful) {
+                            _lastError.value = "Service ${resp.code}: ${text.take(200)}"
+                        }
                     }
+                    break // HTTP da tra ve -> khong retry.
+                } catch (t: IOException) {
+                    networkError = t
+                    Log.w(TAG, "callService network error (attempt ${attempt + 1}/2): ${t.message}")
+                    if (attempt == 0) delay(500)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "callService failed for $url", t)
+                    _lastError.value = "Service: ${t.message}"
+                    break
                 }
-            } catch (t: Throwable) {
-                Log.e(TAG, "callService failed for $url", t)
-                _lastError.value = "Service: ${t.message}"
+            }
+            if (httpCode == null && networkError != null) {
+                _lastError.value = "Service: ${networkError.message}"
             }
             // Home Assistant refused the call, so roll the optimistic value back at once.
             if (!accepted && optimisticEntityId != null) {
@@ -1068,5 +1335,52 @@ class HomeAssistantRepository {
     private companion object {
         /** How long a local flip outranks a REST snapshot. */
         const val OPTIMISTIC_WINDOW_MS = 5_000L
+
+        /** (GAP-39) Ten file snapshot /api/states — giong iOS states_snapshot.json. */
+        const val STATES_SNAPSHOT_FILE = "states_snapshot.json"
+
+        /** (GAP-41c) Port iOS EntityObservation.uiThrottle = 2.0s. */
+        const val UI_THROTTLE_MS = 2_000L
+
+        /** (GAP-40) iOS updateBucket min5Exact — copy nguyen 6 entity. */
+        val MIN5_EXACT: Set<String> = setOf(
+            "sensor.solis_s6_eh1p_battery_soc_2",
+            "sensor.solis_s6_eh1p_today_battery_charge_energy_2",
+            "sensor.solis_s6_eh1p_today_battery_discharge_energy_2",
+            "sensor.solis_s6_eh1p_battery_voltage_2",
+            "sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2",
+            "sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2",
+        )
+
+        /** (GAP-40) iOS updateBucket s10Exact — copy nguyen 16 entity. */
+        val S10_EXACT: Set<String> = setOf(
+            "sensor.battery_current_flow",
+            "sensor.battery_power_flow",
+            "sensor.cong_suat_nha",
+            "sensor.dashboard_active_card",
+            "sensor.dashboard_active_card_2",
+            "sensor.grid_power",
+            "sensor.o_cam_may_giat_power",
+            "sensor.o_cam_may_say_power",
+            "sensor.battery_time_to_full_2",
+            "sensor.thoi_gian_pin_con_lai",
+            "sensor.solis_s6_eh1p_pv_power_1_3",
+            "sensor.solis_s6_eh1p_pv_power_2_3",
+            "sensor.solis_s6_eh1p_pv_voltage_1_2",
+            "sensor.solis_s6_eh1p_pv_voltage_2_2",
+            "sensor.solis_s6_eh1p_pv_current_1_2",
+            "sensor.solis_s6_eh1p_pv_current_2_2",
+        )
+
+        /**
+         * (GAP-41c) Port iOS EntityObservation.controlPrefixes — copy DUNG
+         * danh sach hien tai cua iOS (da gom number.* tu delta c2e12e6):
+         * entity dieu khien luon update tuc thi, khong throttle. Vi
+         * number.* la control nen thuc te chi sensor.* bi throttle.
+         */
+        val CONTROL_PREFIXES: List<String> = listOf(
+            "light.", "switch.", "fan.", "cover.", "lock.", "climate.",
+            "binary_sensor.", "alarm_control_panel.", "number.",
+        )
     }
 }

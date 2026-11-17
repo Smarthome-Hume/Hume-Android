@@ -106,6 +106,8 @@ class HumeApplication : Application(), ImageLoaderFactory {
         haRepository.sensorSink = { entityId, value, timeMs ->
             sensorDatabase.record(entityId, value, timeMs)
         }
+        // (GAP-39) Thu muc file noi bo cho states_snapshot.json (seed khi mo app).
+        haRepository.snapshotDir = filesDir
         // Kich ban da bi go khoi giao dien: khong con re-arm alarm luc cold start,
         // nen onCreate() khong con cham vao DataStore tren main thread.
     }
