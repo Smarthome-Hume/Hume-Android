@@ -299,7 +299,7 @@ fun EnergyDonut(
                 // de khong pha khe 4 do; cubic-bezier (0.42, 0, 0.58, 1).
                 selTAnim.animateTo(
                     1f,
-                    tween(1000, CubicBezierEasing(0.42f, 0f, 0.58f, 1f)),
+                    tween(durationMillis = 1000, easing = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)),
                 )
             }
         } else {
