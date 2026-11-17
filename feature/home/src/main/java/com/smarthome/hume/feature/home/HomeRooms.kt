@@ -303,6 +303,23 @@ private fun RoomCard(
                 // hien du. Khong thu nho chu, khong cat thong tin.
                 val subColor = if (room.lightOn) cs.onPrimaryContainer
                 else cs.onSurfaceVariant
+                // (2026-11-17, sub van bi "1 ..." — anh 4870, ban 04b900e)
+                // iOS M3EType.bodySmall KHONG co tnum; Android bodySmall co
+                // fontFeatureSettings="tnum" (theme toan cuc, HumeM3ETheme.kt)
+                // lam so rong them (tabular = rong so 0). Do that bang
+                // Montserrat-Medium 12 (fontTools, UPM 1000), slot S26U 140dp
+                // (the 168dp - padding 14x2): "2 thiet bi · 1 bat · 537W"
+                // tnum = 143.2dp VUOT 3.2dp -> "..." an "bat"; bo tnum =
+                // 135.4dp VUA (thua 4.6dp). "7 thiet bi · 5 bat · 1,2kW":
+                // 145.3 -> 138.7dp vua. Ghi de CUC BO o sub nay (style
+                // copy), khong doi theme — tnum toan cuc giu cho cac cho
+                // khac can so thang hang. Row tach (7f2ab6b) giu nguyen:
+                // truong hop cuc doan ("9 thiet bi · 9 bat · 9999W" = 147.6dp
+                // ca khi bo tnum) thi chi phan dem bi "...", cong suat van
+                // hien — iOS slot 144pt cung cat chuoi nay.
+                val subStyle = MaterialTheme.typography.bodySmall.copy(
+                    fontFeatureSettings = "",
+                )
                 // (2026-11-17, LỖI 3 vòng fix 2: sub vẫn bị "N ..." — ảnh 4842)
                 // iOS sub thẻ phòng là Font.custom 12pt CỨNG (M3EType.bodySmall,
                 // HomeRooms.swift:223-229 + M3ETheme.swift:143: f(12, .medium) ->
@@ -329,7 +346,7 @@ private fun RoomCard(
                         ) {
                             Text(
                                 "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = subStyle,
                                 fontWeight = FontWeight.Medium,
                                 color = subColor,
                                 maxLines = 1,
@@ -339,7 +356,7 @@ private fun RoomCard(
                             )
                             Text(
                                 " · " + formatRoomPowerText(room.roomPowerW),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = subStyle,
                                 fontWeight = FontWeight.Medium,
                                 color = subColor,
                                 maxLines = 1,
@@ -349,7 +366,7 @@ private fun RoomCard(
                     } else {
                         Text(
                             "${room.deviceCount} thiết bị · ${room.devicesOn} bật",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = subStyle,
                             fontWeight = FontWeight.Medium,
                             color = subColor,
                             maxLines = 1,
