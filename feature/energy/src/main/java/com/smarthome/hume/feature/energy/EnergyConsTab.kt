@@ -63,6 +63,7 @@ import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -176,20 +177,25 @@ private fun WeekCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
 @Composable
 private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     M3ECard(
-        shape = RoundedCornerShape(32.dp),
-        // (2026-11-18) Cat MANH theo lenh user 04:30: contentPadding 20->10dp
-        // (-20dp tong doc; ngang cung 10dp).
-        contentPadding = 10.dp,
+        shape = RoundedCornerShape(M3ETokens.CostCard.CardCorner),
+        // (2026-11-18) Token hoa phan B: contentPadding 10->17dp
+        // = 1,00 x title 17 (M3ETokens.Ratio.CardPadding). Padding 10dp cu
+        // cho ti le 0,59 so voi title — mot trong cac khe bi bop dan toi
+        // the "day sat" o vong cat 31d213e.
+        contentPadding = M3ETokens.CostCard.ContentPadding,
         modifier = Modifier.riseOnce("cons-cost", 440, risePlayed),
     ) {
         Text(
             "Chi phí điện",
             // Title 17pt theo lenh user 18/11.
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 17.sp, lineHeight = 20.7.sp),
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = M3ETokens.Text.CardTitle.fontSize,
+                lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+            ),
         )
-        // (2026-11-18) Cat MANH: khe title->Stat2 12->6dp.
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Khe title->Stat2 6->10dp = 0,60 x title 17 (Ratio.TitleToContent).
+        Spacer(Modifier.height(M3ETokens.CostCard.TitleGap))
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.CostCard.RowGap)) {
             Stat2(
                 label = "Điện lưới",
                 vnd = state.cost.gridVnd,
@@ -201,9 +207,9 @@ private fun CostCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
                 modifier = Modifier.weight(1f),
             )
         }
-        // (2026-11-18) Cat MANH: khe Stat2->PBox 10->6dp.
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Khe Stat2->PBox 6->8dp = 0,70 x PBox value 12 (Ratio.SectionGap).
+        Spacer(Modifier.height(M3ETokens.CostCard.SectionGap))
+        Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.CostCard.RowGap)) {
             PBox("Giá mua", (state.cost.buyPrice).toVnd(), Modifier.weight(1f))
             PBox("Giá EVN", (state.cost.evnPrice).toVnd(), Modifier.weight(1f))
             PBox("Tiết kiệm", state.cost.savedVnd.toVnd(), Modifier.weight(1f))
@@ -216,14 +222,17 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
     val unit = vnd.toSmartVndParts().second
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(M3ETokens.CostCard.StatCorner))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            // (2026-11-18) Cat MANH: padding Stat2 14->8dp (-12dp).
-            .padding(8.dp),
+            // Padding Stat2 8->11dp = 0,70 x value 16 (Ratio.StatPadding).
+            // Gia tri thu 20->16sp de khe bop truoc do ve dung ti le.
+            .padding(M3ETokens.CostCard.StatPadding),
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+            style = MaterialTheme.typography.labelMedium.copy(
+                lineHeight = M3ETokens.Text.StatLabel.lineHeight,
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // Gia tri marquee khi tran khung, don vi giu co dinh (khong bi ep vo layout).
@@ -231,8 +240,8 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
         // Overshoot khi data ve (port iOS 84dfe2c, cost-<label>); smartVnd giu ngan
         // nen hiem khi tran — giong iOS dung lineLimit(1).
         Row(
-            // (2026-11-18) Cat MANH: khe label->gia tri 4->2dp.
-            modifier = Modifier.padding(top = 2.dp),
+            // Khe label->gia tri 2->3dp = 0,20 x value 16 (Ratio.LabelToValue).
+            modifier = Modifier.padding(top = M3ETokens.CostCard.StatLabelGap),
         ) {
             OvershootNumber(
                 value = vnd.toDouble(),
@@ -241,9 +250,10 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
                 chaosId = "cost-$label",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                    // (2026-11-18) Cat MANH: lineHeight gia tri 24,4->20sp
-                    // (-4,4dp; gia tri chi gom chu so/dau phay nen vua).
-                    lineHeight = 20.sp,
+                    // Gia tri thu 20->16sp, lineHeight ve tu nhien 19,5
+                    // (LH cu 20sp = 1,0x tu dat, bo theo token).
+                    fontSize = M3ETokens.CostCard.StatValueSize,
+                    lineHeight = M3ETokens.CostCard.StatValueLineHeight,
                 ).tnum(),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -251,10 +261,12 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
                     .weight(1f)
                     .alignByBaseline(),
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(M3ETokens.CostCard.UnitGap))
             Text(
                 unit,
-                style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.6.sp),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    lineHeight = M3ETokens.Text.StatLabel.lineHeight,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.alignByBaseline(),
             )
@@ -266,15 +278,18 @@ private fun Stat2(label: String, vnd: Long, modifier: Modifier = Modifier) {
 private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(M3ETokens.CostCard.PBoxCorner))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            // (2026-11-18) Cat MANH: padding PBox 12->8dp (-8dp).
-            .padding(8.dp),
+            // Padding PBox 8->10dp = 0,85 x value 12 (Ratio.PBoxPadding).
+            .padding(M3ETokens.CostCard.PBoxPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, lineHeight = 13.4.sp),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = M3ETokens.Text.PBoxLabel.lineHeight,
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
@@ -282,11 +297,13 @@ private fun PBox(label: String, value: String, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
-                // (2026-11-18) Cat MANH: lineHeight gia tri 17,1->15,5sp
-                // (-1,6dp; gia tri chi gom chu so + "đ", khong chan duoi).
-                lineHeight = 15.5.sp,
+                // Gia tri thu 14->12sp, lineHeight ve tu nhien 14,6
+                // (LH cu 15,5sp = 1,107x tu dat, bo theo token).
+                fontSize = M3ETokens.CostCard.PBoxValueSize,
+                lineHeight = M3ETokens.CostCard.PBoxValueLineHeight,
             ).tnum(),
-            modifier = Modifier.padding(top = 2.dp),
+            // Khe label->gia tri 2->4dp = 0,30 x value 12 (Ratio.PBoxLabelToValue).
+            modifier = Modifier.padding(top = M3ETokens.CostCard.PBoxLabelGap),
         )
     }
 }
