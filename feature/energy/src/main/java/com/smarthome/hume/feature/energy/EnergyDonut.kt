@@ -48,10 +48,14 @@ import kotlinx.coroutines.launch
  * Donut kieu Arc ring — port 1:1 tu iOS `EnergyDonut`
  * (Hume/M3E/Tabs/EnergyConsumeTab+Cards.swift:336-740, v72/v75).
  *
- * - Khe tung bien (v72, iOS :382-383, :595-597): cung ve tu
- *   (bien + pullback trai) toi (bien sau - pullback phai),
- *   pullback = capOverhang cua chinh cung do + minGapDeg/2, dau bo tron
- *   (StrokeCap.Round) cua 2 cung ke luon cach nhau dung minGapDeg (4 do).
+ * - Khe TONG QUAT cho N bat ky (lenh user 17/11, ghi de v72): slot i co
+ *   sweep = f_i * (360 - N*gapEff), start tich luy sweep + gapEff tu dinh
+ *   (-90 do); gapEff = min(4 do, 180/N) — N = 1 ve tron kin 360 do,
+ *   N lon gap co lai de tong khe <= 180 do, sweep clamp >= 0. Cung ve tu
+ *   (bien + pullback) toi (bien sau - pullback), pullback = capOverhang
+ *   cua chinh cung do (KHONG + minGap/2 nhu iOS :470-473 — slot da cach
+ *   nhau gapEff san) nen goc quet NHIN THAY = dung slotSweep, khe giua
+ *   2 cung ke = dung gapEff (4 do) o moi trang thai chon.
  * - Arc chon no (iOS :330-331, :644-648): day +40%, dai them 9 do moi phia,
  *   ban kinh +3dp, arc ke mong -10%; lo xo bounce response 1.1s /
  *   damping 0.30 (iOS :166-171, :330) — qua
@@ -69,12 +73,19 @@ import kotlinx.coroutines.launch
  *   gia tri + ten cua slice do (an lai de ve tong).
  * - Entrance / data update: ve tung slice stagger (draw 1.46s emphasized,
  *   delay 180ms/slice) kem wobble (vot qua roi nay ve) — port tu iOS c5b64c6.
+ *   Tong thoi gian entrance TONG QUAT: totalMs = 1100 + 180*(N-1) de slice
+ *   cuoi cung dat local = 1 khi t = 1 (hang 1460 cua iOS :501 = 1100+180*2
+ *   chi dung voi N <= 3; N = 4 slice cuoi dung o 0.836 — goc loi 16 do).
  *
  * Don vi pt→dp 1:1 theo dung so iOS (4 do, +40%, 9 do, +3, 1.1s/0.30,
  * <=20 do, 30 do, +55%, -10%, le trong 17dp).
  */
 
-/** Khe ho nhin thay toi thieu giua dau bo tron cua 2 cung ke — iOS minGapDeg. */
+/**
+ * Khe nhin thay giua 2 cung ke — iOS minGapDeg (4 do). Trong mo hinh slot
+ * tong quat, day la khe DANH NGHIA; gap hieu dung gapEff = min(4 do,
+ * 180/N) qua [effectiveGapDeg] (N lon thi co lai).
+ */
 private const val MIN_GAP_DEG = 4.0
 /** Cung chon dai them moi phia — iOS pushDeg. */
 private const val PUSH_DEG = 9.0
@@ -82,6 +93,20 @@ private const val PUSH_DEG = 9.0
 private const val DOT_SLOT_DEG = 20.0
 /** Vien nang cua cham duoc chon quet 30 do — iOS sliceGeometry. */
 private const val CAPSULE_SWEEP_DEG = 30.0
+
+/**
+ * Gap hieu dung giua 2 cung ke (do) — tong quat cho N bat ky, KHONG
+ * hardcode cho 4 cung (lenh user 17/11): 4 do neu vua; N lon thi co lai
+ * de tong khe <= 180 do (nua vong) — budget sweep = 360 - N*gapEff
+ * luon > 0. N <= 1: khong co khe (nhanh n == 1 ve tron kin 360 do).
+ */
+private fun effectiveGapDeg(n: Int): Double {
+    if (n <= 1) return 0.0
+    return min(MIN_GAP_DEG, 180.0 / n)
+}
+
+/** Budget goc quet cho tat ca cung: 360 tru tong khe — chia theo ti le f_i. */
+private fun sweepBudgetDeg(n: Int): Double = 360.0 - n * effectiveGapDeg(n)
 
 /** Hinh hoc ve cua 1 slice — iOS sliceGeometry tra (start, sweep, lineW, radius). */
 private data class SliceGeom(
@@ -113,14 +138,18 @@ private fun adjustedFractions(norm: List<Double>, sel: Int?, expand: Float): Lis
     val safeSel = sel?.takeIf { it in norm.indices }
     if (sum <= 0 || safeSel == null || norm.size <= 1) return norm
     val adj = norm.toMutableList()
-    val push = PUSH_DEG * expand.toDouble() / 360.0
     val n = adj.size
+    // Push 9 do moi phia tinh tren budget sweep (360 - N*gap), khong phai
+    // tren 360 do — slot cua cung chon dai them dung 2*pushDeg, 2 ke ngan
+    // lai dung pushDeg moi phia (tru cham duoc mien, xem duoi). iOS :425
+    // chia cho 360 vi slot iOS = f*360; o day slot = f*budget.
+    val push = PUSH_DEG * expand.toDouble() / sweepBudgetDeg(n)
     val prev = (safeSel + n - 1) % n
     val next = (safeSel + 1) % n
-    // iOS so voi fraction GOC (chua chuan hoa); o day norm da chuan hoa
-    // tong = 1 nen tuong duong.
-    val prevIsDot = norm[prev] * 360.0 <= DOT_SLOT_DEG
-    val nextIsDot = norm[next] * 360.0 <= DOT_SLOT_DEG
+    // Cham = slot thuc (ti le * budget) <= 20 do — so theo goc slot, khong
+    // phai ti le * 360 (iOS :424-425 dung fracs*360 vi slot iOS = f*360).
+    val prevIsDot = norm[prev] * sweepBudgetDeg(n) <= DOT_SLOT_DEG
+    val nextIsDot = norm[next] * sweepBudgetDeg(n) <= DOT_SLOT_DEG
     adj[safeSel] += 2 * push
     if (prevIsDot && !nextIsDot) {
         adj[next] = max(0.002, adj[next] - 2 * push)
@@ -152,14 +181,25 @@ private fun sliceGeometry(
     val n = normAdj.size
     if (n == 0) return emptyList()
     val safeSel = sel?.takeIf { it in normAdj.indices }
-    // Bien slot: slot i = [slotStart[i], slotStart[i] + slotSweep[i]]
+    // Bien slot — CONG THUC TONG QUAT (lenh user 17/11, khong hardcode 4):
+    // slot i = [slotStart[i], slotStart[i] + slotSweep[i]] voi
+    // slotSweep[i] = f_i * (360 - N*gapEff), slotStart tich luy
+    // slotSweep + gapEff, bat dau tu dinh (-90 do). Tong sweep + tong khe
+    // = 360 do voi MOI N. N = 1 do nhanh rieng ve tron kin ben duoi.
+    // (iOS :452-456 dung f_i * 360, slot noi nhau khong co khe rieng —
+    // khe an trong pullback moi bien; o day khe la doan slot rieng nen
+    // pullback chi bu capOverhang, xem pullback() ben duoi.)
+    val gapEff = effectiveGapDeg(n)
+    val budget = sweepBudgetDeg(n)
     val slotStart = DoubleArray(n)
     val slotSweep = DoubleArray(n)
     var curDeg = -90.0
     for (i in 0 until n) {
         slotStart[i] = curDeg
-        slotSweep[i] = normAdj[i] * 360.0
-        curDeg += normAdj[i] * 360.0
+        // Clamp >= 0: budget > 0 va f_i >= 0 nen chi phong thu truong hop
+        // bien (f_i = 0 -> slot 0, chi con khe).
+        slotSweep[i] = max(0.0, normAdj[i] * budget)
+        curDeg += slotSweep[i] + gapEff
     }
     // Kieu ve cua slice i khi la cung thuong: do day x
     // (chon +40% / ke -10%) va ban kinh (+3dp neu chon) — iOS arcStyle.
@@ -171,13 +211,20 @@ private fun sliceGeometry(
         val rad = rPx + (if (isSel) swellPx * expand else 0f)
         return wMul to rad
     }
-    // Pullback co ban cua slice i tren 1 bien — iOS pullback.
+    // Pullback co ban cua slice i tren 1 bien: CHI bu capOverhang cua chinh
+    // cung do — dau bo tron lan ra ngoai goc ve dung bang nay, nen cung
+    // NHIN THAY bat dau/dung dung tai bien slot (goc quet nhin thay =
+    // slotSweep). Khe giua 2 cung ke = gapEff (doan slot rieng), KHONG can
+    // cong them MIN_GAP_DEG/2 nhu iOS (iOS :470-473: slot noi nhau nen
+    // pullback = overhang + minGap/2 de tao khe; o day slot da cach nhau
+    // gapEff san).
     fun pullback(i: Int): Double {
         val (wMul, rad) = arcStyle(i)
-        return capOverhangDeg(lineBasePx * wMul.toFloat(), rad) + MIN_GAP_DEG / 2
+        return capOverhangDeg(lineBasePx * wMul.toFloat(), rad)
     }
     // Cham duoc chon no thanh vien nang 30 do: vien nang lan qua bien slot
-    // cua no (spill) nen 2 arc ke phai lui them (spill + minGapDeg/2).
+    // cua no (spill) nen 2 arc ke phai lui them (spill — khe gapEff da co
+    // san trong slotStart, xem leftPullback/rightPullback ben duoi).
     var capsuleIdx: Int? = null
     var capsuleSpill = 0.0
     if (safeSel != null && n > 1) {
@@ -191,13 +238,17 @@ private fun sliceGeometry(
     fun leftPullback(i: Int): Double {
         var p = pullback(i)
         val cap = capsuleIdx
-        if (cap != null && i == (cap + 1) % n) p += capsuleSpill + MIN_GAP_DEG / 2
+        // Vien nang lan qua bien slot (spill): arc ke lui them dung spill —
+        // khe slot gapEff giua vien nang va arc ke da co san trong
+        // slotStart, khong cong them gap/2 nhu iOS (iOS :488-495: bien
+        // chung khong co khe rieng nen can spill + minGap/2).
+        if (cap != null && i == (cap + 1) % n) p += capsuleSpill
         return p
     }
     fun rightPullback(i: Int): Double {
         var p = pullback(i)
         val cap = capsuleIdx
-        if (cap != null && i == (cap + n - 1) % n) p += capsuleSpill + MIN_GAP_DEG / 2
+        if (cap != null && i == (cap + n - 1) % n) p += capsuleSpill
         return p
     }
     val out = ArrayList<SliceGeom>(n)
@@ -225,9 +276,12 @@ private fun sliceGeometry(
                     )
                 }
                 isDot -> {
-                    // Cham: duong kinh vua slot (tru khe 2 ben) — khong bao
-                    // gio rong hon slot nen khong de len cung ke.
-                    val dotHalf = max(0.0, slotSweep[i] / 2 - MIN_GAP_DEG / 2)
+                    // Cham: duong kinh vua tron slot — khong bao gio rong
+                    // hon slot nen khong de len cung ke. Khong tru them
+                    // gap/2 nhu iOS :529 (slot iOS noi nhau nen cham phai
+                    // lui gap/2 moi ben; o day khe gapEff toi arc ke da
+                    // nam trong slotStart).
+                    val dotHalf = max(0.0, slotSweep[i] / 2)
                     val dotDia = min(lineBasePx, 2 * rPx * sin(dotHalf * PI / 180).toFloat())
                     out += SliceGeom(
                         startDeg = slotStart[i] + slotSweep[i] / 2 - 0.05,
@@ -349,15 +403,21 @@ fun EnergyDonut(
                 // truc tiep (khong qua `expand` da chup) de khong dung gia
                 // tri cu khi pointerInput chua tao lai.
                 val hitFracs = adjustedFractions(normFractions, selected, expandAnim.value)
+                // Vung cham theo dung slot ve: sweep = f*budget, tich luy
+                // sweep + gapEff. Khe sau slice i tinh vao vung cham cua
+                // chinh slice i (khong co vung chet — nhu iOS :717-723,
+                // slot iOS noi nhau nen moi goc deu thuoc 1 slot).
+                val hitGap = effectiveGapDeg(hitFracs.size)
+                val hitBudget = sweepBudgetDeg(hitFracs.size)
                 var acc = 0.0
                 var idx: Int? = null
                 for ((i, f) in hitFracs.withIndex()) {
-                    val sweep = f * 360.0
-                    if (rel >= acc && rel < acc + sweep) {
+                    val sweep = f * hitBudget
+                    if (rel >= acc && rel < acc + sweep + hitGap) {
                         idx = i
                         break
                     }
-                    acc += sweep
+                    acc += sweep + hitGap
                 }
                 idx?.let { applySelection(if (selected == it) null else it) }
             }
@@ -380,10 +440,17 @@ fun EnergyDonut(
             // (drawArc 360 do, khong topLeft/size nen ve het Canvas, ban
             // kinh tam side/2 — nam NGOAI ban kinh slice r = side/2-17dp)
             // hien thanh vong tron xam mo bao quanh donut tren anh that.
-            // Entrance stagger + wobble (port tu iOS c5b64c6, GIU NGUYEN):
-            // slice vot qua roi nay ve thay vi nhay cung khi data update.
+            // Entrance stagger + wobble (port tu iOS c5b64c6): slice vot qua
+            // roi nay ve thay vi nhay cung khi data update. Tong thoi gian
+            // TONG QUAT totalMs = 1100 + 180*(N-1) — slice i ve xong khi
+            // t*totalMs - i*180 = 1100 nen slice CUOI cung dat local = 1
+            // khi t = 1 (hang 1460 cua iOS :501 = 1100+180*2 chi dung voi
+            // N <= 3; N = 4 slice cuoi dung o 0.836, thieu ~12 do duoi
+            // don thanh khe 16 do truoc slice 0 — dung loi anh that).
+            // N <= 3 giu nguyen nhu iOS (N=3: totalMs = 1460).
             val locals = normFractions.mapIndexed { i, _ ->
-                val rawLocal = ((t * 1460f - i * 180f) / 1100f).coerceIn(0f, 1f)
+                val totalMs = 1100f + 180f * (normFractions.size - 1).coerceAtLeast(0)
+                val rawLocal = ((t * totalMs - i * 180f) / 1100f).coerceIn(0f, 1f)
                 val wobble = if (rawLocal < 1f) {
                     (sin(rawLocal * 12f + i) * 0.15 * (1f - rawLocal)).toFloat()
                 } else 0f
