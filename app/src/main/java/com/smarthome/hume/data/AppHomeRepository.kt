@@ -192,6 +192,15 @@ class AppHomeRepository(
         // (cong thuc cu dung, gio khong con dung) nen khong watch 4 sensor
         // do nua.
         ids.addAll(BATTERY_TIME_CALC_ENTITY_IDS)
+        // (N-12 — port iOS PowerwallLiveData.entityIds, 205 entity, buoc bat
+        // buoc truoc khi mo trang Powerwall) Toan bo sensor ESP32 BMS
+        // (prefix powerwall_bms_): 4 pack x 46 key + master-only + system
+        // + setting live. Trang Powerwall doc qua GroupEntityReader, KHONG
+        // nam trong config phong/tab nao nen phai them tay vao day nhu the
+        // rua bat (iOS rebuildWatchedSet §4f: ids.formUnion(entityIds)).
+        // 31 entity N-03 la tap con cua set nay; ids la HashSet nen trung
+        // lap tu triet tieu, khong duplicate.
+        ids.addAll(POWERWALL_ENTITY_IDS)
         // (2026-10-22, E1) Flow 4 node: truoc day thieu cac sensor nay trong
         // watched -> roi bucket ONE_DAY, dong bang 24h trong khi node PV/Pin
         // van nhay 10s -> 4 node sai lech nhau tren may that (iOS da fix o
@@ -1004,8 +1013,60 @@ private val VI_NAME_DICT = listOf(
 // parseDurationToEndTime/durationToMinutes cu (chi phuc vu fallback sensor
 // Solis) da xoa theo — khong con noi nao dung.
 
+/** Setting BMS live tren master — port 1:1 iOS PowerwallLiveData.settingEntityIds
+ * (11 entity). Dung chung cho ca POWERWALL_ENTITY_IDS (full, N-12) va
+ * BATTERY_TIME_CALC_ENTITY_IDS (N-03). charge_voltage_limit da co trong
+ * packKeys nen KHONG lap lai o day (nhu iOS). */
+private val POWERWALL_SETTING_ENTITY_IDS: List<String> = listOf(
+    "setting_charge_cv", "setting_cutoff_soc", "setting_cutoff_c_rate",
+    "setting_charge_limit_c_rate", "setting_discharge_cutoff_soc",
+    "setting_discharge_limit_c_rate", "setting_cell_max_volt",
+    "setting_cell_min_volt", "setting_cutoff_volt", "setting_undervoltage",
+    "py_chg_current_limit",
+).map { "sensor.powerwall_bms_master_$it" }
+
+/** Toan bo entity Powerwall can watch — port 1:1 iOS PowerwallLiveData.entityIds
+ * (N-12, buoc bat buoc truoc khi mo trang Powerwall — N-02 port song song).
+ * iOS HomeAssistantManager.rebuildWatchedSet §4f: ids.formUnion(entityIds).
+ * Tong 205 entity duy nhat: 4 pack x 46 key (184) + master-only 4
+ * (temp/cell max-min id) + system 6 (py_system_* + py_protection/alarm_flags)
+ * + setting live 11. Pack 2 (slave 2 / BMS1) la slot de trong nen iOS khong
+ * watch — copy nguyen, khong them pack_2. Luu y: "~220" trong mo ta gap chi
+ * la uoc luong; dem dung tu code iOS la 205.
+ * 31 entity cua BATTERY_TIME_CALC_ENTITY_IDS (N-03) la tap con cua set nay. */
+private val POWERWALL_ENTITY_IDS: List<String> = buildList {
+    // Key sensor dung chung cho moi pack — port iOS PowerwallLiveData.packKeys
+    // (46 key: 30 key co dinh + cell_1..cell_16).
+    val packKeys = listOf(
+        "soc", "soh", "voltage", "current",
+        "temp_avg", "temp_cell_1", "temp_cell_2", "temp_cell_3", "temp_max", "temp_min",
+        "cell_max", "cell_min", "cell_spread",
+        "status", "error_id", "output",
+        "full_charge_cap", "remaining_cap",
+        "charge_current_limit", "charge_voltage_limit", "discharge_current_limit",
+        "adc_battery_volt", "adc_fuse_volt", "adc_pack_volt",
+        "board_temp", "fet_temp", "charge_fet", "discharge_fet", "precharge_fet",
+        "firmware_version",
+    ) + (1..16).map { "cell_$it" }
+    for (p in listOf("master", "pack_1", "pack_3", "pack_4")) {
+        for (key in packKeys) add("sensor.powerwall_bms_${p}_$key")
+    }
+    // Master-only: id cua cell/temp cao-thap.
+    for (key in listOf("temp_max_cell_id", "temp_min_cell_id", "cell_max_id", "cell_min_id")) {
+        add("sensor.powerwall_bms_master_$key")
+    }
+    // System-level (inverter-facing, Pylontech).
+    for (key in listOf(
+        "py_system_soc", "py_system_soh", "py_system_voltage",
+        "py_system_current", "py_protection_flags", "py_alarm_flags",
+    )) {
+        add("sensor.powerwall_bms_master_$key")
+    }
+    addAll(POWERWALL_SETTING_ENTITY_IDS)
+}
+
 /** Entity toi thieu cho cong thuc thoi gian sac/xa — port 1:1 iOS
- * PowerwallLiveData.timeCalcEntityIds (31 thay vi ~220 entity day du). */
+ * PowerwallLiveData.timeCalcEntityIds (31 thay vi 205 entity day du). */
 private val BATTERY_TIME_CALC_ENTITY_IDS: List<String> = buildList {
     val mp = "sensor.powerwall_bms_master_"
     add(mp + "py_system_soc"); add(mp + "py_system_voltage")
@@ -1018,16 +1079,9 @@ private val BATTERY_TIME_CALC_ENTITY_IDS: List<String> = buildList {
             add("sensor.powerwall_bms_${p}_$key")
         }
     }
-    // Setting BMS live tren master (port iOS PowerwallLiveData.settingEntityIds).
-    for (key in listOf(
-        "setting_charge_cv", "setting_cutoff_soc", "setting_cutoff_c_rate",
-        "setting_charge_limit_c_rate", "setting_discharge_cutoff_soc",
-        "setting_discharge_limit_c_rate", "setting_cell_max_volt",
-        "setting_cell_min_volt", "setting_cutoff_volt", "setting_undervoltage",
-        "py_chg_current_limit"
-    )) {
-        add(mp + key)
-    }
+    // Setting BMS live tren master — dung chung POWERWALL_SETTING_ENTITY_IDS
+    // (port iOS PowerwallLiveData.settingEntityIds), khong lap lai literal.
+    addAll(POWERWALL_SETTING_ENTITY_IDS)
 }
 
 /** Setting BMS — so CHINH luon la live tu sensor setting_* (master).
