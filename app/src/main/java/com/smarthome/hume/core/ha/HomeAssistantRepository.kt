@@ -497,7 +497,7 @@ class HomeAssistantRepository {
         // iOS: 10s — cong suat realtime (solar PV, pin, luoi, thiet bi).
         if (entityId in S10_EXACT) return UpdateBucket.TEN_SECONDS
         // iOS: 10s — tat ca sensor _power / _power_2 (aptomat, thiet bi).
-        if (entityId.hasSuffix("_power") || entityId.hasSuffix("_power_2")) {
+        if (entityId.endsWith("_power") || entityId.endsWith("_power_2")) {
             return UpdateBucket.TEN_SECONDS
         }
         // (GAP-42) iOS HomeAssistantManager.swift:233 — cam bien nhiet do
@@ -512,19 +512,19 @@ class HomeAssistantRepository {
         if (entityId.contains("_temperature") || entityId.contains("_humidity")) {
             return UpdateBucket.THIRTY_MINUTES
         }
-        if (entityId.hasSuffix("_pv_today_energy_generation_2")) {
+        if (entityId.endsWith("_pv_today_energy_generation_2")) {
             return UpdateBucket.THIRTY_MINUTES
         }
         if (entityId.contains("_today_energy")) return UpdateBucket.THIRTY_MINUTES
         // iOS: 1h — daily-energy kWh accumulators, cost sensors, billing.
-        if (entityId.hasSuffix("_daily")) return UpdateBucket.ONE_HOUR
+        if (entityId.endsWith("_daily")) return UpdateBucket.ONE_HOUR
         if (entityId.contains("_energy_daily") || entityId.contains("_daily_energy")) {
             return UpdateBucket.ONE_HOUR
         }
         if (entityId == "sensor.grid_cost" || entityId == "sensor.home_cost") {
             return UpdateBucket.ONE_HOUR
         }
-        if (entityId.hasSuffix("_billing") || entityId.hasSuffix("_billing_2")) {
+        if (entityId.endsWith("_billing") || entityId.endsWith("_billing_2")) {
             return UpdateBucket.ONE_HOUR
         }
         if (entityId == "sensor.grid_import_billing_2" ||
@@ -1260,7 +1260,7 @@ class HomeAssistantRepository {
         // Flip lac quan tung den (callService chi ho tro 1 optimisticEntityId).
         entityIds.forEach { applyLocalState(it, expected) }
         val data = buildJsonObject {
-            put("entity_id", buildJsonArray { entityIds.forEach { add(it) } })
+            put("entity_id", buildJsonArray { entityIds.forEach { add(JsonPrimitive(it)) } })
         }.toString()
         callService("light", service, data)
     }
@@ -1283,7 +1283,7 @@ class HomeAssistantRepository {
                 put(
                     "rgb_color",
                     buildJsonArray {
-                        add(r); add(g); add(b)
+                        add(JsonPrimitive(r)); add(JsonPrimitive(g)); add(JsonPrimitive(b))
                     },
                 )
             },
