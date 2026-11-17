@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
@@ -64,6 +65,10 @@ import kotlin.math.roundToInt
  * v66: so live tween (0.6s easeInOut) thay vi nhay coc — vong SOC, 16 cot
  * cell, cac o so (dien ap 2 le, dong/cong suat 1 le, nhiet 1 le, SOH 0 le,
  * cell 3 le). Khong co nut X — dong bang vuot xuong nhu the phong.
+ * The noi giong RoomSheet (fix 3d, HomeRooms.kt): container M3 trong suot
+ * + RectangleShape, the cach deu 3 canh 8dp, bo 20dp ca 4 goc, top gap
+ * 183dp; noi dung pack cuon trong the (verticalScroll) nen khong can
+ * chieu cao rieng.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,21 +81,48 @@ fun PowerwallPackSheet(
     val extra = com.smarthome.hume.core.ui.theme.LocalHumeExtraColors.current
     val pack = payload.packs[packKey] ?: emptyMap()
     val packName = PowerwallLiveData.unitPrefixes.firstOrNull { it.first == packKey }?.third ?: packKey
-    // Detent 0.85 (iOS .fraction(0.85)): gioi han chieu cao sheet.
-    val maxSheetH = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
+    // The noi giong RoomSheet (fix 3d): top gap 183dp (22% man hinh,
+    // theo iOS), the cao = screenH - 183 - 8, cach deu 3 canh 8dp.
+    // Kich thuoc suy ra tu gia tri runtime (KHONG hardcode man hinh).
+    val screenH = LocalConfiguration.current.screenHeightDp.dp
+    val sheetMargin = 8.dp
+    val topGap = 183.dp
+    val cardH = screenH - topGap - sheetMargin
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp),
-        containerColor = cs.surfaceContainer,
+        // (fix 3d, nhu RoomSheet) Container M3 TRONG SUOT + hinh chu nhat:
+        // the NHIN THAY ve BEN TRONG content (bo 20dp ca 4 goc, nen
+        // surfaceContainer). M3 neo day container vao mep duoi man hinh
+        // va container full-width — muon the noi cach mep 8dp thi
+        // container phai trong suot, the that nam trong. Shape container
+        // de chu nhat co tinh: neu de bo 20dp, Surface cat content theo
+        // shape se cat vao goc cua the. Scrim + vuot dong cua M3 giu nguyen.
+        shape = RectangleShape,
+        containerColor = Color.Transparent,
+        // Tu kiem soat inset (nhu RoomSheet, N-07d): M3 khong cong them
+        // bottom inset (mac dinh modalWindowInsets = bottom insets).
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
+        // Khong dung dragHandle slot cua M3: GrabHandle nam trong dai
+        // header co dinh de fade 81dp phu kin tu dinh sheet nhu iOS.
         dragHandle = null,
     ) {
-        Box(
+        Column(
             Modifier
                 .fillMaxWidth()
-                .heightIn(max = maxSheetH),
+                .height(screenH - topGap),
         ) {
+            // The noi: rong = screenW - 2*8, cao = screenH - 183 - 8,
+            // bo 20dp CA 4 GOC, nen surfaceContainer.
+            Box(
+                Modifier
+                    .padding(horizontal = sheetMargin)
+                    .fillMaxWidth()
+                    .height(cardH)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cs.surfaceContainer),
+            ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,6 +152,12 @@ fun PowerwallPackSheet(
                 // cong (iOS: .padding(.horizontal, 16) + .padding(.leading, 8)).
                 PackHeader(pack, packName, cs, Modifier.padding(start = 24.dp, end = 16.dp))
             }
+            }
+            // Spacer TRONG SUOT duoi the: day the cach mep duoi dung 8dp —
+            // day moi la co che tao margin day (M3 neo day container vao
+            // mep duoi). Vuot dong van hoat dong ca tren vung nay vi no
+            // nam trong container cua sheet.
+            Spacer(Modifier.height(sheetMargin))
         }
     }
 }

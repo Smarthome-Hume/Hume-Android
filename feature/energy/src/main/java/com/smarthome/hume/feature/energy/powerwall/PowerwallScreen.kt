@@ -280,9 +280,10 @@ fun PowerwallScreen(
         }
     }
 
-    // v57: sheet pack chuan nhu cac sheet khac (detent 0.85, bo 60, nen
-    // surfaceContainer). Dat o day (ngoai WebView) de sheet khong bi render
-    // lai theo tung lan payload doi; sheet tu doc live data ben trong.
+    // The pack noi giong RoomSheet (fix 3d): container M3 trong suot,
+    // the cach deu 3 canh 8dp, bo 20dp ca 4 goc, top gap 183dp (xem
+    // PowerwallPackSheet.kt). Dat o day (ngoai WebView) de sheet khong bi
+    // render lai theo tung lan payload doi; sheet tu doc live data ben trong.
     packSheetKey?.let { key ->
         PowerwallPackSheet(
             packKey = key,
