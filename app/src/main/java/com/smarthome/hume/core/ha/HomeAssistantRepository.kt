@@ -190,6 +190,15 @@ class HomeAssistantRepository {
     var sensorSink: ((String, Double, Long) -> Unit)? = null
 
     /**
+     * (GAP-42) Sensor nhiet do TempAlert dang theo doi — port iOS
+     * TempAlertConfig.sensor (HomeAssistantManager.swift:233, bucket
+     * .trigger). TempAlertWatcher.start() cap nhat theo cau hinh nguoi
+     * dung; mac dinh la cam bien phong ngu lon.
+     */
+    @Volatile
+    var tempAlertSensorId: String = TempAlertConfig.DEFAULT_SENSOR
+
+    /**
      * (GAP-39) Thu muc file noi bo (Application.filesDir), do HumeApplication
      * gan — cung cho voi cach sensorSink duoc gan. Dung de doc/ghi
      * states_snapshot.json (port iOS HomeAssistantManager.statesSnapshotURL).
@@ -434,7 +443,8 @@ class HomeAssistantRepository {
      *     (E6, giu nguyen; iOS cung co 2 nhanh nay)
      *  9. 6 telemetry pin Solis -> FIVE_MINUTES (iOS .s60 = bucket 300s)
      * 10. 16 sensor cong suat exact + suffix _power/_power_2 -> TEN_SECONDS
-     * 11. _temperature/_humidity + _pv_today_energy_generation_2 +
+     * 11. TempAlert sensor dang theo doi -> REALTIME (iOS .trigger, GAP-42)
+     *     + _temperature/_humidity + _pv_today_energy_generation_2 +
      *     _today_energy -> THIRTY_MINUTES (iOS .min30)
      * 12. _daily / _energy_daily / _daily_energy / grid_cost / home_cost /
      *     _billing(_2) / grid_import_billing_2 / home_import_billing ->
@@ -445,9 +455,11 @@ class HomeAssistantRepository {
      *     REALTIME (iOS: chi sensor/input_number moi vao bucket, con lai
      *     realtime — switch/light/binary_sensor/alarm/climate...).
      *
-     * KHONG port nhanh TempAlertConfig.sensor -> trigger cua iOS: Android
-     * chua co TempAlertConfig (grep 0 hit); sensor do chua "_temperature"
-     * nen roi nhanh 11 (THIRTY_MINUTES) thay vi trigger.
+     * (GAP-42) Nhanh TempAlertConfig.sensor -> trigger cua iOS
+     * (HomeAssistantManager.swift:233) nay da port: sensor dang theo doi
+     * (TempAlertConfig.DEFAULT_SENSOR mac dinh) ve REALTIME — tuong duong
+     * .trigger o Android vi event duoc publish ngay (xem nhanh scene.*).
+     * Cac sensor _temperature khac van roi nhanh 11 (THIRTY_MINUTES).
      */
     fun bucketFor(entityId: String): UpdateBucket {
         // Sheet chi tiet cam bien mo: muon realtime het de xem so nhay —
@@ -488,6 +500,14 @@ class HomeAssistantRepository {
         if (entityId.hasSuffix("_power") || entityId.hasSuffix("_power_2")) {
             return UpdateBucket.TEN_SECONDS
         }
+        // (GAP-42) iOS HomeAssistantManager.swift:233 — cam bien nhiet do
+        // phong dang theo doi (TempAlertConfig.sensor) -> .trigger, de
+        // canh bao nong/lanh kip thoi. O Android .trigger tuong duong
+        // REALTIME (publish ngay, nhu nhanh scene.* o tren). Dat TRUOC
+        // nhanh _temperature chung (THIRTY_MINUTES) de khong bi nuot.
+        // tempAlertSensorId do TempAlertWatcher.start() cap nhat theo
+        // cau hinh nguoi dung; mac dinh la TempAlertConfig.DEFAULT_SENSOR.
+        if (entityId == tempAlertSensorId) return UpdateBucket.REALTIME
         // iOS: nhiet do / do am -> 30 phut.
         if (entityId.contains("_temperature") || entityId.contains("_humidity")) {
             return UpdateBucket.THIRTY_MINUTES
@@ -1330,6 +1350,117 @@ class HomeAssistantRepository {
         val attributes = current.attributes.toMutableMap().apply { this[key] = value }
         _entities.value = _entities.value + (entityId to current.copy(attributes = attributes))
         _entityUpdated.tryEmit(entityId)
+    }
+
+    /* ---------------- automation config API (GAP-42) ---------------- */
+
+    /**
+     * Port iOS HomeAssistantManager.createAutomation
+     * (HomeAssistantManager.swift:1218-1240): POST
+     * /api/config/automation/config/app_<epoch giay> voi body
+     * {alias, trigger, condition: [], action, mode: "single"}.
+     * Tra true khi HTTP 2xx. iOS sinh id theo giay — 2 automation tao
+     * cung 1 giay se ghi de nhau; giu dung hanh vi iOS, khong tu sua.
+     * HA automation config API doi token co quyen config (giong thong
+     * bao loi ScenesView.swift hien khi tao that bai). Chi 1 attempt
+     * nhu iOS (khong ap retry GAP-44 — day khong phai service call).
+     * [triggers]/[actions] la JSON dung dinh dang HA automation, vd
+     * trigger numeric_state cua ScenesView.save(): {"platform":
+     * "numeric_state", "entity_id": ..., "above": ...}.
+     */
+    suspend fun createAutomation(
+        alias: String,
+        triggers: JsonArray,
+        actions: JsonArray,
+    ): Boolean {
+        val id = "app_${System.currentTimeMillis() / 1000}"
+        val body = buildJsonObject {
+            put("alias", alias)
+            put("trigger", triggers)
+            put("condition", buildJsonArray { })
+            put("action", actions)
+            put("mode", "single")
+        }.toString()
+        return postAutomationConfig(id, body)
+    }
+
+    /**
+     * Port iOS HomeAssistantManager.createScheduledAutomation
+     * (HomeAssistantManager.swift:1256-1280): tao/ghi de automation voi
+     * id do app quan ly (de bat/tat/xoa theo lich ngu canh —
+     * SceneScheduleStore.swift:83,104 dung deleteAutomation cung id nay).
+     * Khac createAutomation: body co them "id" va condition do caller
+     * truyen (vd loc thu trong tuan).
+     */
+    suspend fun createScheduledAutomation(
+        configId: String,
+        alias: String,
+        triggers: JsonArray,
+        conditions: JsonArray,
+        actions: JsonArray,
+    ): Boolean {
+        val body = buildJsonObject {
+            put("id", configId)
+            put("alias", alias)
+            put("trigger", triggers)
+            put("condition", conditions)
+            put("action", actions)
+            put("mode", "single")
+        }.toString()
+        return postAutomationConfig(configId, body)
+    }
+
+    private suspend fun postAutomationConfig(configId: String, bodyJson: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val url = "${endpoint.currentBaseUrl}/api/config/automation/config/$configId"
+            try {
+                val body = bodyJson.toRequestBody("application/json".toMediaType())
+                val req = Request.Builder().url(url)
+                    .header("Authorization", "Bearer $token")
+                    .post(body)
+                    .build()
+                client.newCall(req).execute().use { resp ->
+                    Log.i(TAG, "POST /api/config/automation/config/$configId -> HTTP ${resp.code}")
+                    if (!resp.isSuccessful) {
+                        _lastError.value =
+                            "Automation ${resp.code}: ${resp.body?.string().orEmpty().take(200)}"
+                    }
+                    resp.isSuccessful
+                }
+            } catch (t: Throwable) {
+                Log.e(TAG, "postAutomationConfig failed for $url", t)
+                _lastError.value = "Automation: ${t.message}"
+                false
+            }
+        }
+
+    /**
+     * Port iOS HomeAssistantManager.deleteAutomation
+     * (HomeAssistantManager.swift:1241-1253): DELETE
+     * /api/config/automation/config/<configId>. configId lay tu
+     * attribute "id" cua automation (xem SceneScheduleStore.swift,
+     * ScenesView.swift:306,349). Tra true khi HTTP 2xx.
+     */
+    suspend fun deleteAutomation(configId: String): Boolean = withContext(Dispatchers.IO) {
+        val url = "${endpoint.currentBaseUrl}/api/config/automation/config/$configId"
+        try {
+            val req = Request.Builder().url(url)
+                .header("Authorization", "Bearer $token")
+                .delete()
+                .build()
+            client.newCall(req).execute().use { resp ->
+                Log.i(TAG, "DELETE /api/config/automation/config/$configId -> HTTP ${resp.code}")
+                if (!resp.isSuccessful) {
+                    _lastError.value =
+                        "Automation ${resp.code}: ${resp.body?.string().orEmpty().take(200)}"
+                }
+                resp.isSuccessful
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "deleteAutomation failed for $url", t)
+            _lastError.value = "Automation: ${t.message}"
+            false
+        }
     }
 
     private companion object {

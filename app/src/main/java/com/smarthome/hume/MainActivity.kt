@@ -23,6 +23,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.data.HumeGraph
+import com.smarthome.hume.core.ha.TempAlertWatcher
+import com.smarthome.hume.core.ha.ZoneArrivalManager
 import com.smarthome.hume.feature.energy.EnergyNotifier
 import com.smarthome.hume.feature.energy.PumpAlertMonitor
 import com.smarthome.hume.core.datastore.ThemeSettings
@@ -108,6 +110,16 @@ class MainActivity : ComponentActivity() {
                     applicationContext,
                     app.haRepository.entities.value[PumpAlertMonitor.PUMP_ENTITY_ID]?.state,
                 )
+                // (GAP-42) Port iOS HumeApp.onAppActive: ZoneArrival time
+                // triggers (60s ticker) + bat geofence nha khi
+                // arrival_auto_enabled; TempAlert watch sensor nhiet do.
+                // Geofence chi dang ky duoc khi da cap FINE location
+                // (xem ZoneArrivalManager.startHomeMonitoring).
+                ZoneArrivalManager.onAppActive(applicationContext)
+                if (ZoneArrivalManager.isArrivalAutoEnabled(applicationContext)) {
+                    ZoneArrivalManager.startHomeMonitoring(applicationContext)
+                }
+                TempAlertWatcher.start(applicationContext, app.haRepository)
             }
 
             override fun onStop(owner: LifecycleOwner) {
@@ -116,6 +128,10 @@ class MainActivity : ComponentActivity() {
                 // monitor chi chay foreground nhu iOS (giu lastPumpOn + co bao,
                 // lan foreground sau sync() se dem lai neu bom con chay).
                 PumpAlertMonitor.onAppBackground()
+                // (GAP-42) Dung ticker gio ZoneArrival + watch nhiet do khi
+                // xuong background (socket cung ngat o tren).
+                ZoneArrivalManager.onAppBackground()
+                TempAlertWatcher.stop()
             }
         })
 
