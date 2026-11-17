@@ -1224,8 +1224,10 @@ class HomeAssistantRepository {
     }
 
     /**
-     * Climate KHONG co service "toggle" trong HA. Phai dung turn_on/turn_off
-     * tuy theo hvac_mode hien tai (off = dang tat, khac off = dang bat).
+     * Climate KHONG co service "toggle" trong HA. Tat -> turn_off; bat lai ->
+     * set_hvac_mode cool (GAP-28, port iOS HomeRooms.swift:602-611, comment
+     * "Port toggleClimate"). DOI SO VOI CU: truoc day bat lai goi
+     * climate.turn_on (ve mode cu / mode mac dinh cua HA); tu day LUON cool.
      */
     fun toggleClimate(entityId: String) {
         val currentState = _entities.value[entityId]?.state ?: "off"
@@ -1234,12 +1236,33 @@ class HomeAssistantRepository {
             applyLocalState(entityId, "off")
             callService("climate", "turn_off", serviceData(entityId), entityId)
         } else {
-            // Bat lai voi mode truoc do (neu co) hoac "cool"
-            val lastMode = _entities.value[entityId]?.attributes?.get("hvac_modes")
-                ?.toString()?.takeIf { it.contains("cool") }?.let { "cool" } ?: "cool"
-            applyLocalState(entityId, lastMode)
-            callService("climate", "turn_on", serviceData(entityId), entityId)
+            // (GAP-28) Bat lai LUON ve cool — khong ve mode cu nhu truoc.
+            applyLocalState(entityId, "cool")
+            callService(
+                "climate", "set_hvac_mode",
+                serviceData(entityId) { put("hvac_mode", "cool") }, entityId,
+            )
         }
+    }
+
+    /**
+     * (GAP-30) Bat/tat TOAN BO den trong phong bang 1 lenh duy nhat — port
+     * iOS HomeRooms.swift:241-248 (toggleRoomLights): entity_id = toan bo
+     * lightIds, KHONG loc theo trang thai; bat/tat theo trang thai chung:
+     * bat ky den nao dang bat -> turn_off toan bo, nguoc lai -> turn_on
+     * toan bo.
+     */
+    fun toggleRoomLights(entityIds: List<String>) {
+        if (entityIds.isEmpty()) return
+        val anyOn = entityIds.any { _entities.value[it]?.isOn == true }
+        val service = if (anyOn) "turn_off" else "turn_on"
+        val expected = if (anyOn) "off" else "on"
+        // Flip lac quan tung den (callService chi ho tro 1 optimisticEntityId).
+        entityIds.forEach { applyLocalState(it, expected) }
+        val data = buildJsonObject {
+            put("entity_id", buildJsonArray { entityIds.forEach { add(it) } })
+        }.toString()
+        callService("light", service, data)
     }
 
     fun setLightBrightness(entityId: String, percent: Int) =

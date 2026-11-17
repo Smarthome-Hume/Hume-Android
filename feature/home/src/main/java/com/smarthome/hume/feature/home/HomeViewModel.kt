@@ -164,6 +164,9 @@ class HomeViewModel(
     fun setClimateTemp(entityId: String, temp: Double) = repo.setClimateTemp(entityId, temp)
     fun setHvacMode(entityId: String, mode: String) = repo.setHvacMode(entityId, mode)
     fun toggleClimate(entityId: String) = repo.toggleClimate(entityId)
+    /** (GAP-30) Bat/tat toan bo den 1 phong bang 1 lenh; wiring o
+     * HomeScreen.kt:302 (onToggleLights) do worker khac noi sau. */
+    fun toggleRoomLights(entityIds: List<String>) = repo.toggleRoomLights(entityIds)
 
     /** Bo qua (an) thong bao theo id. */
     fun dismissNotification(id: String) {

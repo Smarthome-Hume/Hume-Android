@@ -590,8 +590,9 @@ private fun ClimateCard(
                     onTemp(c.entityId, (target - 1).coerceIn(16.0, 31.0))
                 }
                 Text(
-                    "%.0f°".format(target),
-                    style = MaterialTheme.typography.titleMedium,
+                    // (GAP-28) Port iOS HomeRooms.swift:539-542: "21°C" font titleLarge.
+                    "%.0f°C".format(target),
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                     maxLines = 1,
@@ -647,7 +648,8 @@ private fun StepperButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(34.dp)
+            // (GAP-28) Port iOS HomeRooms.swift:580-592: nut stepper tron 42pt, icon 22.
+            .size(42.dp)
             .clip(CircleShape)
             .background(cs.surfaceContainerHighest)
             .pressMorph(pressedScale = 0.85f, onClick = if (enabled) onClick else null),
@@ -655,7 +657,7 @@ private fun StepperButton(
         Icon(
             icon, null,
             tint = cs.onSurface,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(22.dp),
         )
     }
 }

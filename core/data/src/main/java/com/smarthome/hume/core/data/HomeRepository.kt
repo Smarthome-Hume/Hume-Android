@@ -32,6 +32,9 @@ interface HomeRepository {
     fun setClimateTemp(entityId: String, tempC: Double)
     fun setHvacMode(entityId: String, mode: String)
     fun toggleClimate(entityId: String)
+    /** (GAP-30) Bat/tat toan bo den trong phong bang 1 lenh light.turn_on/off
+     * voi entity_id = toan bo danh sach (port iOS HomeRooms.swift:241-248). */
+    fun toggleRoomLights(entityIds: List<String>)
     /** mode: "home" / "away" / "night" / "custom_bypass" */
     fun alarmArm(mode: String)
     fun alarmDisarm()
