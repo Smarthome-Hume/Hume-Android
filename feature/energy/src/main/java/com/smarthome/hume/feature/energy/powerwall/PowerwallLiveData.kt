@@ -59,6 +59,27 @@ object PowerwallLiveData {
         "firmware_version",
     ) + (1..16).map { "cell_$it" }
 
+    /**
+     * Setting BMS live tren master (doc that tu BMS, KHONG hardcode).
+     * Da kiem chung 19:44 16/11 tren iOS: khop 100% so hardcode cu trong app.
+     * charge_voltage_limit da co trong packKeys nen KHONG lap lai o day.
+     * setting_overvoltage + py_dchg_voltage_limit dang unknown nen khong lay.
+     *
+     * Khai bao TRUOC [entityIds]: initializer cua [entityIds] dung
+     * [settingEntityIds], ma property trong object chi khoi tao theo thu tu
+     * khai bao — de sau thi kotlinc bao "must be initialized".
+     */
+    val settingEntityIds: List<String> = run {
+        val mp = "sensor.powerwall_bms_master_"
+        listOf(
+            "setting_charge_cv", "setting_cutoff_soc", "setting_cutoff_c_rate",
+            "setting_charge_limit_c_rate", "setting_discharge_cutoff_soc",
+            "setting_discharge_limit_c_rate", "setting_cell_max_volt",
+            "setting_cell_min_volt", "setting_cutoff_volt", "setting_undervoltage",
+            "py_chg_current_limit",
+        ).map { mp + it }
+    }
+
     /** Toan bo entity can watch (N-12 dang ky vao watched set). */
     val entityIds: List<String> = buildList {
         for ((_, prefix, _) in unitPrefixes) {
@@ -76,23 +97,6 @@ object PowerwallLiveData {
             add("sensor.powerwall_bms_master_$key")
         }
         addAll(settingEntityIds)
-    }
-
-    /**
-     * Setting BMS live tren master (doc that tu BMS, KHONG hardcode).
-     * Da kiem chung 19:44 16/11 tren iOS: khop 100% so hardcode cu trong app.
-     * charge_voltage_limit da co trong packKeys nen KHONG lap lai o day.
-     * setting_overvoltage + py_dchg_voltage_limit dang unknown nen khong lay.
-     */
-    val settingEntityIds: List<String> = run {
-        val mp = "sensor.powerwall_bms_master_"
-        listOf(
-            "setting_charge_cv", "setting_cutoff_soc", "setting_cutoff_c_rate",
-            "setting_charge_limit_c_rate", "setting_discharge_cutoff_soc",
-            "setting_discharge_limit_c_rate", "setting_cell_max_volt",
-            "setting_cell_min_volt", "setting_cutoff_volt", "setting_undervoltage",
-            "py_chg_current_limit",
-        ).map { mp + it }
     }
 
     // MARK: - Payload {sys, packs} cho window.__humePowerwallLive
