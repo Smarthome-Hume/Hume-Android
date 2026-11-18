@@ -364,9 +364,9 @@ private fun PowerRow(
         EnergyPowerKind.Home -> 9000.0
     }
     val color = when (row.kind) {
-        EnergyPowerKind.Battery -> Color(0xFFD97706) // cam
+        EnergyPowerKind.Battery -> M3ETokens.StatusColors.Battery // cam
         EnergyPowerKind.Solar -> MaterialTheme.colorScheme.primary // xanh duong
-        EnergyPowerKind.Grid -> Color(0xFF9AA5B1) // xam
+        EnergyPowerKind.Grid -> M3ETokens.StatusColors.Grid // xam
         EnergyPowerKind.Home -> MaterialTheme.colorScheme.primary
     }
     // Gia tri that tu HA (khong jitter demo)
@@ -388,7 +388,7 @@ private fun PowerRow(
                 ),
             )
             // iOS PowerRowView: so labelLarge + "W" labelSmall, spacing 2, can baseline.
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xxs)) {
                 Text(
                     "${if (watts < 0) "−" else ""}${abs(watts).roundToInt()}",
                     style = MaterialTheme.typography.labelLarge.copy(
@@ -447,12 +447,7 @@ private fun FlatPowerBar(
 private fun DonutCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
     // 4 mau slice RIENG BIET: primary (theme) + 3 mau co dinh (xanh duong, ho phach, tim)
     // de tranh trung nhau nhu vu primary==tertiary o theme xanh la
-    val sliceColors = listOf(
-        Color(0xFFE8734A), // cam do (khac primary cua moi theme)
-        Color(0xFF5B8DEF), // xanh duong
-        Color(0xFFE8A838), // vang
-        Color(0xFF9B7EDE), // tim
-    )
+    val sliceColors = M3ETokens.ChartColors.Palette
     // Legend entrance: tu phai sang, stagger (demo .dli)
     var legendShown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { legendShown = true }
@@ -670,7 +665,7 @@ private fun DevicesCard(
                         .clip(RoundedCornerShape(999.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                         .padding(M3ETokens.Spacing.Xs),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xxs),
                 ) {
                     DeviceMode.entries.forEach { m ->
                         val isSel = ui.deviceMode == m
@@ -864,7 +859,7 @@ private fun LowBatteryCard(state: EnergyUiState, risePlayed: MutableSet<String>)
             state.lowBatteries.forEachIndexed { i, b ->
                 if (i > 0) {
                     HorizontalDivider(
-                        thickness = 1.dp,
+                        thickness = M3ETokens.Divider.Thickness,
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     )
                 }

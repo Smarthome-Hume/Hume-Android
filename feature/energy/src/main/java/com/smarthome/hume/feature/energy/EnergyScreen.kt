@@ -155,8 +155,8 @@ fun EnergyScreen(
             // (N-06) Chua dung chieu cao pill title co dinh 76dp nhu iOS
             // (M3EEnergyView.swift: padding top 76 = top 12 + pill ~50
             // + bottom 6 + gap 8); pill that nam o lop co dinh ben duoi.
-            top = statusBarTop + 76.dp, start = 18.dp, end = 18.dp,
-            bottom = 120.dp,
+            top = statusBarTop + 76.dp, start = M3ETokens.Spacing.PageMargin, end = M3ETokens.Spacing.PageMargin,
+            bottom = M3ETokens.Spacing.PageBottom,
         ),
         verticalArrangement = Arrangement.spacedBy(10.dp), // cắt dưới iOS theo lệnh user 22:03 (14→10dp)
     ) {
@@ -203,14 +203,14 @@ fun EnergyScreen(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = M3ETokens.Spacing.PageMargin)
                 .padding(top = statusBarTop + 12.dp, bottom = 6.dp),
         ) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(28.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = M3ETokens.Spacing.Xl, vertical = M3ETokens.Spacing.Md)
                     .riseOnce("hdr", 0, risePlayed),
             ) {
                 Text(

@@ -98,7 +98,7 @@ fun EnergySolarTab(
         ) {
             state.chargeControls.forEach { c ->
                 HorizontalDivider(
-                    thickness = 1.dp,
+                    thickness = M3ETokens.Divider.Thickness,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 )
                 ControlRow(c, vm)
@@ -124,7 +124,7 @@ fun EnergySolarTab(
         ) {
             state.dischargeControls.forEach { c ->
                 HorizontalDivider(
-                    thickness = 1.dp,
+                    thickness = M3ETokens.Divider.Thickness,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 )
                 ControlRow(c, vm)
@@ -249,7 +249,7 @@ private fun SunsynkCard(state: EnergyUiState, risePlayed: MutableSet<String>) {
         // Khe cum 14->12dp = 0,70 x title 17 (Ratio.SectionGap, 11,9 -> 12).
         Spacer(Modifier.height(M3ETokens.Spacing.Md))
         HorizontalDivider(
-            thickness = 1.dp,
+            thickness = M3ETokens.Divider.Thickness,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         )
         Spacer(Modifier.height(M3ETokens.Spacing.Md))

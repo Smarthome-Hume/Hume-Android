@@ -104,10 +104,10 @@ fun InsightPopupOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Popup))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 // Viền kính mờ như iOS (.stroke white 50%)
-                .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                .border(M3ETokens.Border.Thin, Color.White.copy(alpha = 0.5f), RoundedCornerShape(M3ETokens.Corner.Popup))
                 // Chặn tap xuyên qua thẻ làm đóng popup
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -181,7 +181,7 @@ private fun InsightDeviceCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                 .background(cs.surfaceContainer)
                 .padding(16.dp),
         ) {
@@ -207,7 +207,7 @@ private fun InsightDeviceCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                 .background(if (isOn) Color(0xFFEF4444) else cs.primary)
                 .pressMorph(pressedScale = 0.96f) {
                     haptic()
@@ -243,7 +243,7 @@ private fun InsightDeviceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(100.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.surfaceContainer),
             contentAlignment = Alignment.Center,
         ) {
@@ -291,7 +291,8 @@ private fun InsightBatteryCard(
         // Số % lớn (iOS: 48pt bold)
         Text(
             "$soc%",
-            fontSize = 48.sp,
+            fontSize = M3ETokens.Text.HeroPercent.fontSize,
+            lineHeight = M3ETokens.Text.HeroPercent.lineHeight,
             fontWeight = FontWeight.Bold,
             color = cs.onSurface,
         )
@@ -342,7 +343,7 @@ private fun InsightPopupButton(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
             .background(if (primary) cs.primary else cs.surfaceContainer)
             .pressMorph(pressedScale = 0.96f) { haptic(); onClick() }
             .padding(vertical = 14.dp),

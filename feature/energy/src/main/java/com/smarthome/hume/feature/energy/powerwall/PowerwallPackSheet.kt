@@ -227,7 +227,7 @@ private fun PackHeader(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(M3ETokens.Icon.IconBox)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.primaryContainer),
         ) {
             MsIcon(M3EIcons.Battery, null, tint = cs.primary, modifier = Modifier.size(M3ETokens.Icon.PackHeader))
@@ -357,8 +357,8 @@ private fun SocCell(
             Text(
                 "$socInt%",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 15.sp,
-                    lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                    fontSize = M3ETokens.Text.PackValue.fontSize,
+                    lineHeight = M3ETokens.Text.PackValue.lineHeight,
                 ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
@@ -690,8 +690,8 @@ private fun Kv(
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 15.sp,
-                lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                fontSize = M3ETokens.Text.PackValue.fontSize,
+                lineHeight = M3ETokens.Text.PackValue.lineHeight,
             ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
@@ -726,8 +726,8 @@ private fun KvNum(
                 decimals = decimals,
                 unit = unit,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 15.sp,
-                    lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                    fontSize = M3ETokens.Text.PackValue.fontSize,
+                    lineHeight = M3ETokens.Text.PackValue.lineHeight,
                 ),
                 color = cs.onSurface,
             )
@@ -735,8 +735,8 @@ private fun KvNum(
                 Text(
                     suffix,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 15.sp,
-                        lineHeight = M3ETokens.naturalLineHeight(15.sp),
+                        fontSize = M3ETokens.Text.PackValue.fontSize,
+                        lineHeight = M3ETokens.Text.PackValue.lineHeight,
                     ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,

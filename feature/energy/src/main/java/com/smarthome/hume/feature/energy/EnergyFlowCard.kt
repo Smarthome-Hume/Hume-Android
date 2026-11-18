@@ -224,7 +224,7 @@ fun EnergyFlowCard(
                         Modifier
                             .size(M3ETokens.Spacing.Sm)
                             .clip(CircleShape)
-                            .background(Color(0xFF22C55E))
+                            .background(M3ETokens.StatusColors.Connection.Connected)
                             .blink(1600),
                     )
                     Spacer(Modifier.width(7.dp))
@@ -290,9 +290,9 @@ private fun FlowArea(
 
         val pvM = subcompose("pv") {
         FlowNode(
-            icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp)) },
-            tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
-            tintFg = Color(0xFFD97706),
+            icon = { MsIcon(M3EIcons.SolarPower, null, tint = M3ETokens.StatusColors.Battery, modifier = Modifier.size(20.dp)) },
+            tintBg = Color(0xFFF59E0B).copy(alpha = M3ETokens.Alpha.TintBg),
+            tintFg = M3ETokens.StatusColors.Battery,
             label = "Sản xuất", valueKw = flow.prodKw,
             // Nang luong (kWh) tung node — port iOS commit 46c365f (muc 25)
             energyKwh = flow.pvKwh,
@@ -312,7 +312,7 @@ private fun FlowArea(
         val gridBadgeFg = if (flow.gridOn) LocalHumeExtraColors.current.success else Color(0xFFBA1A1A)
         FlowNode(
             icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(20.dp)) },
-            tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
+            tintBg = Color(0xFF2F6EA3).copy(alpha = M3ETokens.Alpha.TintBg),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
             energyKwh = flow.gridKwh,
@@ -334,7 +334,7 @@ private fun FlowArea(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(gridBadgeFg.copy(alpha = 0.16f))
+                        .background(gridBadgeFg.copy(alpha = M3ETokens.Alpha.TintBg))
                         .padding(horizontal = 9.dp, vertical = M3ETokens.Spacing.Xs),
                 )
             }
@@ -383,14 +383,14 @@ private fun FlowArea(
                     ),
                 )
             },
-            tintBg = battFg.copy(alpha = 0.16f),
+            tintBg = battFg.copy(alpha = M3ETokens.Alpha.TintBg),
             tintFg = battFg,
             label = "Pin", valueKw = flow.battKw,
             // Pin: 2 dong kWh rieng sac/xa (port iOS commit 46c365f, muc 25)
             energyKwh = flow.battChgKwh, energyLabel = "Sạc",
             energyKwh2 = flow.battDisKwh, energyLabel2 = "Xả",
             badge = if (charging) "Đang sạc" else "Đang xả",
-            badgeBg = battFg.copy(alpha = 0.16f),
+            badgeBg = battFg.copy(alpha = M3ETokens.Alpha.TintBg),
             badgeFg = battFg,
             // Bam node pin -> mo trang Powerwall 3D (N-05, port iOS v69 4d6aa26).
             onClick = onBatteryClick,
@@ -526,7 +526,7 @@ private fun FlowArea(
                             scaleY = pScale
                             alpha = pAlpha
                         }
-                        .border(1.5.dp, primary, CircleShape),
+                        .border(M3ETokens.Border.Medium, primary, CircleShape),
                 )
             }
             Box(
@@ -605,7 +605,7 @@ private fun FlowTracks(flow: EnergyFlowState, charging: Boolean, vbH: Float, del
             }
             drawPath(
                 path = path,
-                color = trackColor.copy(alpha = 0.45f),
+                color = trackColor.copy(alpha = M3ETokens.Alpha.Track),
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
             // Khong co dong (hien "0 W") -> chi ve track mo, khong ve net sweep

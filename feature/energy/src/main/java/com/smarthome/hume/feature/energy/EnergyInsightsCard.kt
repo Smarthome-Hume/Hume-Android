@@ -121,7 +121,7 @@ fun EnergyInsightsCard(
                                     .clip(CircleShape)
                                     .background(
                                         if (selected) cs.onTertiaryContainer
-                                        else cs.onTertiaryContainer.copy(alpha = 0.35f),
+                                        else cs.onTertiaryContainer.copy(alpha = M3ETokens.Alpha.TertiaryText),
                                     )
                                     .clickable {
                                         scope.launch { pagerState.animateScrollToPage(i) }
@@ -160,8 +160,8 @@ private fun InsightRow(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(sevColor.copy(alpha = 0.12f)),
+                .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
+                .background(sevColor.copy(alpha = M3ETokens.Alpha.SeverityBg)),
         ) {
             MsIcon(
                 insight.glyph.ifBlank { Ms.auto_awesome }, null,
@@ -184,7 +184,7 @@ private fun InsightRow(
                 maxLines = 1,
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(sevColor.copy(alpha = 0.12f))
+                    .background(sevColor.copy(alpha = M3ETokens.Alpha.SeverityBg))
                     .padding(horizontal = M3ETokens.Spacing.Sm, vertical = 2.dp),
             )
             Spacer(Modifier.height(M3ETokens.Spacing.Xs))
@@ -214,7 +214,7 @@ private fun InsightRow(
                 style = MaterialTheme.typography.bodyMedium.copy(
                     lineHeight = M3ETokens.Text.Body.lineHeight,
                 ),
-                color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                color = cs.onTertiaryContainer.copy(alpha = M3ETokens.Alpha.SecondaryText),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 3.dp),
@@ -258,7 +258,7 @@ private fun InsightPrimaryButton(
                 pressedScale = 0.9f,
                 onClick = onClick,
             )
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Small))
             .background(cs.onTertiaryContainer)
             .padding(
                 horizontal = M3ETokens.Spacing.Lg,
@@ -287,8 +287,8 @@ private fun InsightSecondaryChip(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .pressMorph(pressedScale = 0.92f, onClick = onClick)
-            .clip(RoundedCornerShape(M3ETokens.Spacing.Md))
-            .background(cs.onTertiaryContainer.copy(alpha = 0.12f))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Small))
+            .background(cs.onTertiaryContainer.copy(alpha = M3ETokens.Alpha.SeverityBg))
             .padding(
                 horizontal = M3ETokens.Spacing.Md,
                 vertical = M3ETokens.Spacing.Sm,

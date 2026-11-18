@@ -159,7 +159,7 @@ private fun SettingsHeader(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(44.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.primaryContainer),
         ) {
             // iOS dung SF Symbol "slider.horizontal.3"; font Material
@@ -196,19 +196,19 @@ private fun SettingCell(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
             .background(cs.surfaceContainerHighest) // iOS SettingsSheet:131 (extra.surfaceHighest fallback Cam = nau khi seed Indigo)
             .padding(14.dp),
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = M3ETokens.Text.BodySmall.fontSize, lineHeight = M3ETokens.Text.BodySmall.lineHeight),
             fontWeight = FontWeight.Medium,
             color = cs.onSurfaceVariant,
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = M3ETokens.Text.StatValueLarge.fontSize, lineHeight = M3ETokens.Text.StatValueLarge.lineHeight),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )

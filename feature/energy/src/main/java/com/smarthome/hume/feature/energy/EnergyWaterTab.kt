@@ -292,7 +292,7 @@ private fun WaterTdsCard(w: WaterUiState, risePlayed: MutableSet<String>) {
                     modifier = Modifier
                         .weight(1f)
                         .height(M3ETokens.Spacing.Sm)
-                        .clip(RoundedCornerShape(M3ETokens.Spacing.Xs))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.XxSmall))
                         .background(
                             if (i < segOn) extra.success else cs.surfaceContainer,
                         ),
@@ -338,7 +338,7 @@ private fun WaterSensorsGrid(w: WaterUiState, risePlayed: MutableSet<String>) {
         modifier = Modifier.riseOnce("water-sensors", 460, risePlayed),
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
             modifier = Modifier.fillMaxWidth(),
         ) {
             WaterSensorCard(
@@ -361,7 +361,7 @@ private fun WaterSensorsGrid(w: WaterUiState, risePlayed: MutableSet<String>) {
             )
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
             modifier = Modifier.fillMaxWidth(),
         ) {
             WaterSensorCard(
@@ -407,7 +407,7 @@ private fun WaterSensorCard(
             .clip(RoundedCornerShape(M3ETokens.Corner.Sensor))
             .background(cardBg)
             // Padding 14dp: khong co token 14dp, giu so cu (ti le 1,00 x ten 14sp).
-            .padding(14.dp),
+            .padding(M3ETokens.Spacing.Md),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
