@@ -113,7 +113,7 @@ fun ChartDetailSheet(
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
                     .height(cardH)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                     .background(cs.surfaceContainer),
             ) {
                 Column(Modifier.fillMaxSize()) {
@@ -291,9 +291,9 @@ private fun ChartCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Popup))
             .background(cs.surfaceContainerHighest)
-            .padding(16.dp),
+            .padding(M3ETokens.Spacing.Lg),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

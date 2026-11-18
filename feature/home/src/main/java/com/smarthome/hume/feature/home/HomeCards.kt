@@ -204,9 +204,9 @@ fun HomeHeader(
             // Den neon nhap nhay theo trang thai ket noi HA:
             // xanh la = da ket noi (nhap nhay nhe), do = mat ket noi, da cam = dang ket noi
             val (neonColor, blinkMs) = when (state.connectionState) {
-                ConnectionState.Connected -> Color(0xFF22C55E) to 1600
-                ConnectionState.Connecting -> Color(0xFFF59E0B) to 800
-                ConnectionState.Disconnected -> Color(0xFFEF4444) to 0
+                ConnectionState.Connected -> M3ETokens.StatusColors.Connection.Connected to 1600
+                ConnectionState.Connecting -> M3ETokens.StatusColors.Connection.Connecting to 800
+                ConnectionState.Disconnected -> M3ETokens.StatusColors.Connection.Disconnected to 0
             }
             Box(
                 contentAlignment = Alignment.Center,
@@ -623,7 +623,7 @@ fun SuggestCard(
                                 .clip(CircleShape)
                                 .background(
                                     if (selected) cs.onTertiaryContainer
-                                    else cs.onTertiaryContainer.copy(alpha = 0.35f),
+                                    else cs.onTertiaryContainer.copy(alpha = M3ETokens.Alpha.TertiaryText),
                                 )
                                 .clickable {
                                     scope.launch { pagerState.animateScrollToPage(i) }
@@ -833,7 +833,7 @@ private fun SuggestTipRow(
                 text = tip.title,
                 // (2026-11-18) Cat MANH: title 14->13sp (MarqueeText chi lay
                 // fontSize tu style, bo qua lineHeight) — cot chu 33,7->30,2dp.
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = M3ETokens.Text.BodyTight.fontSize, lineHeight = M3ETokens.Text.BodyTight.lineHeight),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onTertiaryContainer,
                 startPadding = 14.dp,
@@ -848,7 +848,7 @@ private fun SuggestTipRow(
                     fontSize = M3ETokens.Text.Caption.fontSize,
                 ),
                 fontWeight = FontWeight.Medium,
-                color = cs.onTertiaryContainer.copy(alpha = 0.75f),
+                color = cs.onTertiaryContainer.copy(alpha = M3ETokens.Alpha.SecondaryText),
                 modifier = Modifier.padding(top = 2.dp),
                 startPadding = 14.dp,
             )

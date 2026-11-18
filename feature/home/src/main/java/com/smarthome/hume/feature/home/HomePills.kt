@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.model.AlarmUi
 import com.smarthome.hume.core.model.domain.SecurityMode
 import com.smarthome.hume.core.ui.components.M3EIcons
@@ -432,8 +433,8 @@ private fun SecPill(
                 Text(
                     ps,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.sp,
-                        lineHeight = 13.sp,
+                        fontSize = M3ETokens.Text.ChipText.fontSize,
+                        lineHeight = M3ETokens.Text.ChipText.lineHeight,
                         letterSpacing = 0.sp,
                     ),
                     fontWeight = FontWeight.Medium,
@@ -586,8 +587,8 @@ private fun BulbPill(
             Text(
                 if (count > 0) "$count bóng bật" else "Đèn tắt",
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
+                    fontSize = M3ETokens.Text.ChipText.fontSize,
+                    lineHeight = M3ETokens.Text.ChipText.lineHeight,
                     letterSpacing = 0.sp,
                 ),
                 fontWeight = FontWeight.SemiBold,
@@ -688,8 +689,8 @@ private fun SecModeCard(
                     SecurityMode.Off -> "Tắt"
                 },
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
+                    fontSize = M3ETokens.Text.ChipText.fontSize,
+                    lineHeight = M3ETokens.Text.ChipText.lineHeight,
                     letterSpacing = 0.sp,
                 ),
                 fontWeight = FontWeight.SemiBold,

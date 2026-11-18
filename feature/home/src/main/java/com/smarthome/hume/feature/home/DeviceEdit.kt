@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.ui.components.M3ECardGap
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
@@ -152,12 +153,12 @@ fun PickerField(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                 .background(cs.surfaceContainer)
                 .border(
-                    width = 1.dp,
-                    color = cs.outlineVariant.copy(alpha = 0.45f),
-                    shape = RoundedCornerShape(20.dp),
+                    width = M3ETokens.Border.Thin,
+                    color = cs.outlineVariant.copy(alpha = M3ETokens.Alpha.Border),
+                    shape = RoundedCornerShape(M3ETokens.Corner.SheetInner),
                 )
                 .pressMorph(pressedScale = 0.98f, onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -175,7 +176,7 @@ fun PickerField(
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
                     .background(cs.surfaceContainerHigh),
                 contentAlignment = Alignment.Center,
             ) {
@@ -318,7 +319,7 @@ fun DeviceEditScreen(
                             val selected = type == key
                             Row(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
+                                    .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                                     .background(
                                         if (selected) cs.secondaryContainer
                                         else cs.surfaceContainer,
@@ -525,7 +526,7 @@ fun EntityPickerScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                             .background(if (selected) cs.primaryContainer else Color.Transparent)
                             .pressMorph(pressedScale = 0.98f) {
                                 onSelect(e.id)

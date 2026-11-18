@@ -228,12 +228,12 @@ fun HomeScreen(
                     // Fling dam (0.6x van toc) -> cuon cham, do hon
                     flingBehavior = rememberDampedFlingBehavior(),
                     contentPadding = PaddingValues(
-                        start = 18.dp, end = 18.dp,
+                        start = M3ETokens.Spacing.PageMargin, end = M3ETokens.Spacing.PageMargin,
                         // (N-06) Chua dung chieu cao header co dinh (do
                         // that, gom status bar) nhu iOS padding top =
                         // headerHeight (M3EHomeView.swift:72).
                         top = headerHeight,
-                        bottom = 120.dp,
+                        bottom = M3ETokens.Spacing.PageBottom,
                     ),
                     // Nhịp margin-collapse theo CSS (khong spacedBy):
                     // card->card 10 (cat duoi iOS theo lenh user 22:03); pills->sec 20; sec->card 12
@@ -337,7 +337,7 @@ fun HomeScreen(
                         .onGloballyPositioned {
                             headerHeight = with(density) { it.size.height.toDp() }
                         }
-                        .padding(horizontal = 18.dp)
+                        .padding(horizontal = M3ETokens.Spacing.PageMargin)
                         .padding(top = statusBarTop + M3ETokens.Spacing.Sm),
                 ) {
                     Column(Modifier.padding(bottom = M3ETokens.Spacing.CardGap)) {
@@ -585,7 +585,7 @@ private fun EcoDialog(
                     .padding(horizontal = 32.dp)
                     .offset(y = (-60).dp),
             ) {
-                Column(Modifier.padding(24.dp)) {
+                Column(Modifier.padding(M3ETokens.Dialog.Padding)) {
                     MsIcon(
                         Ms.bolt, null,
                         tint = cs.secondary,

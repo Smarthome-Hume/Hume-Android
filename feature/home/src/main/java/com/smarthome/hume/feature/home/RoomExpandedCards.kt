@@ -434,7 +434,7 @@ fun DishwasherExpandedView(
             DishwasherMetaPill(Icons.Outlined.WaterDrop, "Mức $softLevel")
         }
 
-        HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
+        HorizontalDivider(thickness = M3ETokens.Divider.Thickness, color = cs.surfaceContainerHigh)
 
         // Hang chuong trinh kieu the an ninh: an tieu de bung 1 hang
         // ngang 6 icon (spring 0.45).
@@ -565,7 +565,7 @@ fun DishwasherExpandedView(
             }
         }
 
-        HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
+        HorizontalDivider(thickness = M3ETokens.Divider.Thickness, color = cs.surfaceContainerHigh)
 
         // 3 o tang cuong: o vuong 76dp, vong tron trang 40dp + icon 18dp.
         // Thu tu iOS: chong dia (DP 102) — hoi nuoc (DP 108) — say chong
@@ -594,7 +594,7 @@ fun DishwasherExpandedView(
             )
         }
 
-        HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
+        HorizontalDivider(thickness = M3ETokens.Divider.Thickness, color = cs.surfaceContainerHigh)
 
         // NUOC MEM: nhan + nut -/+ 56dp + slider 3–15, gui khi tha tay
         // qua number.set_value DP 106, hien thi "x/15".
@@ -679,7 +679,7 @@ fun DishwasherExpandedView(
             }
         }
 
-        HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
+        HorizontalDivider(thickness = M3ETokens.Divider.Thickness, color = cs.surfaceContainerHigh)
 
         // HEN GIO BAT DAU: chi nut -/+ buoc 1 gio, 0–1440 phut (DP 8).
         // (2026-11-18) Khoi phuc: khe khoi hen gio 6->10dp (iOS 10pt).
@@ -731,7 +731,7 @@ fun DishwasherExpandedView(
             }
         }
 
-        HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
+        HorizontalDivider(thickness = M3ETokens.Divider.Thickness, color = cs.surfaceContainerHigh)
 
         // Hang nut cuoi: nguon (DP 1) + Dung (INERT) + Bat dau/Tam dung
         // (DP 2 — CHUA TUNG TEST TU HA, lan dau bam can de y may chay
@@ -1190,7 +1190,7 @@ fun LightExpandedView(
                         .size(M3ETokens.RoomSheet.LightColorDot)
                         .clip(CircleShape)
                         .background(Color(rgb[0], rgb[1], rgb[2]))
-                        .border(1.dp, cs.outlineVariant, CircleShape),
+                        .border(M3ETokens.Border.Thin, cs.outlineVariant, CircleShape),
                 )
             }
             Box(

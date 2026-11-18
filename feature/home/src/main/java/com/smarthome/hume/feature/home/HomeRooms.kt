@@ -1069,7 +1069,7 @@ fun DeviceRow(
             verticalAlignment = Alignment.CenterVertically,
             // iOS HomeRooms.swift:737 HStack(spacing: 13) ngoai (cum
             // icon+ten -> trailing switch/chip) — Android cu: khong spacing.
-            horizontalArrangement = Arrangement.spacedBy(13.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
             modifier = Modifier.clickable {
                 if (isConfirming) isConfirming = false
             },

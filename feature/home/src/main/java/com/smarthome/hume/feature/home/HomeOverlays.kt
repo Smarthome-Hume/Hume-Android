@@ -73,7 +73,7 @@ fun LightsSheet(
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
                     .height(cardH)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                     .background(cs.surfaceContainer),
             ) {
                 Column(Modifier.fillMaxSize()) {

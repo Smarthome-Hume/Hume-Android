@@ -210,7 +210,7 @@ fun RoomMgmtHeader(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.surfaceContainerHighest)
                 .pressMorph(pressedScale = 0.88f, onClick = onBack),
             contentAlignment = Alignment.Center,
@@ -248,7 +248,7 @@ fun RoomMgmtHeader(
         if (onAdd != null) {
             Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                     .background(cs.primaryContainer)
                     .pressMorph(pressedScale = 0.88f, onClick = onAdd)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -294,7 +294,7 @@ fun RoomMgmtSaveBar(
             modifier = Modifier
                 .weight(1f)
                 .height(52.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                 .background(cs.surfaceContainerHighest)
                 .pressMorph(pressedScale = 0.97f) { if (!saving) onCancel() },
             contentAlignment = Alignment.Center,
@@ -310,7 +310,7 @@ fun RoomMgmtSaveBar(
             modifier = Modifier
                 .weight(2f)
                 .height(52.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                 .background(if (saveEnabled) cs.primary else cs.surfaceContainerHigh)
                 .pressMorph(pressedScale = 0.97f) { if (saveEnabled && !saving) onSave() },
             contentAlignment = Alignment.Center,
@@ -377,7 +377,7 @@ fun RoomMgmtConfirmSheet(
                     modifier = Modifier
                         .weight(1f)
                         .height(52.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(cs.surfaceContainer)
                         .pressMorph(pressedScale = 0.97f, onClick = onDismiss),
                     contentAlignment = Alignment.Center,
@@ -393,7 +393,7 @@ fun RoomMgmtConfirmSheet(
                     modifier = Modifier
                         .weight(2f)
                         .height(52.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(if (destructive) cs.error else cs.primary)
                         .pressMorph(pressedScale = 0.97f, onClick = onConfirm),
                     contentAlignment = Alignment.Center,
@@ -418,7 +418,7 @@ private fun EditButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(40.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Small))
             .background(cs.primaryContainer)
             .pressMorph(pressedScale = 0.88f, onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -445,7 +445,7 @@ private fun ReorderButtons(
         Box(
             modifier = Modifier
                 .size(28.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
                 .background(cs.primaryContainer)
                 .pressMorph(pressedScale = 0.88f) { if (canMoveUp) onMoveUp() },
             contentAlignment = Alignment.Center,
@@ -461,7 +461,7 @@ private fun ReorderButtons(
         Box(
             modifier = Modifier
                 .size(28.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
                 .background(cs.primaryContainer)
                 .pressMorph(pressedScale = 0.88f) { if (canMoveDown) onMoveDown() },
             contentAlignment = Alignment.Center,
@@ -684,7 +684,7 @@ private fun RoomRow(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                 .background(cs.primaryContainer),
         ) {
             MsIcon(
@@ -954,7 +954,7 @@ private fun RoomSensorRow(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                     .background(cs.surfaceContainer),
             ) {
                 MsIcon(
@@ -1021,7 +1021,7 @@ private fun DeviceRow(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                 .background(cs.surfaceContainer),
         ) {
             MsIcon(

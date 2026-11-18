@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
@@ -54,7 +55,7 @@ fun IconPicker(
     val previewGlyph = msGlyphByName[trimmed]
     val previewVector = vectorByName[trimmed]
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md)) {
         // Mode 1: o go ten (M3ETextField) + preview 48dp bo 16dp primaryContainer
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -78,7 +79,7 @@ fun IconPicker(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                         .background(cs.primaryContainer),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -137,7 +138,7 @@ fun IconPicker(
                         Box(
                             modifier = Modifier
                                 .size(52.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                                 .background(
                                     if (isSelected) cs.primaryContainer
                                     else cs.surfaceContainerHighest,
