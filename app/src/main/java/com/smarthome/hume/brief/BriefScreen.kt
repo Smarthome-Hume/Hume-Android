@@ -709,7 +709,10 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(dev.name, style = MaterialTheme.typography.titleSmall, color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                // Ten dai ("A/C phòng ngủ chính") tran cot ten: chay marquee
+                // kieu legend donut (nghi 1.5s -> cuon het -> nghi 1.2s ->
+                // cuon ve), chi cuon khi tran, vua khung thi dung yen.
+                MarqueeText(dev.name, style = MaterialTheme.typography.titleSmall, color = cs.onSurface, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
                 Text("${countUpText(dev.kwh, 1, tabKey)} kWh", style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant, maxLines = 1, softWrap = false)
             }
