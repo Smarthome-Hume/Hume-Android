@@ -577,7 +577,7 @@ fun RoomSheet(
                     // Bottom trong the = 0dp: noi dung cuoi cach day the
                     // 24dp nho item Spacer cuoi list.
                     contentPadding = PaddingValues(top = 93.dp, bottom = 0.dp),
-                    // (2026-11-18) Khoi phuc: khe doc giua cac the con 8->12dp (iOS 12pt).
+                    // (2026-11-18) Giam 6dp: khe doc giua cac the con 12->6dp (user 10:14).
                     verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.CardGap),
                 ) {
                 // 2 tile nhiet do / do am (.shenv .tile: khong press morph)

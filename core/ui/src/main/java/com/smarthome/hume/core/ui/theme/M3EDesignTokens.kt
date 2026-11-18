@@ -348,8 +348,8 @@ object M3ETokens {
     // iOS o 3/4 khe muc (CardGap/ExpandedGap/GenericGap/DishwasherGap) —
     // cac khe do dung so iOS truc tiep o day.
     object RoomSheet {
-        /** Khe doc LazyColumn giua cac the con (iOS VStack spacing 12pt). */
-        val CardGap: Dp = 12.dp
+        /** Khe doc LazyColumn giua cac the con (giam 6dp vong 18/11: 12->6dp, user 10:14). */
+        val CardGap: Dp = 6.dp
 
         /** Khe tren tieu de "Thiet bi" (iOS 4pt). */
         val DevicesTitleGap: Dp = 4.dp
