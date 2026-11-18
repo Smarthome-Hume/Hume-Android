@@ -120,7 +120,7 @@ fun SecurityScreen(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = M3ETokens.Spacing.PageMargin)
                 .m3ePageBottomPadding(),
         ) {
             // (N-06) Chua dung chieu cao pill title co dinh 66dp nhu iOS
@@ -176,13 +176,13 @@ fun SecurityScreen(
                         recErr,
                         style = MaterialTheme.typography.bodySmall,
                         color = cs.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = M3ETokens.Spacing.Xs, vertical = M3ETokens.Spacing.Xs),
                     )
                 }
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     // demo .reclist: padding 2px 2px 6px
-                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 2.dp, bottom = 6.dp),
+                    contentPadding = PaddingValues(start = M3ETokens.Spacing.Xxs, end = M3ETokens.Spacing.Xxs, top = M3ETokens.Spacing.Xxs, bottom = 6.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .riseIn(480),
@@ -224,14 +224,14 @@ fun SecurityScreen(
             Modifier
                 .align(Alignment.TopStart)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = M3ETokens.Spacing.PageMargin)
                 .padding(top = statusBarTop + 8.dp),
         ) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(28.dp))
                     .background(cs.primaryContainer)
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = M3ETokens.Spacing.Xl, vertical = M3ETokens.Spacing.Md)
                     .riseIn(0),
             ) {
                 Text(
@@ -308,10 +308,10 @@ private fun RecCard(
     Column(
         Modifier
             .width(132.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest) // iOS M3ERecCard: surfaceContainerHighest (extra.surfaceHighest fallback ve Cam = nau, sai khi seed Indigo)
             .pressMorph(pressedScale = 0.94f, onClick = onClick) // demo .rec:active scale(.94)
-            .padding(8.dp),
+            .padding(M3ETokens.Spacing.Sm),
     ) {
         Box(
             Modifier
@@ -339,7 +339,7 @@ private fun RecCard(
                 MsIcon(
                     M3EIcons.PlayCircle,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.75f),
+                    tint = Color.White.copy(alpha = M3ETokens.Alpha.SecondaryText),
                     modifier = Modifier.size(34.dp),
                 )
             }
@@ -448,8 +448,8 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
         else -> cs.onSurface
     }
     val timeColor = when {
-        on && s.warn -> cs.onTertiaryContainer.copy(alpha = 0.75f)
-        on -> cs.onPrimaryContainer.copy(alpha = 0.75f)
+        on && s.warn -> cs.onTertiaryContainer.copy(alpha = M3ETokens.Alpha.SecondaryText)
+        on -> cs.onPrimaryContainer.copy(alpha = M3ETokens.Alpha.SecondaryText)
         else -> cs.onSurfaceVariant
     }
     // Pill trang thai: active = nen dac (primary/tertiary) + chu trang/onContainer;
@@ -479,7 +479,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
 
     Box(
         modifier
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(cardBg),
     ) {
         // Layout 2 hang:
@@ -489,7 +489,7 @@ private fun SensorCard(s: SensorUi, modifier: Modifier = Modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(M3ETokens.Spacing.Md),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
@@ -601,7 +601,7 @@ private fun ClipOverlay(
                     Modifier
                         .fillMaxWidth(0.88f)
                         .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(
                             Brush.linearGradient(
                                 listOf(Color(0xFF2B3A4A), Color(0xFF141C26)),
@@ -624,7 +624,7 @@ private fun ClipOverlay(
                         )
                         clip.clipPath == null -> Text(
                             "Đang tải...",
-                            color = Color.White.copy(alpha = 0.75f),
+                            color = Color.White.copy(alpha = M3ETokens.Alpha.SecondaryText),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                         )
@@ -659,7 +659,7 @@ private fun ClipOverlay(
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
                                 .clickable(onClick = onDownload)
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                                .padding(M3ETokens.Dialog.ButtonPadding),
                         )
                     }
                     if (onShare != null && clip.clipPath != null) {
@@ -672,7 +672,7 @@ private fun ClipOverlay(
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
                                 .clickable(onClick = onShare)
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                                .padding(M3ETokens.Dialog.ButtonPadding),
                         )
                     }
                     Text(
@@ -742,14 +742,14 @@ private fun LivePlayerOverlay(
                 Modifier
                     .align(Alignment.TopStart)
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(M3ETokens.Spacing.Lg),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE53935))
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                        .background(M3ETokens.StatusColors.Recording)
+                        .padding(horizontal = M3ETokens.Spacing.CardGap, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
