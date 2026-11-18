@@ -92,6 +92,55 @@ class AppHomeRepository(
     /** Goi y tong hop tu trigger Frigate truc tiep (khong qua PIR). */
     private var frigateMotions: List<HomeNotification> = emptyList()
 
+    // (Fix crash khoi dong 18/11) CAC FIELD DUOI DAY BAT BUOC KHAI BAO
+    // TRUOC init: scope la Dispatchers.Main.immediate nen scope.launch
+    // trong init chay DONG BO ngay trong constructor, combine(ha.entities,
+    // ...) emit ngay vi StateFlow da co gia tri -> updateWatched /
+    // buildWatchedSet / buildState chay truoc khi trinh khoi tao cua field
+    // khai bao sau init kip chay. Field non-null (Set/Boolean) khi do con
+    // null -> NPE o Set.contains / unboxing (crash 09:24-09:27 18/11).
+    /** Dang ky realtime cho cac entity dashboard dang hien (2026-09-30). */
+    private var lastWatched: Set<String> = emptySet()
+
+    /**
+     * (v81 muc 2) Trang thai scope cua watched set — M3ERootScreen ghi
+     * tab/Powerwall vao HomeAssistantRepository, MainActivity ghi
+     * background; combine o init collect ve day roi goi rebuildWatched().
+     */
+    private var activeTab: HumeTab = HumeTab.Home
+    private var powerwallOpen: Boolean = false
+    private var backgrounded: Boolean = false
+
+    /**
+     * (v81 muc 4) 5 sensor thua — CHI bo khoi watched set app, KHONG xoa
+     * entity tren HA. battery_time_to_full_2 bao ao (iOS bo fallback o
+     * v70), thoi_gian_pin_con_lai khong phai duration, 3
+     * may_giat_washer_* chet (tren Android khong co cho nao watch chung
+     * — chi chan de phong duong dong keo vao lai). Loc o cho duy nhat
+     * nay (updateWatched) nen ca duong dong (room config / discovery)
+     * cung khong dua chung vao watched duoc. Duong watchEntity cua
+     * TempAlertWatcher chi watch cam bien nhiet/do am nen khong vuong.
+     * GIU 2 flag BMS py_protection_flags / py_alarm_flags (tin hieu an
+     * toan Pylontech frame 0x359, live = 0) — chung nam trong
+     * PowerwallLiveData.entityIds, khong co trong danh sach nay.
+     */
+    private val excessSensorIds: Set<String> = setOf(
+        "sensor.battery_time_to_full_2",
+        "sensor.thoi_gian_pin_con_lai",
+        "sensor.may_giat_washer_completion_time",
+        "sensor.may_giat_washer_job_state",
+        "sensor.may_giat_washer_machine_state",
+    )
+
+    /** (N-03, v70) Dong BMS lam muot (EMA, alpha 0.2) + mau dong cuoi cho
+     * cong thuc thoi gian pin — port iOS CurrentEMA (HomeBatteryCard giu
+     * @State battEMA, cap nhat qua onChange(of: bmsCurr)). buildState
+     * (goi dong bo tu combine trong init) doc/ghi 2 bien nay nen cung
+     * phai khoi tao truoc init (du nullable nen doc null van an toan,
+     * chuyen len day de khoi phu thuoc thu tu khoi tao). */
+    private var battCurrentEma: Double? = null
+    private var lastBmsCurr: Double? = null
+
     init {
         scope.launch {
             combine(ha.entities, ha.connected, _roomConfigs) { e, c, _ -> e to c }
@@ -155,47 +204,9 @@ class AppHomeRepository(
         return ids != null && ids.isNotEmpty()
     }
 
-    /** Dang ky realtime cho cac entity dashboard dang hien (2026-09-30). */
-    private var lastWatched: Set<String> = emptySet()
-
-    /**
-     * (v81 muc 2) Trang thai scope cua watched set — M3ERootScreen ghi
-     * tab/Powerwall vao HomeAssistantRepository, MainActivity ghi
-     * background; combine o init collect ve day roi goi rebuildWatched().
-     */
-    private var activeTab: HumeTab = HumeTab.Home
-    private var powerwallOpen: Boolean = false
-    private var backgrounded: Boolean = false
-
     /** Rebuild watched set tu state hien tai (goi khi tab/Powerwall/background doi). */
     private fun rebuildWatched() = updateWatched(_homeState.value)
 
-    /**
-     * (v81 muc 4) 5 sensor thua — CHI bo khoi watched set app, KHONG xoa
-     * entity tren HA. battery_time_to_full_2 bao ao (iOS bo fallback o
-     * v70), thoi_gian_pin_con_lai khong phai duration, 3
-     * may_giat_washer_* chet (tren Android khong co cho nao watch chung
-     * — chi chan de phong duong dong keo vao lai). Loc o cho duy nhat
-     * nay (updateWatched) nen ca duong dong (room config / discovery)
-     * cung khong dua chung vao watched duoc. Duong watchEntity cua
-     * TempAlertWatcher chi watch cam bien nhiet/do am nen khong vuong.
-     * GIU 2 flag BMS py_protection_flags / py_alarm_flags (tin hieu an
-     * toan Pylontech frame 0x359, live = 0) — chung nam trong
-     * PowerwallLiveData.entityIds, khong co trong danh sach nay.
-     */
-    private val excessSensorIds: Set<String> = setOf(
-        "sensor.battery_time_to_full_2",
-        "sensor.thoi_gian_pin_con_lai",
-        "sensor.may_giat_washer_completion_time",
-        "sensor.may_giat_washer_job_state",
-        "sensor.may_giat_washer_machine_state",
-    )
-
-    /** (N-03, v70) Dong BMS lam muot (EMA, alpha 0.2) + mau dong cuoi cho
-     * cong thuc thoi gian pin — port iOS CurrentEMA (HomeBatteryCard giu
-     * @State battEMA, cap nhat qua onChange(of: bmsCurr)). */
-    private var battCurrentEma: Double? = null
-    private var lastBmsCurr: Double? = null
     /**
      * (v81 muc 2) Watched set theo tab — port iOS rebuildWatchedSet §7:
      * watched = alwaysOn ∪ tab dang mo (+ Powerwall khi mo); background
