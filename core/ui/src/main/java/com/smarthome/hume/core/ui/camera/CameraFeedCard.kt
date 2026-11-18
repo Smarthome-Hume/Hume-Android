@@ -55,6 +55,7 @@ import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.blink
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.delay
 
 /**
@@ -107,7 +108,7 @@ fun CameraFeedCard(
 
     M3ECard(
         shape = RoundedCornerShape(32.dp),
-        contentPadding = 12.dp,
+        contentPadding = M3ETokens.Spacing.Md,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest, // iOS M3ESecurityCamera.swift:75 (extra.surfaceHighest fallback Cam = nau khi seed Indigo/Lime)
         modifier = modifier,
     ) {
@@ -117,9 +118,11 @@ fun CameraFeedCard(
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(22.dp))
                 // demo .scfeed: gradient + 2 radial highlight
+                // B-12: gradient nen camera toi co dinh -> CameraColors.Gradient.
+                // Cac alpha scrim (0.09/0.06/0.35/0.5) GIU NGUYEN literal — khong co token.
                 .background(
                     Brush.linearGradient(
-                        listOf(Color(0xFF2B3A4A), Color(0xFF1A2430), Color(0xFF24303D)),
+                        M3ETokens.CameraColors.Gradient,
                     ),
                 )
                 .drawBehind {
@@ -208,7 +211,7 @@ fun CameraFeedCard(
                     .align(Alignment.TopStart)
                     .padding(10.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFE53935))
+                    .background(M3ETokens.StatusColors.Recording)
                     .padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -260,7 +263,9 @@ fun CameraFeedCard(
                             M3EIcons.Fullscreen,
                             contentDescription = "Xem toàn màn hình",
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp),
+                            // B-20: icon fullscreen 18dp -> Icon.XSmall 16dp
+                            // (icon nho trong nut tron 36dp; DOI GIA TRI 18 -> 16dp).
+                            modifier = Modifier.size(M3ETokens.Icon.XSmall),
                         )
                     }
                 }
