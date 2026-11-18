@@ -1018,7 +1018,7 @@ class HomeAssistantRepository {
         val msg = buildJsonObject {
             put("id", subId)
             put("type", "subscribe_entities")
-            put("entity_ids", buildJsonArray { ids.sorted().forEach { add(it) } })
+            put("entity_ids", buildJsonArray { ids.sorted().forEach { add(JsonPrimitive(it)) } })
         }.toString()
         ws?.send(msg)
         Log.i(TAG, "subscribe_entities n=${ids.size} id=$subId")
