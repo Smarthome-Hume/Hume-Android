@@ -72,10 +72,15 @@ import kotlin.math.roundToInt
 
 private const val VB_W = 380f
 private const val VB_H = 430f
-// Node 150 rong de mep trong cach xa hub 64px: kenh line 68px cho elbow
-// thoang (2026-09-30, user: node ap sat inverter lam line bi bop).
+// Node 150 rong + 6 don vi viewBox moi ben ra NGOAI (156): mep NGOAI
+// thang hang voi title/cac thanh phan khac trong the (cung padding the
+// 16dp), mep TRONG giu nguyen o 156/224 nen kenh line 68px giua 2 node,
+// track + hub khong doi (2026-11-18, user: 4 node bi thut so voi title).
+// iOS FlowNodeView van 150 + offset 6 — day la sua rieng Android theo
+// lenh user, khong copy iOS.
 // Giam chieu cao node 190->175 (2026-10-01, user: the can doi hon).
 private const val NODE_W = 150f
+private const val NODE_OUT = 6f // do rong them moi ben ra ngoai (don vi viewBox)
 private const val NODE_H = 175f
 
 // d = delta chieu cao moi hang node so voi thiet ke goc (NODE_H 175),
@@ -264,8 +269,12 @@ private fun FlowArea(
     SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
         val maxW = constraints.maxWidth
         val scale = maxW / VB_W // px cho 1 don vi viewBox
-        val nodeW = (NODE_W * scale).roundToInt()
-        val margin = (6f * scale).roundToInt()
+        // Node rong ra ngoai NODE_OUT moi ben: mep ngoai = 0 / maxW (thang
+        // hang title), mep trong giu o 156/224 nen kenh giua 2 node van 68
+        // don vi viewBox, track + hub khong doi. Chi do 1 lan (xem FIX
+        // crash 1 o duoi): intrinsic height lay theo nodeW moi nay.
+        val nodeW = ((NODE_W + NODE_OUT) * scale).roundToInt()
+        val margin = (6f * scale).roundToInt() // chi con dung cho khe DOC (tren/duoi)
         val gap = (68f * scale).roundToInt() // kenh giua 2 hang (hub + track)
         val hubPx = (64f * scale).roundToInt()
 
@@ -526,10 +535,10 @@ private fun FlowArea(
 
         layout(maxW, totalH) {
             tracksP.forEach { it.placeRelative(0, 0) }
-            pvP.forEach { it.placeRelative(margin, margin) }
-            gridP.forEach { it.placeRelative(maxW - margin - nodeW, margin) }
-            homeP.forEach { it.placeRelative(margin, totalH - margin - nodeH) }
-            battP.forEach { it.placeRelative(maxW - margin - nodeW, totalH - margin - nodeH) }
+            pvP.forEach { it.placeRelative(0, margin) }
+            gridP.forEach { it.placeRelative(maxW - nodeW, margin) }
+            homeP.forEach { it.placeRelative(0, totalH - margin - nodeH) }
+            battP.forEach { it.placeRelative(maxW - nodeW, totalH - margin - nodeH) }
             hubP.forEach { it.placeRelative(maxW / 2 - hubPx / 2, totalH / 2 - hubPx / 2) }
         }
     }
