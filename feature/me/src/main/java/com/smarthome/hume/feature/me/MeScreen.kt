@@ -23,6 +23,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -286,7 +287,7 @@ fun MeScreen(
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
             )
-            SeedRow(selected = if (hasCustomColor) null else seed, dark = darkMode, onSelect = { haptic(); vm.setSeed(it) })
+            SeedRow(selected = if (hasCustomColor) null else seed, dark = darkMode ?: isSystemInDarkTheme(), onSelect = { haptic(); vm.setSeed(it) })
         }
         // Card 2: mau tuy chinh co background rieng (muc cuoi trang)
         Column(
