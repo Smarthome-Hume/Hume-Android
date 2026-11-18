@@ -43,7 +43,8 @@ import kotlin.math.abs
  * Thay modal HTML trong index.html: nut setting (goc the he thong) -> JS
  * bao qua bridge "HumeAndroid" {type:"settings"} -> PowerwallScreen mo
  * sheet nay. Cau truc Y HET the pack: sheet native, GrabHandle, vuot
- * xuong de an, bo 60, nen surfaceContainer, M3EHeaderFade o top, content
+ * xuong de an, bo 44 (Q3 chot 18/11: bo tren chung 44dp, truoc day
+ * 60dp), nen surfaceContainer, M3EHeaderFade o top, content
  * top inset 81. Noi dung = 10 dong gioi han sac/xa, v70 doc LIVE tu BMS
  * (sensor setting_* tren master qua payload sys); thieu live thi fallback
  * dung so cu (da kiem chung 19:44 16/11 khop 100%).
@@ -78,7 +79,7 @@ fun PowerwallSettingsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp),
+        shape = RoundedCornerShape(topStart = M3ETokens.Corner.SheetTop, topEnd = M3ETokens.Corner.SheetTop),
         containerColor = cs.surfaceContainer,
         dragHandle = null,
     ) {

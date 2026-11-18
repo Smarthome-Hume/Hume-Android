@@ -542,6 +542,9 @@ private fun FontPickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        // (Q3 chot 18/11) Bo tren tuong minh 44dp = Corner.SheetTop
+        // (truoc day dung shape mac dinh M3, cung 44dp qua theme).
+        shape = RoundedCornerShape(topStart = M3ETokens.Corner.SheetTop, topEnd = M3ETokens.Corner.SheetTop),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
         Column(

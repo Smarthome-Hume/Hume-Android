@@ -344,7 +344,7 @@ fun RoomMgmtConfirmSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
+        shape = RoundedCornerShape(topStart = M3ETokens.Corner.SheetTop, topEnd = M3ETokens.Corner.SheetTop),
         containerColor = cs.surfaceContainerHighest,
     ) {
         Column(
