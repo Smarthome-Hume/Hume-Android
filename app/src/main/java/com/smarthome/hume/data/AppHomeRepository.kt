@@ -1,9 +1,11 @@
 package com.smarthome.hume.data
 
 import com.smarthome.hume.core.data.HomeRepository
-import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.ha.HaEndpointMode
+import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.ha.HomeAssistantRepository
+import com.smarthome.hume.core.ha.TempAlertConfig
+import com.smarthome.hume.core.model.HumeTab
 import com.smarthome.hume.core.model.AlarmUi
 import com.smarthome.hume.core.model.BatteryUi
 import com.smarthome.hume.core.model.ClimateUi
@@ -104,6 +106,20 @@ class AppHomeRepository(
                     updateWatched(newState)
                 }
         }
+        // (v81 muc 2) Doi tab / mo Powerwall / xuong background -> rebuild
+        // watched set tu state hien tai (khong doi entities). Combine nay
+        // chay doc lap voi combine entities o tren: tab doi khi khong co
+        // event HA nao ve van phai cat watched ngay.
+        scope.launch {
+            combine(ha.activeTab, ha.powerwallOpen, ha.backgrounded) { tab, pw, bg ->
+                Triple(tab, pw, bg)
+            }.collect { (tab, pw, bg) ->
+                activeTab = tab
+                powerwallOpen = pw
+                backgrounded = bg
+                rebuildWatched()
+            }
+        }
         scope.launch {
             ha.connected.collectLatest { connected ->
                 if (!connected) return@collectLatest
@@ -139,12 +155,59 @@ class AppHomeRepository(
     /** Dang ky realtime cho cac entity dashboard dang hien (2026-09-30). */
     private var lastWatched: Set<String> = emptySet()
 
+    /**
+     * (v81 muc 2) Trang thai scope cua watched set — M3ERootScreen ghi
+     * tab/Powerwall vao HomeAssistantRepository, MainActivity ghi
+     * background; combine o init collect ve day roi goi rebuildWatched().
+     */
+    private var activeTab: HumeTab = HumeTab.Home
+    private var powerwallOpen: Boolean = false
+    private var backgrounded: Boolean = false
+
+    /** Rebuild watched set tu state hien tai (goi khi tab/Powerwall/background doi). */
+    private fun rebuildWatched() = updateWatched(_homeState.value)
+
     /** (N-03, v70) Dong BMS lam muot (EMA, alpha 0.2) + mau dong cuoi cho
      * cong thuc thoi gian pin — port iOS CurrentEMA (HomeBatteryCard giu
      * @State battEMA, cap nhat qua onChange(of: bmsCurr)). */
     private var battCurrentEma: Double? = null
     private var lastBmsCurr: Double? = null
+    /**
+     * (v81 muc 2) Watched set theo tab — port iOS rebuildWatchedSet §7:
+     * watched = alwaysOn ∪ tab dang mo (+ Powerwall khi mo); background
+     * thu ve critical-only. Chi goi ha.setWatchedEntities khi set doi
+     * (guard lastWatched, nhu cu). Entity moi them seed ngay tu cache,
+     * entity bi bo roi khoi entities — co che do nam trong
+     * HomeAssistantRepository.setWatchedEntities.
+     */
     private fun updateWatched(s: HomeUiState) {
+        val ids = buildWatchedSet(s)
+        if (ids != lastWatched) {
+            lastWatched = ids
+            ha.setWatchedEntities(ids)
+        }
+        // (2026-09-30) Khong pin bucket tay o day nua: luat telemetry thong nhat
+        // nam trong HomeAssistantRepository.bucketFor (sensor.* -> TEN_SECONDS,
+        // discrete -> REALTIME), ap dung cho moi man hinh.
+    }
+
+    /** Ghep watched set tu cac scope (xem buildAlwaysOnIds/buildEnergyIds). */
+    private fun buildWatchedSet(s: HomeUiState): Set<String> {
+        val alwaysOn = buildAlwaysOnIds(s)
+        if (backgrounded) return buildCriticalOnlyIds(alwaysOn)
+        val ids = HashSet(alwaysOn)
+        if (activeTab == HumeTab.Energy) ids.addAll(buildEnergyIds())
+        if (powerwallOpen) ids.addAll(POWERWALL_ENTITY_IDS)
+        return ids
+    }
+
+    /**
+     * Always-on (iOS §7.1): phong (dong) + the pin Home + rua bat + bom
+     * + TempAlert + an ninh (binary_sensor = critical) + "mo coi" tu
+     * cache. Tab nao cung can, ke ca khi background (truoc khi loc
+     * critical-only).
+     */
+    private fun buildAlwaysOnIds(s: HomeUiState): Set<String> {
         val ids = HashSet<String>()
         // Tat ca thiet bi tren UI (config phong + climate) — bao gom sensor dien.
         s.searchDevices.forEach { ids.add(it.entityId) }
@@ -162,19 +225,12 @@ class AppHomeRepository(
             .mapNotNull { it.powerEntity }
             .forEach { ids.add(it) }
         s.alarm?.let { ids.add(it.entityId) }
-        // Nang luong: PV + pin.
+        // The pin Home (port iOS HomeBatteryWatchedIds: 31 time-calc + 8
+        // Solis). PV + pin + limit hieu dung + 2 id doc chung voi tab
+        // Energy (chieu sac/xa + trang thai inverter).
         ids.add(HumeConfig.PV_POWER); ids.add(HumeConfig.PV_TODAY)
         ids.add(HumeConfig.BATTERY_SOC); ids.add(HumeConfig.BATTERY_POWER)
-        // Flow tab Dien: cac sensor cong suat thoi gian thuc (deu la sensor.*
-        // -> tu dong vao nhom telemetry 10s theo bucketFor). Truoc day thieu
-        // nen gia tri luoi/nha co the stale, gay bug "duong chay khi hien 0".
-        ids.add("sensor.aptomat_tong_power"); ids.add("sensor.cong_suat_nha")
-        ids.add("sensor.solis_s6_eh1p_pv_power_1_3")
-        ids.add("sensor.solis_s6_eh1p_pv_power_2_3")
-        ids.add("sensor.aptomat_t1_power"); ids.add("sensor.aptomat_t2_power")
-        ids.add("sensor.aptomat_t3_power")
-        ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
-        ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
+        ids.add("sensor.battery_current_flow")
         // (2026-10-22) Bo sensor.grid_status cu khoi watched: gridOn doc truc
         // tiep status_string_3 (port iOS d8df5d3), khong con noi nao dung
         // grid_status nua.
@@ -192,31 +248,6 @@ class AppHomeRepository(
         // (cong thuc cu dung, gio khong con dung) nen khong watch 4 sensor
         // do nua.
         ids.addAll(BATTERY_TIME_CALC_ENTITY_IDS)
-        // (N-12 — port iOS PowerwallLiveData.entityIds, 205 entity, buoc bat
-        // buoc truoc khi mo trang Powerwall) Toan bo sensor ESP32 BMS
-        // (prefix powerwall_bms_): 4 pack x 46 key + master-only + system
-        // + setting live. Trang Powerwall doc qua GroupEntityReader, KHONG
-        // nam trong config phong/tab nao nen phai them tay vao day nhu the
-        // rua bat (iOS rebuildWatchedSet §4f: ids.formUnion(entityIds)).
-        // 31 entity N-03 la tap con cua set nay; ids la HashSet nen trung
-        // lap tu triet tieu, khong duplicate.
-        ids.addAll(POWERWALL_ENTITY_IDS)
-        // (2026-10-22, E1) Flow 4 node: truoc day thieu cac sensor nay trong
-        // watched -> roi bucket ONE_DAY, dong bang 24h trong khi node PV/Pin
-        // van nhay 10s -> 4 node sai lech nhau tren may that (iOS da fix o
-        // 3af820b, baseWatchedIds). Bo sung day du theo iOS:
-        ids.add("sensor.solis_s6_eh1p_meter_active_power")
-        ids.add("sensor.solis_s6_eh1p_household_load_power_2")
-        ids.add("sensor.solis_s6_eh1p_backup_load_power_2")
-        ids.add("sensor.solis_s6_eh1p_household_load_today_energy_2")
-        ids.add("sensor.solis_s6_eh1p_backup_load_today_energy_2")
-        ids.add("sensor.solis_s6_eh1p_today_battery_discharge_energy_2")
-        ids.add("sensor.aptomat_tong_daily")
-        // (Batch B, GAP-04 — port iOS PumpAlertMonitor) Bom may loc Rice Home:
-        // khong watch -> roi bucket ONE_DAY, monitor app-level khong bao gio
-        // thay doi trang thai kip thoi. binary_sensor da watch se vao REALTIME
-        // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s).
-        ids.add("binary_sensor.r_ro_m_01")
         // (Batch D, GAP-08 — port iOS RoomExpandedCards/DishwasherLiveManager)
         // Nhom may rua bat Texgio: khong watch -> roi bucket ONE_DAY, the
         // mo rong stale (trang thai/giai doan/con lai/nhiet do/chuong trinh
@@ -233,9 +264,70 @@ class AppHomeRepository(
         ids.add("switch.texgio_tgfpcm795b_g_khoa_tre_em") // DP 101
         ids.add("number.texgio_tgfpcm795b_g_hen_gio") // DP 8
         ids.add("number.texgio_tgfpcm795b_g_nuoc_mem") // DP 106
+        // (Batch B, GAP-04 — port iOS PumpAlertMonitor) Bom may loc Rice Home:
+        // khong watch -> roi bucket ONE_DAY, monitor app-level khong bao gio
+        // thay doi trang thai kip thoi. binary_sensor da watch se vao REALTIME
+        // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s).
+        ids.add("binary_sensor.r_ro_m_01")
+        // TempAlert (port iOS rebuildWatchedSet §1e): cam bien nhiet do dang
+        // theo doi + do am tuong ung. TempAlertWatcher.watchEntity cung
+        // them, nhung watched set rebuild theo tab nen phai co san o day
+        // keo khong bi cat khi doi tab.
+        ha.tempAlertSensorId.takeIf { it.isNotBlank() }?.let { ids.add(it) }
+        TempAlertConfig.humiditySensorFor(ha.tempAlertSensorId)
+            .takeIf { it.isNotBlank() }?.let { ids.add(it) }
+        // An ninh: sensor cua/chuyen dong/khoi/nuoc.
+        // LECH VOI BRIEF (ghi ro de khoi sua nham): brief noi "entity An
+        // ninh chi watch khi tab An ninh mo" — nhung ca 14 id nay deu la
+        // binary_sensor.* = critical (WS handler bypass guard), thong bao
+        // cua/chuyen dong/khoi/ro o the Nha (buildNotifications) + set
+        // critical-only khi background deu can chung song o moi tab; iOS
+        // v81 cung giu binary_sensor.* trong alwaysOn qua
+        // criticalDiscoveredIds(). Tren Android khong co entity an ninh
+        // nao khong phai binary_sensor nen khong co scope Security rieng.
+        runCatching {
+            ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
+        }
+        // Entity "mo coi" phat hien tu cache (port iOS
+        // criticalDiscoveredIds): alarm/binary/frigate/person — de
+        // subscribe_entities khong lam mat bypass critical cu (vd cam
+        // bien moi chua co trong list nao, person.* cho header/avatar).
+        ids.addAll(ha.criticalDiscoveredIds())
+        return ids
+    }
+
+    /**
+     * Scope tab Nang luong (iOS §7.2): entity donut/cost/nuoc + flow +
+     * dieu khien sac/xa — CHI watch khi tab Nang luong mo. Donut dong
+     * (sensor _power/_power_2 + device_class=energy) quet tu cache qua
+     * [HomeAssistantRepository.energyDiscoveredIds].
+     */
+    private fun buildEnergyIds(): Set<String> {
+        val ids = HashSet<String>()
+        // Flow tab Dien: cac sensor cong suat thoi gian thuc (deu la sensor.*
+        // -> tu dong vao nhom telemetry 10s theo bucketFor). Truoc day thieu
+        // nen gia tri luoi/nha co the stale, gay bug "duong chay khi hien 0".
+        ids.add("sensor.aptomat_tong_power"); ids.add("sensor.cong_suat_nha")
+        ids.add("sensor.solis_s6_eh1p_pv_power_1_3")
+        ids.add("sensor.solis_s6_eh1p_pv_power_2_3")
+        ids.add("sensor.aptomat_t1_power"); ids.add("sensor.aptomat_t2_power")
+        ids.add("sensor.aptomat_t3_power")
+        ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
+        ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
+        // (2026-10-22, E1) Flow 4 node: truoc day thieu cac sensor nay trong
+        // watched -> roi bucket ONE_DAY, dong bang 24h trong khi node PV/Pin
+        // van nhay 10s -> 4 node sai lech nhau tren may that (iOS da fix o
+        // 3af820b, baseWatchedIds). Bo sung day du theo iOS:
+        ids.add("sensor.solis_s6_eh1p_meter_active_power")
+        ids.add("sensor.solis_s6_eh1p_household_load_power_2")
+        ids.add("sensor.solis_s6_eh1p_backup_load_power_2")
+        ids.add("sensor.solis_s6_eh1p_household_load_today_energy_2")
+        ids.add("sensor.solis_s6_eh1p_backup_load_today_energy_2")
+        ids.add("sensor.solis_s6_eh1p_today_battery_discharge_energy_2")
+        ids.add("sensor.aptomat_tong_daily")
         // (Batch C, GAP-01 — port iOS EnergyWaterTab) Toan bo nhom nuoc RO
         // con lai: khong watch -> roi bucket ONE_DAY, tab Nuoc stale.
-        // Bom binary_sensor.r_ro_m_01 da co tu Batch B, khong them trung.
+        // Bom binary_sensor.r_ro_m_01 da co o alwaysOn (Batch B), khong them trung.
         ids.add("sensor.r_ro_m_01"); ids.add("sensor.r_ro_m_01_2")
         ids.add("sensor.r_ro_m_01_4"); ids.add("sensor.r_ro_m_01_7")
         ids.add("sensor.r_ro_m_01_8")
@@ -269,18 +361,27 @@ class AppHomeRepository(
         ids.add("number.solis_s6_eh1p_battery_max_discharge_current_2")
         ids.add("number.solis_s6_eh1p_off_grid_overdischarge_soc_2")
         ids.add("number.solis_s6_eh1p_overdischarge_soc_2")
-        // An ninh: sensor cua/chuyen dong/khoi/nuoc.
-        runCatching {
-            ids.addAll(com.smarthome.hume.core.data.HumeGraph.get().securityRepository.sensorEntityIds)
-        }
-        if (ids != lastWatched) {
-            lastWatched = ids
-            ha.setWatchedEntities(ids)
-        }
-        // (2026-09-30) Khong pin bucket tay o day nua: luat telemetry thong nhat
-        // nam trong HomeAssistantRepository.bucketFor (sensor.* -> TEN_SECONDS,
-        // discrete -> REALTIME), ap dung cho moi man hinh.
+        // Donut: 4 id map cung power -> energy (explicitEnergyMap cua
+        // AppEnergyRepository) + quet dong tu cache.
+        ids.add("sensor.air_condition_current_extrapolated_power")
+        ids.add("sensor.air_condition_daily_energy_ac")
+        ids.add("sensor.dieu_hoa_power")
+        ids.add("sensor.dieu_hoa_power_energy")
+        ids.addAll(ha.energyDiscoveredIds())
+        return ids
     }
+
+    /**
+     * Background critical-only (iOS §7.4): alarm, khoi/ro/cua (moi
+     * binary_sensor.*), Frigate + trang thai luoi Solis. Moi thu khac
+     * cat het; len foreground rebuild full set + REST refresh.
+     */
+    private fun buildCriticalOnlyIds(alwaysOn: Set<String>): Set<String> =
+        alwaysOn.filter { id ->
+            id.startsWith("alarm_control_panel.") || id.startsWith("binary_sensor.") ||
+                id.startsWith("sensor.frigate_") ||
+                id == "sensor.solis_s6_eh1p_status_string_3"
+        }.toSet()
 
     override fun toggle(entityId: String) = ha.toggle(entityId)
     override fun setSwitch(entityId: String, on: Boolean) {

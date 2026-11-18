@@ -118,6 +118,32 @@ class HomeAssistantRepository {
     private val _watched = MutableStateFlow<Set<String>>(emptySet())
     val watchedEntityIds: StateFlow<Set<String>> = _watched.asStateFlow()
 
+    /**
+     * (v81) Cache day du moi entity tung thay — tach khoi `_entities` (chi
+     * chua entity dang watched). Port iOS entityCache vs entities:
+     * - `_entities` = tap UI dang thay (bi cat khi doi tab / xuong
+     *   background) — UI doc tu day, giong iOS `entities`.
+     * - `entityCache` = tap day du, giu mai — seed khi mo lai tab/trang
+     *   (setWatchedEntities lay entity moi them tu day), giong iOS
+     *   `entityCache`. REST snapshot + WS deu ghi vao day (xem
+     *   applyUpdates / fetchInitialStates / loadStatesSnapshot).
+     * Doc/ghi tu nhieu thread (WS, IO, main) nen moi lan cham deu
+     * synchronized.
+     */
+    private val entityCache = HashMap<String, HomeEntity>()
+
+    /**
+     * Tab user dang nhin + trang Powerwall co mo khong + app co dang
+     * background khong. AppHomeRepository collect 3 flow nay de rebuild
+     * watched set theo tab (v81 muc 2); M3ERootScreen ghi vao day.
+     */
+    private val _activeTab = MutableStateFlow(HumeTab.Home)
+    val activeTab: StateFlow<HumeTab> = _activeTab.asStateFlow()
+    private val _powerwallOpen = MutableStateFlow(false)
+    val powerwallOpen: StateFlow<Boolean> = _powerwallOpen.asStateFlow()
+    private val _backgrounded = MutableStateFlow(false)
+    val backgrounded: StateFlow<Boolean> = _backgrounded.asStateFlow()
+
     /** True while the Sensors sheet is open: it lists everything, so everything is realtime. */
     private val _sensorsSheetOpen = MutableStateFlow(false)
     val sensorsSheetOpen: StateFlow<Boolean> = _sensorsSheetOpen.asStateFlow()
@@ -152,19 +178,6 @@ class HomeAssistantRepository {
      * waking the CPU every second even with the screen off.
      */
     private var flushJob: Job? = null
-
-    /**
-     * Tab the user is looking at. Kept so callers stay source compatible, but it
-     * no longer gates updates: freezing by tab made screens go stale, and the
-     * watched set already describes what is on screen.
-     */
-    private var activeTab: HumeTab = HumeTab.Home
-
-    /**
-     * Room bubble currently open. Kept for the same reason as activeTab: opening
-     * a room no longer freezes the other rooms.
-     */
-    private var activeRoomKey: String? = null
 
     /** entityId -> room keys, built once from RoomBubbleConfig like entityRoomMap. */
     private val entityRoomMap: Map<String, Set<String>> by lazy {
@@ -259,6 +272,9 @@ class HomeAssistantRepository {
     fun onAppForeground() {
         if (!isConfigured) return
         wantConnection = true
+        // (v81) Len foreground: watched tro lai full set theo tab
+        // (AppHomeRepository collect [backgrounded] -> rebuildWatched).
+        _backgrounded.value = false
         reconnectAttempt = 0
         scope.launch {
             val base = endpoint.resolve()
@@ -271,6 +287,11 @@ class HomeAssistantRepository {
     /** Called when the app is no longer visible: drop the socket instead of burning battery. */
     fun onAppBackground() {
         wantConnection = false
+        // (v81) Xuong background: watched thu ve critical-only
+        // (AppHomeRepository collect [backgrounded] -> rebuildWatched).
+        // Socket cung ngat o duoi nen phan thang nam o luc len foreground
+        // tro lai (rebuild full set + REST refresh) — giong iOS §7.
+        _backgrounded.value = true
         stopFlushLoop()
         closeSocket()
         Log.i(TAG, "App backgrounded, WebSocket released")
@@ -359,15 +380,73 @@ class HomeAssistantRepository {
 
     /* ---------------- watched entities and update buckets ---------------- */
 
-    /** Tell the repository which entities are on screen right now. */
+    /**
+     * Tell the repository which entities are on screen right now.
+     *
+     * (v81) Giong iOS rebuildWatchedSet §5: entity MOI them seed ngay tu
+     * [entityCache] (cache day du, khong phai cho event WS tiep theo);
+     * entity BI BO roi khoi `_entities` (UI het thay) nhung VAN GIU
+     * trong [entityCache] de mo lai seed ngay. Co che flush pending cu
+     * (entity dang pending ma duoc watch thi flush ngay) giu nguyen.
+     */
     fun setWatchedEntities(ids: Set<String>) {
+        val old = _watched.value
         _watched.value = ids
-        // Anything already queued for a watched entity should show up immediately.
+        val added = ids - old
+        val removed = old - ids
+        // Seed entity moi them tu cache (chi khi co id moi).
         val ready = HashMap<String, HomeEntity>()
+        if (added.isNotEmpty()) {
+            synchronized(entityCache) {
+                added.forEach { id -> entityCache[id]?.let { ready[id] = it } }
+            }
+        }
+        // Flush pending cu: entity dang pending ma duoc watch thi flush
+        // ngay — giu nguyen, chay ca khi set khong doi.
         synchronized(pending) {
             ids.forEach { id -> pending.remove(id)?.let { ready[id] = it } }
         }
         if (ready.isNotEmpty()) applyUpdates(ready)
+        // Cat entity bi bo khoi _entities (khong cat khoi entityCache).
+        if (removed.isNotEmpty()) {
+            val current = _entities.value
+            if (current.keys.any { it in removed }) {
+                _entities.value = current.filterKeys { it !in removed }
+            }
+            Log.i(TAG, "Watched: ${ids.size} (+${added.size} -${removed.size})")
+        } else if (added.isNotEmpty()) {
+            Log.i(TAG, "Watched: ${ids.size} (+${added.size} -${removed.size})")
+        }
+    }
+
+    /**
+     * (v81) Entity "mo coi" phat hien tu cache — moi alarm_control_panel.*,
+     * binary_sensor.*, sensor.frigate_* + person.* — de subscribe_entities
+     * khong lam mat co che bypass critical cu (truoc day subscribe_events
+     * nhan TAT CA roi guard moi loc; gio chi subscribe nhung gi da biet).
+     * Cache co tu snapshot dia luc init + REST luc connect nen du som;
+     * REST xong AppHomeRepository rebuild lai, entity moi xuat hien se
+     * duoc subscribe them. Port iOS criticalDiscoveredIds().
+     */
+    fun criticalDiscoveredIds(): Set<String> = synchronized(entityCache) {
+        entityCache.keys.filter { id ->
+            id.startsWith("alarm_control_panel.") || id.startsWith("binary_sensor.") ||
+                id.startsWith("sensor.frigate_") || id.startsWith("person.")
+        }.toSet()
+    }
+
+    /**
+     * (v81) Kham pha Energy dong tu cache: moi sensor _power/_power_2 +
+     * sensor device_class=energy (donut/devices). Port iOS
+     * energyDiscoveredIds(). Loai powerwall_bms_* (thuoc scope Powerwall,
+     * chi watch khi trang mo) de khoi keo 205 entity BMS vao tab Energy.
+     */
+    fun energyDiscoveredIds(): Set<String> = synchronized(entityCache) {
+        entityCache.values.filter { e ->
+            e.id.startsWith("sensor.") && !e.id.contains("powerwall_bms_") &&
+                (e.id.endsWith("_power") || e.id.endsWith("_power_2") ||
+                    e.attributes["device_class"]?.jsonPrimitive?.contentOrNull == "energy")
+        }.map { it.id }.toSet()
     }
 
     fun watchEntity(entityId: String) = setWatchedEntities(_watched.value + entityId)
@@ -387,15 +466,32 @@ class HomeAssistantRepository {
     }
 
     /**
-     * setActiveTab(): kept for source compatibility. Tabs no longer freeze
-     * anything, but switching tabs is still a good moment to publish whatever
-     * was queued.
+     * Room bubble currently open. Kept for source compatibility: opening
+     * a room no longer freezes the other rooms.
+     */
+    private var activeRoomKey: String? = null
+
+    /**
+     * setActiveTab(): M3ERootScreen goi khi user doi tab. Ghi vao flow
+     * [activeTab] de AppHomeRepository rebuild watched set theo tab (v81
+     * muc 2); doi tab van la luc tot de publish nhung gi dang pending.
      */
     fun setActiveTab(tab: HumeTab) {
-        if (tab == activeTab) return
-        activeTab = tab
+        if (tab == _activeTab.value) return
+        _activeTab.value = tab
         Log.i(TAG, "Active tab -> $tab")
         releaseVisiblePending()
+    }
+
+    /**
+     * setPowerwallOpen(): M3ERootScreen goi khi trang Powerwall 3D mo/dong.
+     * Ghi vao flow [powerwallOpen] de AppHomeRepository chi watch 205
+     * entity BMS khi trang mo (v81 muc 2, iOS setPowerwallOpen).
+     */
+    fun setPowerwallOpen(open: Boolean) {
+        if (open == _powerwallOpen.value) return
+        _powerwallOpen.value = open
+        Log.i(TAG, "Powerwall open -> $open")
     }
 
     /** setActiveRoom(): kept for source compatibility. Opening a room freezes nothing. */
@@ -698,6 +794,8 @@ class HomeAssistantRepository {
         }
         if (changed.isEmpty()) return
         _entities.value = current + changed
+        // (v81) Ghi ca vao entityCache (tap day du, khong bi cat khi doi tab).
+        synchronized(entityCache) { changed.forEach { (id, entity) -> entityCache[id] = entity } }
         changed.keys.forEach { _entityUpdated.tryEmit(it) }
     }
 
@@ -963,7 +1061,11 @@ class HomeAssistantRepository {
             val arr = json.decodeFromString<List<HAEntity>>(text)
             if (arr.isEmpty()) return
             if (_entities.value.isNotEmpty()) return
-            _entities.value = arr.associate { it.entityId to it.toHomeEntity() }
+            val seeded = arr.associate { it.entityId to it.toHomeEntity() }
+            _entities.value = seeded
+            // (v81) Snapshot dia cung la cache day du (de doi tab seed ngay
+            // ca khi REST/WS chua ve).
+            synchronized(entityCache) { entityCache.putAll(seeded) }
             Log.i(TAG, "Seeded ${_entities.value.size} entities from $STATES_SNAPSHOT_FILE")
         }.onFailure { Log.w(TAG, "loadStatesSnapshot failed: ${it.message}") }
     }
@@ -991,7 +1093,11 @@ class HomeAssistantRepository {
                 }
                 val arr = json.decodeFromString<List<HAEntity>>(body)
                 val snapshot = arr.associate { it.entityId to it.toHomeEntity() }
-                _entities.value = mergeSnapshot(snapshot)
+                val merged = mergeSnapshot(snapshot)
+                _entities.value = merged
+                // (v81) REST snapshot day du -> cache day du (watched set
+                // cat _entities sau do khong lam mat seed).
+                synchronized(entityCache) { entityCache.putAll(merged) }
                 _lastError.value = null
                 Log.i(TAG, "Loaded ${arr.size} entities")
             }
@@ -1377,7 +1483,11 @@ class HomeAssistantRepository {
         val current = _entities.value[entityId] ?: return
         if (current.state == state) return
         synchronized(optimisticUntil) { optimisticUntil[entityId] = System.currentTimeMillis() }
-        _entities.value = _entities.value + (entityId to current.copy(state = state))
+        val flipped = current.copy(state = state)
+        _entities.value = _entities.value + (entityId to flipped)
+        // (v81) Gia tri lac quan cung vao cache — mo lai tab trong cua so
+        // optimistic van thay nut da lat, khong nhay ve gia tri cu.
+        synchronized(entityCache) { entityCache[entityId] = flipped }
         _entityUpdated.tryEmit(entityId)
     }
 
@@ -1387,7 +1497,10 @@ class HomeAssistantRepository {
         if (current.attributes[key] == value) return
         synchronized(optimisticUntil) { optimisticUntil[entityId] = System.currentTimeMillis() }
         val attributes = current.attributes.toMutableMap().apply { this[key] = value }
-        _entities.value = _entities.value + (entityId to current.copy(attributes = attributes))
+        val updated = current.copy(attributes = attributes)
+        _entities.value = _entities.value + (entityId to updated)
+        // (v81) Nhu applyLocalState: attribute lac quan cung vao cache.
+        synchronized(entityCache) { entityCache[entityId] = updated }
         _entityUpdated.tryEmit(entityId)
     }
 

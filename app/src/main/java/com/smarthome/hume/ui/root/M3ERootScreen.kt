@@ -213,6 +213,19 @@ fun M3ERootScreen(
         // M3EEnergyView.swift:227): the pin / node pin goi onOpenPowerwall
         // -> set true; pill title "Powerwall" hoac back he thong -> false.
         var powerwallShown by remember { mutableStateOf(false) }
+        // (v81 muc 2, watched theo tab) Noi tab dang mo + trang Powerwall
+        // vao repo: AppHomeRepository collect ha.activeTab /
+        // ha.powerwallOpen de rebuild watched set (alwaysOn ∪ tab mo,
+        // + 205 entity BMS chi khi Powerwall mo). Chi them wiring tab —
+        // KHONG dung hinh hoc/mau navbar (worker khac so huu vung do).
+        // LaunchedEffect chay ngay lan dau (selected=Home, powerwall=false
+        // -> setActiveTab/setPowerwallOpen deu no-op vi da dung gia tri).
+        androidx.compose.runtime.LaunchedEffect(selected) {
+            ha.setActiveTab(navItems[selected].tab)
+        }
+        androidx.compose.runtime.LaunchedEffect(powerwallShown) {
+            ha.setPowerwallOpen(powerwallShown)
+        }
         // Overlay toan man hinh (viewer avatar / popup camera): ve o tang root,
         // TREN navbar, de lop mo + blur phu ca navbar chu khong chi vung content.
         // Nhan request tu HomeScreen qua callback (HomeScreen khong tu ve overlay).
