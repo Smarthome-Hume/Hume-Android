@@ -423,8 +423,8 @@ object M3ETokens {
         /** Padding doc chip chuong trinh rua bat (iOS 4dp -> chip 25,1dp). */
         val DishwasherProgramChipPaddingV: Dp = 4.dp
 
-        /** O tang cuong rua bat 76dp, vong tron trong 40dp, icon 18dp (iOS). */
-        val DishwasherBoost: Dp = 76.dp
+        /** O tang cuong rua bat 70dp, vong tron trong 40dp, icon 18dp (giam 6dp vong 18/11: 76->70dp). */
+        val DishwasherBoost: Dp = 70.dp
         val DishwasherBoostCircle: Dp = 40.dp
         val DishwasherBoostIcon: Dp = 18.dp
 

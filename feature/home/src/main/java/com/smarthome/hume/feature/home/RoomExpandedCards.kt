@@ -936,7 +936,7 @@ private fun RowScope.DishwasherBoostButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .weight(1f)
-            // (2026-11-18) Khoi phuc: o tang cuong 56->76dp (iOS 76pt).
+            // (2026-11-18) Giam 6dp: o tang cuong 76->70dp (vong trong 40dp/icon 18dp giu; ca 2 trang thai dong/mo deu -6dp).
             .height(M3ETokens.RoomSheet.DishwasherBoost)
             .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(if (isOn) cs.primaryContainer else cs.surfaceContainerHigh)
