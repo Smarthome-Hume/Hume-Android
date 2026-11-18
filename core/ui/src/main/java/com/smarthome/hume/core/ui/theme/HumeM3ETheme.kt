@@ -104,12 +104,15 @@ public val LocalHumeExtraColors = staticCompositionLocalOf {
 }
 
 // ---- Shape expressive (thang M3E mo rong, khong phai baseline) ----
+// (audit C-04) Noi ve token Corner cung gia tri — HumeShapes chi con la
+// bi danh Shapes cho M3, khong phai nguon so thu 2. Fallback seed
+// Indigo/Lime -> "cam" (M3ERawTokens.kt) GIU NGUYEN theo lenh giao viec.
 val HumeShapes = Shapes(
-    extraSmall = RoundedCornerShape(12.dp),
-    small = RoundedCornerShape(16.dp),
-    medium = RoundedCornerShape(28.dp),   // card chuan
-    large = RoundedCornerShape(32.dp),
-    extraLarge = RoundedCornerShape(44.dp), // sheet
+    extraSmall = RoundedCornerShape(M3ETokens.Corner.Small), // 12dp
+    small = RoundedCornerShape(M3ETokens.Corner.Cell), // 16dp
+    medium = RoundedCornerShape(M3ETokens.Corner.Card), // 28dp, card chuan
+    large = RoundedCornerShape(M3ETokens.Corner.CardLarge), // 32dp
+    extraLarge = RoundedCornerShape(M3ETokens.Corner.SheetTop), // 44dp, sheet
 )
 
 // ---- Motion tokens (tu demo: --ease, --spring) ----
