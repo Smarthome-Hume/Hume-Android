@@ -28,4 +28,11 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:model"))
     implementation(project(":core:datastore"))
+    // PowerwallViewModel.kt:151 doc HomeEntity.attributes
+    // (Map<String, JsonElement> dinh nghia o :core:model) nen module nay
+    // phai khai truc tiep, khong an theo :core:model (implementation khong
+    // truyen classpath sang module phu thuoc) — neu khong compile gay
+    // "Cannot access class 'kotlinx.serialization.json.JsonElement'".
+    // Cung cach fix nhu :feature:home (RoomExpandedCards.kt).
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 }
