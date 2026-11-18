@@ -696,9 +696,12 @@ private fun M3ENavBar(
                 // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
                 // Navbar dac 0.98 (user 2026-10-02).
-                // (fix 3) iOS M3ERootView.swift:248: navbar = surfaceContainerLowest.
-                // Truoc day extra.surfaceLowest — fallback Cam 28211B khi seed Indigo/Lime.
-                .background(cs.surfaceContainerLowest.copy(alpha = 0.98f))
+                // Navbar = surfaceContainerHighest (phuong an A, user 18/11):
+                // trung nen the M3ECard — truoc day surfaceContainerLowest
+                // (theo iOS M3ERootView.swift:252). CHI DOI MAU NEN, khong
+                // dung hinh hoc navbar (pill R24 + dong tam la v82, lam sau).
+                // Seed Indigo: light F4F2EF -> FFFFFF, dark 06070D -> 1A203B.
+                .background(cs.surfaceContainerHighest.copy(alpha = 0.98f))
                 // (navbar 21:24) Padding doc 10 -> 6dp: khe tren/duoi
                 // (nen active -> mep nen ngoai) cu = 10 (Row) + 4 (item)
                 // = 14dp, lon hon khe canh = 10dp (Row ngang). Giam de
