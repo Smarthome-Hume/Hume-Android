@@ -84,6 +84,7 @@ import com.smarthome.hume.feature.home.CameraPopupOverlay
 import com.smarthome.hume.feature.home.CameraPopupRequest
 import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.core.ui.theme.M3ESeed
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.feature.home.HomeScreen
 import com.smarthome.hume.feature.home.ChartHistorySeries
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
@@ -364,7 +365,7 @@ fun M3ERootScreen(
                     .height(fadeTop)
                     .background(
                         Brush.verticalGradient(
-                            0.0f to scrim.copy(alpha = 0.95f),
+                            0.0f to scrim.copy(alpha = M3ETokens.Alpha.ScrimTop),
                             0.6f to scrim.copy(alpha = 0.4f),
                             1.0f to scrim.copy(alpha = 0.0f),
                         ),
@@ -399,7 +400,7 @@ fun M3ERootScreen(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = M3ETokens.Alpha.Scrim)),
                     )
                 }
             }
