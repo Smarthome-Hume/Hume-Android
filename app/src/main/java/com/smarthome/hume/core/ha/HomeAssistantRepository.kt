@@ -24,11 +24,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -61,6 +64,23 @@ class HomeAssistantRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var ws: WebSocket? = null
     private var msgId = 1
+
+    /**
+     * (v81 muc 3) subscribe_entities — HA 2023.3+ (server 2026.11.2 da
+     * kiem chung live ben iOS): 1 subscription duy nhat cho toan watched
+     * set (don gian hon iOS chia theo scope; doi tab resubscribe toan
+     * set, chi khi set doi). `a` = full state day ngay sau subscribe
+     * (seed tuoi), `c` = delta {"+": {...}}, `r` = remove. Neu server
+     * cu khong ho tro (result fail) thi fallback subscribe_events 1 lan
+     * cho ca session (xem handleWs "result").
+     */
+    private var entitiesSubId: Int? = null
+    private var lastSubscribedIds: Set<String>? = null
+    private var pendingEntitiesSubId: Int? = null
+    private var pendingEntitiesIds: Set<String>? = null
+    private var stateChangedSubId: Int? = null
+    private var subscribeEntitiesUnsupported = false
+
     /** Chon duong noi HA: local (WireGuard/WiFi) uu tien, rot ve remote (Cloudflare). */
     val endpoint = HaEndpointResolver()
     private var token = ""
@@ -352,6 +372,12 @@ class HomeAssistantRepository {
         ws?.close(1000, "bye")
         ws = null
         _connected.value = false
+        // (v81) Subscription chet cung socket — mo lai phai subscribe moi.
+        entitiesSubId = null
+        lastSubscribedIds = null
+        pendingEntitiesSubId = null
+        pendingEntitiesIds = null
+        stateChangedSubId = null
     }
 
     private fun openSocket(base: String) {
@@ -417,6 +443,9 @@ class HomeAssistantRepository {
         } else if (added.isNotEmpty()) {
             Log.i(TAG, "Watched: ${ids.size} (+${added.size} -${removed.size})")
         }
+        // (v81 muc 3) Watched set doi -> resubscribe (chi gui khi set
+        // doi; chua ket noi thi auth_ok se subscribe lai).
+        syncSubscriptions()
     }
 
     /**
@@ -833,12 +862,21 @@ class HomeAssistantRepository {
                 ws?.send(authMsg)
             }
             "auth_ok" -> {
-                Log.i(TAG, "WebSocket auth_ok, subscribing to state_changed")
+                Log.i(TAG, "WebSocket auth_ok, subscribing entities")
                 reconnectAttempt = 0
                 _connected.value = true
                 _lastError.value = null
-                ws?.send("""{"id":${++msgId},"type":"subscribe_events","event_type":"state_changed"}""")
+                // Subscription cu chet cung socket cu — auth_ok subscribe lai.
+                entitiesSubId = null
+                lastSubscribedIds = null
+                pendingEntitiesSubId = null
+                pendingEntitiesIds = null
+                stateChangedSubId = null
+                subscribeEntitiesUnsupported = false
                 requestRegistries()
+                // (v81) subscribe_entities theo watched set hien tai; `a`
+                // day full state ngay nen day cung la refresh luc mo.
+                syncSubscriptions()
             }
             "auth_invalid" -> {
                 Log.e(TAG, "WebSocket auth_invalid: token rejected by Home Assistant")
@@ -851,6 +889,21 @@ class HomeAssistantRepository {
                 disconnect()
             }
             "event" -> {
+                val eventObj = obj["event"]?.jsonObject ?: return
+                // (v81) Hinh subscribe_entities {"a"/"c"/"r"} — event cua
+                // sub cu (da unsubscribe, vd doi tab) thi bo, tranh state
+                // cu cua scope cu ro vao cache.
+                if (eventObj.containsKey("a") || eventObj.containsKey("c") || eventObj.containsKey("r")) {
+                    val subId = obj["id"]?.jsonPrimitive?.intOrNull
+                    if (subId != null && subId != entitiesSubId && subId != pendingEntitiesSubId) return
+                    handleEntitiesEvent(eventObj)
+                    return
+                }
+                // Hinh state_changed cu (fallback — giu lai phong khi HA gui
+                // ca 2, hoac khi server cu khong co subscribe_entities).
+                // Khong check subscription id o day: state_changed tu
+                // subscribe_events co id khac, khong nam trong
+                // entitiesSubId.
                 // (GAP-41a) Port iOS v2.8 "LOC TRUOC KHI GIAI MA": parse
                 // entity_id + state truoc, chi decode full HAEntity
                 // (attributes) khi entity critical / Frigate / watched.
@@ -861,7 +914,7 @@ class HomeAssistantRepository {
                 // state+attributes deu khong doi, va iOS drop luon event
                 // nay. PumpAlert (binary_sensor) la critical nen khong anh
                 // huong.
-                val data = obj["event"]?.jsonObject?.get("data")?.jsonObject ?: return
+                val data = eventObj["data"]?.jsonObject ?: return
                 val entityId = data["entity_id"]?.jsonPrimitive?.contentOrNull ?: return
                 val newStateObj = data["new_state"]?.jsonObject ?: return
                 val state = newStateObj["state"]?.jsonPrimitive?.contentOrNull ?: return
@@ -891,6 +944,25 @@ class HomeAssistantRepository {
             }
             "result" -> {
                 val id = obj["id"]?.jsonPrimitive?.intOrNull ?: return
+                // (v81) Ket qua subscribe_entities.
+                if (id == pendingEntitiesSubId) {
+                    pendingEntitiesSubId = null
+                    val ok = obj["success"]?.jsonPrimitive?.booleanOrNull ?: false
+                    if (ok) {
+                        entitiesSubId = id
+                        lastSubscribedIds = pendingEntitiesIds
+                        pendingEntitiesIds = null
+                        Log.i(TAG, "subscribe_entities ok id=$id n=${lastSubscribedIds?.size}")
+                    } else {
+                        val err = obj["error"]?.jsonObject?.get("message")
+                            ?.jsonPrimitive?.contentOrNull ?: "unknown"
+                        Log.w(TAG, "subscribe_entities FAILED id=$id: $err — fallback subscribe_events")
+                        pendingEntitiesIds = null
+                        subscribeEntitiesUnsupported = true
+                        subscribeStateChangedFallback()
+                    }
+                    return
+                }
                 when (registryRequests.remove(id)) {
                     "entities" -> parseEntityRegistry(obj["result"])
                     "areas" -> parseAreaRegistry(obj["result"])
@@ -920,6 +992,132 @@ class HomeAssistantRepository {
         registryRequests[entityId] = "entities"
         ws?.send("""{"id":$entityId,"type":"config/entity_registry/list"}""")
     }
+
+    /* ---------------- subscribe_entities (v81 muc 3) ---------------- */
+
+    /**
+     * Dong bo subscribe_entities voi watched set hien tai. Chi gui khi
+     * set doi (tranh burst `a` toan bo set vo ich) hoac chua subscribe;
+     * set rong thi unsubscribe. Khong ket noi thi thoi — auth_ok se
+     * subscribe lai toan bo. Neu server cu khong ho tro thi
+     * [subscribeEntitiesUnsupported] chan (fallback dang chay).
+     */
+    private fun syncSubscriptions() {
+        if (!_connected.value || ws == null) return
+        if (subscribeEntitiesUnsupported) return
+        val ids = _watched.value
+        if (ids.isEmpty()) {
+            unsubscribeEntities()
+            return
+        }
+        if (ids == lastSubscribedIds && entitiesSubId != null) return
+        unsubscribeEntities()
+        val subId = ++msgId
+        pendingEntitiesSubId = subId
+        pendingEntitiesIds = ids
+        val msg = buildJsonObject {
+            put("id", subId)
+            put("type", "subscribe_entities")
+            put("entity_ids", buildJsonArray { ids.sorted().forEach { add(it) } })
+        }.toString()
+        ws?.send(msg)
+        Log.i(TAG, "subscribe_entities n=${ids.size} id=$subId")
+    }
+
+    /**
+     * Dung subscription hien tai. Quen id truoc khi gui (event cu toi
+     * sau do se bi loc o handleWs nho check subscription id).
+     */
+    private fun unsubscribeEntities() {
+        val subId = entitiesSubId ?: pendingEntitiesSubId ?: return
+        entitiesSubId = null
+        lastSubscribedIds = null
+        pendingEntitiesSubId = null
+        pendingEntitiesIds = null
+        if (!_connected.value || ws == null) return
+        ws?.send("""{"id":${++msgId},"type":"unsubscribe_events","subscription":$subId}""")
+        Log.i(TAG, "unsubscribe_entities id=$subId")
+    }
+
+    /**
+     * Fallback khi server khong co subscribe_entities: nhan moi event
+     * state_changed nhu cu (guard trong handleWs van loc truoc khi
+     * decode day du).
+     */
+    private fun subscribeStateChangedFallback() {
+        val subId = ++msgId
+        stateChangedSubId = subId
+        ws?.send("""{"id":$subId,"type":"subscribe_events","event_type":"state_changed"}""")
+        Log.w(TAG, "subscribe_entities unsupported, fallback subscribe_events id=$subId")
+    }
+
+    /**
+     * Xu ly event cua subscribe_entities: {"a": full, "c": delta,
+     * "r": remove}. `a` day ngay sau subscribe cho MOI entity — la seed
+     * tuoi, khong phai spam: onIncomingState -> applyUpdates van
+     * distinctUntilChanged nen entity khong doi se khong re-render.
+     *
+     * Format HA 2023.3+ (iOS v81 da kiem chung live): full state
+     * {s: state, a: attributes, lc: last_changed epoch giay, lu:
+     * last_updated epoch giay}; delta {"+": {s?, a?, lc?, lu?}} — chi
+     * field doi, merge voi cache; `a` trong delta la TOAN BO attributes
+     * moi (HA gui nguyen dict khi attributes doi), khong phai patch
+     * tung key. Day la cho DUY NHAT format khac state_changed cu
+     * (event.data.entity_id + new_state day du): handler cu giu nguyen
+     * lam fallback o handleWs.
+     */
+    private fun handleEntitiesEvent(event: JsonObject) {
+        // "a" — full state.
+        event["a"]?.jsonObject?.forEach { (entityId, st) ->
+            val stObj = st.jsonObject
+            val state = stObj["s"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            val attrs = stObj["a"]?.jsonObject?.entries?.associate { (k, v) -> k to v }
+                ?: emptyMap()
+            onIncomingState(
+                HomeEntity(
+                    id = entityId,
+                    state = state,
+                    attributes = attrs,
+                    lastChanged = epochToIso(stObj["lc"]?.jsonPrimitive?.doubleOrNull),
+                    lastUpdated = epochToIso(stObj["lu"]?.jsonPrimitive?.doubleOrNull),
+                )
+            )
+        }
+        // "c" — delta, merge voi state hien co trong _entities/cache.
+        event["c"]?.jsonObject?.forEach { (entityId, ch) ->
+            val plus = ch.jsonObject["+"]?.jsonObject ?: return@forEach
+            val cached = _entities.value[entityId]
+                ?: synchronized(entityCache) { entityCache[entityId] }
+                ?: return@forEach
+            val state = plus["s"]?.jsonPrimitive?.contentOrNull ?: cached.state
+            val attrs = plus["a"]?.jsonObject?.entries?.associate { (k, v) -> k to v }
+                ?: cached.attributes
+            onIncomingState(
+                cached.copy(
+                    state = state,
+                    attributes = attrs,
+                    lastChanged = epochToIso(plus["lc"]?.jsonPrimitive?.doubleOrNull)
+                        ?: cached.lastChanged,
+                    lastUpdated = epochToIso(plus["lu"]?.jsonPrimitive?.doubleOrNull)
+                        ?: cached.lastUpdated,
+                )
+            )
+        }
+        // "r" — entity bi xoa khoi HA.
+        event["r"]?.jsonArray?.forEach { el ->
+            val entityId = (el as? JsonPrimitive)?.contentOrNull ?: return@forEach
+            synchronized(entityCache) { entityCache.remove(entityId) }
+            val current = _entities.value
+            if (current.containsKey(entityId)) {
+                _entities.value = current - entityId
+                _entityUpdated.tryEmit(entityId)
+            }
+        }
+    }
+
+    /** Epoch giay (Double) cua subscribe_entities -> ISO-8601 nhu HA REST (HomeEntity.minutesAgo doc duoc). */
+    private fun epochToIso(epochSeconds: Double?): String? =
+        epochSeconds?.let { Instant.ofEpochMilli((it * 1000).toLong()).toString() }
 
     /** Read a JSON array of plain strings, skipping anything that is not one. */
     private fun stringSet(element: JsonElement?): Set<String> {
