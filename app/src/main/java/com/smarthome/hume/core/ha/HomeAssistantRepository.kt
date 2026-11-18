@@ -134,9 +134,12 @@ class HomeAssistantRepository {
     private val registryRequests = HashMap<Int, String>()
 
     /**
-     * (GAP-41c) Port iOS EntityObservation.GroupEntityReader uiThrottle
-     * (2.0s) — xem publishRealtime(). Chi ap dung cho sensor.* khong phai
-     * control; prefix control copy dung iOS (ke ca number.* la dieu khien).
+     * (v81) Trailing-flush cho throttle theo tung entity — xem
+     * publishRealtime(). Nhip khong con la 2.0s phang nua: moi entity
+     * throttle theo [UpdatePolicy.throttleMsFor] (T0 0s / T1 1s / T2 5s /
+     * T3 60s); chi entity co nhip > 0 moi vao day, gia tri moi nhat duoc
+     * giu roi flush trailing khi het cua so. [UpdatePolicy] la nguon
+     * duy nhat — khong con list CONTROL_PREFIXES hardcode thu 2.
      */
     private val uiThrottleLock = Any()
     private val lastUiPublish = HashMap<String, Long>()
@@ -314,8 +317,9 @@ class HomeAssistantRepository {
     private fun stopFlushLoop() {
         flushJob?.cancel()
         flushJob = null
-        // (GAP-41c) iOS GroupEntityReader.cancelPendingUpdates onDisappear:
-        // khong con flush trailing khi app ngat ket noi / xuong background.
+        // (v81) Huy trailing-flush cua throttle theo policy khi app ngat
+        // ket noi / xuong background (nhu iOS GroupEntityReader
+        // .cancelPendingUpdates onDisappear): khong con flush trailing.
         synchronized(uiThrottleLock) {
             pendingUiThrottle.values.forEach { it.cancel() }
             pendingUiThrottle.clear()
@@ -552,26 +556,38 @@ class HomeAssistantRepository {
     }
 
     /**
-     * (GAP-41c) Port iOS EntityObservation.GroupEntityReader uiThrottle
-     * (2.0s): sensor.* khong phai control chi publish toi da 1 lan / 2s;
-     * event den trong cua so cho thi giu gia tri MOI NHAT roi flush trailing
-     * khi het 2s (giong iOS pendingUiUpdates Task). Cung state cuoi, chi it
-     * rebuild hon — khong doi hanh vi hien thi. Entity dieu khien
-     * (CONTROL_PREFIXES, gom number.*) va cac domain discrete khac publish
-     * ngay lap tuc. logToSink o onIncomingState khong bi throttle (lich su
-     * sensor van ghi du).
+     * (v81) Throttle o tang doc theo [UpdatePolicy] — thay uiThrottle
+     * 2.0s phang cu (GAP-41c, port iOS GroupEntityReader.uiThrottle).
+     * Moi entity chi publish toi da 1 lan / nhip tang cua no (T0 0s /
+     * T1 1s / T2 5s / T3 60s); event den trong cua so cho thi giu gia
+     * tri MOI NHAT roi flush trailing khi het nhip (giong iOS
+     * pendingUiUpdates). Doi availability (unavailable <-> co gia tri)
+     * luon publish ngay bat ke tang (iOS §2 T0). Optimistic echo khong
+     * qua day: applyLocalState/applyLocalAttribute ghi thang vao
+     * _entities nen bam van doi cung frame.
+     *
+     * Chi entity bucket REALTIME moi qua day (onIncomingState); entity
+     * bucket khac da bi gom vao `pending` + flush theo bucket truoc —
+     * nhip thuc = min(nhip bucket, nhip tang). logToSink o
+     * onIncomingState khong bi throttle (lich su sensor van ghi du).
      */
     private fun publishRealtime(entity: HomeEntity) {
         val id = entity.id
-        val throttleable = (id.startsWith("sensor.") || id.startsWith("number.")) &&
-            CONTROL_PREFIXES.none { id.startsWith(it) }
-        if (!throttleable) {
+        val throttleMs = UpdatePolicy.throttleMsFor(id, tempAlertSensorId)
+        if (throttleMs <= 0L ||
+            UpdatePolicy.availabilityChanged(_entities.value[id]?.state, entity.state)
+        ) {
+            synchronized(uiThrottleLock) {
+                pendingUiThrottle.remove(id)?.cancel()
+                throttledLatest.remove(id)
+                lastUiPublish[id] = SystemClock.elapsedRealtime()
+            }
             applyUpdates(mapOf(id to entity))
             return
         }
         val now = SystemClock.elapsedRealtime()
         val last = synchronized(uiThrottleLock) { lastUiPublish[id] ?: 0L }
-        if (now - last >= UI_THROTTLE_MS) {
+        if (now - last >= throttleMs) {
             synchronized(uiThrottleLock) {
                 lastUiPublish[id] = now
                 pendingUiThrottle.remove(id)?.cancel()
@@ -583,7 +599,7 @@ class HomeAssistantRepository {
         synchronized(uiThrottleLock) {
             throttledLatest[id] = entity
             if (pendingUiThrottle.containsKey(id)) return
-            val waitMs = UI_THROTTLE_MS - (now - last)
+            val waitMs = throttleMs - (now - last)
             pendingUiThrottle[id] = scope.launch {
                 delay(waitMs)
                 val latest = synchronized(uiThrottleLock) {
@@ -1493,9 +1509,6 @@ class HomeAssistantRepository {
         /** (GAP-39) Ten file snapshot /api/states — giong iOS states_snapshot.json. */
         const val STATES_SNAPSHOT_FILE = "states_snapshot.json"
 
-        /** (GAP-41c) Port iOS EntityObservation.uiThrottle = 2.0s. */
-        const val UI_THROTTLE_MS = 2_000L
-
         /** (GAP-40) iOS updateBucket min5Exact — copy nguyen 6 entity. */
         val MIN5_EXACT: Set<String> = setOf(
             "sensor.solis_s6_eh1p_battery_soc_2",
@@ -1524,17 +1537,6 @@ class HomeAssistantRepository {
             "sensor.solis_s6_eh1p_pv_voltage_2_2",
             "sensor.solis_s6_eh1p_pv_current_1_2",
             "sensor.solis_s6_eh1p_pv_current_2_2",
-        )
-
-        /**
-         * (GAP-41c) Port iOS EntityObservation.controlPrefixes — copy DUNG
-         * danh sach hien tai cua iOS (da gom number.* tu delta c2e12e6):
-         * entity dieu khien luon update tuc thi, khong throttle. Vi
-         * number.* la control nen thuc te chi sensor.* bi throttle.
-         */
-        val CONTROL_PREFIXES: List<String> = listOf(
-            "light.", "switch.", "fan.", "cover.", "lock.", "climate.",
-            "binary_sensor.", "alarm_control_panel.", "number.",
         )
     }
 }

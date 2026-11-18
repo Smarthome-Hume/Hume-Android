@@ -3,6 +3,7 @@ package com.smarthome.hume.data
 import com.smarthome.hume.core.data.EnergyRepository
 import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.ha.HomeAssistantRepository
+import com.smarthome.hume.core.ha.UpdatePolicy
 import com.smarthome.hume.core.model.BatteryControl
 import com.smarthome.hume.core.model.BatteryControlKind
 import com.smarthome.hume.core.model.BatteryInfo
@@ -48,6 +49,18 @@ class AppEnergyRepository(
     override val energyState: StateFlow<EnergyUiState> = _state.asStateFlow()
 
     private val weekCache = mutableMapOf<Long, Double>()
+
+    /**
+     * (v81) Trang thai gate cua donut — xem donutFor(). Donut truoc day
+     * rebuild tren MOI emission cua ha.entities (combine -> buildState ->
+     * buildDonut, khong throttle/distinct) du kWh ngay chi doi theo
+     * phut/gio. Gio chi rebuild khi input doi that + het nhip tang cua
+     * input cham nhat (thuong la T3 60s vi input la sensor kWh ngay).
+     */
+    private var lastDonutSignature: List<Pair<String, Double>> = emptyList()
+    private var lastDonutSlices: List<EnergyDonutSlice> = emptyList()
+    private var lastDonutTotalKwh: Double = 0.0
+    private var lastDonutRebuildMs: Long = 0L
 
     init {
         scope.launch {
@@ -210,7 +223,7 @@ class AppEnergyRepository(
         )
 
         val (powerDevices, energyDevices) = buildDevices(entities, registry, rate)
-        val donut = buildDonut(energyDevices)
+        val donut = donutFor(energyDevices)
         val lowBatteries = entities.values
             .filter { e ->
                 e.id.endsWith("_battery") &&
@@ -472,6 +485,41 @@ class AppEnergyRepository(
         val slices = if (rest > 0.005) {
             top + EnergyDonutSlice("Khác", rest, rest / total)
         } else top
+        return slices to total
+    }
+
+    /**
+     * (v81) Donut doc qua duong co policy — port iOS v81 "Donut sang
+     * GroupEntityReader" (bo doc thang cache khong throttle). Android
+     * khong doc thang map tho nhu iOS cu (donut da di qua combine cua
+     * repo), nhung combine chay tren MOI emission nen buildDonut van
+     * chay lai vo toi — gate o day:
+     *   1. distinct: signature (id + kWh) khong doi -> tra slice cu,
+     *      khong build lai (tuong duong entityEquals state+attributes
+     *      tren input donut).
+     *   2. throttle: input doi nhung chua het nhip tang cua input cham
+     *      nhat (max throttleMsFor tren cac id — input donut la sensor
+     *      kWh ngay nen thuong la T3 60s) -> tra slice cu; gia tri moi
+     *      khong mat (signature chua cap nhat) nen emission ke tiep sau
+     *      khi het nhip se rebuild.
+     * buildState van chay tren moi emission (cac truong khac chua tach
+     * selector — ENTITY-STORE §2.8 buoc 3); chi phan donut la duoc gate.
+     */
+    private fun donutFor(energyDevices: List<EnergyDevice>): Pair<List<EnergyDonutSlice>, Double> {
+        val signature = energyDevices.map { it.id to it.value }
+        if (signature == lastDonutSignature) {
+            return lastDonutSlices to lastDonutTotalKwh
+        }
+        val nowMs = System.currentTimeMillis()
+        val throttleMs = energyDevices.maxOfOrNull { UpdatePolicy.throttleMsFor(it.id) } ?: 0L
+        if (lastDonutRebuildMs != 0L && nowMs - lastDonutRebuildMs < throttleMs) {
+            return lastDonutSlices to lastDonutTotalKwh
+        }
+        val (slices, total) = buildDonut(energyDevices)
+        lastDonutSignature = signature
+        lastDonutSlices = slices
+        lastDonutTotalKwh = total
+        lastDonutRebuildMs = nowMs
         return slices to total
     }
 
