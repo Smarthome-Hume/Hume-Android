@@ -7,7 +7,15 @@ plugins {
 
 android {
     namespace = "com.smarthome.hume"
-    compileSdk = 37
+    // (2026-11-19, BOM 2026.11.01 / Compose 1.13): compileSdk 37 -> 37.1.
+    // AGP 9: minor SDK chi bieu dien duoc qua block compileSdk — `compileSdk = 37`
+    // (Int) khong co cho cho minor. May build can cai `platforms;android-37.1`.
+    // targetSdk GIU 37 (chi nang compileSdk, khong doi hanh vi runtime).
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
     defaultConfig {
         applicationId = "com.smarthome.hume"
         minSdk = 26
@@ -52,7 +60,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.11.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation("androidx.core:core-ktx:1.15.0")
@@ -63,7 +71,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     // Montserrat qua Google Fonts (downloadable fonts) - khong can chep .ttf vao res/font.
-    // KHONG ghim version: BOM 2026.09.00 quan ly artifact nay ( -> 1.12.1).
+    // KHONG ghim version: BOM 2026.11.01 quan ly artifact nay ( -> 1.13.0).
     // Pin cu 1.7.6 da bi go o Batch 1 vi no ep ui-text 1.7.6 chay cung
     // Compose 1.12.1 (khong tuong thich nhi phan).
     implementation("androidx.compose.ui:ui-text-google-fonts")

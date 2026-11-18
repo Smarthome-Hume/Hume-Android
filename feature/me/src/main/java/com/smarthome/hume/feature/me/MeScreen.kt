@@ -910,11 +910,17 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                         ),
                     ),
             )
+            // (2026-11-19, BOM 2026.11.01 / M3 1.5.0): Slider value-based
+            // deprecated — chuyen sang SliderState (hue van la nguon that).
+            val hueSliderState = androidx.compose.material3.rememberSliderState(
+                value = hue,
+                trackRange = 0f..360f,
+            )
+            hueSliderState.value = hue
             // Slider trong suot de keo
             androidx.compose.material3.Slider(
-                value = hue,
+                state = hueSliderState,
                 onValueChange = { hue = it },
-                valueRange = 0f..360f,
                 modifier = Modifier.matchParentSize(),
                 colors = androidx.compose.material3.SliderDefaults.colors(
                     thumbColor = androidx.compose.ui.graphics.Color.White,
@@ -987,8 +993,16 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("S", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
-            androidx.compose.material3.Slider(
+            // (2026-11-19, BOM 2026.11.01 / M3 1.5.0): Slider value-based
+            // deprecated — chuyen sang SliderState. sat van la nguon that
+            // (o mau 2D keo/thả cung doi sat, dong bo qua dong gan duoi).
+            val satSliderState = androidx.compose.material3.rememberSliderState(
                 value = sat,
+                trackRange = 0f..1f,
+            )
+            satSliderState.value = sat
+            androidx.compose.material3.Slider(
+                state = satSliderState,
                 onValueChange = { sat = it },
                 colors = androidx.compose.material3.SliderDefaults.colors(
                     thumbColor = cs.primary,
@@ -1003,8 +1017,16 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("V", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.width(16.dp))
-            androidx.compose.material3.Slider(
+            // (2026-11-19, BOM 2026.11.01 / M3 1.5.0): Slider value-based
+            // deprecated — chuyen sang SliderState. value van la nguon that
+            // (o mau 2D keo/thả cung doi value, dong bo qua dong gan duoi).
+            val valueSliderState = androidx.compose.material3.rememberSliderState(
                 value = value,
+                trackRange = 0f..1f,
+            )
+            valueSliderState.value = value
+            androidx.compose.material3.Slider(
+                state = valueSliderState,
                 onValueChange = { value = it },
                 colors = androidx.compose.material3.SliderDefaults.colors(
                     thumbColor = cs.primary,

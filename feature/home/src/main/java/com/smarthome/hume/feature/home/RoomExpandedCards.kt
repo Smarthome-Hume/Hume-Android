@@ -53,6 +53,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -622,14 +623,21 @@ fun DishwasherExpandedView(
                     },
                 )
                 Spacer(Modifier.size(M3ETokens.Spacing.Md))
-                Slider(
+                // (2026-11-19, BOM 2026.11.01 / M3 1.5.0): Slider value-based
+                // deprecated — chuyen sang SliderState. softSlider van la
+                // nguon that (nut -/+ va HA day ve dong bo qua dong gan duoi).
+                val softSliderState = rememberSliderState(
                     value = softSlider,
+                    steps = 11,
+                    trackRange = 3f..15f,
+                )
+                softSliderState.value = softSlider
+                Slider(
+                    state = softSliderState,
                     onValueChange = {
                         softSlider = it
                         draggingSoft = true
                     },
-                    valueRange = 3f..15f,
-                    steps = 11,
                     onValueChangeFinished = {
                         draggingSoft = false
                         actions.onSetNumber(p.softNumber, softSlider.toInt().toDouble())
@@ -1135,13 +1143,20 @@ fun LightExpandedView(
                 modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.size(M3ETokens.Spacing.Md))
-            Slider(
+            // (2026-11-19, BOM 2026.11.01 / M3 1.5.0): Slider value-based
+            // deprecated — chuyen sang SliderState. brightness van la nguon
+            // that (HA day attr ve dong bo qua dong gan duoi).
+            val brightnessSliderState = rememberSliderState(
                 value = brightness,
+                trackRange = 0f..100f,
+            )
+            brightnessSliderState.value = brightness
+            Slider(
+                state = brightnessSliderState,
                 onValueChange = {
                     brightness = it
                     draggingBrightness = true
                 },
-                valueRange = 0f..100f,
                 onValueChangeFinished = {
                     draggingBrightness = false
                     lastSentPercent = brightness
@@ -1207,8 +1222,16 @@ fun LightExpandedView(
                         ),
                     ),
             ) {
-                Slider(
+                // (2026-11-19, BOM 2026.11.01 / M3 1.5.0): Slider value-based
+                // deprecated — chuyen sang SliderState. hue van la nguon that
+                // (LaunchedEffect(attrRgb) dong bo qua dong gan duoi).
+                val hueSliderState = rememberSliderState(
                     value = hue,
+                    trackRange = 0f..360f,
+                )
+                hueSliderState.value = hue
+                Slider(
+                    state = hueSliderState,
                     onValueChange = { newHue ->
                         hue = newHue
                         // Mau dang la trang (sat = 0) thi keo hue phai ra
@@ -1222,7 +1245,6 @@ fun LightExpandedView(
                             actions.onSetLightRgb(entityId, rgb[0], rgb[1], rgb[2])
                         }
                     },
-                    valueRange = 0f..360f,
                     colors = SliderDefaults.colors(
                         thumbColor = Color.White,
                         activeTrackColor = Color.Transparent,

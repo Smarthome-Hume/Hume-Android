@@ -49,8 +49,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -63,6 +61,7 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.PasswordOutputTransformation
 import com.smarthome.hume.core.ui.theme.M3ETokens
 
 private val TokenEntryMode.label: String
@@ -383,8 +382,8 @@ private fun ManualTokenField(
             }
         },
         textStyle = MaterialTheme.typography.bodyMedium,
-        visualTransformation = if (state.tokenVisible) VisualTransformation.None
-        else PasswordVisualTransformation(),
+        outputTransformation = if (state.tokenVisible) null
+        else PasswordOutputTransformation,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = {
             focus.clearFocus()

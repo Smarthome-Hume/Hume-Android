@@ -5,7 +5,13 @@ plugins {
 
 android {
     namespace = "com.smarthome.hume.baselineprofile"
-    compileSdk = 37
+    // (2026-11-19, BOM 2026.11.01 / Compose 1.13): compileSdk 37 -> 37.1 —
+    // cung block AGP 9 nhu :app (minor SDK khong bieu dien duoc bang Int).
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
     defaultConfig {
         minSdk = 26
         testInstrumentationRunner = "androidx.benchmark.macro.junit4.MacrobenchmarkJUnit4Runner"

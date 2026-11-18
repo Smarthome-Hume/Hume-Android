@@ -5,7 +5,13 @@ plugins {
 
 android {
     namespace = "com.smarthome.hume.core.ui"
-    compileSdk = 37
+    // (2026-11-19, BOM 2026.11.01 / Compose 1.13): compileSdk 37 -> 37.1 —
+    // cung block AGP 9 nhu :app (minor SDK khong bieu dien duoc bang Int).
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
     defaultConfig { minSdk = 26 }
     buildFeatures { compose = true }
     compileOptions {
@@ -15,13 +21,13 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.11.01")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    // Khong ghim version: BOM 2026.09.00 quan ly artifact nay ( -> 1.12.1).
+    // Khong ghim version: BOM 2026.11.01 quan ly artifact nay ( -> 1.13.0).
     implementation("androidx.compose.ui:ui-text-google-fonts")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")

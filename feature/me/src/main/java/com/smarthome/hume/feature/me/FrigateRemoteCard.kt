@@ -31,14 +31,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.components.PasswordOutputTransformation
 import com.smarthome.hume.core.ui.components.rememberHaptic
 
 /**
@@ -143,8 +142,8 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                             )
                         }
                     },
-                    visualTransformation = if (secretVisible) VisualTransformation.None
-                    else PasswordVisualTransformation(),
+                    outputTransformation = if (secretVisible) null
+                    else PasswordOutputTransformation,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
