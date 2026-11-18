@@ -8,9 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 // Port of Core/ManagedLists.swift.
-// The header light pill counts entities from THIS list, not from the room list,
-// and the bell counts only the sensors the user added to the notification list
-// (empty on a fresh install, exactly like iOS).
+// The header light pill counts entities from THIS list, not from the room list.
 
 @Serializable
 data class ManagedItem(
@@ -20,12 +18,9 @@ data class ManagedItem(
     val hidden: Boolean = false,
 )
 
-enum class ManagedKind { LIGHTS, NOTIF }
-
 @Serializable
 internal data class ManagedListsSnapshot(
     val lights: List<ManagedItem> = emptyList(),
-    val notif: List<ManagedItem> = emptyList(),
 )
 
 class ManagedListsStore private constructor(context: Context) {
@@ -35,9 +30,7 @@ class ManagedListsStore private constructor(context: Context) {
     private val snapshotSerializer = ManagedListsSnapshot.serializer()
 
     private val _lights = MutableStateFlow<List<ManagedItem>>(emptyList())
-    private val _notif = MutableStateFlow<List<ManagedItem>>(emptyList())
     val lights: StateFlow<List<ManagedItem>> = _lights.asStateFlow()
-    val notif: StateFlow<List<ManagedItem>> = _notif.asStateFlow()
 
     init {
         val raw = prefs.getString(KEY, null)
@@ -46,47 +39,40 @@ class ManagedListsStore private constructor(context: Context) {
         }
         if (snapshot == null) {
             _lights.value = defaultLights.map { ManagedItem(id = it) }
-            _notif.value = emptyList()
             persist()
         } else {
             _lights.value = snapshot.lights
-            _notif.value = snapshot.notif
         }
     }
 
     private fun persist() {
         val text = json.encodeToString(
             snapshotSerializer,
-            ManagedListsSnapshot(_lights.value, _notif.value),
+            ManagedListsSnapshot(_lights.value),
         )
         prefs.edit().putString(KEY, text).apply()
     }
 
-    fun items(kind: ManagedKind): List<ManagedItem> =
-        if (kind == ManagedKind.LIGHTS) _lights.value else _notif.value
+    fun items(): List<ManagedItem> = _lights.value
 
-    fun add(entityId: String, kind: ManagedKind, icon: String) {
-        val target = if (kind == ManagedKind.LIGHTS) _lights else _notif
-        if (target.value.any { it.id == entityId }) return
-        target.value = target.value + ManagedItem(id = entityId, icon = icon)
+    fun add(entityId: String, icon: String) {
+        if (_lights.value.any { it.id == entityId }) return
+        _lights.value = _lights.value + ManagedItem(id = entityId, icon = icon)
         persist()
     }
 
-    fun remove(entityId: String, kind: ManagedKind) {
-        val target = if (kind == ManagedKind.LIGHTS) _lights else _notif
-        target.value = target.value.filterNot { it.id == entityId }
+    fun remove(entityId: String) {
+        _lights.value = _lights.value.filterNot { it.id == entityId }
         persist()
     }
 
-    fun update(item: ManagedItem, kind: ManagedKind) {
-        val target = if (kind == ManagedKind.LIGHTS) _lights else _notif
-        target.value = target.value.map { if (it.id == item.id) item else it }
+    fun update(item: ManagedItem) {
+        _lights.value = _lights.value.map { if (it.id == item.id) item else it }
         persist()
     }
 
-    /** Every entity id the two lists need realtime updates for. */
-    fun watchedIds(): Set<String> =
-        (_lights.value.map { it.id } + _notif.value.map { it.id }).toSet()
+    /** Every entity id the list needs realtime updates for. */
+    fun watchedIds(): Set<String> = _lights.value.map { it.id }.toSet()
 
     companion object {
         private const val KEY = "managed_lists_v1"

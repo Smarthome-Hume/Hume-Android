@@ -28,9 +28,8 @@ private const val TAG_TEMP = "TempAlert"
  *   co ham danh gia nguong tap trung trong Core (nguong chi doc o
  *   TempAlertConfig.current + UI) — nen watcher nay chi danh gia nguong
  *   cuc bo va phat trang thai qua [alertVisible]/[alertKind], KHONG tao
- *   automation, KHONG tu post notification. UI (banner nhu
- *   PumpAlertMonitor.alertVisible) hoac mot monitor thong bao sau nay
- *   doc 2 flow nay.
+ *   automation, KHONG tu post notification. Hien chua co UI nao doc
+ *   2 flow nay.
  *
  * Edge-trigger nhu canh bao that: chi phat 1 lan khi vuot qua nguong,
  * re-arm khi nhiet do tro lai trong dai (nong: < hot; lanh: > cold).
@@ -41,7 +40,7 @@ object TempAlertWatcher {
 
     enum class Kind { HOT, COLD }
 
-    /** Banner canh bao dang hien hay khong (port y tuong PumpAlertMonitor.alertVisible). */
+    /** Co canh bao nhiet do dang hien hay khong. */
     private val _alertVisible = MutableStateFlow(false)
     val alertVisible: StateFlow<Boolean> = _alertVisible.asStateFlow()
 

@@ -9,7 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -29,7 +28,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -101,9 +99,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.m3ePageBottomPadding
-import com.smarthome.hume.core.ui.components.NeighborPressState
 import com.smarthome.hume.core.ui.components.rememberHaptic
-import com.smarthome.hume.core.ui.components.rememberNeighborPress
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.pressMorph
@@ -116,7 +112,7 @@ import kotlin.math.sin
 
 /**
  * Tab Toi — port truc tiep demo v4 rev12 (#page-me):
- * the Dong bo (wavy loading), the Thong bao, Giao dien (dark mode + 10 seeds).
+ * the Dong bo (wavy loading), Giao dien (dark mode + 10 seeds).
  */
 
 /** Rise entrance theo demo: opacity 0->1 + translateY 22px, .7s emphasized, stagger theo delay. */
@@ -138,7 +134,6 @@ private fun Modifier.riseEntrance(delayMs: Int): Modifier = composed {
 @Composable
 fun MeScreen(
     vm: MeViewModel = viewModel(),
-    onViewCamera: () -> Unit = {},
     roomStore: com.smarthome.hume.feature.home.RoomStore? = null,
     pickerEntities: kotlinx.coroutines.flow.StateFlow<Map<String, com.smarthome.hume.feature.home.PickerEntity>>? = null,
 ) {
@@ -738,129 +733,6 @@ private fun MeAvatarCard(
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
-    }
-}
-
-// ---------- thong bao ----------
-
-@Composable
-private fun NotifCard(onViewCamera: () -> Unit) {
-    val haptic = rememberHaptic()
-    // demo .nbtn: press-main flex-grow 1.18 / press-nei flex-grow .93 + scaleX(.95)
-    val np = rememberNeighborPress(2, 1.18f, 0.93f)
-    val surfaceLow = MaterialTheme.colorScheme.surfaceContainerLow // (extra.surfaceLow == surfaceContainerLow voi 8 seed co token, nhung fallback Cam khi seed Indigo/Lime/custom -> dung cs.* cho doi theo moi seed)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(30.dp))
-            .background(surfaceLow)
-            .padding(18.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            MsIcon(
-                M3EIcons.Shield,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(28.dp),
-            )
-        }
-        Column(Modifier.weight(1f)) {
-            Text("Phát hiện chuyển động", style = MaterialTheme.typography.titleSmall)
-            Text(
-                "Camera sân trước · 2 phút trước",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 3.dp, bottom = 12.dp),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NButton(
-                    index = 0,
-                    np = np,
-                    icon = M3EIcons.Videocam,
-                    text = "Xem camera",
-                    primary = true,
-                    onClick = { haptic(); onViewCamera() },
-                )
-                NButton(
-                    index = 1,
-                    np = np,
-                    icon = M3EIcons.Close,
-                    text = "Bỏ qua",
-                    primary = false,
-                    // demo: "Bo qua" khong co handler (chi animation press)
-                    onClick = { haptic() },
-                )
-            }
-        }
-    }
-}
-
-/**
- * NButton demo (.nbtn): bo 20px (press 13px), padding 13 all, gap 8px;
- * neighbor-press: nut dang nhan flex-grow 1.18, nut ke co;
- * active: secondary -> surfaceHigh, primary -> primaryContainer/onPrimaryContainer.
- */
-@Composable
-private fun RowScope.NButton(
-    index: Int,
-    np: NeighborPressState,
-    icon: String,
-    text: String,
-    primary: Boolean,
-    onClick: () -> Unit,
-) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    LaunchedEffect(pressed) { if (pressed) np.press(index) else np.release() }
-    val weight by animateFloatAsState(
-        np.weightFor(index),
-        tween(500, easing = M3EMotion.spring),
-        label = "nbtnWeight",
-    )
-    // demo .nbtn.press-nei: scaleX(.95) — cung nhip voi flex-grow
-    val neiScaleX by animateFloatAsState(
-        if (np.isNeighbor(index)) 0.95f else 1f,
-        tween(500, easing = M3EMotion.spring),
-        label = "nbtnNeiScaleX",
-    )
-    val corner by animateDpAsState(
-        if (pressed) 13.dp else 20.dp,
-        tween(400, easing = M3EMotion.spring),
-        label = "nbtnCorner",
-    )
-    val bg = when {
-        primary && pressed -> MaterialTheme.colorScheme.primaryContainer
-        primary -> MaterialTheme.colorScheme.primary
-        pressed -> MaterialTheme.colorScheme.surfaceContainerHigh // (extra.surfaceHigh == surfaceContainerHigh voi 8 seed co token, nhung fallback Cam khi seed Indigo/Lime/custom)
-        else -> MaterialTheme.colorScheme.surfaceContainer
-    }
-    val fg = when {
-        primary && pressed -> MaterialTheme.colorScheme.onPrimaryContainer
-        primary -> MaterialTheme.colorScheme.onPrimary
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-    Row(
-        Modifier
-            .weight(weight)
-            .graphicsLayer { scaleX = neiScaleX }
-            .clip(RoundedCornerShape(corner))
-            .background(bg)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(13.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MsIcon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(text, style = MaterialTheme.typography.titleSmall, color = fg)
     }
 }
 

@@ -1,7 +1,6 @@
 package com.smarthome.hume.feature.energy
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,8 +12,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,9 +37,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.components.M3EHeaderFade
-import com.smarthome.hume.core.ui.components.Ms
-import com.smarthome.hume.core.ui.components.MsIcon
-import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -98,10 +92,6 @@ fun EnergyScreen(
     val ui by vm.ui.collectAsState()
     val haptic = rememberHaptic()
     val scope = rememberCoroutineScope()
-    // (Batch B, GAP-02) Thong bao trang thai he thong dien KHONG con goi tu
-    // day nua: M3ERootScreen theo doi app-level (moi tab) va goi
-    // EnergyNotifier.onStateChanged — giu lai day se ban trung 2 lan cho
-    // 1 su kien luoi. Tab nay chi giu banner view-local ben duoi.
     var paneVisible by remember { mutableStateOf(true) }
     val risePlayed = remember { mutableSetOf<String>() }
     // Dinh vi the nang luong de deep-link "Xem pin" cuon toi
@@ -125,45 +115,6 @@ fun EnergyScreen(
     // InsightActionTarget.BatteryPopup; node pin flow card KHONG dung
     // popup nay nua, mo trang Powerwall (N-05, port iOS v69).
     var insightPopup by remember { mutableStateOf<InsightPopup?>(null) }
-
-    // Banner bao doi trang thai luoi (port iOS M3EEnergyView gridAlert):
-    // nil = an; true = co dien tro lai (xanh); false = mat dien (do).
-    var gridAlert by remember { mutableStateOf<Boolean?>(null) }
-    // Theo doi gridOn doi -> hien banner (bo qua lan dau tien).
-    var lastGridOnSeen by remember { mutableStateOf<Boolean?>(null) }
-    // (Batch B, GAP-02) Guard invalid chung voi monitor: bo qua emission
-    // khi inverterStatus unavailable/unknown/none/rong — tranh banner nhay
-    // khi sensor chap chon nhu iOS da chan.
-    // (GAP-02 du) Debounce 3s — port iOS GridAlertMonitor.update/fireAlert:
-    // banner chi hien khi state giu on dinh du 3s, nhu notification cua
-    // EnergyNotifier. Lam debounce TAI CHO trong LaunchedEffect nay vi
-    // EnergyNotifier khong expose tin hieu gridOn da debounce (chi ban
-    // notification ben trong) va scope chi cho phep sua file nay (phan
-    // banner). LaunchedEffect restart (huy delay) neu gridOn/inverterStatus
-    // doi trong 3s — dung co che huy cua coroutine, khong them job/Handler.
-    // Nho: invalid giua chung cung restart + huy delay (khat hon iOS mot
-    // chut — iOS update() bo qua invalid ma khong huy debounce dang cho —
-    // nhung khop voi EnergyNotifier.onStateChanged cua Android, no huy
-    // debounce khi gap invalid).
-    LaunchedEffect(state.flow.gridOn, state.flow.inverterStatus) {
-        if (!EnergyNotifier.isValidGridStatus(state.flow.inverterStatus)) return@LaunchedEffect
-        val g = state.flow.gridOn
-        if (lastGridOnSeen == null) {
-            lastGridOnSeen = g
-            return@LaunchedEffect
-        }
-        if (lastGridOnSeen == g) return@LaunchedEffect
-        delay(3000)
-        // Kiem tra lai state van on dinh (port iOS fireAlert guard
-        // lastGridOn == gridOn) truoc khi hien banner.
-        if (state.flow.gridOn != g) return@LaunchedEffect
-        if (!EnergyNotifier.isValidGridStatus(state.flow.inverterStatus)) return@LaunchedEffect
-        gridAlert = g
-        lastGridOnSeen = g
-    }
-    // Banner canh bao bom (Batch B, GAP-04 — port iOS pumpAlertFired):
-    // trang thai nam o PumpAlertMonitor, tab nay chi hien + nut "Da biet".
-    val pumpAlert by PumpAlertMonitor.alertVisible.collectAsState()
 
     // Deep-link "Xem pin": chuyen sang sub-tab Dien mat troi roi cuon toi the nang luong.
     LaunchedEffect(deepLink) {
@@ -223,24 +174,6 @@ fun EnergyScreen(
                     .fillMaxWidth()
                     .riseOnce("esub", 400, risePlayed),
             )
-        }
-        // Banner bao doi trang thai luoi (port iOS M3EEnergyView:56-100)
-        gridAlert?.let { alertOn ->
-            item {
-                GridAlertBanner(
-                    alertOn = alertOn,
-                    onDismiss = { gridAlert = null },
-                )
-            }
-        }
-        // Banner do canh bao bom chay lien tuc (Batch B, GAP-04).
-        // Nut "Da biet" chi an banner, giu co bao toi khi bom tat.
-        if (pumpAlert) {
-            item {
-                PumpAlertBanner(
-                    onDismiss = { PumpAlertMonitor.dismissBanner() },
-                )
-            }
         }
         item {
             Box(Modifier.paneFade(paneVisible)) {
@@ -302,130 +235,5 @@ fun EnergyScreen(
             onDismiss = { insightPopup = null },
             cost = state.cost,
         )
-    }
-}
-
-/**
- * Banner bao doi trang thai luoi hien ngay trong tab Nang luong
- * (port iOS M3EEnergyView:56-100).
- * - alertOn=true: xanh "Da co dien luoi tro lai" + nut "Da biet"
- * - alertOn=false: do "MAT DIEN LUOI!" + nut "Tat bao dong"
- */
-@Composable
-private fun GridAlertBanner(
-    alertOn: Boolean,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val extra = LocalHumeExtraColors.current
-    // iOS M3EEnergyView: banner do dung Color.red (do tuoi, khong doi theo
-    // seed); cs.error dark la FFB4AB (hong nhat, chu trang khong doc duoc).
-    // EF4444 la mau do co dinh app da dung o solisStatusColor (iOS cung
-    // dung EF4444 cho "normal operation").
-    val bg = if (alertOn) extra.success else androidx.compose.ui.graphics.Color(0xFFEF4444)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(bg)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        MsIcon(
-            if (alertOn) Ms.bolt else Ms.error,
-            contentDescription = null,
-            tint = androidx.compose.ui.graphics.Color.White,
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                if (alertOn) "Đã có điện lưới trở lại" else "MẤT ĐIỆN LƯỚI!",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = androidx.compose.ui.graphics.Color.White,
-            )
-            if (!alertOn) {
-                Text(
-                    "Đang chạy bằng pin • Chạm để tắt báo động",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(androidx.compose.ui.graphics.Color.White)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            Text(
-                if (alertOn) "Đã biết" else "Tắt báo động",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = bg,
-                modifier = Modifier.clickable(onClick = onDismiss),
-            )
-        }
-    }
-}
-
-/**
- * Banner do canh bao bom chay lien tuc (Batch B, GAP-04 — port iOS
- * pumpAlertFired trong M3EEnergyView). Cung dang GridAlertBanner (do,
- * chu trang, nut trang) nhung cau chu + nut rieng: nut "Da biet" chi an
- * banner, co bao giu toi khi bom tat (PumpAlertMonitor.dismissBanner).
- */
-@Composable
-private fun PumpAlertBanner(
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    // iOS M3EEnergyView: banner do dung Color.red (xem GridAlertBanner).
-    val alertRed = androidx.compose.ui.graphics.Color(0xFFEF4444)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(alertRed)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        MsIcon(
-            Ms.error,
-            contentDescription = null,
-            tint = androidx.compose.ui.graphics.Color.White,
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                "MÁY BƠM CHẠY LIÊN TỤC!",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = androidx.compose.ui.graphics.Color.White,
-            )
-            Text(
-                "Máy bơm máy lọc nước đã chạy liên tục 7 phút.",
-                style = MaterialTheme.typography.labelSmall,
-                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
-            )
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(androidx.compose.ui.graphics.Color.White)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            Text(
-                "Đã biết",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = alertRed,
-                modifier = Modifier.clickable(onClick = onDismiss),
-            )
-        }
     }
 }

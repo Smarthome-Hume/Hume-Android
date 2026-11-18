@@ -296,10 +296,9 @@ class AppHomeRepository(
         ids.add("switch.texgio_tgfpcm795b_g_khoa_tre_em") // DP 101
         ids.add("number.texgio_tgfpcm795b_g_hen_gio") // DP 8
         ids.add("number.texgio_tgfpcm795b_g_nuoc_mem") // DP 106
-        // (Batch B, GAP-04 — port iOS PumpAlertMonitor) Bom may loc Rice Home:
-        // khong watch -> roi bucket ONE_DAY, monitor app-level khong bao gio
-        // thay doi trang thai kip thoi. binary_sensor da watch se vao REALTIME
-        // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s).
+        // Bom may loc Rice Home: binary_sensor da watch se vao REALTIME
+        // theo bucketFor (khong phai sensor.* nen khong roi nhom 10s);
+        // khong watch -> roi bucket ONE_DAY, tab Nuoc khong thay doi kip thoi.
         ids.add("binary_sensor.r_ro_m_01")
         // TempAlert (port iOS rebuildWatchedSet §1e): cam bien nhiet do dang
         // theo doi + do am tuong ung. TempAlertWatcher.watchEntity cung

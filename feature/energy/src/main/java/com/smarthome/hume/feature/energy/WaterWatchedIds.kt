@@ -4,8 +4,7 @@ package com.smarthome.hume.feature.energy
  * Watched set cua tab Nuoc (RO) — v81 muc 7 (don grab-bag).
  *
  * CHU SO HUU: tab Nuoc trong Energy (`AppEnergyRepository` doc nhom nay
- * cho WaterUi) + [PumpAlertMonitor] (canh bao bom loc Rice Home, doc
- * `binary_sensor.r_ro_m_01`). Truoc day 8 id nay chi nam rai rac trong
+ * cho WaterUi). Truoc day 8 id nay chi nam rai rac trong
  * `AppHomeRepository.updateWatched` (Batch B/C) + `AppEnergyRepository`
  * (doc truc tiep literal) — gio tap hop ve 1 cho, store chi union.
  *
@@ -26,7 +25,7 @@ object WaterWatchedIds {
 
     /** 3 binary_sensor: bom, nuoc vao, nuoc su dung. */
     val binarySensorIds: Set<String> = setOf(
-        "binary_sensor.r_ro_m_01", // Bom (PumpAlertMonitor doc)
+        "binary_sensor.r_ro_m_01", // Bom
         "binary_sensor.r_ro_m_01_2", // Nuoc vao
         "binary_sensor.r_ro_m_01_3", // Nuoc su dung
     )

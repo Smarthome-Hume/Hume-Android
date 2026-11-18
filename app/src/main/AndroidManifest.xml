@@ -1,6 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Brief sang: thoi tiet theo vi tri (chi can do chinh xac cap thanh pho). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- GAP-42 ZoneArrival: GeofencingClient BAT BUOC ACCESS_FINE_LOCATION
@@ -53,14 +52,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"/>
         </provider>
-        <!-- Nut "Tat bao dong" tren notification mat dien (port iOS c885ea9). -->
-        <receiver
-            android:name="com.smarthome.hume.feature.energy.DismissAlarmReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.smarthome.hume.DISMISS_GRID_ALARM"/>
-            </intent-filter>
-        </receiver>
         <!-- (GAP-42) Geofence ve/ra khoi nha -> ZoneArrivalManager (port iOS
              CLCircularRegion didEnter/didExitRegion). Khong phai permission,
              chi la diem nhan transition cua GeofencingClient. -->

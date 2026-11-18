@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.smarthome.hume.core.data.AiRepository
-import com.smarthome.hume.core.data.AiResult
 import com.smarthome.hume.core.data.AiTip
 import com.smarthome.hume.core.data.HomeRepository
 import com.smarthome.hume.core.data.HumeGraph
@@ -63,10 +62,6 @@ class HomeViewModel(
     private val _aiState = MutableStateFlow<AiUiState>(AiUiState.Idle)
     val aiState: StateFlow<AiUiState> = _aiState.asStateFlow()
 
-    /** Tom tat AI cho thong bao (neu AI duoc cau hinh). */
-    private val _notifAiSummary = MutableStateFlow<String?>(null)
-    val notifAiSummary: StateFlow<String?> = _notifAiSummary.asStateFlow()
-
     init {
         viewModelScope.launch { repo.refreshSolarWeek() }
         // Doi state co data that (da ket noi HA) roi moi goi AI 1 lan
@@ -81,43 +76,6 @@ class HomeViewModel(
             }
             if (ready) {
                 refreshAiTips()
-                refreshNotifAiSummary()
-            }
-        }
-        // Cap nhat tom tat AI khi thong bao thay doi
-        viewModelScope.launch {
-            state.collect { s ->
-                if (s.notifications.isNotEmpty()) {
-                    refreshNotifAiSummary()
-                } else {
-                    _notifAiSummary.value = null
-                }
-            }
-        }
-    }
-
-    /** Dung AI tom tat thong bao; that bai -> null (an di, khong hien). */
-    fun refreshNotifAiSummary() {
-        viewModelScope.launch {
-            val notifs = state.value.notifications
-            if (notifs.isEmpty()) {
-                _notifAiSummary.value = null
-                return@launch
-            }
-            val result = try {
-                val prompt = notifs.take(5).joinToString("\n") { "- ${it.title}: ${it.body} (${it.timeText})" }
-                aiRepository.chat(
-                    systemPrompt = "Bạn là trợ lý nhà thông minh. Tóm tắt ngắn gọn (1 câu, tiếng Việt) các thông báo sau cho chủ nhà.",
-                    userPrompt = prompt,
-                )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                null
-            }
-            _notifAiSummary.value = when (result) {
-                is AiResult.Ok -> result.value.takeIf { it.isNotBlank() }
-                else -> null
             }
         }
     }
@@ -167,11 +125,6 @@ class HomeViewModel(
     /** (GAP-30) Bat/tat toan bo den 1 phong bang 1 lenh; wiring o
      * HomeScreen.kt:302 (onToggleLights) do worker khac noi sau. */
     fun toggleRoomLights(entityIds: List<String>) = repo.toggleRoomLights(entityIds)
-
-    /** Bo qua (an) thong bao theo id. */
-    fun dismissNotification(id: String) {
-        // TODO: repo.dismissNotification(id) khi co API; tam thoi loc o UI
-    }
 
     fun armAlarm(mode: String, label: String) {
         repo.alarmArm(mode)

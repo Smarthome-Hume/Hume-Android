@@ -1,20 +1,15 @@
 package com.smarthome.hume
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.Network
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -22,14 +17,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.data.HumeGraph
 import com.smarthome.hume.core.ha.TempAlertWatcher
 import com.smarthome.hume.core.ha.ZoneArrivalManager
-import com.smarthome.hume.feature.energy.EnergyNotifier
-import com.smarthome.hume.feature.energy.PumpAlertMonitor
 import com.smarthome.hume.core.datastore.ThemeSettings
 import com.smarthome.hume.core.ha.HistoryFetcher
 import com.smarthome.hume.core.model.AuthSession
@@ -40,48 +32,6 @@ import com.smarthome.hume.feature.auth.LoginScreen
 import com.smarthome.hume.ui.root.M3ERootScreen
 
 class MainActivity : ComponentActivity() {
-    /**
-     * Xin quyen thong bao (Android 13+) — Batch A, GAP-16, port iOS
-     * HumeApp.onAppActive (nhung chi xin o day, KHONG xin lai moi lan
-     * app foreground nhu iOS). Manifest da khai bao POST_NOTIFICATIONS
-     * tu truoc; truoc day khong noi nao xin nen EnergyNotifier chi
-     * return im lang khi chua cap quyen.
-     */
-    private val notifPermLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { /* Ket qua luu qua co "asked": tu choi vinh vien -> Toast huong dan ben duoi */ }
-
-    private fun requestNotificationPermissionOnce() {
-        if (Build.VERSION.SDK_INT < 33) return
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        ) return
-        val prefs = getSharedPreferences("hume_notif_perm", MODE_PRIVATE)
-        val asked = prefs.getBoolean("asked", false)
-        // Mau BriefEdgeHost: user tu choi vinh vien (khong con hien dialog
-        // he thong) thi khong launch vo ich nua — giai thich ngan bang Toast
-        // huong vao Cai dat thay vi bam vao im re.
-        if (asked && !shouldShowRequestPermissionRationale(
-                Manifest.permission.POST_NOTIFICATIONS,
-            )
-        ) {
-            Toast.makeText(
-                this,
-                "Thông báo đang tắt: vào Cài đặt > Thông báo để nhận cảnh báo mất điện.",
-                Toast.LENGTH_LONG,
-            ).show()
-            return
-        }
-        prefs.edit().putBoolean("asked", true).apply()
-        notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Port iOS 5ce8e65: xoa notification moi lan app len foreground.
-        NotificationManagerCompat.from(this).cancelAll()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         // Android 15 always draws edge to edge. SystemBarStyle.auto flips the
         // bar icons with the system appearance, which is what the SwiftUI app
@@ -92,11 +42,6 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
-        // Xin quyen thong bao 1 cho duy nhat (GAP-16): truoc khi ve UI.
-        requestNotificationPermissionOnce()
-        // Port iOS 5ce8e65: xoa badge/notification khi mo app.
-        // Android khong co badge he thong (tuy launcher) — xoa notification la tuong duong.
-        NotificationManagerCompat.from(this).cancelAll()
         val app = application as HumeApplication
         val graph = HumeGraph.get()
 
@@ -104,15 +49,6 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 app.haRepository.onAppForeground()
-                // (Batch B, GAP-02/04) Len foreground: sync baseline canh bao
-                // (port iOS HumeApp.onAppActive) — tranh bao sai khi reconnect
-                // doi state trong luc app background. Dung observer san co
-                // nay, khong tao lifecycle observer moi.
-                EnergyNotifier.requestGridSync()
-                PumpAlertMonitor.sync(
-                    applicationContext,
-                    app.haRepository.entities.value[PumpAlertMonitor.PUMP_ENTITY_ID]?.state,
-                )
                 // (GAP-42) Port iOS HumeApp.onAppActive: ZoneArrival time
                 // triggers (60s ticker) + bat geofence nha khi
                 // arrival_auto_enabled; TempAlert watch sensor nhiet do.
@@ -127,10 +63,6 @@ class MainActivity : ComponentActivity() {
 
             override fun onStop(owner: LifecycleOwner) {
                 app.haRepository.onAppBackground()
-                // (Batch B, GAP-04) Tam dung dem 7 phut khi xuong background:
-                // monitor chi chay foreground nhu iOS (giu lastPumpOn + co bao,
-                // lan foreground sau sync() se dem lai neu bom con chay).
-                PumpAlertMonitor.onAppBackground()
                 // (GAP-42) Dung ticker gio ZoneArrival + watch nhiet do khi
                 // xuong background (socket cung ngat o tren).
                 ZoneArrivalManager.onAppBackground()

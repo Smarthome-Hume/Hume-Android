@@ -85,9 +85,7 @@ import com.smarthome.hume.core.ui.theme.HumeM3ETheme
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.feature.home.HomeScreen
 import com.smarthome.hume.feature.home.ChartHistorySeries
-import com.smarthome.hume.feature.energy.EnergyNotifier
 import com.smarthome.hume.feature.energy.EnergyScreen as M3EEnergyScreen
-import com.smarthome.hume.feature.energy.PumpAlertMonitor
 import com.smarthome.hume.feature.energy.powerwall.PowerwallScreen
 import com.smarthome.hume.feature.me.MeScreen
 import com.smarthome.hume.feature.security.SecurityScreen as M3ESecurityScreen
@@ -127,44 +125,8 @@ fun M3ERootScreen(
             scope = coroutineScope,
         )
     }
-    // (Batch B, GAP-02/04) Monitor canh bao app-level — port iOS HumeApp
-    // startGridMonitor/startPumpMonitor. Root song xuyen ca 4 tab nen canh
-    // bao toi duoc ca khi user khong o tab Nang luong; EnergyScreen khong
-    // goi EnergyNotifier nua (tranh ban trung 2 lan cho 1 su kien luoi).
-    // Foreground-only: socket ngat khi app background (observer san co o
-    // MainActivity) nen khong con event; moi lan len foreground MainActivity
-    // sync lai baseline (requestGridSync/sync) de khong bao sai khi reconnect.
     // (GAP-37) Vuot mep trai mo Brief nam o Box content ben duoi
     // (briefEdgeSwipe), khong phai o day.
-    val appAlertContext = remember(context) { context.applicationContext }
-    androidx.compose.runtime.LaunchedEffect(ha) {
-        // Sync bom lan dau (khong bao) — port iOS PumpAlertMonitor.sync().
-        PumpAlertMonitor.sync(
-            appAlertContext,
-            ha.entities.value[PumpAlertMonitor.PUMP_ENTITY_ID]?.state,
-        )
-        launch {
-            ha.entityUpdated.collect { id ->
-                if (id == PumpAlertMonitor.PUMP_ENTITY_ID) {
-                    PumpAlertMonitor.update(
-                        appAlertContext,
-                        ha.entities.value[id]?.state,
-                    )
-                }
-            }
-        }
-        launch {
-            HumeGraph.get().energyRepository.energyState.collect { state ->
-                // Lan dau + moi lan len foreground: sync baseline, khong bao
-                // (port iOS GridAlertMonitor.sync); cac lan sau moi bao.
-                if (EnergyNotifier.consumeGridSyncRequest()) {
-                    EnergyNotifier.syncGridState(state.flow.gridOn, state.flow.inverterStatus)
-                } else {
-                    EnergyNotifier.onStateChanged(appAlertContext, state)
-                }
-            }
-        }
-    }
     // Entities cho EntityPicker (port iOS SensorPickerView)
     val pickerEntities = remember(ha) {
         ha.entities.map { map ->
@@ -385,7 +347,6 @@ fun M3ERootScreen(
                         },
                     )
                     HumeTab.Profile -> MeScreen(
-                        onViewCamera = { selected = 2 },
                         roomStore = roomStoreAdapter,
                         pickerEntities = pickerEntities,
                     )
