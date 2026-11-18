@@ -109,7 +109,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .widthIn(max = 420.dp)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                    .padding(horizontal = M3ETokens.Spacing.Xxl, vertical = M3ETokens.Spacing.PageTop),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Logo
@@ -273,7 +273,7 @@ fun LoginScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(M3ETokens.Spacing.Lg),
                         ) {
                             MsIcon(
                                 M3EIcons.Check,
@@ -311,7 +311,7 @@ fun LoginScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(M3ETokens.Spacing.Lg),
                         ) {
                             MsIcon(
                                 Ms.error,
@@ -334,7 +334,7 @@ fun LoginScreen(
                     enabled = state.canSubmit,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(M3ETokens.Height.ButtonLarge),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                     ),
@@ -417,7 +417,7 @@ private fun QrShowSection(
                     contentDescription = "Mã QR chứa địa chỉ và token",
                     modifier = Modifier
                         .size(200.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                         .background(androidx.compose.ui.graphics.Color.White)
                         .padding(12.dp),
                 )

@@ -196,7 +196,7 @@ fun BriefScreen(
                     .fillMaxWidth()
                     .onSizeChanged { tabBarH = with(density) { it.height.toDp() } }
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(99.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                     .background(cs.surfaceContainer)
                     .padding(4.dp),
             ) {
@@ -216,7 +216,7 @@ private fun AiPill() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(99.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
             .background(cs.primaryContainer)
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
@@ -235,7 +235,7 @@ private fun BriefTab(text: String, selected: Boolean, onClick: () -> Unit, modif
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(99.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
             .background(if (selected) cs.primaryContainer else Color.Transparent)
             .pressMorph(0.94f, onClick)
             .padding(vertical = 9.dp),
@@ -277,7 +277,7 @@ private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean, modifier: Mod
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .clip(RoundedCornerShape(99.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                 .background(cs.primaryContainer)
                 .clickable(onClick = onRefresh)
                 .padding(horizontal = 24.dp, vertical = 12.dp),
@@ -306,11 +306,11 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
             M3ECard(
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = cs.primaryContainer,
-                contentPadding = 18.dp,
+                contentPadding = M3ETokens.Spacing.PageMargin,
             ) {
                 M3ESectionLabel("NHẬN ĐỊNH", light = true)
                 Spacer(Modifier.height(8.dp))
-                Text(d.aiInsight, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
+                Text(d.aiInsight, style = MaterialTheme.typography.bodyMedium, lineHeight = M3ETokens.Text.Body.lineHeight, color = cs.onPrimaryContainer)
             }
         }
         // Thoi tiet
@@ -320,8 +320,8 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val (icon, tint) = when (d.weather.kind) {
-                        "sunny" -> Ms.wb_sunny to Color(0xFFF9A825)
-                        "rain" -> Ms.water_drop to Color(0xFF1565C0)
+                        "sunny" -> Ms.wb_sunny to M3ETokens.StatusColors.Weather.Sunny
+                        "rain" -> Ms.water_drop to M3ETokens.StatusColors.Weather.Rain
                         else -> Ms.wb_sunny to cs.onSurfaceVariant
                     }
                     MsIcon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(40.dp))
@@ -361,7 +361,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     Spacer(Modifier.height(10.dp))
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(99.dp))
+                            .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                             .background(cs.surfaceContainer)
                             .clickable(enabled = !refreshing, onClick = onRequestLocation)
                             .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -400,7 +400,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(cs.primaryContainer)
                         .padding(12.dp),
                 ) {
@@ -409,7 +409,7 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     Text(
                         "Lũy kế kỳ này: ${(d.billingCostVnd).toVnd()} · ${countUpText(d.billingKwh, 1, tabKey)} kWh",
                         style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer,
-                        lineHeight = 18.sp,
+                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                     )
                 }
             }
@@ -433,14 +433,14 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(cs.surfaceContainer)
                         .padding(12.dp),
                 ) {
                     MsIcon(Ms.lightbulb, contentDescription = null, tint = cs.primary, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        d.aiTip, style = MaterialTheme.typography.bodySmall, lineHeight = 20.sp,
+                        d.aiTip, style = MaterialTheme.typography.bodySmall, lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                         color = cs.onSurface,
                     )
                 }
@@ -484,7 +484,7 @@ private fun MonthlyTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(99.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                 .background(cs.primaryContainer)
                 .clickable(onClick = onCreateLive)
                 .padding(vertical = 12.dp),
@@ -511,7 +511,7 @@ private fun MonthlySectionHeader(month: String, status: String) {
         Text("TỔNG HỢP $month".uppercase(), style = MaterialTheme.typography.titleSmall, color = cs.onSurface)
         Box(
             Modifier
-                .clip(RoundedCornerShape(99.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                 .background(cs.secondaryContainer)
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
@@ -532,9 +532,9 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
             M3ECard(
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = cs.primaryContainer,
-                contentPadding = 18.dp,
+                contentPadding = M3ETokens.Spacing.PageMargin,
             ) {
-                Text(m.aiSummary, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp, color = cs.onPrimaryContainer)
+                Text(m.aiSummary, style = MaterialTheme.typography.bodyMedium, lineHeight = M3ETokens.Text.Body.lineHeight, color = cs.onPrimaryContainer)
             }
         }
         StaggerCard(1, tabKey) {
@@ -568,7 +568,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                             .background(cs.primaryContainer)
                             .padding(12.dp),
                     ) {
@@ -577,7 +577,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         Text(
                             "Thực tế cả nhà tiêu thụ: ≈ ${(m.homeCostVnd).toVnd()} · Tiết kiệm ${m.savingsPct}% nhờ PV",
                             style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer,
-                            lineHeight = 18.sp,
+                            lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                         )
                     }
                 }
@@ -593,7 +593,7 @@ private fun MonthlyContent(m: BriefMonthly, tabKey: Any) {
                         Text(f.name, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = cs.onSurface, modifier = Modifier.width(64.dp))
                         AnimBar(
                             fraction = (f.kwh / max).toFloat(), tabKey = tabKey, height = 10.dp,
-                            color = if (i == 0) Color(0xFFEF6C00) else cs.primary,
+                            color = if (i == 0) M3ETokens.StatusColors.Weather.Rank0 else cs.primary,
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
@@ -628,7 +628,7 @@ private fun BriefCard(content: @Composable ColumnScope.() -> Unit) {
     M3ECard(
         modifier = Modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentPadding = 18.dp,
+        contentPadding = M3ETokens.Spacing.PageMargin,
         content = content,
     )
 }
@@ -639,7 +639,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
     Column(
         modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
             .background(cs.surfaceContainer)
             .padding(14.dp),
     ) {
@@ -650,7 +650,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
                 Spacer(Modifier.width(6.dp))
                 Text(
                     label, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.sp,
-                    color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 14.sp,
+                    color = cs.onSurfaceVariant, maxLines = 2, lineHeight = M3ETokens.Text.ChipText.lineHeight,
                 )
             }
         }
@@ -678,7 +678,7 @@ private fun StatBox(icon: String, label: String, big: String, unit: String, sub:
         Spacer(Modifier.height(4.dp))
         // Vung phu co dinh 2 dong de day 2 the can nhau.
         Box(Modifier.height(32.dp), contentAlignment = Alignment.TopStart) {
-            Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2, lineHeight = 15.sp)
+            Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, maxLines = 2, lineHeight = M3ETokens.Text.BodySmall.lineHeight)
         }
     }
 }
@@ -691,7 +691,7 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(22.dp)
-                .clip(RoundedCornerShape(11.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
                 .background(cs.surfaceContainerHigh),
         ) {
             Text("${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = cs.onSurfaceVariant)
@@ -701,7 +701,7 @@ private fun DeviceRow(dev: BriefDeviceStat, max: Double, index: Int, tabKey: Any
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.surfaceContainer),
         ) {
             MsIcon(briefIcon(dev.iconKey), contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(22.dp))
@@ -731,7 +731,7 @@ private fun UnmeasuredRow(kwh: Double, max: Double, tabKey: Any) {
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(22.dp)
-                .clip(RoundedCornerShape(11.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
                 .background(cs.surfaceContainerHigh),
         ) {
             MsIcon(Ms.info, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(14.dp))
@@ -741,7 +741,7 @@ private fun UnmeasuredRow(kwh: Double, max: Double, tabKey: Any) {
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.surfaceContainer),
         ) {
             MsIcon(Ms.power, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(22.dp))
@@ -772,14 +772,14 @@ private fun AnimBar(fraction: Float, tabKey: Any, color: Color, modifier: Modifi
         modifier
             .fillMaxWidth()
             .height(height)
-            .clip(RoundedCornerShape(99.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
             .background(cs.surfaceContainer),
     ) {
         Box(
             Modifier
                 .fillMaxWidth(w)
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(99.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                 .background(color),
         )
     }
