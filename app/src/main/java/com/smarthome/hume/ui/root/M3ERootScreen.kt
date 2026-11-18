@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.drawToBitmap
 import com.smarthome.hume.brief.BriefEdgeHost
+import com.smarthome.hume.colorFromArgb
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -147,17 +148,8 @@ fun M3ERootScreen(
     )
     val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }.getOrDefault(M3ESeed.Cam)
     val darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()
-    // (2026-10-01, fix crash khi ap dung mau tuy chinh: dung cach tach ARGB an toan)
-    val customColor = themeSettings.customColor?.let { argb ->
-        runCatching {
-            androidx.compose.ui.graphics.Color(
-                red = ((argb shr 16) and 0xFF) / 255f,
-                green = ((argb shr 8) and 0xFF) / 255f,
-                blue = (argb and 0xFF) / 255f,
-                alpha = ((argb shr 24) and 0xFF) / 255f,
-            )
-        }.getOrNull()
-    }
+    // Mau tuy chinh: tach ARGB qua ham chung (audit C-02).
+    val customColor = themeSettings.customColor?.let(::colorFromArgb)
     HumeM3ETheme(seed = seed, darkTheme = darkTheme, customSeedColor = customColor, fontFamily = themeSettings.fontFamily) {
         var selected by rememberSaveable { mutableIntStateOf(0) }
         // Deep-link "Xem pin" tu the goi y trang Nha -> tab Nang luong + cuon toi the pin.
