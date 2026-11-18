@@ -1830,7 +1830,17 @@ class HomeAssistantRepository {
             "sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2",
         )
 
-        /** (GAP-40) iOS updateBucket s10Exact — copy nguyen 16 entity. */
+        /**
+         * (GAP-40) iOS updateBucket s10Exact — copy nguyen 16 entity, TRU
+         * 2 sensor thua (v81 muc 4): sensor.battery_time_to_full_2 (bao
+         * ao, iOS bo fallback o v70) + sensor.thoi_gian_pin_con_lai
+         * (khong phai duration) — ca 2 da bi chan khoi watched set
+         * (AppHomeRepository.excessSensorIds) nen khong con duoc watch;
+         * xoa khoi day de khong con phan loai telemetry 10s cho chung
+         * neu co duong nao watch lai. Con 14 entity.
+         * (dashboard_active_card(_2) GIU NGUYEN — iOS v81 loai them
+         * nhung brief Android chi duyet 5 sensor, khong dung vao day.)
+         */
         val S10_EXACT: Set<String> = setOf(
             "sensor.battery_current_flow",
             "sensor.battery_power_flow",
@@ -1840,8 +1850,6 @@ class HomeAssistantRepository {
             "sensor.grid_power",
             "sensor.o_cam_may_giat_power",
             "sensor.o_cam_may_say_power",
-            "sensor.battery_time_to_full_2",
-            "sensor.thoi_gian_pin_con_lai",
             "sensor.solis_s6_eh1p_pv_power_1_3",
             "sensor.solis_s6_eh1p_pv_power_2_3",
             "sensor.solis_s6_eh1p_pv_voltage_1_2",

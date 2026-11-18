@@ -167,6 +167,27 @@ class AppHomeRepository(
     /** Rebuild watched set tu state hien tai (goi khi tab/Powerwall/background doi). */
     private fun rebuildWatched() = updateWatched(_homeState.value)
 
+    /**
+     * (v81 muc 4) 5 sensor thua — CHI bo khoi watched set app, KHONG xoa
+     * entity tren HA. battery_time_to_full_2 bao ao (iOS bo fallback o
+     * v70), thoi_gian_pin_con_lai khong phai duration, 3
+     * may_giat_washer_* chet (tren Android khong co cho nao watch chung
+     * — chi chan de phong duong dong keo vao lai). Loc o cho duy nhat
+     * nay (updateWatched) nen ca duong dong (room config / discovery)
+     * cung khong dua chung vao watched duoc. Duong watchEntity cua
+     * TempAlertWatcher chi watch cam bien nhiet/do am nen khong vuong.
+     * GIU 2 flag BMS py_protection_flags / py_alarm_flags (tin hieu an
+     * toan Pylontech frame 0x359, live = 0) — chung nam trong
+     * POWERWALL_ENTITY_IDS, khong co trong danh sach nay.
+     */
+    private val excessSensorIds: Set<String> = setOf(
+        "sensor.battery_time_to_full_2",
+        "sensor.thoi_gian_pin_con_lai",
+        "sensor.may_giat_washer_completion_time",
+        "sensor.may_giat_washer_job_state",
+        "sensor.may_giat_washer_machine_state",
+    )
+
     /** (N-03, v70) Dong BMS lam muot (EMA, alpha 0.2) + mau dong cuoi cho
      * cong thuc thoi gian pin — port iOS CurrentEMA (HomeBatteryCard giu
      * @State battEMA, cap nhat qua onChange(of: bmsCurr)). */
@@ -181,7 +202,9 @@ class AppHomeRepository(
      * HomeAssistantRepository.setWatchedEntities.
      */
     private fun updateWatched(s: HomeUiState) {
-        val ids = buildWatchedSet(s)
+        // (v81 muc 4) Chan 5 sensor thua o cho duy nhat nay (xem
+        // excessSensorIds) — ke ca khi room config / discovery keo chung vao.
+        val ids = buildWatchedSet(s).filterNot { it in excessSensorIds }.toSet()
         if (ids != lastWatched) {
             lastWatched = ids
             ha.setWatchedEntities(ids)
