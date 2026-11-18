@@ -204,8 +204,10 @@ object M3ETokens {
 
     // ---------- Icon size ----------
     object Icon {
-        /** SuggestCard icon (da cat 30->22dp vong truoc). */
-        val SuggestCard: Dp = 22.dp
+        /** SuggestCard icon (cat 30->22dp vong 04:30 18/11, tang lai 22->24dp
+         * theo lenh user 09:47 18/11 — 24dp = [Standard]; van nho hon cot
+         * chu (31,3dp) nen khong doi chieu cao the. */
+        val SuggestCard: Dp = 24.dp
 
         /** EnvTile: box 48dp / icon 24dp (khoi phuc tu 36/20 sau cat 18/11; iOS 48/24pt). */
         val EnvTileBox: Dp = 48.dp

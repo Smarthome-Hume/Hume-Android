@@ -553,7 +553,13 @@ fun SuggestCard(
         // (2026-11-18) Cat MANH theo lenh user 04:30: padding doc 12 -> 5dp
         // (-14dp). MarqueeText bo qua lineHeight nen cat them bang co chu
         // title 14->13sp, sub 12->11sp (xem SuggestTipRow).
-        contentPadding = 5.dp,
+        // (2026-11-18) Tang LAI theo lenh user 09:47 ("tang len chut nua",
+        // khong ve lai 57,7/70,7dp cu): padding doc 5 -> 8dp (= Spacing.Sm,
+        // +6dp tong), icon 22->24dp + dots 6/4->7/5dp + khe tren dots 2->4dp
+        // + khe title->sub 1->2dp. Cot chu 30,2->31,3dp (van la thanh phan
+        // cao nhat, nut 22,6dp + icon 24dp khong doi chieu cao).
+        // The 1 tip 40,2->47,3dp; >1 tip 48,2->58,3dp.
+        contentPadding = M3ETokens.Spacing.Sm,
     ) {
         Column(Modifier.padding(horizontal = M3ETokens.Spacing.Xs)) {
             HorizontalPager(
@@ -600,7 +606,9 @@ fun SuggestCard(
                         // (2026-11-17) Khe tren dots 10 -> 6dp (-4dp khi
                         // >1 tip, cat duoi iOS theo lenh user; 6dp la so
                         // da dung o vong 44d50c2: spacer 10->6, khe hang 8->6).
-                        .padding(top = 2.dp),
+                        // (2026-11-18) Cat MANH 04:30: khe 6->2dp.
+                        // (2026-11-18) Tang lai 09:47: khe 2->4dp.
+                        .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -609,7 +617,9 @@ fun SuggestCard(
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 3.dp)
-                                .size(if (selected) 6.dp else 4.dp)
+                                // (2026-11-18) Cat MANH 04:30: dots 7/5->6/4dp.
+                                // (2026-11-18) Tang lai 09:47: dots ve 7/5dp.
+                                .size(if (selected) 7.dp else 5.dp)
                                 .clip(CircleShape)
                                 .background(
                                     if (selected) cs.onTertiaryContainer
@@ -832,12 +842,14 @@ private fun SuggestTipRow(
                 text = tip.sub,
                 // (2026-11-18) Cat MANH: sub 12->11sp + khe tren 2->1dp.
                 // Token hoa 18/11: 11sp = Text.Caption (khong doi co chu).
+                // (2026-11-18) Tang lai 09:47: khe title->sub 1->2dp
+                // (cot chu 30,2->31,3dp; ti le khe/title 2/13 = 0,15).
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = M3ETokens.Text.Caption.fontSize,
                 ),
                 fontWeight = FontWeight.Medium,
                 color = cs.onTertiaryContainer.copy(alpha = 0.75f),
-                modifier = Modifier.padding(top = 1.dp),
+                modifier = Modifier.padding(top = 2.dp),
                 startPadding = 14.dp,
             )
         }
