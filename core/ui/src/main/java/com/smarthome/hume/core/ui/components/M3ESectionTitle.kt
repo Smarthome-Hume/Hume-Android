@@ -6,8 +6,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
@@ -27,9 +25,9 @@ fun M3ESectionTitle(
             lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
         ),
         fontWeight = FontWeight.Bold,
-        letterSpacing = (-0.1).sp,
+        letterSpacing = M3ETokens.LetterSpacing.Tight,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(start = 4.dp, end = 4.dp),
+        modifier = modifier.padding(start = M3ETokens.Spacing.Xs, end = M3ETokens.Spacing.Xs),
     )
 }
 
@@ -50,7 +48,7 @@ fun M3ESectionLabel(
         text,
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 1.5.sp,
+        letterSpacing = M3ETokens.LetterSpacing.Tracking,
         color = if (light) cs.onPrimaryContainer else cs.onSurfaceVariant,
         modifier = modifier,
     )

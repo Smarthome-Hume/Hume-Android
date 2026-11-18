@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.theme.M3ETokens
 
@@ -39,8 +38,8 @@ fun M3ESectionHeader(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 12.dp)
-            .padding(horizontal = 4.dp)
+            .padding(top = M3ETokens.Spacing.Xl, bottom = M3ETokens.Spacing.Md)
+            .padding(horizontal = M3ETokens.Spacing.Xs)
             .riseIn(delayMs),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom,
@@ -52,12 +51,12 @@ fun M3ESectionHeader(
                 lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
             ),
             fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.1).sp,
+            letterSpacing = M3ETokens.LetterSpacing.Tight,
         )
         if (actionLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp,
+                modifier = Modifier.size(M3ETokens.Icon.XSmall),
+                strokeWidth = M3ETokens.Border.Focused,
                 color = MaterialTheme.colorScheme.primary,
             )
         } else if (action != null) {
