@@ -13,10 +13,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.smarthome.hume.core.data.HumeGraph
@@ -33,10 +36,12 @@ import com.smarthome.hume.ui.root.M3ERootScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Android 15 always draws edge to edge. SystemBarStyle.auto flips the
-        // bar icons with the system appearance, which is what the SwiftUI app
-        // gets for free from UIKit; the padding for those bars is applied in
-        // HumeRootScreen.
+        // Android 15 always draws edge to edge. Nen bar TRANSPARENT giu
+        // nguyen o day; rieng MAU ICON (sang/toi) KHONG de SystemBarStyle.auto
+        // quyet theo uiMode he thong nua — auto de icon den khi user ep dark
+        // trong app trong khi he thong dang light (icon den xi tren nen toi,
+        // user 05:44 19/11). Mau icon duoc dong bo theo theme THUC cua app
+        // trong SideEffect o setContent ben duoi (chay lai moi khi theme doi).
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
@@ -96,6 +101,27 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalDensity provides Density(density = density.density, fontScale = 1f),
             ) {
+            // (status bar 2026-11-19) Icon thanh status + thanh dieu huong
+            // theo theme THUC cua app (themeSettings.darkMode ?:
+            // isSystemInDarkTheme()), KHONG theo uiMode he thong:
+            // app dark + he thong light -> icon phai SANG (trang), app light
+            // -> icon TOI (den). SideEffect chay sau moi composition nen doi
+            // theme trong app (hoac doi he thong khi de che do tu dong) doi
+            // icon ngay, khong can restart. Dat o root setContent nen phu
+            // ca 2 nhanh (M3ERootScreen da login + LoginScreen chua login);
+            // chi doi co appearance (mau icon), nen bar van TRANSPARENT nhu
+            // enableEdgeToEdge o tren, khong doi theme.
+            val themeSettings by graph.themeStore.settings.collectAsState(
+                initial = ThemeSettings(),
+            )
+            val appDarkTheme = themeSettings.darkMode ?: isSystemInDarkTheme()
+            val rootView = LocalView.current
+            SideEffect {
+                WindowInsetsControllerCompat(window, rootView).apply {
+                    isAppearanceLightStatusBars = !appDarkTheme
+                    isAppearanceLightNavigationBars = !appDarkTheme
+                }
+            }
             // Nguon su that cho gate dang nhap: AuthRepository cua kien truc moi.
             // (Doc chung file "hume_settings"/"hume_secrets" voi SettingsStore cu.)
             val session by graph.authRepository.session.collectAsState(initial = AuthSession())
@@ -122,16 +148,15 @@ class MainActivity : ComponentActivity() {
                 )
             } else {
                 // Theme mot lan o root (thay cho wrapper long trong LoginScreen).
-                val themeSettings by graph.themeStore.settings.collectAsState(
-                    initial = ThemeSettings(),
-                )
+                // themeSettings + appDarkTheme da collect o root setContent
+                // (dung chung cho SideEffect mau icon status bar o tren).
                 val seed = runCatching { M3ESeed.valueOf(themeSettings.seedName) }
                     .getOrDefault(M3ESeed.Cam)
                 // Mau tuy chinh: tach ARGB qua ham chung (audit C-02).
                 val customColor = themeSettings.customColor?.let(::colorFromArgb)
                 HumeM3ETheme(
                     seed = seed,
-                    darkTheme = themeSettings.darkMode ?: isSystemInDarkTheme(),
+                    darkTheme = appDarkTheme,
                     customSeedColor = customColor,
                     fontFamily = themeSettings.fontFamily,
                 ) {
