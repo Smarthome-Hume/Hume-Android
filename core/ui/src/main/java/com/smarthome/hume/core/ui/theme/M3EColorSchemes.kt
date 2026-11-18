@@ -574,7 +574,9 @@ private val darkSchemeAmber: ColorScheme
     )
 
 
-internal fun colorSchemeFor(seed: M3ESeed, dark: Boolean): ColorScheme {
+/** Public tu vong chuan hoa A-16 (18/11): feature:me SeedDot dung
+ *  primary cua scheme thay cho map mau tay. */
+fun colorSchemeFor(seed: M3ESeed, dark: Boolean): ColorScheme {
     val s = seed.name.lowercase()
     // (fix 3) background/onBackground chua bao gio duoc set trong scheme nao
     // -> roi ve baseline M3 (FFFBFF/121212), khong theo seed. M3E khong co

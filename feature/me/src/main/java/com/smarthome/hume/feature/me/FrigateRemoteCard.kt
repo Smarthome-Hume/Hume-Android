@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -77,7 +78,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(cs.surfaceContainerHighest)
             .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {
@@ -155,7 +156,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                     Modifier
                         .width(88.dp)
                         .height(56.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(cs.primary)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -179,7 +180,7 @@ fun FrigateRemoteCard(vm: MeViewModel) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                         .background(cs.primaryContainer)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },

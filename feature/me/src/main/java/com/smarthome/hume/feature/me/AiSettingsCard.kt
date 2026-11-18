@@ -27,6 +27,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import com.smarthome.hume.core.ui.components.M3ETextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -95,7 +96,7 @@ fun AiSettingsCard(vm: MeViewModel) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(cs.surfaceContainerHighest)
             .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {
@@ -228,7 +229,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                         Modifier
                             .width(88.dp)
                             .height(56.dp)
-                            .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                             .background(cs.primary)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
@@ -252,7 +253,7 @@ fun AiSettingsCard(vm: MeViewModel) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                             .background(cs.primaryContainer)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
@@ -328,7 +329,7 @@ private fun RowScope.AiDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(M3ETokens.Corner.Popup),
             containerColor = cs.surfaceContainerHigh,
         ) {
             options.forEach { opt ->

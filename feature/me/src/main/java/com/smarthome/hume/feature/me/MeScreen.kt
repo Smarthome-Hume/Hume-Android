@@ -105,6 +105,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.M3ESeed
 import com.smarthome.hume.core.ui.theme.M3ETokens
+import com.smarthome.hume.core.ui.theme.colorSchemeFor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -222,7 +223,7 @@ fun MeScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
+            .padding(horizontal = M3ETokens.Spacing.PageMargin)
             .m3ePageBottomPadding(),
     ) {
         // (N-06) Chua dung chieu cao pill title co dinh 66dp nhu iOS
@@ -276,7 +277,7 @@ fun MeScreen(
                 .padding(top = 16.dp)
                 .clip(RoundedCornerShape(28.dp))
                 .background(cs.surfaceContainerHighest)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Md),
         ) {
             Text(
                 "MÀU CHỦ ĐẠO",
@@ -285,7 +286,7 @@ fun MeScreen(
                 color = cs.onSurfaceVariant,
                 letterSpacing = 0.4.sp,
             )
-            SeedRow(selected = if (hasCustomColor) null else seed, onSelect = { haptic(); vm.setSeed(it) })
+            SeedRow(selected = if (hasCustomColor) null else seed, dark = darkMode, onSelect = { haptic(); vm.setSeed(it) })
         }
         // Card 2: mau tuy chinh co background rieng (muc cuoi trang)
         Column(
@@ -294,7 +295,7 @@ fun MeScreen(
                 .padding(top = 12.dp)
                 .clip(RoundedCornerShape(28.dp))
                 .background(cs.surfaceContainerHighest)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Md),
         ) {
             Text(
                 "MÀU TÙY CHỈNH",
@@ -341,7 +342,7 @@ fun MeScreen(
             Modifier
                 .align(Alignment.TopStart)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = M3ETokens.Spacing.PageMargin)
                 .padding(top = statusBarTop + 8.dp),
         ) {
             Box(
@@ -477,13 +478,13 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
             .pressMorph(pressedScale = 0.97f, onClick = onOpen)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
                 .size(44.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(cs.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
@@ -545,7 +546,7 @@ private fun FontPickerSheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = M3ETokens.Spacing.Xl)
                 .padding(bottom = 32.dp),
         ) {
             Text(
@@ -624,10 +625,10 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
             .background(if (selected) cs.primaryContainer else cs.surfaceContainerLow)
             .pressMorph(pressedScale = 0.97f, onClick = onSelect)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -688,9 +689,9 @@ private fun MeAvatarCard(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(14.dp),
+            .padding(M3ETokens.Spacing.Md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ProfileAvatar(
@@ -706,10 +707,10 @@ private fun MeAvatarCard(
         // Nut Doi/Go: nen pill + pressMorph giong cum dieu hoa (2026-09-30).
         Box(
             Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                 .background(MaterialTheme.colorScheme.primaryContainer)
                 .pressMorph(pressedScale = 0.88f, onClick = onChange)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.CardGap),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -723,10 +724,10 @@ private fun MeAvatarCard(
             Spacer(Modifier.width(8.dp))
             Box(
                 Modifier
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                     .background(MaterialTheme.colorScheme.errorContainer)
                     .pressMorph(pressedScale = 0.88f, onClick = onRemove)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                    .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.CardGap),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -741,10 +742,10 @@ private fun MeAvatarCard(
         Spacer(Modifier.width(8.dp))
         Box(
             Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .pressMorph(pressedScale = 0.88f, onClick = onLogout)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.CardGap),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -778,7 +779,7 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
             .padding(top = 18.dp, bottom = 4.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Md),
     ) {
         Text("Chế độ hiển thị", style = MaterialTheme.typography.titleSmall)
         // Cum 3 che do: nen surfaceContainerHigh bo 24, moi option nen rieng
@@ -789,9 +790,9 @@ private fun ThemeModeCard(mode: Boolean?, onSelect: (Boolean?) -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Popup))
                 .background(cs.surfaceContainerHigh)
-                .padding(14.dp),
+                .padding(M3ETokens.Spacing.Md),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             options.forEachIndexed { i, opt ->
@@ -890,7 +891,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             Box(
                 Modifier
                     .matchParentSize()
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                     .background(
                         androidx.compose.ui.graphics.Brush.horizontalGradient(
                             colors = List(7) { i ->
@@ -919,7 +920,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .height(112.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(M3ETokens.Corner.Small))
                 .background(
                     androidx.compose.ui.graphics.Brush.verticalGradient(
                         colors = listOf(
@@ -979,6 +980,11 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             androidx.compose.material3.Slider(
                 value = sat,
                 onValueChange = { sat = it },
+                colors = androidx.compose.material3.SliderDefaults.colors(
+                    thumbColor = cs.primary,
+                    activeTrackColor = cs.primary,
+                    inactiveTrackColor = cs.surfaceContainerHigh,
+                ),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -990,6 +996,11 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             androidx.compose.material3.Slider(
                 value = value,
                 onValueChange = { value = it },
+                colors = androidx.compose.material3.SliderDefaults.colors(
+                    thumbColor = cs.primary,
+                    activeTrackColor = cs.primary,
+                    inactiveTrackColor = cs.surfaceContainerHigh,
+                ),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -1002,9 +1013,9 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             Box(
                 Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.XSmall))
                     .background(currentColor)
-                    .border(1.dp, cs.outlineVariant, RoundedCornerShape(10.dp)),
+                    .border(M3ETokens.Border.Thin, cs.outlineVariant, RoundedCornerShape(M3ETokens.Corner.XSmall)),
             )
             Column(Modifier.weight(1f)) {
                 Text("HEX $hexString", style = MaterialTheme.typography.bodySmall)
@@ -1014,7 +1025,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
             Box(
                 Modifier
                     .height(40.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                     .background(cs.primaryContainer)
                     .pressMorph(pressedScale = 0.92f) {
                         val c = currentColor
@@ -1025,7 +1036,7 @@ private fun CustomSeedRow(onApplyCustom: (Long) -> Unit) {
                         onApplyCustom(argb)
                         feedback = "Đã áp dụng màu tùy chỉnh" to false
                     }
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = M3ETokens.Spacing.Xl),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -1056,18 +1067,9 @@ private fun colorDistance(a: Color, b: Color): Float {
     return dr * dr + dg * dg + db * db
 }
 
-private val seedColors = mapOf(
-    M3ESeed.Cam to Color(0xFFF9784C),
-    M3ESeed.Green to Color(0xFF478A4D),
-    M3ESeed.Blue to Color(0xFF2F6EA3),
-    M3ESeed.Violet to Color(0xFF6A54A6),
-    M3ESeed.Red to Color(0xFFBE4130),
-    M3ESeed.Pink to Color(0xFF9E3D6E),
-    M3ESeed.Teal to Color(0xFF2A7F76),
-    M3ESeed.Amber to Color(0xFF776000),
-    M3ESeed.Lime to Color(0xFF6B9E2F),
-    M3ESeed.Indigo to Color(0xFF4A5AA8),
-)
+// (A-16) Khong map mau seed tay nua — dung primary cua scheme
+// (colorSchemeFor(seed, dark).primary); doi primary o scheme thi dot
+// mau tu doi theo, khong lech nhu map tay truoc day.
 
 private val seedNames = mapOf(
     M3ESeed.Cam to "Cam Hume",
@@ -1091,7 +1093,7 @@ private val seedNames = mapOf(
  *  moi hang la Row SpaceBetween de luon du 5 dot/hang, khong wrap lech.
  *  selected = null khi mau tuy chinh dang kich hoat (khong tick seed nao). */
 @Composable
-private fun SeedRow(selected: M3ESeed?, onSelect: (M3ESeed) -> Unit) {
+private fun SeedRow(selected: M3ESeed?, dark: Boolean, onSelect: (M3ESeed) -> Unit) {
     Column(
         // Nam trong card nen chi can khoang cach voi label phia tren
         modifier = Modifier
@@ -1109,6 +1111,7 @@ private fun SeedRow(selected: M3ESeed?, onSelect: (M3ESeed) -> Unit) {
                     SeedDot(
                         seed = s,
                         selected = s == selected,
+                        dark = dark,
                         onSelect = onSelect,
                     )
                 }
@@ -1121,9 +1124,11 @@ private fun SeedRow(selected: M3ESeed?, onSelect: (M3ESeed) -> Unit) {
 private fun SeedDot(
     seed: M3ESeed,
     selected: Boolean,
+    dark: Boolean,
     onSelect: (M3ESeed) -> Unit,
 ) {
-    val color = seedColors[seed] ?: Color.Gray
+    // (A-16) Mau dot = primary cua scheme theo dark/light hien tai.
+    val color = colorSchemeFor(seed, dark).primary
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -1146,7 +1151,7 @@ private fun SeedDot(
         Modifier
             .size(56.dp)
             .then(
-                if (selected) Modifier.border(1.5.dp, color, CircleShape)
+                if (selected) Modifier.border(M3ETokens.Border.Medium, color, CircleShape)
                 else Modifier
             ),
         contentAlignment = Alignment.Center,
@@ -1189,7 +1194,7 @@ private fun RoomManagementCard(onOpen: () -> Unit) {
             .clip(RoundedCornerShape(28.dp))
             .background(cs.surfaceContainerHighest)
             .clickable(onClick = onOpen)
-            .padding(20.dp),
+            .padding(M3ETokens.Spacing.Xl),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
