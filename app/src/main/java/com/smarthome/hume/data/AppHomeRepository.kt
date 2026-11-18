@@ -141,6 +141,20 @@ class AppHomeRepository(
     private var battCurrentEma: Double? = null
     private var lastBmsCurr: Double? = null
 
+    /**
+     * Debounce huong sac/xa pin 30s (user 10:54 18/11: pill lat SAC/XA lien
+     * tuc). sensor.battery_power_flow dao dong du doi, doi dau moi 10-30s
+     * (history HA 18/11: -599..+193W) — pill chi doi sau khi huong moi duy
+     * tri lien tuc 30s. Khai bao truoc init nhu battCurrentEma (buildState
+     * goi dong bo tu combine trong init). battDirStable: huong dang hien
+     * (1 = sac, -1 = xa, 0 = nghi); battDirCandidate: huong moi dang cho
+     * du 30s moi nhan.
+     */
+    private var battDirStable: Int = 0
+    private var battDirCandidate: Int = 0
+    private var battDirCandidateSinceMs: Long = 0L
+    private var battDirInitialized: Boolean = false
+
     init {
         scope.launch {
             combine(ha.entities, ha.connected, _roomConfigs) { e, c, _ -> e to c }
@@ -453,9 +467,42 @@ class AppHomeRepository(
         // Limit hieu dung: co dien -> backupSoc; mat dien -> overdischarge_soc
         val effectiveLimit = if (gridOn) backupSoc else overdischargeSoc
         // Hume goc: resting = power 0..5W -> khong hien thoi gian
-        val resting = battPowerW in 0.0..5.0
-        val discharging = battPowerW < 0.0
-        val charging = !resting && !discharging
+        val instResting = battPowerW in 0.0..5.0
+        val instDischarging = battPowerW < 0.0
+        // Debounce huong sac/xa 30s (user 10:54 18/11): sensor
+        // battery_power_flow doi dau moi 10-30s (history HA 18/11:
+        // -599..+193W) nen pill chay theo dau tuc thoi lat SAC/XA lien tuc
+        // — chi nhan huong moi khi no duy tri lien tuc >= 30s. Lan dau nhan
+        // ngay (khong de pill khoi dong o NGHI khi pin dang sac/xa).
+        // So lieu powerW/powerKw giu nguyen raw; chi 3 boolean duoi (dua vao
+        // batteryTimeCalc + runtimeText) va BatteryUi.debouncedDir dung huong
+        // da debounce.
+        val instDir = when {
+            instDischarging -> -1
+            instResting -> 0
+            else -> 1
+        }
+        val nowMs = System.currentTimeMillis()
+        if (!battDirInitialized) {
+            battDirStable = instDir
+            battDirCandidate = instDir
+            battDirCandidateSinceMs = nowMs
+            battDirInitialized = true
+        } else if (instDir == battDirStable) {
+            // Huong tuc thoi tro ve huong on dinh -> xoa candidate.
+            battDirCandidate = battDirStable
+            battDirCandidateSinceMs = nowMs
+        } else if (instDir == battDirCandidate) {
+            if (nowMs - battDirCandidateSinceMs >= 30_000L) {
+                battDirStable = battDirCandidate
+            }
+        } else {
+            battDirCandidate = instDir
+            battDirCandidateSinceMs = nowMs
+        }
+        val resting = battDirStable == 0
+        val discharging = battDirStable < 0
+        val charging = battDirStable > 0
         // (N-03, v70 — port iOS Hume/M3E/Tabs/BatteryTimeCalc.swift +
         // HomeBatteryCard.swift:55-63,88-101) Thoi gian sac/xa tinh local tu
         // BMS (Ah/A), KHONG dung sensor Solis nua: sensor.battery_time_to_full_2
@@ -500,8 +547,10 @@ class AppHomeRepository(
             lastBmsCurr = bmsCurr
         }
         val emaCurr = battCurrentEma ?: (bmsCurr ?: 0.0)
-        // Chieu sac/xa van lay theo Solis flowW nhu iOS (resting 0..5W,
-        // discharging < 0); chi dong + SOC + Ah + setting lay tu BMS.
+        // Chieu sac/xa lay theo Solis flowW nhu iOS (resting 0..5W,
+        // discharging < 0) NHUNG da debounce 30s o tren (charging /
+        // discharging o day la huong on dinh, khong phai tuc thoi); chi dong
+        // + SOC + Ah + setting lay tu BMS.
         val battTime = batteryTimeCalc(
             soc = bmsSoc,
             currentEma = emaCurr,
@@ -572,6 +621,7 @@ class AppHomeRepository(
                 endTime = endTime,
                 effectiveLimit = effectiveLimit,
                 overdischargeSoc = overdischargeSoc,
+                debouncedDir = battDirStable,
             ),
             alarm = alarm,
             lightsOn = lightsOn,

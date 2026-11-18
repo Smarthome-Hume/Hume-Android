@@ -22,11 +22,21 @@ data class BatteryUi(
     val effectiveLimit: Int = 20,
     /** Nguong ep xa khi mat dien (sensor.solis_s6_eh1p_overdischarge_soc_2). */
     val overdischargeSoc: Int = 5,
+    /**
+     * Huong sac/xa da debounce: 1 = sac, -1 = xa, 0 = nghi; null = chua
+     * debounce, dung powerW nhu cu. Sensor sensor.battery_power_flow doi
+     * dau moi 10-30s (history HA 18/11: -599..+193W) nen pill chay theo dau
+     * tuc thoi lat SAC/XA lien tuc — AppHomeRepository chi truyen huong moi
+     * vao day sau khi no duy tri lien tuc 30s (user 10:54 18/11).
+     * powerW/powerKw giu nguyen raw, chi pill + huong tinh gio doi theo nay.
+     */
+    val debouncedDir: Int? = null,
 ) {
     // Hume goc: resting = power 0..5W, discharging = power < 0, charging = power > 5W
-    val isResting: Boolean get() = powerW in 0.0..5.0
-    val isDischarging: Boolean get() = powerW < 0.0
-    val isCharging: Boolean get() = !isResting && !isDischarging
+    // Khi co debouncedDir thi dung no (da on dinh 30s); khi null giu nguyen logic cu.
+    val isResting: Boolean get() = debouncedDir?.let { it == 0 } ?: (powerW in 0.0..5.0)
+    val isDischarging: Boolean get() = debouncedDir?.let { it < 0 } ?: (powerW < 0.0)
+    val isCharging: Boolean get() = debouncedDir?.let { it > 0 } ?: (!isResting && !isDischarging)
     val statusText: String
         get() = when {
             isResting -> "NGHỈ"
