@@ -209,9 +209,9 @@ object M3ETokens {
          * chu (31,3dp) nen khong doi chieu cao the. */
         val SuggestCard: Dp = 24.dp
 
-        /** EnvTile: box 48dp / icon 24dp (khoi phuc tu 36/20 sau cat 18/11; iOS 48/24pt). */
-        val EnvTileBox: Dp = 48.dp
-        val EnvTile: Dp = 24.dp
+        /** EnvTile: box 44dp / icon 22dp (giam 6dp vong 18/11: 48/24 -> 44/22, ti le theo the 76->70dp). */
+        val EnvTileBox: Dp = 44.dp
+        val EnvTile: Dp = 22.dp
 
         /** Stepper (Solar) nut 32dp tron; StepperButton (Climate) 42dp. */
         val StepperButton: Dp = 32.dp
@@ -354,8 +354,8 @@ object M3ETokens {
         /** Khe tren tieu de "Thiet bi" (iOS 4pt). */
         val DevicesTitleGap: Dp = 4.dp
 
-        /** Padding EnvTile (iOS 14pt). Ti le 14/16sp = 0,88 (khac Ratio.CardPadding 1,00). */
-        val EnvTilePadding: Dp = 14.dp
+        /** Padding EnvTile (giam 6dp vong 18/11: 14->13dp; the 13+44+13 = 70dp). */
+        val EnvTilePadding: Dp = 13.dp
 
         /** Padding hop tren ClimateCard: ngang 16 / doc 14 (iOS). */
         val ClimatePaddingH: Dp = 16.dp

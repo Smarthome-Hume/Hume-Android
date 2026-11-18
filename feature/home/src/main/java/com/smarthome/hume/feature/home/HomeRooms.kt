@@ -730,14 +730,14 @@ private fun EnvTile(
         modifier = modifier
             .clip(RoundedCornerShape(M3ETokens.Corner.EnvTile)) // NGOAI LE: bo 30dp giu nguyen (iOS 24pt, audit 11.5)
             .background(cs.surfaceContainerHighest)
-            // (2026-11-18) Khoi phuc: padding EnvTile 8->14dp (iOS 14pt). Bo 30dp GIU NGUYEN.
+            // (2026-11-18) Giam 6dp: padding EnvTile 14->13dp (the 13+44+13 = 70dp). Bo 30dp GIU NGUYEN.
             .padding(M3ETokens.RoomSheet.EnvTilePadding),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    // (2026-11-18) Khoi phuc: vong tron icon EnvTile 36->48dp, icon 20->24dp (token).
+                    // (2026-11-18) Giam 6dp: vong tron icon EnvTile 48->44dp, icon 24->22dp (token).
                     .size(M3ETokens.Icon.EnvTileBox)
                     .clip(CircleShape)
                     .background(container),
