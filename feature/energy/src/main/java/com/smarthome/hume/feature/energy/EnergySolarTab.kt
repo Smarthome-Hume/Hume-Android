@@ -449,17 +449,19 @@ private fun Expander(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            // 2026-11-18 (user 09:47): boc mui ten trong nen tron tonal
-            // rieng (circle 36dp, surfaceContainer — mau tonal san co cua
-            // MaterialTheme, khong hardcode; icon Chevron 26dp giu
-            // nguyen -> padding 5dp moi ben) de nhin ro la nut bam.
-            // Chi boc nen, khong doi chuc nang expand/collapse hay
-            // icon mui ten; ca 2 Expander Sac/Xa dung chung cho nay.
+            // 2026-11-18 (user 10:34): boc mui ten trong nen VUONG BO TRON
+            // goc rieng (RoundedCornerShape Corner.Cell 16dp, thay cho
+            // CircleShape vong truoc; box 36dp, surfaceContainer — mau
+            // tonal san co cua MaterialTheme, khong hardcode; icon
+            // Chevron 26dp giu nguyen -> padding 5dp moi ben) de nhin ro
+            // la nut bam. Chi doi hinh dang boc nen, khong doi kich
+            // thuoc, mau, icon hay animation xoay 180 do; ca 2 Expander
+            // Sac/Xa dung chung cho nay.
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                     .background(MaterialTheme.colorScheme.surfaceContainer),
             ) {
                 MsIcon(
