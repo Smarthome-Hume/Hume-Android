@@ -207,18 +207,18 @@ object M3ETokens {
         /** SuggestCard icon (da cat 30->22dp vong truoc). */
         val SuggestCard: Dp = 22.dp
 
-        /** EnvTile: box 36dp / icon 20dp (da cat 48->36 / 24->20). */
-        val EnvTileBox: Dp = 36.dp
-        val EnvTile: Dp = 20.dp
+        /** EnvTile: box 48dp / icon 24dp (khoi phuc tu 36/20 sau cat 18/11; iOS 48/24pt). */
+        val EnvTileBox: Dp = 48.dp
+        val EnvTile: Dp = 24.dp
 
-        /** Stepper (Solar) nut 32dp tron; StepperButton (Climate) 34dp. */
+        /** Stepper (Solar) nut 32dp tron; StepperButton (Climate) 42dp. */
         val StepperButton: Dp = 32.dp
-        val ClimateStepperButton: Dp = 34.dp
-        val ClimateStepperIcon: Dp = 18.dp
+        val ClimateStepperButton: Dp = 42.dp
+        val ClimateStepperIcon: Dp = 22.dp
 
-        /** Nut nguon dieu hoa 40dp / icon 20dp (da cat 54->40 / 26->20). */
-        val ClimatePowerButton: Dp = 40.dp
-        val ClimatePowerIcon: Dp = 20.dp
+        /** Nut nguon dieu hoa 54dp / icon 26dp (khoi phuc tu 40/20 sau cat 18/11; iOS 54/26pt). */
+        val ClimatePowerButton: Dp = 54.dp
+        val ClimatePowerIcon: Dp = 26.dp
 
         /** Box icon chuan cac the (Expander / FlowNode / WaterSensor). */
         val IconBox: Dp = 44.dp
@@ -253,14 +253,19 @@ object M3ETokens {
 
     // ---------- minHeight nut & chip ----------
     object MinHeight {
-        /** Nut Huy / Xac nhan inline (da cat 40->32dp; iOS 40pt). */
-        val ConfirmCancelButton: Dp = 32.dp
+        /** Nut Huy / Xac nhan inline (khoi phuc tu 32dp sau cat 18/11; iOS 40pt). */
+        val ConfirmCancelButton: Dp = 40.dp
 
-        /** Chip MO/DONG DeviceRow (padding doc 4dp -> cao 21,4dp; iOS ~27,4pt). */
-        val OpenCloseChip: Dp = 21.4.dp
+        /**
+         * Chip MO/DONG DeviceRow (khoi phuc tu 21,4dp sau cat 18/11; iOS 27,4pt).
+         * DA NOI DAY 18/11: DeviceRow dung token nay qua heightIn(min) +
+         * padding doc [M3ETokens.RoomSheet.OpenCloseChipPaddingV] (7dp x 2 +
+         * LH 13,4 = 27,4dp) — khong con la token chet.
+         */
+        val OpenCloseChip: Dp = 27.4.dp
 
-        /** Chip che do ClimateMode (da cat 44->34dp; iOS 44pt). */
-        val ModeChip: Dp = 34.dp
+        /** Chip che do ClimateMode (khoi phuc tu 34dp sau cat 18/11; iOS 44pt). */
+        val ModeChip: Dp = 44.dp
     }
 
     // ---------- Chieu cao co dinh ----------
@@ -328,6 +333,122 @@ object M3ETokens {
         /** Gia tri PBox: 12/14,6 (thu tu 14sp; LH cu bi bop 17,1->15,5). */
         val PBoxValueSize: TextUnit = Text.PBoxValue.fontSize
         val PBoxValueLineHeight: TextUnit = Text.PBoxValue.lineHeight
+    }
+
+    // ---------- RoomSheet (the con trong sheet phong) — khoi phuc parity iOS ----------
+    //
+    // Muc dich (18/11): khoi phuc cac so iOS sau vong cat manh 36ea51c
+    // (EnvTile/DeviceRow/Climate/rua bat/den). KHONG doi [Spacing.Sm] (8dp,
+    // dung chung 17 cho trong feature/home) hay [Icon.IconBox] (44dp, dung
+    // chung 4 file energy) — moi so RoomSheet nam rieng o day.
+    // Can cu: `~/workspace/roomsheet-measure-2026-11-18.md` muc 6.1.
+    // Ratio.SectionGap (0,70) chi la san chong bop khe, KHONG tai tao duoc
+    // iOS o 3/4 khe muc (CardGap/ExpandedGap/GenericGap/DishwasherGap) —
+    // cac khe do dung so iOS truc tiep o day.
+    object RoomSheet {
+        /** Khe doc LazyColumn giua cac the con (iOS VStack spacing 12pt). */
+        val CardGap: Dp = 12.dp
+
+        /** Khe tren tieu de "Thiet bi" (iOS 4pt). */
+        val DevicesTitleGap: Dp = 4.dp
+
+        /** Padding EnvTile (iOS 14pt). Ti le 14/16sp = 0,88 (khac Ratio.CardPadding 1,00). */
+        val EnvTilePadding: Dp = 14.dp
+
+        /** Padding hop tren ClimateCard: ngang 16 / doc 14 (iOS). */
+        val ClimatePaddingH: Dp = 16.dp
+        val ClimatePaddingV: Dp = 14.dp
+
+        /** Khe giua 2 hop dieu hoa (iOS 10pt). */
+        val ClimateGap: Dp = 10.dp
+
+        /** Padding trong stepper nhiet do (iOS 6dp); khe giua cac nut stepper (iOS 12dp). */
+        val StepperPadding: Dp = 6.dp
+        val StepperGap: Dp = 12.dp
+
+        /** Padding ngang quanh so nhiet do stepper (iOS 8dp). */
+        val TempPaddingH: Dp = 8.dp
+
+        /** Padding doc DeviceRow (iOS 14pt; ngang 16dp giu nguyen). */
+        val DeviceRowPaddingV: Dp = 14.dp
+
+        /** Khe tren slot mo rong (iOS VStack spacing 12pt). */
+        val ExpandedGap: Dp = 12.dp
+
+        /** Khe giua cac dong GenericExpandedView (iOS 8pt). */
+        val GenericGap: Dp = 8.dp
+
+        /** Khe doc tong the rua bat (iOS 14pt). */
+        val DishwasherGap: Dp = 14.dp
+
+        /** Khe nhan -> so hero rua bat (iOS 2dp). */
+        val DishwasherHeroGap: Dp = 2.dp
+
+        /** Khe doc SegmentFlow rua bat (iOS 10pt). */
+        val DishwasherSegmentGap: Dp = 10.dp
+
+        /** Khe icon -> nhan trong 1 doan rua (iOS 6dp). */
+        val DishwasherSegmentLabelGap: Dp = 6.dp
+
+        /** Node tron 1 doan rua (iOS 24pt; icon 11dp giu nguyen). */
+        val DishwasherSegmentNode: Dp = 24.dp
+
+        /** Padding doc meta pill rua bat (iOS 8dp -> pill 33,1dp). */
+        val DishwasherMetaPillPaddingV: Dp = 8.dp
+
+        /** Khe khoi chuong trinh rua bat (iOS 10pt). */
+        val DishwasherProgramGap: Dp = 10.dp
+
+        /** Khe khoi nuoc mem / hen gio rua bat (iOS 10pt). */
+        val DishwasherSectionGap: Dp = 10.dp
+
+        /** Vong tron chuong trinh rua bat 56dp / icon 26dp (iOS). */
+        val DishwasherProgramCircle: Dp = 56.dp
+        val DishwasherProgramIcon: Dp = 26.dp
+
+        /** Khe icon -> nhan trong 1 item chuong trinh (iOS 4dp). */
+        val DishwasherProgramItemGap: Dp = 4.dp
+
+        /** Padding doc chip chuong trinh rua bat (iOS 4dp -> chip 25,1dp). */
+        val DishwasherProgramChipPaddingV: Dp = 4.dp
+
+        /** O tang cuong rua bat 76dp, vong tron trong 40dp, icon 18dp (iOS). */
+        val DishwasherBoost: Dp = 76.dp
+        val DishwasherBoostCircle: Dp = 40.dp
+        val DishwasherBoostIcon: Dp = 18.dp
+
+        /** Nut stepper rua bat 56dp / icon 20dp (iOS). */
+        val DishwasherStepper: Dp = 56.dp
+        val DishwasherStepperIcon: Dp = 20.dp
+
+        /** Nut nguon rua bat 56dp; nut Dung 60dp (iOS; icon 24dp giu nguyen). */
+        val DishwasherPower: Dp = 56.dp
+        val DishwasherStop: Dp = 60.dp
+
+        /** Padding doc nut Bat dau rua (iOS 16dp -> nut 49,1dp). */
+        val DishwasherStartPaddingV: Dp = 16.dp
+
+        /**
+         * Khe doc tong the den — GIU 8dp, LECH CO CHU Y so voi iOS 14pt.
+         * Slider M3 toi thieu 48dp (iOS ~31pt, +17dp) + khoi mau Android
+         * 2 hang (65dp vs iOS 1 hang ~32pt) da cong +47dp; khoi phuc khe
+         * 14 se day den len 199,7dp (+53 so voi iOS). Tong den co hieu ung
+         * sau sua: 187,7dp.
+         */
+        val LightGap: Dp = 8.dp
+
+        /** Khe trong khoi mau / khoi hieu ung den (iOS 8pt). */
+        val LightInnerGap: Dp = 8.dp
+
+        /** Padding doc chip hieu ung den (iOS 8dp -> chip 30,6dp). */
+        val LightEffectChipPaddingV: Dp = 8.dp
+
+        /** Padding nut Huy/Xac nhan: ngang 12 / doc 10 (iOS; nut 40dp). */
+        val ConfirmCancelPaddingH: Dp = 12.dp
+        val ConfirmCancelPaddingV: Dp = 10.dp
+
+        /** Padding doc chip MO/DONG (iOS 7dp x 2 + LH 13,4 = 27,4dp). */
+        val OpenCloseChipPaddingV: Dp = 7.dp
     }
 }
 
