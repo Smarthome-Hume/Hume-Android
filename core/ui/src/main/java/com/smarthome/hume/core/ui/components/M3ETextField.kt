@@ -23,8 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * O nhap lieu chuan M3E, dung thong nhat toan app.
@@ -59,7 +58,8 @@ fun M3ETextField(
 ) {
     val cs = MaterialTheme.colorScheme
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(20.dp)
+    // B-02: bo 20dp -> Corner.TextField (cung gia tri).
+    val shape = RoundedCornerShape(M3ETokens.Corner.TextField)
 
     Column(modifier = modifier) {
         if (label.isNotEmpty()) {
@@ -69,7 +69,7 @@ fun M3ETextField(
                 fontWeight = FontWeight.Bold,
                 color = cs.onSurfaceVariant,
                 maxLines = 1,
-                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                modifier = Modifier.padding(start = M3ETokens.Spacing.Xs, bottom = M3ETokens.Spacing.Sm),
             )
         }
         TextField(
@@ -79,8 +79,8 @@ fun M3ETextField(
                 .fillMaxWidth()
                 .onFocusChanged { focused = it.isFocused }
                 .border(
-                    width = if (focused) 2.dp else 1.dp,
-                    color = if (focused) cs.primary else cs.outlineVariant.copy(alpha = 0.45f),
+                    width = if (focused) M3ETokens.Border.Focused else M3ETokens.Border.Thin,
+                    color = if (focused) cs.primary else cs.outlineVariant.copy(alpha = M3ETokens.Alpha.Border),
                     shape = shape,
                 ),
             placeholder = if (placeholder.isNotEmpty()) {
@@ -108,9 +108,9 @@ fun M3ETextField(
                 errorIndicatorColor = Color.Transparent,
                 focusedTextColor = cs.onSurface,
                 unfocusedTextColor = cs.onSurface,
-                disabledTextColor = cs.onSurface.copy(alpha = 0.6f),
-                focusedPlaceholderColor = cs.onSurfaceVariant.copy(alpha = 0.55f),
-                unfocusedPlaceholderColor = cs.onSurfaceVariant.copy(alpha = 0.55f),
+                disabledTextColor = cs.onSurface.copy(alpha = M3ETokens.Alpha.DisabledText),
+                focusedPlaceholderColor = cs.onSurfaceVariant.copy(alpha = M3ETokens.Alpha.Placeholder),
+                unfocusedPlaceholderColor = cs.onSurfaceVariant.copy(alpha = M3ETokens.Alpha.Placeholder),
                 cursorColor = cs.primary,
                 focusedLeadingIconColor = cs.onSurfaceVariant,
                 unfocusedLeadingIconColor = cs.onSurfaceVariant,
