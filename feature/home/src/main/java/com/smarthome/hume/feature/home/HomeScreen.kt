@@ -485,14 +485,14 @@ private fun BoxScope.MorphLoaderIndicator(
 private fun M3ESnackbar(data: SnackbarData) {
     val cs = MaterialTheme.colorScheme
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(M3ETokens.Snackbar.Corner),
         color = cs.surfaceContainerHigh,
-        shadowElevation = 6.dp,
-        modifier = Modifier.heightIn(min = 48.dp),
+        shadowElevation = M3ETokens.Shadow.Snackbar,
+        modifier = Modifier.heightIn(min = M3ETokens.MinHeight.Snackbar),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            modifier = Modifier.padding(M3ETokens.Snackbar.Padding),
         ) {
             Text(
                 data.visuals.message,
