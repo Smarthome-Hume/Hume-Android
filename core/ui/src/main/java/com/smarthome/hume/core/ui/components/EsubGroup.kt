@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Nhom subtab kieu demo v4 (.esub/.dvsegi):
@@ -33,23 +33,24 @@ fun EsubGroup(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    /** Cho phep spec khac nhau giua cac tab (Dien: 12.5sp/700/pad 10-10; An ninh: 12sp/600/pad 8-10). */
-    fontSize: TextUnit = 12.5.sp,
+    /** Cho phep spec khac nhau giua cac tab (Dien: 12sp/700/pad 10-10; An ninh: 12sp/600/pad 8-10). */
+    // B-07 (Q4(b) lam tron): 12.5sp -> Text.BodySmall 12sp (DOI GIA TRI 12.5 -> 12sp).
+    fontSize: TextUnit = M3ETokens.Text.BodySmall.fontSize,
     fontWeight: FontWeight = FontWeight.Bold,
-    itemPadding: PaddingValues = PaddingValues(vertical = 10.dp, horizontal = 10.dp),
+    itemPadding: PaddingValues = PaddingValues(vertical = M3ETokens.Spacing.CardGap, horizontal = M3ETokens.Spacing.CardGap),
     /** Neu co: hien icon thay vi chu (vd camera picker khong du cho). */
     icons: List<String>? = null,
 ) {
-    val pill = RoundedCornerShape(999.dp)
+    val pill = RoundedCornerShape(M3ETokens.Corner.Pill)
     Row(
         modifier = modifier
             .clip(pill)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             // Tong chieu cao chuan 46dp (muc 23): min 46dp — padding/text
             // tieu chuan van du 46dp, noi dung lon hon thi tu gian (khong clip).
-            .heightIn(min = 46.dp)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+            .heightIn(min = M3ETokens.Height.EsubGroup)
+            .padding(M3ETokens.Spacing.Xs),
+        horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xxs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEachIndexed { i, label ->
@@ -72,7 +73,9 @@ fun EsubGroup(
                 ) {
                     val iconKey = icons?.getOrNull(i)
                     if (iconKey != null) {
-                        // Che do icon: hien icon thay chu
+                        // Che do icon: hien icon thay chu.
+                        // B-07: icon 22dp GIU NGUYEN literal — khong co token
+                        // icon 22dp chung; Icon.EnvTile (22dp) sai ngu nghia.
                         MsIcon(
                             iconKey,
                             contentDescription = label,
