@@ -42,6 +42,7 @@ import com.smarthome.hume.core.ui.components.M3EMotion
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * FAB speed-dial trang Nha theo demo v4 (.fabwrap/.fab/.fmi + .fabscrim):
@@ -115,15 +116,15 @@ fun HomeFabMenu(
         Spacer(Modifier.height(8.dp))
         // Trigger
         val radius by animateDpAsState(
-            targetValue = if (open) 28.dp else 16.dp,
+            targetValue = if (open) M3ETokens.Corner.Card else M3ETokens.Corner.Cell,
             animationSpec = tween(450, easing = M3EMotion.spring),
             label = "fabR",
         )
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(56.dp)
-                .shadow(8.dp, RoundedCornerShape(radius))
+                .size(M3ETokens.Height.Fab)
+                .shadow(M3ETokens.Shadow.Fab, RoundedCornerShape(radius))
                 .clip(RoundedCornerShape(radius))
                 .background(
                     if (open) cs.primary else cs.primaryContainer,
@@ -140,7 +141,7 @@ fun HomeFabMenu(
                 if (open) M3EIcons.Close else M3EIcons.Add,
                 contentDescription = null,
                 tint = if (open) cs.onPrimary else cs.onPrimaryContainer,
-                modifier = Modifier.size(if (open) 20.dp else 24.dp),
+                modifier = Modifier.size(if (open) M3ETokens.Icon.Small else M3ETokens.Icon.Standard),
             )
         }
     }
@@ -158,9 +159,9 @@ private fun FabMenuItem(
     val pressed by interaction.collectIsPressedAsState()
     Box(
         modifier = modifier
-            .height(56.dp)
-            .shadow(8.dp, RoundedCornerShape(28.dp))
-            .clip(RoundedCornerShape(28.dp))
+            .height(M3ETokens.Height.Fab)
+            .shadow(M3ETokens.Shadow.Fab, RoundedCornerShape(M3ETokens.Corner.Card))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(cs.primaryContainer)
             .clickable(
                 interactionSource = interaction,
@@ -172,13 +173,13 @@ private fun FabMenuItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = M3ETokens.Spacing.Xxl)
                 .align(Alignment.Center),
         ) {
             MsIcon(
                 icon, contentDescription = null,
                 tint = cs.onPrimaryContainer,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(M3ETokens.Icon.Standard),
             )
             Text(
                 label,
