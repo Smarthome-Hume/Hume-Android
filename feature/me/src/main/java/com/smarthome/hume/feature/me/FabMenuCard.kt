@@ -58,23 +58,23 @@ fun FabMenuCard(
 
     Box(
         modifier
-            .clip(RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(cs.surfaceContainerHigh)
             .clickable(interactionSource = interaction, indication = null) { showSheet = true }
-            .padding(20.dp),
+            .padding(M3ETokens.Spacing.Xl),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Lg),
         ) {
             Box(
                 Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .size(M3ETokens.Icon.IconBoxLarge)
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Cell))
                     .background(cs.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                MsIcon(M3EIcons.Fab, null, tint = cs.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                MsIcon(M3EIcons.Fab, null, tint = cs.onPrimaryContainer, modifier = Modifier.size(M3ETokens.Icon.Standard))
             }
             Column(Modifier.weight(1f)) {
                 Text(
@@ -89,7 +89,7 @@ fun FabMenuCard(
                     color = cs.onSurface,
                 )
             }
-            MsIcon(M3EIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            MsIcon(M3EIcons.ChevronRight, null, tint = cs.onSurfaceVariant, modifier = Modifier.size(M3ETokens.Icon.Small))
         }
     }
 
@@ -111,14 +111,14 @@ private fun FabMenuConfigSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 44.dp, topEnd = 44.dp),
+        shape = RoundedCornerShape(topStart = M3ETokens.Corner.SheetTop, topEnd = M3ETokens.Corner.SheetTop),
         containerColor = cs.surfaceContainerHigh,
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
+                .padding(horizontal = M3ETokens.Spacing.Xxl)
+                .padding(bottom = M3ETokens.Spacing.PageTop),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
