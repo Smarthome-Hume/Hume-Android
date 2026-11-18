@@ -808,6 +808,7 @@ private fun ClimateCard(
             .clip(RoundedCornerShape(M3ETokens.Corner.ClimateBox))
             .background(cs.surfaceContainerHighest)
             // (2026-11-18) Khoi phuc: padding doc 8->14dp, ngang 12->16dp (iOS 14/16pt).
+            // Giam 6dp vong 18/11: thu cum stepper 54->48dp + nut nguon 54->48dp, GIU padding 14dp (hop 14+48+14 = 76dp).
             .padding(horizontal = M3ETokens.RoomSheet.ClimatePaddingH, vertical = M3ETokens.RoomSheet.ClimatePaddingV),
     ) {
         Row(
@@ -855,7 +856,7 @@ private fun ClimateCard(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    // (2026-11-18) Khoi phuc: nut nguon dieu hoa 40->54dp, icon 20->26dp (token).
+                    // (2026-11-18) Giam 6dp: nut nguon dieu hoa 54->48dp, icon 26->24dp (token).
                     .size(M3ETokens.Icon.ClimatePowerButton)
                     .clip(CircleShape)
                     .background(if (c.isOn) cs.primaryContainer else cs.surfaceContainer)
@@ -898,7 +899,7 @@ private fun StepperButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             // (GAP-28) Port iOS HomeRooms.swift:580-592: nut stepper tron 42pt, icon 22.
-            // (2026-11-18) Khoi phuc: nut 34->42dp, icon 18->22dp (token).
+            // (2026-11-18) Giam 6dp: nut 42->36dp, icon 22->20dp (token); padding cum 6dp giu -> cum 36+12 = 48dp.
             .size(M3ETokens.Icon.ClimateStepperButton)
             .clip(CircleShape)
             .background(cs.surfaceContainerHighest)
@@ -950,7 +951,7 @@ private fun ClimateModeGroup(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(w)
-                    // (2026-11-18) Khoi phuc: chip che do 34->44dp (token).
+                    // (2026-11-18) Giam 6dp: chip che do 44->38dp (token); hop modes 14+38+14 = 66dp.
                     .height(M3ETokens.MinHeight.ModeChip)
                     .graphicsLayer(scaleX = scale, scaleY = scale)
                     .clip(RoundedCornerShape(18.dp))

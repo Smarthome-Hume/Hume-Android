@@ -213,14 +213,14 @@ object M3ETokens {
         val EnvTileBox: Dp = 44.dp
         val EnvTile: Dp = 22.dp
 
-        /** Stepper (Solar) nut 32dp tron; StepperButton (Climate) 42dp. */
+        /** Stepper (Solar) nut 32dp tron; StepperButton (Climate) 36dp (giam 6dp vong 18/11: 42->36). */
         val StepperButton: Dp = 32.dp
-        val ClimateStepperButton: Dp = 42.dp
-        val ClimateStepperIcon: Dp = 22.dp
+        val ClimateStepperButton: Dp = 36.dp
+        val ClimateStepperIcon: Dp = 20.dp
 
-        /** Nut nguon dieu hoa 54dp / icon 26dp (khoi phuc tu 40/20 sau cat 18/11; iOS 54/26pt). */
-        val ClimatePowerButton: Dp = 54.dp
-        val ClimatePowerIcon: Dp = 26.dp
+        /** Nut nguon dieu hoa 48dp / icon 24dp (giam 6dp vong 18/11: 54/26 -> 48/24). */
+        val ClimatePowerButton: Dp = 48.dp
+        val ClimatePowerIcon: Dp = 24.dp
 
         /** Box icon chuan cac the (Expander / FlowNode / WaterSensor). */
         val IconBox: Dp = 44.dp
@@ -266,8 +266,8 @@ object M3ETokens {
          */
         val OpenCloseChip: Dp = 27.4.dp
 
-        /** Chip che do ClimateMode (khoi phuc tu 34dp sau cat 18/11; iOS 44pt). */
-        val ModeChip: Dp = 44.dp
+        /** Chip che do ClimateMode (giam 6dp vong 18/11: 44->38dp; hop modes 14+38+14 = 66dp). */
+        val ModeChip: Dp = 38.dp
     }
 
     // ---------- Chieu cao co dinh ----------
