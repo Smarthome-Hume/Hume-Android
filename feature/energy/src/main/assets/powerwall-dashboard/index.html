@@ -1576,6 +1576,7 @@
 
     document.getElementById("btn-reset").addEventListener("click", function(){
       camera.position.copy(CAM0); controls.target.copy(TGT0); controls.update();
+      needRender = true; // v81 render-on-demand: reset camera → vẽ lại 1 frame
     });
 
     /* lift tween: ~1 s ease-in-out (accelerates, then settles gently),
@@ -1628,6 +1629,7 @@
       if (!w || !h) return;
       renderer.setSize(w, h, false);
       camera.aspect = w / h; camera.updateProjectionMatrix();
+      needRender = true; // v81 render-on-demand: resize đổi khung hình → vẽ lại 1 frame
     }
     if (window.ResizeObserver) new ResizeObserver(resize).observe(box);
     window.addEventListener("resize", resize);
@@ -1648,23 +1650,47 @@
       if (p <= 0) return ENTER_DROP;
       return ENTER_DROP * Math.pow(1 - p, 3);
     }
+    /* v81 render-on-demand (port iOS v81): rAF vẫn chạy mỗi frame
+       (callback rẻ) nhưng renderer.render CHỈ chạy khi có gì đổi —
+       camera (controls 'change': xoay/quay tự động/damping), entrance/lift
+       đang chạy, LED tick 250ms, hoặc cờ needRender (theme/label/resize/
+       reset). Trước đây render 60fps liên tục cả khi trang đứng yên →
+       GPU/CPU không nghỉ. LED thở: từ sin liên tục → tick 250ms (thở
+       chậm lại, vẫn thấy nhịp; chu kỳ 2.6s → ~10 mẫu/chu kỳ). */
+    var needRender = true; // frame đầu luôn vẽ
+    var lastLedMs = 0;
+    var LED_TICK_MS = 250;
+    controls.addEventListener("change", function(){ needRender = true; });
     (function loop(){
       requestAnimationFrame(loop);
       var t = (performance.now() - t0) / 1000;
       try {
         controls.update();
         var nowMs = performance.now();
-        order.forEach(function(k){
-          var g = groups[k];
-          /* vertical travel only — straight up / straight down on the Y
-             axis: no sideways drift, no sliding, no tilt or rotation.
-             v66 entrance: cộng thêm độ lệch rơi-vào (enterOffset) —
-             không chạm liftAt nên logic lift khi chọn pack giữ nguyên. */
-          g.position.y = g.userData.baseY + liftAt(g, nowMs) + enterOffset(g, nowMs);
-        });
-        if (runLedMat) runLedMat.emissiveIntensity = 2 + Math.sin(t * 2.4) * 0.7;
-        if (hoverDirty){ renderer.domElement.style.cursor = hoverKey ? "pointer" : "grab"; hoverDirty = false; }
-        renderer.render(scene, camera);
+        var animating = false;
+        for (var ai = 0; ai < order.length; ai++) {
+          var gg = groups[order[ai]];
+          if (enterOffset(gg, nowMs) !== 0) { animating = true; break; }
+          if (nowMs - gg.userData.liftStart < LIFT_MS) { animating = true; break; }
+        }
+        var ledDue = nowMs - lastLedMs >= LED_TICK_MS;
+        if (needRender || animating || ledDue) {
+          needRender = false;
+          order.forEach(function(k){
+            var g = groups[k];
+            /* vertical travel only — straight up / straight down on the Y
+               axis: no sideways drift, no sliding, no tilt or rotation.
+               v66 entrance: cộng thêm độ lệch rơi-vào (enterOffset) —
+               không chạm liftAt nên logic lift khi chọn pack giữ nguyên. */
+            g.position.y = g.userData.baseY + liftAt(g, nowMs) + enterOffset(g, nowMs);
+          });
+          if (ledDue) {
+            lastLedMs = nowMs;
+            if (runLedMat) runLedMat.emissiveIntensity = 2 + Math.sin(t * 2.4) * 0.7;
+          }
+          if (hoverDirty){ renderer.domElement.style.cursor = hoverKey ? "pointer" : "grab"; hoverDirty = false; }
+          renderer.render(scene, camera);
+        }
       } catch (err) { /* keep looping */ }
     })();
 
@@ -1675,9 +1701,15 @@
       scene.fog.color.set(bg);
       floor.material.color.set(floorC);
       wall.material.color.set(wallC);
+      needRender = true; // v81: màu scene đổi → vẽ lại 1 frame
     }
 
-    return { highlight: highlight, setTheme: setTheme, refreshLabel: refreshSideLabel };
+    /* v81: refreshLabel bọc thêm requestRender — refreshSideLabel nằm
+       ngoài initScene nên không thấy cờ needRender; nhãn đổi (dải điện
+       áp) phải vẽ lại 1 frame thì texture mới hiện. */
+    return { highlight: highlight, setTheme: setTheme,
+             refreshLabel: function(){ refreshSideLabel(); needRender = true; },
+             requestRender: function(){ needRender = true; } };
   }
 
   /* the V emblem is the REAL photo of the badge (user's image-218)
