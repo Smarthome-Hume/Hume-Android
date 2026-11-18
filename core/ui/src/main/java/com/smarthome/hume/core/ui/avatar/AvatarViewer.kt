@@ -52,6 +52,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.io.File
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.filterNotNull
@@ -181,10 +182,12 @@ fun AvatarViewerOverlay(
                 Modifier
                     .offset { localOffset }
                     .size(rectSize)
-                    .shadow(28.dp, CircleShape)
+                    // B-13: shadow 28dp -> Shadow.Avatar; border 1dp -> Border.Thin.
+                    // fontSize ti le 0.4x rectSize TUYET DOI KHONG DUNG (dung thiet ke).
+                    .shadow(M3ETokens.Shadow.Avatar, CircleShape)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), CircleShape)
+                    .border(M3ETokens.Border.Thin, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), CircleShape)
                     // Chan tap tren hinh tron: nhan vao avatar khong dong popup
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
