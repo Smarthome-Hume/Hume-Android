@@ -41,6 +41,7 @@ import com.smarthome.hume.core.ui.components.WavyBatteryBar
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.rememberHaptic
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -157,7 +158,12 @@ private fun InsightDeviceCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 popup.label,
-                style = MaterialTheme.typography.headlineSmall,
+                // Chuan hoa 18/11: title popup -> SheetTitle 24/29,3
+                // (20 -> 24sp; iOS headlineSmall 20pt — ghi nhan lech).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                ),
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),
             )
@@ -264,7 +270,12 @@ private fun InsightBatteryCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Pin lưu trữ",
-                style = MaterialTheme.typography.headlineSmall,
+                // Chuan hoa 18/11: title popup -> SheetTitle 24/29,3
+                // (20 -> 24sp; iOS headlineSmall 20pt — ghi nhan lech).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                ),
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),
             )
@@ -378,7 +389,12 @@ private fun InsightCostCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Chi tiết tiết kiệm",
-                style = MaterialTheme.typography.headlineSmall,
+                // Chuan hoa 18/11: title popup -> SheetTitle 24/29,3
+                // (20 -> 24sp; iOS headlineSmall 20pt — ghi nhan lech).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
                 modifier = Modifier.weight(1f),

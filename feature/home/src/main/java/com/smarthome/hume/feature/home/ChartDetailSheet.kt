@@ -49,6 +49,7 @@ import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.theme.LocalHumeExtraColors
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -148,7 +149,13 @@ fun ChartDetailSheet(
                                 Column {
                                     Text(
                                         if (type == ChartDetailType.Battery) "Hiệu năng pin" else "Điện mặt trời",
-                                        style = MaterialTheme.typography.headlineMedium,
+                                        // Chuan hoa 18/11: title sheet ->
+                                        // SheetTitle 24/29,3 (giu 24sp,
+                                        // chi LH 32 -> 29,3; iOS 24pt).
+                                        style = MaterialTheme.typography.headlineMedium.copy(
+                                            fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                                            lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                                        ),
                                         fontWeight = FontWeight.Medium,
                                         color = cs.onSurface,
                                     )
@@ -295,7 +302,13 @@ private fun ChartCard(
         ) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium,
+                // Chuan hoa 18/11: title khoi chart trong sheet ->
+                // SectionTitle 16/19,5 (giu 16sp, chi LH 24 -> 19,5;
+                // iOS M3EChartCard title = titleMedium 16pt).
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )

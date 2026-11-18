@@ -51,6 +51,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.components.riseIn
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.CancellationException
@@ -230,7 +231,14 @@ fun RoomMgmtHeader(
         ) {
             Text(
                 title,
-                fontSize = 18.sp,
+                // Chuan hoa 18/11: title trang (RoomMgmtHeader) ->
+                // PageTitle 20/24,4 (18 -> 20sp; truoc day hardcode,
+                // khong style). Phu: "Quan ly phong", "Them/Sua phong",
+                // "Phong", "Sensor nhiet do/do am", EntityPicker.
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = M3ETokens.Text.PageTitle.fontSize,
+                    lineHeight = M3ETokens.Text.PageTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onPrimaryContainer,
                 maxLines = 1,
@@ -348,7 +356,12 @@ fun RoomMgmtConfirmSheet(
         ) {
             Text(
                 title,
-                style = MaterialTheme.typography.headlineSmall,
+                // Chuan hoa 18/11: title dialog xac nhan -> SheetTitle
+                // 24/29,3 (20 -> 24sp).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
@@ -685,7 +698,12 @@ private fun RoomRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 room.name,
-                style = MaterialTheme.typography.titleMedium,
+                // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                // (giu 16sp, chi LH 24 -> 19,5).
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -950,7 +968,12 @@ private fun RoomSensorRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleMedium,
+                    // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                    // (giu 16sp, chi LH 24 -> 19,5).
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                        lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1012,7 +1035,12 @@ private fun DeviceRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 device.name.ifBlank { device.entityId },
-                style = MaterialTheme.typography.titleMedium,
+                // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                // (giu 16sp, chi LH 24 -> 19,5).
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

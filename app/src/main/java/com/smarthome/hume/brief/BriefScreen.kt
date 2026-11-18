@@ -66,6 +66,7 @@ import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.toSmartVndParts
 import com.smarthome.hume.core.ui.components.toVnd
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /** Trang Brief sang: mo bang vuot phai tren navbar, dong bang vuot phai->trai / nut back he thong. */
 @Composable
@@ -99,7 +100,17 @@ fun BriefScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brief", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, color = cs.onSurface)
+                    Text(
+                        "Brief",
+                        // Chuan hoa 18/11: title trang -> PageTitle 20/24,4
+                        // (24 -> 20sp).
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = M3ETokens.Text.PageTitle.fontSize,
+                            lineHeight = M3ETokens.Text.PageTitle.lineHeight,
+                        ),
+                        fontWeight = FontWeight.SemiBold,
+                        color = cs.onSurface,
+                    )
                     Spacer(Modifier.width(8.dp))
                     AiPill()
                 }
@@ -247,7 +258,16 @@ private fun BriefEmpty(onRefresh: () -> Unit, refreshing: Boolean, modifier: Mod
     ) {
         MsIcon(Ms.wb_sunny, contentDescription = null, tint = cs.onSurfaceVariant, modifier = Modifier.size(48.dp))
         Spacer(Modifier.height(12.dp))
-        Text("Chưa có bản brief", style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
+        Text(
+            "Chưa có bản brief",
+            // Chuan hoa 18/11: title empty-state -> SectionTitle 16/19,5
+            // (giu 16sp, chi LH 24 -> 19,5).
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+            ),
+            color = cs.onSurface,
+        )
         Spacer(Modifier.height(6.dp))
         Text(
             "Brief được tạo tự động lúc 6:00 sáng. Bạn cũng có thể tạo ngay bây giờ.",
@@ -307,7 +327,16 @@ private fun DailyContent(d: BriefDaily, onRequestLocation: () -> Unit, refreshin
                     MsIcon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(d.weather.conditionVi, style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
+                        Text(
+                            d.weather.conditionVi,
+                            // Chuan hoa 18/11: ten hang -> SectionTitle
+                            // 16/19,5 (giu 16sp, chi LH 24 -> 19,5).
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                                lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                            ),
+                            color = cs.onSurface,
+                        )
                         Text(
                             "${d.weather.tempMin}° – ${d.weather.tempMax}°C · Độ ẩm ${d.weather.humidity}%",
                             style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,

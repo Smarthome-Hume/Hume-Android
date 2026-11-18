@@ -53,13 +53,22 @@ object M3ETokens {
         val SectionTitle = M3ETextSpec(16.sp, 19.5.sp)
 
         /**
-         * Title TRANG (pill "Nang luong" EnergyScreen 20sp, Powerwall 18sp).
-         * Khong phai title the — chua co chuan rieng, ghi lai de worker sau
-         * quyet (audit muc 11.8). Tam giu 20/24,4 theo EnergyScreen hien tai.
+         * Title TRANG — CHOT 18/11 (vong audit title): moi title trang
+         * cung 20/24,4 — pill "Nang luong" 20, Powerwall 18->20, "Hi,"
+         * Home 22->20, "An ninh"/"Thong tin" 20, "Brief" 24->20,
+         * RoomMgmtHeader 18->20, Login 22->20. iOS: pill = cardTitle
+         * 20pt (khop), "Hi," = 22pt (lech, Android thong nhat 20
+         * theo lenh user: title trang Nang luong va trang Home cung co).
          */
         val PageTitle = M3ETextSpec(20.sp, 24.4.sp)
 
-        /** Title sheet (LightsSheet / ChartDetail / RoomSheet / EcoDialog). */
+        /**
+         * Title sheet / dialog (LightsSheet / ChartDetail / RoomSheet /
+         * EcoDialog / InsightPopup / dialog xac nhan / FontPickerSheet /
+         * FabMenuConfigSheet / PowerwallSettingsSheet). CHOT 18/11.
+         * Lech iOS ghi nhan: title InsightPopup iOS = headlineSmall
+         * 20pt, header SettingsSheet iOS = cardTitle 20pt.
+         */
         val SheetTitle = M3ETextSpec(24.sp, 29.3.sp)
 
         /** Body chinh. */
@@ -299,8 +308,15 @@ object M3ETokens {
     // ve gan iOS (bang doi chieu day du trong bao cao phan B).
     object CostCard {
         val CardCorner: Dp = Corner.CardLarge // 32dp
-        /** 1,00 x title 17 = 17dp. */
-        val ContentPadding: Dp = 17.dp
+        /**
+         * CHOT 18/11 (vong audit title): 20dp = Spacing.Xl, dong nhat
+         * moi the trong tab + iOS cardPadding 20pt (CostCard iOS dung
+         * mac dinh 20pt). Bo gia tri 17dp phan B (1,00 x title 17):
+         * quy tac ti le lay tu iOS 20/20 voi title iOS 20pt, trong khi
+         * padding iOS van 20pt — so tuyet doi iOS thang ti le. The
+         * cao them ~6dp (183,8 -> ~189,8dp), chap nhan de dong nhat.
+         */
+        val ContentPadding: Dp = Spacing.Xl // 20dp
 
         /** 0,60 x title 17 = 10,2 -> 10dp. */
         val TitleGap: Dp = 10.dp

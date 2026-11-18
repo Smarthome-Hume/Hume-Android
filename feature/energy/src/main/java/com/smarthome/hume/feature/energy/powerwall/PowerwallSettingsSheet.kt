@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlin.math.abs
 
 /**
@@ -169,7 +170,13 @@ private fun SettingsHeader(
         Spacer(Modifier.width(12.dp))
         Text(
             "Giới hạn sạc/xả",
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+            // Chuan hoa 18/11: title sheet -> SheetTitle 24/29,3
+            // (18 -> 24sp; iOS header nay = cardTitle 20pt — ghi nhan
+            // lech; icon box 44dp ap dao nen khong vo layout).
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+            ),
             fontWeight = FontWeight.SemiBold,
             color = cs.onSurface,
         )

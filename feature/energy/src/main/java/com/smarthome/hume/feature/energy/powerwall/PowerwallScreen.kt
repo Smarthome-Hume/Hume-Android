@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.M3EHeaderFade
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.delay
 import org.json.JSONObject
 
@@ -273,7 +274,12 @@ fun PowerwallScreen(
             ) {
                 Text(
                     "Powerwall",
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
+                    // Chuan hoa 18/11: title trang -> PageTitle 20/24,4
+                    // (18 -> 20sp; iOS cardTitle 20pt).
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = M3ETokens.Text.PageTitle.fontSize,
+                        lineHeight = M3ETokens.Text.PageTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                     color = cs.onPrimaryContainer,

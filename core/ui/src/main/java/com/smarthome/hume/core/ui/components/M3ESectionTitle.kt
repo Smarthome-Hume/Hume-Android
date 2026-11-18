@@ -8,10 +8,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Tieu de muc dung chung toan app (thay the SecTitle/SectionTitle rieng le
- * o Brief/Home/Me). Kieu titleMedium 16sp Bold, letterSpacing -0.1sp.
+ * o Brief/Home/Me). Kieu SectionTitle 16/19,5 Bold (chuan hoa 18/11:
+ * LH M3 24 -> 19,5), letterSpacing -0.1sp.
  */
 @Composable
 fun M3ESectionTitle(
@@ -20,7 +22,10 @@ fun M3ESectionTitle(
 ) {
     Text(
         text,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleMedium.copy(
+            fontSize = M3ETokens.Text.SectionTitle.fontSize,
+            lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+        ),
         fontWeight = FontWeight.Bold,
         letterSpacing = (-0.1).sp,
         color = MaterialTheme.colorScheme.onSurface,

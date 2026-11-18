@@ -104,6 +104,7 @@ import com.smarthome.hume.core.ui.components.MsIcon
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.pressMorph
 import com.smarthome.hume.core.ui.theme.M3ESeed
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -353,7 +354,12 @@ fun MeScreen(
                 // demo .phdr h2: 26px/700 ls -.3px
                 Text(
                     "Thông tin",
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                    // Chuan hoa 18/11: title trang -> PageTitle 20/24,4
+                    // (giu 20sp, chi LH 28 -> 24,4).
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = M3ETokens.Text.PageTitle.fontSize,
+                        lineHeight = M3ETokens.Text.PageTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -496,7 +502,12 @@ private fun FontCard(current: String, onOpen: () -> Unit) {
             Spacer(Modifier.height(2.dp))
             Text(
                 current,
-                style = MaterialTheme.typography.titleMedium,
+                // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                // (giu 16sp, chi LH 24 -> 19,5).
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )
@@ -539,7 +550,12 @@ private fun FontPickerSheet(
         ) {
             Text(
                 "Chọn font chữ",
-                style = MaterialTheme.typography.headlineSmall,
+                // Chuan hoa 18/11: title sheet -> SheetTitle 24/29,3
+                // (20 -> 24sp).
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -618,7 +634,12 @@ private fun FontRow(font: GoogleFontInfo, selected: Boolean, onSelect: () -> Uni
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     font.family,
-                    style = MaterialTheme.typography.titleMedium,
+                    // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                    // (giu 16sp, chi LH 24 -> 19,5).
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                        lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = if (selected) cs.onPrimaryContainer else cs.onSurface,
                 )
@@ -1192,7 +1213,12 @@ private fun RoomManagementCard(onOpen: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Quản lý phòng & thiết bị",
-                    style = MaterialTheme.typography.titleMedium,
+                    // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                    // (giu 16sp, chi LH 24 -> 19,5).
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                        lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )

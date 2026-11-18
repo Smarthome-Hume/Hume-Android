@@ -40,6 +40,7 @@ import com.smarthome.hume.core.datastore.FabMenuStore
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.launch
 
 /**
@@ -78,7 +79,12 @@ fun FabMenuCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     "FAB menu",
-                    style = MaterialTheme.typography.titleMedium,
+                    // Chuan hoa 18/11: ten hang -> SectionTitle 16/19,5
+                    // (giu 16sp, chi LH 24 -> 19,5).
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                        lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     color = cs.onSurface,
                 )
@@ -117,7 +123,12 @@ private fun FabMenuConfigSheet(
         ) {
             Text(
                 "FAB menu",
-                style = MaterialTheme.typography.titleLarge,
+                // Chuan hoa 18/11: title sheet -> SheetTitle 24/29,3
+                // (22 -> 24sp).
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                    lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                ),
                 fontWeight = FontWeight.SemiBold,
                 color = cs.onSurface,
             )

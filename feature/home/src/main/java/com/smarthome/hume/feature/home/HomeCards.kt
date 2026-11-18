@@ -241,12 +241,12 @@ fun HomeHeader(
             val name = state.userName.ifBlank { "Gia đình" }
             Text(
                 text = "Hi, $name",
-                // Token hoa 18/11: LH M3 28 -> tu nhien 22 x 1,219 = 26,8
-                // (titleLarge 22sp khong co TextSpec rieng).
+                // Chuan hoa 18/11: title trang 22 -> PageTitle 20/24,4
+                // (cung co voi pill "Nang luong"; iOS "Hi," 22pt — ghi
+                // nhan lech, Android thong nhat 20 theo lenh user).
                 style = MaterialTheme.typography.titleLarge.copy(
-                    lineHeight = M3ETokens.naturalLineHeight(
-                        MaterialTheme.typography.titleLarge.fontSize,
-                    ),
+                    fontSize = M3ETokens.Text.PageTitle.fontSize,
+                    lineHeight = M3ETokens.Text.PageTitle.lineHeight,
                 ),
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.2).sp,

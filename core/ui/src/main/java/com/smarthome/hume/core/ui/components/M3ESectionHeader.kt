@@ -15,12 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Header muc co action ben phai (vd "Xem tat ca").
  * Tach tu SecHeader (SecurityScreen.kt) de dung chung.
  *
- * @param title Tieu de muc (titleMedium Bold).
+ * @param title Tieu de muc (SectionTitle 16/19,5 Bold).
  * @param action Text action ben phai (labelMedium Bold, mau primary), null = an.
  * @param onAction Callback khi bam action.
  * @param actionLoading Hien loading thay cho action.
@@ -46,7 +47,10 @@ fun M3ESectionHeader(
     ) {
         Text(
             title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+            ),
             fontWeight = FontWeight.Bold,
             letterSpacing = (-0.1).sp,
         )

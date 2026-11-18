@@ -63,6 +63,7 @@ import com.smarthome.hume.core.ui.components.M3ESwitch
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 private val TokenEntryMode.label: String
     get() = when (this) {
@@ -143,7 +144,12 @@ fun LoginScreen(
                 M3ECard(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Kết nối Home Assistant",
-                        style = MaterialTheme.typography.titleLarge,
+                        // Chuan hoa 18/11: title trang dang nhap ->
+                        // PageTitle 20/24,4 (22 -> 20sp).
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = M3ETokens.Text.PageTitle.fontSize,
+                            lineHeight = M3ETokens.Text.PageTitle.lineHeight,
+                        ),
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.fillMaxWidth(),

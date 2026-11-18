@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.EsubGroup
 import com.smarthome.hume.core.ui.components.M3EHeaderFade
 import com.smarthome.hume.core.ui.components.rememberHaptic
+import com.smarthome.hume.core.ui.theme.M3ETokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -219,7 +220,12 @@ fun EnergyScreen(
             ) {
                 Text(
                     "Năng lượng",
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                    // Chuan hoa 18/11: title trang -> PageTitle 20/24,4
+                    // (giu 20sp, chi LH 28 -> 24,4).
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = M3ETokens.Text.PageTitle.fontSize,
+                        lineHeight = M3ETokens.Text.PageTitle.lineHeight,
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.3).sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,

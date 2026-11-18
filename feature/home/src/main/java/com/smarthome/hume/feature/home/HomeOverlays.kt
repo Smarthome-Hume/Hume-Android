@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.smarthome.hume.core.model.DeviceUi
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /** Sheet den dang sang — the noi giong RoomSheet/PackSheet (fix 3d): container M3 trong suot + RectangleShape, the cach deu 3 canh 8dp, bo 20dp ca 4 goc, top gap 183dp. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +99,13 @@ fun LightsSheet(
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     "${lights.size} đèn đang sáng",
-                                    style = MaterialTheme.typography.headlineMedium,
+                                    // Chuan hoa 18/11: title sheet (LightsSheet)
+                                    // -> SheetTitle 24/29,3 (giu 24sp, chi
+                                    // LH 32 -> 29,3).
+                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                        fontSize = M3ETokens.Text.SheetTitle.fontSize,
+                                        lineHeight = M3ETokens.Text.SheetTitle.lineHeight,
+                                    ),
                                     fontWeight = FontWeight.Medium,
                                     color = cs.onSurface,
                                 )
