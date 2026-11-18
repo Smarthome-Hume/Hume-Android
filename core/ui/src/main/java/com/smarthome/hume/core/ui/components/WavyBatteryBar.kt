@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Thanh pin M3E — port 1:1 tu iOS WavyBatteryBar.swift (ban chot, KHONG gap/marker):
@@ -119,8 +120,8 @@ fun WavyBatteryBar(
 
     val primary = MaterialTheme.colorScheme.primary
     val segmentBg = MaterialTheme.colorScheme.secondaryContainer // nen segment 0→limit
-    val trackColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f) // track nhat
-    val pill = RoundedCornerShape(50)
+    val trackColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = M3ETokens.Alpha.Track) // track nhat
+    val pill = RoundedCornerShape(M3ETokens.Corner.Pill)
 
     BoxWithConstraints(
         modifier = modifier

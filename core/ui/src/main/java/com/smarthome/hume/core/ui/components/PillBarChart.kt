@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Bieu do cot pill/capsule phong cach M3E (demo rev4):
@@ -33,7 +34,7 @@ fun PillBarChart(
     todayIndex: Int = values.size - 1,
 ) {
     val max = (values.maxOrNull() ?: 1f).coerceAtLeast(0.001f)
-    val pill = RoundedCornerShape(50)
+    val pill = RoundedCornerShape(M3ETokens.Corner.Pill)
     Column(modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
