@@ -23,6 +23,9 @@ import com.smarthome.hume.core.model.cameraKeyForSensor
 import com.smarthome.hume.core.model.FRIGATE_CAMERA_KEYS
 import com.smarthome.hume.core.model.cameraNameVi
 import com.smarthome.hume.core.model.frigateLabelVi
+import com.smarthome.hume.feature.energy.EnergyWatchedIds
+import com.smarthome.hume.feature.energy.HomeBatteryWatchedIds
+import com.smarthome.hume.feature.energy.powerwall.PowerwallLiveData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -178,7 +181,7 @@ class AppHomeRepository(
      * TempAlertWatcher chi watch cam bien nhiet/do am nen khong vuong.
      * GIU 2 flag BMS py_protection_flags / py_alarm_flags (tin hieu an
      * toan Pylontech frame 0x359, live = 0) — chung nam trong
-     * POWERWALL_ENTITY_IDS, khong co trong danh sach nay.
+     * PowerwallLiveData.entityIds, khong co trong danh sach nay.
      */
     private val excessSensorIds: Set<String> = setOf(
         "sensor.battery_time_to_full_2",
@@ -220,7 +223,7 @@ class AppHomeRepository(
         if (backgrounded) return buildCriticalOnlyIds(alwaysOn)
         val ids = HashSet(alwaysOn)
         if (activeTab == HumeTab.Energy) ids.addAll(buildEnergyIds())
-        if (powerwallOpen) ids.addAll(POWERWALL_ENTITY_IDS)
+        if (powerwallOpen) ids.addAll(PowerwallLiveData.entityIds)
         return ids
     }
 
@@ -248,29 +251,24 @@ class AppHomeRepository(
             .mapNotNull { it.powerEntity }
             .forEach { ids.add(it) }
         s.alarm?.let { ids.add(it.entityId) }
-        // The pin Home (port iOS HomeBatteryWatchedIds: 31 time-calc + 8
-        // Solis). PV + pin + limit hieu dung + 2 id doc chung voi tab
-        // Energy (chieu sac/xa + trang thai inverter).
-        ids.add(HumeConfig.PV_POWER); ids.add(HumeConfig.PV_TODAY)
-        ids.add(HumeConfig.BATTERY_SOC); ids.add(HumeConfig.BATTERY_POWER)
-        ids.add("sensor.battery_current_flow")
-        // (2026-10-22) Bo sensor.grid_status cu khoi watched: gridOn doc truc
-        // tiep status_string_3 (port iOS d8df5d3), khong con noi nao dung
-        // grid_status nua.
-        // Trang thai inverter Solis — bao mat dien phai realtime (port iOS 65fe551).
-        ids.add("sensor.solis_s6_eh1p_status_string_3")
-        // Backup SOC: the pin doc nhung truoc day quen watch -> gia tri stale
-        // tu luc mo app (nguyen nhan the pin mat cum thoi gian).
-        ids.add(HumeConfig.BACKUP_SOC)
-        // Nguong ep xa khi mat dien (port iOS f251d8e) + sensor trang thai inverter
+        // The pin Home (39 id, chu so huu: HomeBatteryWatchedIds — 31
+        // time-calc + 8 Solis: PV + pin + limit hieu dung + 2 id doc
+        // chung voi tab Energy (chieu sac/xa + trang thai inverter).
+        // Cong thuc thoi gian sac/xa doc BMS truc tiep (31 time-calc),
+        // khong dung sensor thoi gian Solis (da bo fallback o v70).
+        // (2026-10-22) Bo sensor.grid_status cu khoi watched: gridOn doc
+        // truc tiep status_string_3 (port iOS d8df5d3), khong con noi nao
+        // dung grid_status nua. Trang thai inverter Solis — bao mat dien
+        // phai realtime (port iOS 65fe551).
+        ids.addAll(HomeBatteryWatchedIds.all)
+        // Nguong ep xa khi mat dien, BAN SENSOR (port iOS f251d8e):
+        // buildState doc sensor.solis_s6_eh1p_overdischarge_soc_2 lam
+        // limit hieu dung khi mat dien. KHAC voi ban NUMBER cung ten
+        // (HomeBatteryWatchedIds.OVERDISCHARGE_SOC, dieu khien xa) —
+        // ban sensor KHONG co trong HomeBatteryWatchedIds.all (worker
+        // grab-bag chi giu ban number) nen them tay o day, keo khong
+        // roi bucket ONE_DAY dung luc mat dien.
         ids.add("sensor.solis_s6_eh1p_overdischarge_soc_2")
-        ids.add("sensor.solis_s6_eh1p_status_string_3")
-        // (N-03, v70 — port iOS PowerwallLiveData.timeCalcEntityIds, 31 entity)
-        // Cong thuc thoi gian sac/xa moi doc BMS truc tiep, khong dung sensor
-        // thoi gian cua Solis (da bo fallback) hay sensor nang luong SoH/DoD
-        // (cong thuc cu dung, gio khong con dung) nen khong watch 4 sensor
-        // do nua.
-        ids.addAll(BATTERY_TIME_CALC_ENTITY_IDS)
         // (Batch D, GAP-08 — port iOS RoomExpandedCards/DishwasherLiveManager)
         // Nhom may rua bat Texgio: khong watch -> roi bucket ONE_DAY, the
         // mo rong stale (trang thai/giai doan/con lai/nhiet do/chuong trinh
@@ -321,75 +319,15 @@ class AppHomeRepository(
 
     /**
      * Scope tab Nang luong (iOS §7.2): entity donut/cost/nuoc + flow +
-     * dieu khien sac/xa — CHI watch khi tab Nang luong mo. Donut dong
-     * (sensor _power/_power_2 + device_class=energy) quet tu cache qua
+     * dieu khien sac/xa — CHI watch khi tab Nang luong mo. Chu so huu:
+     * EnergyWatchedIds (50 id, gom ca WaterWatchedIds.all); lich su
+     * tung nhom (Flow E1, Batch A cost, Batch C nuoc RO, B1 sac/xa)
+     * xem KDoc o file do. Donut dong (sensor _power/_power_2 +
+     * device_class=energy) quet tu cache qua
      * [HomeAssistantRepository.energyDiscoveredIds].
      */
     private fun buildEnergyIds(): Set<String> {
-        val ids = HashSet<String>()
-        // Flow tab Dien: cac sensor cong suat thoi gian thuc (deu la sensor.*
-        // -> tu dong vao nhom telemetry 10s theo bucketFor). Truoc day thieu
-        // nen gia tri luoi/nha co the stale, gay bug "duong chay khi hien 0".
-        ids.add("sensor.aptomat_tong_power"); ids.add("sensor.cong_suat_nha")
-        ids.add("sensor.solis_s6_eh1p_pv_power_1_3")
-        ids.add("sensor.solis_s6_eh1p_pv_power_2_3")
-        ids.add("sensor.aptomat_t1_power"); ids.add("sensor.aptomat_t2_power")
-        ids.add("sensor.aptomat_t3_power")
-        ids.add("sensor.battery_current_flow"); ids.add("sensor.energy_home_daily")
-        ids.add("sensor.solis_s6_eh1p_today_battery_charge_energy_2")
-        // (2026-10-22, E1) Flow 4 node: truoc day thieu cac sensor nay trong
-        // watched -> roi bucket ONE_DAY, dong bang 24h trong khi node PV/Pin
-        // van nhay 10s -> 4 node sai lech nhau tren may that (iOS da fix o
-        // 3af820b, baseWatchedIds). Bo sung day du theo iOS:
-        ids.add("sensor.solis_s6_eh1p_meter_active_power")
-        ids.add("sensor.solis_s6_eh1p_household_load_power_2")
-        ids.add("sensor.solis_s6_eh1p_backup_load_power_2")
-        ids.add("sensor.solis_s6_eh1p_household_load_today_energy_2")
-        ids.add("sensor.solis_s6_eh1p_backup_load_today_energy_2")
-        ids.add("sensor.solis_s6_eh1p_today_battery_discharge_energy_2")
-        ids.add("sensor.aptomat_tong_daily")
-        // (Batch C, GAP-01 — port iOS EnergyWaterTab) Toan bo nhom nuoc RO
-        // con lai: khong watch -> roi bucket ONE_DAY, tab Nuoc stale.
-        // Bom binary_sensor.r_ro_m_01 da co o alwaysOn (Batch B), khong them trung.
-        ids.add("sensor.r_ro_m_01"); ids.add("sensor.r_ro_m_01_2")
-        ids.add("sensor.r_ro_m_01_4"); ids.add("sensor.r_ro_m_01_7")
-        ids.add("sensor.r_ro_m_01_8")
-        ids.add("binary_sensor.r_ro_m_01_2"); ids.add("binary_sensor.r_ro_m_01_3")
-        // (Batch A, GAP-05 — port iOS baseWatchedIds) Sensor chi phi ma
-        // AppEnergyRepository doc cho the Chi phi dien (grid_cost/home_cost/
-        // evn_current_unit_price): truoc day khong watch -> roi bucket
-        // ONE_DAY, gia/chi phi stale toi 24h sau khi HA doi.
-        ids.add("sensor.grid_cost"); ids.add("sensor.home_cost")
-        ids.add("sensor.evn_current_unit_price")
-        // (N-01 — port iOS baseWatchedIds) grid_import_billing la mau so
-        // cua gia mua dien (evnBuyRate); home_import_billing doi xung theo
-        // iOS. Khong watch -> rate stale toi 24h sau khi HA doi.
-        ids.add("sensor.grid_import_billing"); ids.add("sensor.home_import_billing")
-        // BatteryInfo (tab Dien mat troi + popup): dien ap + gioi han dong BMS.
-        ids.add("sensor.solis_s6_eh1p_battery_voltage_2")
-        ids.add("sensor.solis_s6_eh1p_battery_charge_current_limitation_bms_2")
-        ids.add("sensor.solis_s6_eh1p_battery_discharge_current_limitation_bms_2")
-        // (2026-10-22, B1) Toan bo entity dieu khien 2 expander Sac/Xa pin
-        // (specs trong AppEnergyRepository): truoc day chi co BACKUP_SOC duoc
-        // watch, con lai roi ONE_DAY -> bam Stepper/switch xong UI khong nhan
-        // state HA tra ve. iOS de ca nhom trong baseWatchedIds.
-        ids.add("switch.allow_grid_to_charge_the_battery_2")
-        ids.add("number.solis_s6_eh1p_battery_max_charge_current_2")
-        ids.add("number.solis_s6_eh1p_grid_time_of_use_charge_battery_current_slot_1_2")
-        ids.add("number.solis_s6_eh1p_grid_time_of_use_charge_cut_off_soc_slot_1_2")
-        ids.add("switch.grid_time_of_use_charging_period_1_2")
-        ids.add("time.solis_s6_eh1p_grid_time_of_use_charge_start_slot_1_2")
-        ids.add("time.solis_s6_eh1p_grid_time_of_use_charge_end_slot_1_2")
-        ids.add("number.solis_s6_eh1p_force_charge_soc_2")
-        ids.add("number.solis_s6_eh1p_battery_max_discharge_current_2")
-        ids.add("number.solis_s6_eh1p_off_grid_overdischarge_soc_2")
-        ids.add("number.solis_s6_eh1p_overdischarge_soc_2")
-        // Donut: 4 id map cung power -> energy (explicitEnergyMap cua
-        // AppEnergyRepository) + quet dong tu cache.
-        ids.add("sensor.air_condition_current_extrapolated_power")
-        ids.add("sensor.air_condition_daily_energy_ac")
-        ids.add("sensor.dieu_hoa_power")
-        ids.add("sensor.dieu_hoa_power_energy")
+        val ids = HashSet(EnergyWatchedIds.all)
         ids.addAll(ha.energyDiscoveredIds())
         return ids
     }
@@ -1140,76 +1078,10 @@ private val VI_NAME_DICT = listOf(
 // parseDurationToEndTime/durationToMinutes cu (chi phuc vu fallback sensor
 // Solis) da xoa theo — khong con noi nao dung.
 
-/** Setting BMS live tren master — port 1:1 iOS PowerwallLiveData.settingEntityIds
- * (11 entity). Dung chung cho ca POWERWALL_ENTITY_IDS (full, N-12) va
- * BATTERY_TIME_CALC_ENTITY_IDS (N-03). charge_voltage_limit da co trong
- * packKeys nen KHONG lap lai o day (nhu iOS). */
-private val POWERWALL_SETTING_ENTITY_IDS: List<String> = listOf(
-    "setting_charge_cv", "setting_cutoff_soc", "setting_cutoff_c_rate",
-    "setting_charge_limit_c_rate", "setting_discharge_cutoff_soc",
-    "setting_discharge_limit_c_rate", "setting_cell_max_volt",
-    "setting_cell_min_volt", "setting_cutoff_volt", "setting_undervoltage",
-    "py_chg_current_limit",
-).map { "sensor.powerwall_bms_master_$it" }
-
-/** Toan bo entity Powerwall can watch — port 1:1 iOS PowerwallLiveData.entityIds
- * (N-12, buoc bat buoc truoc khi mo trang Powerwall — N-02 port song song).
- * iOS HomeAssistantManager.rebuildWatchedSet §4f: ids.formUnion(entityIds).
- * Tong 205 entity duy nhat: 4 pack x 46 key (184) + master-only 4
- * (temp/cell max-min id) + system 6 (py_system_* + py_protection/alarm_flags)
- * + setting live 11. Pack 2 (slave 2 / BMS1) la slot de trong nen iOS khong
- * watch — copy nguyen, khong them pack_2. Luu y: "~220" trong mo ta gap chi
- * la uoc luong; dem dung tu code iOS la 205.
- * 31 entity cua BATTERY_TIME_CALC_ENTITY_IDS (N-03) la tap con cua set nay. */
-private val POWERWALL_ENTITY_IDS: List<String> = buildList {
-    // Key sensor dung chung cho moi pack — port iOS PowerwallLiveData.packKeys
-    // (46 key: 30 key co dinh + cell_1..cell_16).
-    val packKeys = listOf(
-        "soc", "soh", "voltage", "current",
-        "temp_avg", "temp_cell_1", "temp_cell_2", "temp_cell_3", "temp_max", "temp_min",
-        "cell_max", "cell_min", "cell_spread",
-        "status", "error_id", "output",
-        "full_charge_cap", "remaining_cap",
-        "charge_current_limit", "charge_voltage_limit", "discharge_current_limit",
-        "adc_battery_volt", "adc_fuse_volt", "adc_pack_volt",
-        "board_temp", "fet_temp", "charge_fet", "discharge_fet", "precharge_fet",
-        "firmware_version",
-    ) + (1..16).map { "cell_$it" }
-    for (p in listOf("master", "pack_1", "pack_3", "pack_4")) {
-        for (key in packKeys) add("sensor.powerwall_bms_${p}_$key")
-    }
-    // Master-only: id cua cell/temp cao-thap.
-    for (key in listOf("temp_max_cell_id", "temp_min_cell_id", "cell_max_id", "cell_min_id")) {
-        add("sensor.powerwall_bms_master_$key")
-    }
-    // System-level (inverter-facing, Pylontech).
-    for (key in listOf(
-        "py_system_soc", "py_system_soh", "py_system_voltage",
-        "py_system_current", "py_protection_flags", "py_alarm_flags",
-    )) {
-        add("sensor.powerwall_bms_master_$key")
-    }
-    addAll(POWERWALL_SETTING_ENTITY_IDS)
-}
-
-/** Entity toi thieu cho cong thuc thoi gian sac/xa — port 1:1 iOS
- * PowerwallLiveData.timeCalcEntityIds (31 thay vi 205 entity day du). */
-private val BATTERY_TIME_CALC_ENTITY_IDS: List<String> = buildList {
-    val mp = "sensor.powerwall_bms_master_"
-    add(mp + "py_system_soc"); add(mp + "py_system_voltage")
-    add(mp + "py_system_current"); add(mp + "cell_max")
-    for (p in listOf("master", "pack_1", "pack_3", "pack_4")) {
-        for (key in listOf(
-            "full_charge_cap", "remaining_cap",
-            "charge_current_limit", "discharge_current_limit"
-        )) {
-            add("sensor.powerwall_bms_${p}_$key")
-        }
-    }
-    // Setting BMS live tren master — dung chung POWERWALL_SETTING_ENTITY_IDS
-    // (port iOS PowerwallLiveData.settingEntityIds), khong lap lai literal.
-    addAll(POWERWALL_SETTING_ENTITY_IDS)
-}
+/** (v81 muc 7) Cac list BMS 205 / time-calc 31 / setting 11 truoc day
+ * nam o day da doi ve chu so huu: PowerwallLiveData.entityIds
+ * (205, feature/energy) + HomeBatteryWatchedIds.timeCalcIds (31).
+ * Store chi union, khong lap literal. */
 
 /** Setting BMS — so CHINH luon la live tu sensor setting_* (master).
  * Fallback duoi day = gia tri hardcode cu trong iOS, chi dung khi entity live
