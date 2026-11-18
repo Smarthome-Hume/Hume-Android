@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -505,6 +506,10 @@ fun SuggestCard(
     M3ECard(
         modifier = modifier
             .fillMaxWidth()
+            // (2026-11-19) Cao co dinh 62dp ca 2 truong hop (user 06:01
+            // "dong bo" + 06:02 "1 tip cung len 62dp"): chieu cao khong
+            // nhay khi so tip thay doi; noi dung can giua doc ben trong.
+            .height(62.dp)
             .graphicsLayer {
                 translationY = offsetYPx.value
                 scaleX = cardScale.value
@@ -559,9 +564,18 @@ fun SuggestCard(
         // + khe title->sub 1->2dp. Cot chu 30,2->31,3dp (van la thanh phan
         // cao nhat, nut 22,6dp + icon 24dp khong doi chieu cao).
         // The 1 tip 40,2->47,3dp; >1 tip 48,2->58,3dp.
+        // (2026-11-19) Dong bo ca 2 truong hop ve 62dp theo lenh user
+        // 06:01 + 06:02: the co dinh 62dp (height tren modifier), noi
+        // dung can giua doc — chieu cao khong nhay khi so tip thay doi.
+        // 1 tip 47,3->62dp, nhieu tip 58,3->62dp (dung 62,0dp ca 2).
         contentPadding = M3ETokens.Spacing.Sm,
     ) {
-        Column(Modifier.padding(horizontal = M3ETokens.Spacing.Xs)) {
+        Column(
+            Modifier
+                .padding(horizontal = M3ETokens.Spacing.Xs)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Center,
+        ) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth(),
@@ -608,6 +622,9 @@ fun SuggestCard(
                         // da dung o vong 44d50c2: spacer 10->6, khe hang 8->6).
                         // (2026-11-18) Cat MANH 04:30: khe 6->2dp.
                         // (2026-11-18) Tang lai 09:47: khe 2->4dp.
+                        // (2026-11-19) Giu 4dp: the da co dinh 62dp (user
+                        // 06:01+06:02), khe 8dp se lam noi dung nhieu tip
+                        // 46,3dp tran vung 46dp (62 - 16 padding).
                         .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
