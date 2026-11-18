@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -528,7 +527,21 @@ fun RoomSheet(
     val screenH = LocalConfiguration.current.screenHeightDp.dp
     val sheetMargin = M3ETokens.Spacing.Sm
     val topGap = M3ETokens.Height.SheetTopGap
-    val cardH = screenH - topGap - sheetMargin
+    // (18/11, user 11:25 + anh Phong tam: sheet cao co dinh thua ~275dp
+    // trang duoi hang cuoi) cardH cu = screenH - topGap - 8dp ep CUNG
+    // 641dp (S26U 832dp) bat ke noi dung: LazyColumn fillMaxSize trong
+    // the cao co dinh nen noi dung it van thua gan nua sheet trang.
+    // Do lai noi dung mau Phong tam (2 EnvTile 70dp + 2 DeviceRow 70dp):
+    // 93 (top inset = dai header) + 70 + 6 + 21,1 ("Thiet bi": pad 4dp +
+    // LH 17,1) + 6 + 70 + 6 + 70 + 24 (Spacer cuoi) = ~366dp — thua
+    // 641 - 366 = ~275dp, khop anh (trang thua ~1/2 sheet).
+    // FIX: maxCardH chi la TRAN (top gap 183dp GIU NGUYEN lam gioi han
+    // tren); the om noi dung nho heightIn(max) tren ca Box lan LazyColumn
+    // (LazyColumn khong fillMaxSize nua) — noi dung it thi the thap
+    // xuong, noi dung dai vuot tran thi LazyColumn cuon ben trong nhu cu.
+    // Khoang trong duoi noi dung cuoi = Spacer 24dp cuoi list (giu
+    // nguyen, nam trong khoang 16-24dp user chap nhan) + margin day 8dp.
+    val maxCardH = screenH - topGap - sheetMargin
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -551,25 +564,25 @@ fun RoomSheet(
         dragHandle = null,
     ) {
         Column(
-            Modifier
-                .fillMaxWidth()
-                .height(screenH - topGap),
+            Modifier.fillMaxWidth(),
         ) {
-            // The noi: rong = screenW - 2*8, cao = screenH - 124 - 8,
+            // The noi: rong = screenW - 2*8, cao = min(noi dung, maxCardH)
+            // (om noi dung, tran = screenH - 183 - 8 — xem maxCardH o tren),
             // bo 20dp CA 4 GOC (user chot 20:44, xem (fix 3d) o tren),
             // nen surfaceContainer.
             Box(
                 Modifier
                     .padding(horizontal = sheetMargin)
                     .fillMaxWidth()
-                    .height(cardH)
+                    .heightIn(max = maxCardH)
                     .clip(RoundedCornerShape(M3ETokens.Corner.SheetInner))
                     .background(cs.surfaceContainer),
             ) {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .heightIn(max = maxCardH)
                         .padding(horizontal = M3ETokens.Spacing.Xl),
                     // (N-07) Top inset 93dp (= dai header 25 GrabHandle +
                     // 56 header + 12 gap) de tile dau tien bat dau duoi
