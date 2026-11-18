@@ -59,7 +59,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
@@ -596,6 +595,12 @@ private fun Modifier.briefEdgeSwipe(
 }
 
 /**
+ * Nguong vuot mo Brief tren navbar (audit C-07): 80dp — hang so cu chi,
+ * khong phai token giao dien, khong dua vao [M3ETokens].
+ */
+private val NavbarSwipeThreshold = 80.dp
+
+/**
  * Navbar M3E theo demo v4 (.nav/.navit): FLOATING — cach 2 canh 16dp,
  * cach day 20dp, bo 34dp, nen surfaceLowest 98% + shadow (gan nhu dac,
  * M3E khong co thiet ke trong suot);
@@ -616,11 +621,11 @@ private fun M3ENavBar(
     // (nguyen tac dong tam: R_ngoai - R_active = khe giua 2 nen).
     // Android cu 34dp (= 20 + 14, khop khe tren/duoi cu 14dp nhung
     // lech khe canh 10dp). Sau khi giam chieu cao, khe tren/duoi =
-    // khe canh = 10dp nen R_ngoai = 30dp. Luu y: user noi nen active
-    // bo 16dp nhung code hien tai la RoundedCornerShape(20.dp) —
-    // lay so tu code (20dp); neu muon doi active ve 16dp thi
-    // R_ngoai phai tinh lai = 26dp.
-    val pill = RoundedCornerShape(30.dp)
+    // khe canh = 10dp nen R_ngoai = 30dp.
+    // (Q2 chot 10:47 18/11) Pill active GIU 20dp — giua 16/20/24 user
+    // chon giu 20dp (Navbar.ActiveCorner); comment cu noi "user bao
+    // R16" la sai so voi quyet nay, da sua cho khop.
+    val pill = RoundedCornerShape(M3ETokens.Navbar.OuterCorner)
     val np = rememberNeighborPress(navItems.size, 1.18f, 0.93f)
     val haptic = rememberHaptic()
     // Vuot ngang sang phai tren navbar -> mo trang Brief (2026-09-30, user
@@ -630,14 +635,14 @@ private fun M3ENavBar(
     // (haptic + press spring), nhung tryAwaitRelease tra ve false khi drag
     // vuot slop ngang -> np.release() tu huy, khong ket dinh trang thai.
     val openBriefState = rememberUpdatedState(onSwipeOpenBrief)
-    val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
+    val swipeThresholdPx = with(LocalDensity.current) { NavbarSwipeThreshold.toPx() }
     Box(
         modifier
             .fillMaxWidth()
             .navigationBarsPadding()
             // (2026-10-01, user: bo 20dp gap duoi navbar — "2 padding"
             // o sat bottom): navbar sat xuong, chi giu inset he thong.
-            .padding(start = 16.dp, end = 16.dp)
+            .padding(start = M3ETokens.Spacing.Lg, end = M3ETokens.Spacing.Lg)
             .pointerInput(Unit) {
                 var acc = 0f
                 detectHorizontalDragGestures(
@@ -697,7 +702,7 @@ private fun M3ENavBar(
                     label = "navW$i",
                 )
                 val iconSize by animateDpAsState(
-                    targetValue = if (isSel) 27.dp else 24.dp,
+                    targetValue = if (isSel) M3ETokens.Navbar.IconSelected else M3ETokens.Icon.Standard,
                     animationSpec = tween(300, easing = M3EMotion.spring),
                     label = "navI$i",
                 )
@@ -728,7 +733,7 @@ private fun M3ENavBar(
                                 onTap = { onSelect(i) },
                             )
                         }
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = M3ETokens.Spacing.Xs),
                 ) {
                     // Nen active bao ca icon lan chu (dang ban dau: highlight full-item).
                     // Icon luon hien; active -> fill dac.
@@ -745,7 +750,7 @@ private fun M3ENavBar(
                                     alpha = pillAlpha
                                 }
                                 .matchParentSize()
-                                .clip(RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(M3ETokens.Navbar.ActiveCorner))
                                 .background(
                                     when {
                                         isSel -> cs.primaryContainer
@@ -756,7 +761,7 @@ private fun M3ENavBar(
                         )
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
+                            modifier = Modifier.padding(top = M3ETokens.Spacing.Sm, bottom = 6.dp),
                         ) {
                             MsIcon(
                                 item.icon, item.tab.label,
@@ -765,11 +770,15 @@ private fun M3ENavBar(
                                 filled = isSel,
                                 modifier = Modifier.size(iconSize),
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(M3ETokens.Spacing.Xs))
                             Text(
                                 item.tab.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                lineHeight = 13.sp,
+                                // (Q1a) Label 11sp: noi ve Text.ChipText 11/13,4 —
+                                // LH 13 -> 13,4sp (+0,4sp, theo 1,219x).
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = M3ETokens.Text.ChipText.fontSize,
+                                    lineHeight = M3ETokens.Text.ChipText.lineHeight,
+                                ),
                                 fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
                                 color = if (isSel) cs.onSurface
                                 else cs.onSurfaceVariant,
