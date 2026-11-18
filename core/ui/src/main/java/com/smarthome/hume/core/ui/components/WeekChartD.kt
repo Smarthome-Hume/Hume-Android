@@ -65,7 +65,7 @@ fun WeekChartD(
     val range = (maxValue - minValue).coerceAtLeast(0.01f)
     val avg = vals.average().toFloat()
     // Mau kinh mo: surface trong suot 70% — khong vien, khong shadow cung
-    val glassBg = cs.surface.copy(alpha = 0.72f)
+    val glassBg = cs.surface.copy(alpha = M3ETokens.Alpha.Glass)
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
@@ -90,7 +90,7 @@ fun WeekChartD(
             val yPx = avgY.toPx()
             val marginPx = 20.dp.toPx() * sx
             drawLine(
-                color = cs.onSurfaceVariant.copy(alpha = 0.7f),
+                color = cs.onSurfaceVariant.copy(alpha = M3ETokens.Alpha.ChartLabel),
                 start = Offset(marginPx, yPx),
                 end = Offset(size.width - marginPx, yPx),
                 strokeWidth = 1.5.dp.toPx(),
@@ -134,7 +134,7 @@ fun WeekChartD(
                     .offset(x = x(i) - bw / 2, y = top + (baseH - animH))
                     .width(bw)
                     .height(animH)
-                    .clip(RoundedCornerShape(50))
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Pill))
                     .background(barColor)
                     .pointerInput(i) {
                         detectTapGestures(onTap = {
@@ -153,7 +153,7 @@ fun WeekChartD(
                 ) {
                     Box(
                         modifier = Modifier
-                            .shadow(M3ETokens.Spacing.Sm, CircleShape)
+                            .shadow(M3ETokens.Shadow.Small, CircleShape)
                             .clip(CircleShape)
                             .background(cs.surfaceContainerHigh)
                             .padding(
@@ -184,7 +184,8 @@ fun WeekChartD(
                     .align(Alignment.TopEnd)
                     .offset(y = (avgY - 22.dp).coerceAtLeast(0.dp))
                     .padding(end = M3ETokens.Spacing.Xs)
-                    .clip(RoundedCornerShape(M3ETokens.Spacing.Sm))
+                    // B-10/A-22: bo 8dp dung Corner.Tiny, khong muon Spacing.Sm lam bo.
+                    .clip(RoundedCornerShape(M3ETokens.Corner.Tiny))
                     .background(glassBg)
                     .padding(horizontal = M3ETokens.Spacing.Sm, vertical = 3.dp),
             ) {
