@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.smarthome.hume.core.ui.components.M3ECardGap
 import com.smarthome.hume.core.ui.components.M3EIcons
 import com.smarthome.hume.core.ui.components.M3ESectionTitle
 import com.smarthome.hume.core.ui.components.M3ETextField
@@ -547,7 +546,7 @@ fun RoomManagementScreen(
             contentPadding = PaddingValues(
                 start = 18.dp, end = 18.dp, top = 6.dp, bottom = 24.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(M3ECardGap),
+            verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap),
         ) {
             itemsIndexed(rooms, key = { _, room -> room.id }) { index, room ->
                 key(swipeResetKey) {
@@ -789,7 +788,7 @@ fun RoomDetailScreen(
             contentPadding = PaddingValues(
                 start = 18.dp, end = 18.dp, top = 6.dp, bottom = 24.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(M3ECardGap),
+            verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap),
         ) {
             // N-11: section Sensor (port iOS RoomDetailEditView) — truoc section Thiet bi.
             item {
@@ -1227,7 +1226,7 @@ fun RoomEditScreen(
             contentPadding = PaddingValues(
                 start = 18.dp, end = 18.dp, top = 6.dp, bottom = 24.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(M3ECardGap),
+            verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap),
         ) {
             saveError?.let { message ->
                 item { Text(message, color = cs.error) }

@@ -40,7 +40,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarthome.hume.core.ui.theme.M3ETokens
-import com.smarthome.hume.core.ui.components.M3ECardGap
 import com.smarthome.hume.core.ui.components.M3ETextField
 import com.smarthome.hume.core.ui.components.Ms
 import com.smarthome.hume.core.ui.components.MsIcon
@@ -280,7 +279,7 @@ fun DeviceEditScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(M3ECardGap),
+                verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.CardGap),
             ) {
                 saveError?.let { Text(it, color = cs.error) }
                 MgmtSectionHeader("THIẾT BỊ")
@@ -468,7 +467,7 @@ fun EntityPickerScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(Modifier.height(M3ECardGap))
+            Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
             if (initialSelection.isNotEmpty()) {
                 Box(
                     modifier = Modifier
@@ -498,7 +497,7 @@ fun EntityPickerScreen(
                         )
                     }
                 }
-                Spacer(Modifier.height(M3ECardGap))
+                Spacer(Modifier.height(M3ETokens.Spacing.CardGap))
             }
             // Danh sach trong 1 the 28dp; dong bo 20dp, dong dang chon
             // nen primaryContainer + check trong vong tron.

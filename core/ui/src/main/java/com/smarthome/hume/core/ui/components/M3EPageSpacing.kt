@@ -11,16 +11,9 @@ import com.smarthome.hume.core.ui.theme.M3ETokens
  * Cắt dưới iOS theo lệnh user 22:03: 14 -> 10dp (khe giữa các thẻ ngắn hơn chuẩn iOS).
  *
  * B-09: gia tri chuan CHI nam o [M3ETokens.Spacing.CardGap] (10dp).
- * [M3ECardGap] chi con la alias de tuong thich — 2 file feature
- * (DeviceEdit.kt, RoomManagement.kt) van import no truc tiep, nam NGOAI
- * pham vi worker B (chi sua core/ui). Worker A migrate 2 file do sang
- * [M3ETokens.Spacing.CardGap] roi moi xoa alias nay.
+ * Alias cu [M3ECardGap] da xoa (vong chuan hoa 18/11): DeviceEdit.kt va
+ * RoomManagement.kt da migrate sang dung thang token.
  */
-@Deprecated(
-    "Dung M3ETokens.Spacing.CardGap thay the",
-    ReplaceWith("M3ETokens.Spacing.CardGap", "com.smarthome.hume.core.ui.theme.M3ETokens"),
-)
-val M3ECardGap = M3ETokens.Spacing.CardGap
 
 /**
  * Scroll-end clearance for the four tab pages that sit beneath the floating navbar.

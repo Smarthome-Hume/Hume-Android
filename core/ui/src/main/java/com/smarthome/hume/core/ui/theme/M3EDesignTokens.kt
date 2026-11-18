@@ -163,10 +163,10 @@ object M3ETokens {
         val PageTop: Dp = 32.dp
 
         /**
-         * Khe giua cac the. GIA TRI MIRROR cua `M3ECardGap` trong
-         * `core/ui/.../components/M3EPageSpacing.kt` (10dp, user cat
-         * 14->10 ngay 22/03) — gia tri chuan van nam o do, day chi la
-         * ban ghi de token file day du, khong dung thay the.
+         * Khe giua cac the (10dp, user cat 14->10 ngay 22/03).
+         * Gia tri chuan nam o day; `m3eScreenBottomPadding()` trong
+         * `M3EPageSpacing.kt` dung thang token nay (alias cu `M3ECardGap`
+         * da xoa o vong chuan hoa 18/11).
          * iOS `M3ESpacing.cardGap` van 14pt (lech da co, chua quyet).
          */
         val CardGap: Dp = 10.dp
@@ -743,7 +743,7 @@ object M3ETokens {
 /**
  * NGOAI LE con ton tai (ghi lai de worker sau quyet, khong tu sua o day):
  * - `EnergyConsTab` Column spacedBy 14dp: ngoai le duy nhat giua cac tab,
- *   khong dung M3ECardGap 10dp (audit muc 5). Chi doi ve 10dp khi co lenh.
+ *   khong dung Spacing.CardGap 10dp (audit muc 5). Chi doi ve 10dp khi co lenh.
  * - EnvTile bo 30dp: xem [M3ETokens.Corner.EnvTile].
  * - Sheet Android bo 20dp vs iOS 60pt: co tinh khac (man Samsung bo ~22dp).
  * - The mo phong 3D, Slider do sang den, khoi mau den: LOAI TRU khoi
