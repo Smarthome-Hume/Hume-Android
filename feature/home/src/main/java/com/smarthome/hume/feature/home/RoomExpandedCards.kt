@@ -170,8 +170,8 @@ fun GenericExpandedView(
     val stateRaw = entityStates[device.entityId]?.state
         ?: if (device.isOn) "on" else "off"
     val entity = entityStates[device.entityId]
-    // (2026-11-18) Cat MANH: khe giua cac dong generic 8->4dp.
-    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs)) {
+    // (2026-11-18) Khoi phuc: khe giua cac dong generic 4->8dp (iOS 8pt).
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.GenericGap)) {
         ExpandedInfoRow(
             label = "Trạng thái",
             value = when (stateRaw) {
@@ -346,11 +346,11 @@ fun DishwasherExpandedView(
         if (!draggingSoft) softSlider = softLevel.toFloat().coerceIn(3f, 15f)
     }
 
-    // (2026-11-18) Cat MANH: khe doc tong the rua bat 14->8dp (-6dp/khe, ~9 khe).
-    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
+    // (2026-11-18) Khoi phuc: khe doc tong the rua bat 8->14dp (iOS 14pt).
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherGap)) {
         // Hero: trai = nhan + gio lon, phai = nhiet do + nhan.
         Row(verticalAlignment = Alignment.Top) {
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherHeroGap)) {
                 Text(
                     "Thời gian chu trình",
                     // (Viec 5) lineHeight tu nhien thay vi M3 16sp
@@ -378,7 +378,7 @@ fun DishwasherExpandedView(
             if (temp != null) {
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                    verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherHeroGap),
                 ) {
                     Text(
                         "$temp°C",
@@ -438,8 +438,8 @@ fun DishwasherExpandedView(
 
         // Hang chuong trinh kieu the an ninh: an tieu de bung 1 hang
         // ngang 6 icon (spring 0.45).
-        // (2026-11-18) Cat MANH: khe khoi chuong trinh 10->6dp.
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // (2026-11-18) Khoi phuc: khe khoi chuong trinh 6->10dp (iOS 10pt).
+        Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherProgramGap)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -463,8 +463,8 @@ fun DishwasherExpandedView(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(cs.primaryContainer)
-                        // (2026-11-18) Cat MANH: padding doc chip chuong trinh 4->3dp.
-                        .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = 3.dp),
+                        // (2026-11-18) Khoi phuc: padding doc chip chuong trinh 3->4dp (iOS 4dp -> chip 25,1dp).
+                        .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = M3ETokens.RoomSheet.DishwasherProgramChipPaddingV),
                 ) {
                     if (selectedProgram != null) {
                         Icon(
@@ -516,8 +516,8 @@ fun DishwasherExpandedView(
                         val known = prog.machineValue != null
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            // (2026-11-18) Cat MANH: khe icon-nhan chuong trinh 4->2dp.
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            // (2026-11-18) Khoi phuc: khe icon-nhan chuong trinh 2->4dp (iOS 4pt).
+                            verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherProgramItemGap),
                             modifier = Modifier
                                 .alpha(if (known) 1f else 0.4f)
                                 .clickable {
@@ -532,8 +532,8 @@ fun DishwasherExpandedView(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    // (2026-11-18) Cat MANH: vong tron chuong trinh 56->44dp, icon 26->20dp.
-                                    .size(M3ETokens.Icon.IconBox)
+                                    // (2026-11-18) Khoi phuc: vong tron chuong trinh 44->56dp, icon 20->26dp (iOS 56/26pt).
+                                    .size(M3ETokens.RoomSheet.DishwasherProgramCircle)
                                     .clip(CircleShape)
                                     .background(
                                         if (isCurrent) cs.primaryContainer
@@ -544,7 +544,7 @@ fun DishwasherExpandedView(
                                     prog.icon, null,
                                     tint = if (isCurrent) cs.onPrimaryContainer
                                     else cs.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(M3ETokens.RoomSheet.DishwasherProgramIcon),
                                 )
                             }
                             Text(
@@ -598,8 +598,8 @@ fun DishwasherExpandedView(
 
         // NUOC MEM: nhan + nut -/+ 56dp + slider 3–15, gui khi tha tay
         // qua number.set_value DP 106, hien thi "x/15".
-        // (2026-11-18) Cat MANH: khe khoi nuoc mem 10->6dp.
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // (2026-11-18) Khoi phuc: khe khoi nuoc mem 6->10dp (iOS 10pt).
+        Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherSectionGap)) {
             Text(
                 "NƯỚC MỀM",
                 // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp (-2,6dp):
@@ -682,8 +682,8 @@ fun DishwasherExpandedView(
         HorizontalDivider(thickness = 1.dp, color = cs.surfaceContainerHigh)
 
         // HEN GIO BAT DAU: chi nut -/+ buoc 1 gio, 0–1440 phut (DP 8).
-        // (2026-11-18) Cat MANH: khe khoi hen gio 10->6dp.
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // (2026-11-18) Khoi phuc: khe khoi hen gio 6->10dp (iOS 10pt).
+        Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherSectionGap)) {
             Text(
                 "HẸN GIỜ BẮT ĐẦU",
                 // (Viec 5) lineHeight tu nhien 13,4 thay vi M3 16sp (-2,6dp):
@@ -743,8 +743,8 @@ fun DishwasherExpandedView(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    // (2026-11-18) Cat MANH: nut nguon rua bat 56->44dp.
-                    .size(M3ETokens.Icon.IconBox)
+                    // (2026-11-18) Khoi phuc: nut nguon rua bat 44->56dp (iOS 56pt; icon 24 giu).
+                    .size(M3ETokens.RoomSheet.DishwasherPower)
                     .clip(CircleShape)
                     .background(
                         if (statusRaw != "Power_off") cs.primaryContainer
@@ -765,8 +765,8 @@ fun DishwasherExpandedView(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    // (2026-11-18) Cat MANH: nut Dung 60->44dp (-16dp hang nut).
-                    .size(M3ETokens.Icon.IconBox)
+                    // (2026-11-18) Khoi phuc: nut Dung 44->60dp (iOS 60pt; icon 24 giu).
+                    .size(M3ETokens.RoomSheet.DishwasherStop)
                     .clip(CircleShape)
                     .background(
                         if (running) cs.errorContainer
@@ -788,8 +788,8 @@ fun DishwasherExpandedView(
                     .clip(CircleShape)
                     .background(cs.primary)
                     .clickable { actions.onToggle(p.startSwitch) }
-                    // (2026-11-18) Cat MANH: padding doc nut Bat dau 16->10dp.
-                    .padding(vertical = M3ETokens.Spacing.RowGap),
+                    // (2026-11-18) Khoi phuc: padding doc nut Bat dau 10->16dp (iOS 16dp -> nut 49,1dp).
+                    .padding(vertical = M3ETokens.RoomSheet.DishwasherStartPaddingV),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -828,8 +828,8 @@ private fun DishwasherSegmentFlow(
     progress: Float,
 ) {
     val cs = MaterialTheme.colorScheme
-    // (2026-11-18) Cat MANH: khe doan rua 10->6dp.
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    // (2026-11-18) Khoi phuc: khe doan rua 6->10dp (iOS 10pt).
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherSegmentGap)) {
         // Thanh manh: nen + phan da chay (scale theo progress).
         Box(
             modifier = Modifier
@@ -851,8 +851,8 @@ private fun DishwasherSegmentFlow(
                 val done = i <= current && current >= 0
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    // (2026-11-18) Cat MANH: khe icon-nhan doan 6->4dp, icon 24->20dp.
-                    verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Xs),
+                    // (2026-11-18) Khoi phuc: khe icon-nhan doan 4->6dp (iOS 6pt; node 20->24dp, icon 11 giu).
+                    verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.DishwasherSegmentLabelGap),
                     modifier = Modifier.weight(1f),
                 ) {
                     // Moi buoc 1 icon; trang thai bang mau nen cham:
@@ -860,7 +860,7 @@ private fun DishwasherSegmentFlow(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(M3ETokens.RoomSheet.DishwasherSegmentNode)
                             .clip(CircleShape)
                             .background(
                                 if (done) cs.primary
@@ -901,14 +901,14 @@ private fun DishwasherMetaPill(icon: ImageVector, value: String) {
         modifier = Modifier
             .clip(CircleShape)
             .background(cs.surfaceContainerHigh)
-            .padding(horizontal = M3ETokens.Spacing.Md, vertical = 5.dp),
+            .padding(horizontal = M3ETokens.Spacing.Md, vertical = M3ETokens.RoomSheet.DishwasherMetaPillPaddingV),
     ) {
         Icon(icon, null, tint = cs.primary, modifier = Modifier.size(12.dp))
         Text(
             value,
             // (Viec 5) lineHeight tu nhien 17,1 thay vi M3 20sp (-2,9dp):
             // iOS labelLarge 14pt tu nhien; pill 36dp -> 33,1dp nhu iOS.
-            // (2026-11-18) Cat MANH: padding doc pill 8->5dp (pill 33,1->27,1dp).
+            // (2026-11-18) Khoi phuc: padding doc pill 5->8dp (pill 27,1->33,1dp, token).
             style = MaterialTheme.typography.labelLarge.copy(
                 fontSize = M3ETokens.Text.ButtonText.fontSize,
                 lineHeight = M3ETokens.Text.ButtonText.lineHeight,
@@ -936,8 +936,8 @@ private fun RowScope.DishwasherBoostButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .weight(1f)
-            // (2026-11-18) Cat MANH: o tang cuong 76->56dp (-20dp).
-            .height(56.dp)
+            // (2026-11-18) Khoi phuc: o tang cuong 56->76dp (iOS 76pt).
+            .height(M3ETokens.RoomSheet.DishwasherBoost)
             .clip(RoundedCornerShape(M3ETokens.Corner.Card))
             .background(if (isOn) cs.primaryContainer else cs.surfaceContainerHigh)
             .alpha(if (known) 1f else 0.5f)
@@ -947,15 +947,15 @@ private fun RowScope.DishwasherBoostButton(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                // (2026-11-18) Cat MANH: vong tron trong 40->32dp, icon 18->16dp.
-                .size(32.dp)
+                // (2026-11-18) Khoi phuc: vong tron trong 32->40dp, icon 16->18dp (iOS 40/18pt).
+                .size(M3ETokens.RoomSheet.DishwasherBoostCircle)
                 .clip(CircleShape)
                 .background(Color.White),
         ) {
             Icon(
                 icon, label,
                 tint = if (isOn) cs.primary else cs.onSurfaceVariant,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(M3ETokens.RoomSheet.DishwasherBoostIcon),
             )
         }
     }
@@ -971,14 +971,14 @@ private fun DishwasherStepperButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            // (2026-11-18) Cat MANH: nut stepper rua bat 56->44dp, icon 20->18dp.
-            .size(M3ETokens.Icon.IconBox)
+            // (2026-11-18) Khoi phuc: nut stepper rua bat 44->56dp, icon 18->20dp (iOS 56/20pt).
+            .size(M3ETokens.RoomSheet.DishwasherStepper)
             .clip(CircleShape)
             .background(cs.surfaceContainerHigh)
             .alpha(if (enabled) 1f else 0.4f)
             .clickable(enabled = enabled) { onClick() },
     ) {
-        Icon(icon, null, tint = cs.onSurface, modifier = Modifier.size(18.dp))
+        Icon(icon, null, tint = cs.onSurface, modifier = Modifier.size(M3ETokens.RoomSheet.DishwasherStepperIcon))
     }
 }
 
@@ -1121,9 +1121,10 @@ fun LightExpandedView(
         )
     }
 
-    // (2026-11-18) Cat MANH: khe doc tong the den 14->8dp. Hang Slider do
-    // sang KHONG DUNG (M3 min 48dp, can quyet rieng); khoi mau KHONG DUNG.
-    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm)) {
+    // (2026-11-18) GIU khe doc tong the den 8dp, LECH CO CHU Y so voi iOS 14pt:
+    // Slider M3 min 48dp (iOS ~31pt) + khoi mau 2 hang da cong +47dp; khe 14
+    // se day den len 199,7dp (+53 so voi iOS). Tong sau sua: 187,7dp.
+    Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.LightGap)) {
         // Do sang.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -1170,8 +1171,8 @@ fun LightExpandedView(
             )
         }
         // Mau sac — hue slider (track gradient) + mau hien tai.
-        // (2026-11-18) Cat MANH: khe khoi mau sac 8->5dp (khong dung khoi mau 32dp / hue 28dp).
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        // (2026-11-18) Khoi phuc: khe khoi mau sac 5->8dp (iOS 8pt; khoi mau 32dp / hue 28dp giu).
+        Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.LightInnerGap)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Màu sắc",
@@ -1229,8 +1230,8 @@ fun LightExpandedView(
         }
         // Hieu ung — hang chip cuon ngang (den ban ~150 chip -> LazyRow).
         if (effectList.isNotEmpty()) {
-            // (2026-11-18) Cat MANH: khe khoi hieu ung 8->5dp.
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            // (2026-11-18) Khoi phuc: khe khoi hieu ung 5->8dp (iOS 8pt).
+            Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.LightInnerGap)) {
                 Text(
                     "Hiệu ứng",
                     style = MaterialTheme.typography.bodyMedium.copy(lineHeight = M3ETokens.Text.Body.lineHeight),
@@ -1251,8 +1252,8 @@ fun LightExpandedView(
                                 .clickable {
                                     actions.onSetLightEffect(entityId, eff)
                                 }
-                                // (2026-11-18) Cat MANH: padding doc chip hieu ung 8->5dp (chip 30,6->24,6dp).
-                                .padding(horizontal = M3ETokens.Spacing.Md, vertical = 5.dp),
+                                // (2026-11-18) Khoi phuc: padding doc chip hieu ung 5->8dp (chip 24,6->30,6dp, iOS 30,6pt).
+                                .padding(horizontal = M3ETokens.Spacing.Md, vertical = M3ETokens.RoomSheet.LightEffectChipPaddingV),
                         ) {
                             Text(
                                 effectDisplay(eff),

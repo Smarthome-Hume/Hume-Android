@@ -577,8 +577,8 @@ fun RoomSheet(
                     // Bottom trong the = 0dp: noi dung cuoi cach day the
                     // 24dp nho item Spacer cuoi list.
                     contentPadding = PaddingValues(top = 93.dp, bottom = 0.dp),
-                    // (2026-11-18) Cat MANH: khe doc giua cac the con 12->8dp.
-                    verticalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
+                    // (2026-11-18) Khoi phuc: khe doc giua cac the con 8->12dp (iOS 12pt).
+                    verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.CardGap),
                 ) {
                 // 2 tile nhiet do / do am (.shenv .tile: khong press morph)
                 item {
@@ -614,8 +614,8 @@ fun RoomSheet(
                             ),
                             fontWeight = FontWeight.SemiBold,
                             color = cs.onSurface,
-                            // (2026-11-18) Cat MANH: khe tren tieu de 4->2dp.
-                            modifier = Modifier.padding(top = 2.dp),
+                            // (2026-11-18) Khoi phuc: khe tren tieu de 2->4dp (iOS 4pt).
+                            modifier = Modifier.padding(top = M3ETokens.RoomSheet.DevicesTitleGap),
                         )
                     }
                     items(room.devices, key = { it.entityId }) { d ->
@@ -730,14 +730,14 @@ private fun EnvTile(
         modifier = modifier
             .clip(RoundedCornerShape(M3ETokens.Corner.EnvTile)) // NGOAI LE: bo 30dp giu nguyen (iOS 24pt, audit 11.5)
             .background(cs.surfaceContainerHighest)
-            // (2026-11-18) Cat MANH: padding EnvTile 14->8dp (-12dp). Bo 30dp GIU NGUYEN.
-            .padding(M3ETokens.Spacing.Sm),
+            // (2026-11-18) Khoi phuc: padding EnvTile 8->14dp (iOS 14pt). Bo 30dp GIU NGUYEN.
+            .padding(M3ETokens.RoomSheet.EnvTilePadding),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    // (2026-11-18) Cat MANH: vong tron icon EnvTile 48->36dp, icon 24->20dp.
+                    // (2026-11-18) Khoi phuc: vong tron icon EnvTile 36->48dp, icon 20->24dp (token).
                     .size(M3ETokens.Icon.EnvTileBox)
                     .clip(CircleShape)
                     .background(container),
@@ -807,8 +807,8 @@ private fun ClimateCard(
             .alpha(dim)
             .clip(RoundedCornerShape(M3ETokens.Corner.ClimateBox))
             .background(cs.surfaceContainerHighest)
-            // (2026-11-18) Cat MANH: padding doc 14->8dp, ngang 16->12dp (-12dp).
-            .padding(horizontal = M3ETokens.Spacing.Md, vertical = M3ETokens.Spacing.Sm),
+            // (2026-11-18) Khoi phuc: padding doc 8->14dp, ngang 12->16dp (iOS 14/16pt).
+            .padding(horizontal = M3ETokens.RoomSheet.ClimatePaddingH, vertical = M3ETokens.RoomSheet.ClimatePaddingV),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -820,12 +820,12 @@ private fun ClimateCard(
             // :551 corner 18 — Android cu: khong spacing, padding 4, bo 16.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                // (2026-11-18) Cat MANH: khe stepper 12->8dp, padding 6->4dp.
-                horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Sm),
+                // (2026-11-18) Khoi phuc: khe stepper 8->12dp, padding 4->6dp (iOS 12/6pt).
+                horizontalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.StepperGap),
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(cs.surfaceContainer)
-                    .padding(M3ETokens.Spacing.Xs),
+                    .padding(M3ETokens.RoomSheet.StepperPadding),
             ) {
                 StepperButton(Icons.Outlined.Remove, enabled = c.isOn) {
                     haptic()
@@ -844,7 +844,7 @@ private fun ClimateCard(
                     color = cs.onSurface,
                     maxLines = 1,
                     softWrap = false,
-                    modifier = Modifier.padding(horizontal = M3ETokens.Spacing.Xs),
+                    modifier = Modifier.padding(horizontal = M3ETokens.RoomSheet.TempPaddingH),
                 )
                 StepperButton(Icons.Outlined.Add, enabled = c.isOn) {
                     haptic()
@@ -855,7 +855,7 @@ private fun ClimateCard(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    // (2026-11-18) Cat MANH: nut nguon dieu hoa 54->40dp, icon 26->20dp.
+                    // (2026-11-18) Khoi phuc: nut nguon dieu hoa 40->54dp, icon 20->26dp (token).
                     .size(M3ETokens.Icon.ClimatePowerButton)
                     .clip(CircleShape)
                     .background(if (c.isOn) cs.primaryContainer else cs.surfaceContainer)
@@ -872,8 +872,8 @@ private fun ClimateCard(
             }
         }
     }
-    // (2026-11-18) Cat MANH: khe 2 hop dieu hoa 10->6dp.
-    Spacer(Modifier.height(6.dp))
+    // (2026-11-18) Khoi phuc: khe 2 hop dieu hoa 6->10dp (iOS 10pt).
+    Spacer(Modifier.height(M3ETokens.RoomSheet.ClimateGap))
     // .ac-modes: surfaceHighest, bo 24px, padding 14px
     Box(
         modifier = Modifier
@@ -881,7 +881,7 @@ private fun ClimateCard(
             .alpha(dim)
             .clip(RoundedCornerShape(M3ETokens.Corner.ClimateBox))
             .background(cs.surfaceContainerHighest)
-            .padding(M3ETokens.Spacing.Sm),
+            .padding(M3ETokens.RoomSheet.ClimatePaddingV),
     ) {
         ClimateModeGroup(c = c, enabled = c.isOn, onMode = onMode)
     }
@@ -898,7 +898,7 @@ private fun StepperButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             // (GAP-28) Port iOS HomeRooms.swift:580-592: nut stepper tron 42pt, icon 22.
-            // (2026-11-18) Cat MANH: nut 42->34dp, icon 22->18dp.
+            // (2026-11-18) Khoi phuc: nut 34->42dp, icon 18->22dp (token).
             .size(M3ETokens.Icon.ClimateStepperButton)
             .clip(CircleShape)
             .background(cs.surfaceContainerHighest)
@@ -950,7 +950,7 @@ private fun ClimateModeGroup(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(w)
-                    // (2026-11-18) Cat MANH: chip che do 44->34dp (-10dp).
+                    // (2026-11-18) Khoi phuc: chip che do 34->44dp (token).
                     .height(M3ETokens.MinHeight.ModeChip)
                     .graphicsLayer(scaleX = scale, scaleY = scale)
                     .clip(RoundedCornerShape(18.dp))
@@ -1055,8 +1055,8 @@ fun DeviceRow(
                 onClick = null,
             )
             .background(cs.surfaceContainerHighest)
-            // (2026-11-18) Cat MANH: padding doc DeviceRow 14->8dp (-12dp).
-            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Sm),
+            // (2026-11-18) Khoi phuc: padding doc DeviceRow 8->14dp (iOS 14pt; ngang 16 giu).
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.RoomSheet.DeviceRowPaddingV),
     ) {
         // (GAP-29) Tap than the (hang header, ngoai cum icon+ten) huy
         // xac nhan — port iOS HomeRooms.swift:833-837. Tap vao cum
@@ -1091,8 +1091,8 @@ fun DeviceRow(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        // (2026-11-18) Cat MANH: icon thiet bi 48->36dp, glyph 24->20dp.
-                        .size(36.dp)
+                        // (2026-11-18) Khoi phuc: icon thiet bi 36->48dp, glyph 20->24dp (iOS 48/24pt).
+                        .size(M3ETokens.Icon.IconBoxLarge)
                         .clip(CircleShape)
                         .background(
                             if (d.isOn) cs.primaryContainer
@@ -1103,7 +1103,7 @@ fun DeviceRow(
                         d.iconKey, null,
                         tint = if (d.isOn) cs.onPrimaryContainer
                         else cs.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(M3ETokens.Icon.Standard),
                     )
                 }
                 Spacer(Modifier.width(13.dp))
@@ -1150,8 +1150,10 @@ fun DeviceRow(
                             if (contactOpen) cs.errorContainer
                             else cs.surfaceContainer,
                         )
-                        // (2026-11-18) Cat MANH: padding doc chip 7->4dp (chip 27,4->21,4dp).
-                        .padding(horizontal = 14.dp, vertical = M3ETokens.Spacing.Xs),
+                        // (2026-11-18) Khoi phuc: padding doc chip 4->7dp (chip 21,4->27,4dp, iOS 27,4pt);
+                        // token MinHeight.OpenCloseChip da duoc noi day qua heightIn(min) o duoi.
+                        .heightIn(min = M3ETokens.MinHeight.OpenCloseChip)
+                        .padding(horizontal = 14.dp, vertical = M3ETokens.RoomSheet.OpenCloseChipPaddingV),
                 ) {
                     Text(
                         if (contactOpen) "MỞ" else "ĐÓNG",
@@ -1214,7 +1216,7 @@ fun DeviceRow(
                             // iOS HomeRooms.swift:805 .frame(minHeight: 40)
                             // — Android cu: labelMedium 12/16 + padding 20
                             // = 36dp, thap hon iOS 4dp.
-                            // (2026-11-18) Cat MANH: minHeight 40->32dp, padding doc 10->6dp.
+                            // (2026-11-18) Khoi phuc: minHeight 32->40dp, padding doc 6->10dp (token).
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
@@ -1222,7 +1224,7 @@ fun DeviceRow(
                                     .clip(CircleShape)
                                     .background(cs.surfaceContainerHigh)
                                     .clickable { isConfirming = false }
-                                    .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = 6.dp),
+                                    .padding(horizontal = M3ETokens.RoomSheet.ConfirmCancelPaddingH, vertical = M3ETokens.RoomSheet.ConfirmCancelPaddingV),
                             ) {
                                 Text(
                                     "Hủy",
@@ -1241,7 +1243,7 @@ fun DeviceRow(
                             }
                             // Nut Xac nhan (do)
                             // iOS HomeRooms.swift:819 .frame(minHeight: 40).
-                            // (2026-11-18) Cat MANH: minHeight 40->32dp, padding doc 10->6dp.
+                            // (2026-11-18) Khoi phuc: minHeight 32->40dp, padding doc 6->10dp (token).
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
@@ -1252,7 +1254,7 @@ fun DeviceRow(
                                         isConfirming = false
                                         onToggle()
                                     }
-                                    .padding(horizontal = M3ETokens.Spacing.RowGap, vertical = 6.dp),
+                                    .padding(horizontal = M3ETokens.RoomSheet.ConfirmCancelPaddingH, vertical = M3ETokens.RoomSheet.ConfirmCancelPaddingV),
                             ) {
                                 Text(
                                     "Xác nhận",
@@ -1283,8 +1285,8 @@ fun DeviceRow(
                 exit = shrinkVertically(tween(700, easing = M3EMotion.spring)) +
                     fadeOut(tween(700, easing = M3EMotion.spring)),
             ) {
-                // (2026-11-18) Cat MANH: khe tren slot mo rong 12->6dp.
-                Column(modifier = Modifier.padding(top = 6.dp)) {
+                // (2026-11-18) Khoi phuc: khe tren slot mo rong 6->12dp (iOS 12pt).
+                Column(modifier = Modifier.padding(top = M3ETokens.RoomSheet.ExpandedGap)) {
                     expandedContent()
                 }
             }
