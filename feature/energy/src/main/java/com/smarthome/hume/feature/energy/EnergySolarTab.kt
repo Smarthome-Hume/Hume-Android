@@ -83,7 +83,9 @@ fun EnergySolarTab(
                 HorizontalBatteryIcon(
                     soc = state.battery.soc.roundToInt(),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(width = 28.dp, height = 16.dp),
+                    // (2026-11-18) Giam 6dp Expander: icon pin 28x16->26x15dp
+                    // (ti le theo box icon 44->40dp).
+                    modifier = Modifier.size(width = 26.dp, height = 15.dp),
                 )
             },
             title = "Sạc pin",
@@ -107,7 +109,9 @@ fun EnergySolarTab(
                 HorizontalBatteryIcon(
                     soc = state.battery.soc.roundToInt(),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(width = 28.dp, height = 16.dp),
+                    // (2026-11-18) Giam 6dp Expander: icon pin 28x16->26x15dp
+                    // (ti le theo box icon 44->40dp).
+                    modifier = Modifier.size(width = 26.dp, height = 15.dp),
                 )
             },
             title = "Xả pin",
@@ -397,22 +401,27 @@ private fun Expander(
             .clip(RoundedCornerShape(M3ETokens.Corner.CardLarge))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
+        // (2026-11-18) Giam 6dp Expander (user 18/11): header 80->74dp,
+        // thu deu theo ti le ~7,5%: box icon 44->40dp, icon pin 28x16->
+        // 26x15dp, title 17->16sp, subtitle 12->11sp, padding doc 18->
+        // 17dp. Cot chu moi 19,5+2+13,4=34,9dp < box 40dp nen header =
+        // 40+17x2=74dp; vung mo rong giu nguyen nen mo cung -6dp.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggle() }
-                .padding(horizontal = M3ETokens.Spacing.Xl, vertical = 18.dp),
+                .padding(horizontal = M3ETokens.Spacing.Xl, vertical = 17.dp),
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(M3ETokens.Icon.IconBox)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
             ) {
                 Box(
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(26.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     icon()
@@ -422,18 +431,19 @@ private fun Expander(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    // Title 17pt theo lenh user 18/11 (token CardTitle;
-                    // iOS SolisExpander dung titleSmall 14pt).
+                    // Title 16sp (SectionTitle) thay vi CardTitle 17sp —
+                    // thu theo ti le vong giam 6dp 18/11; subtitle 11sp.
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontSize = M3ETokens.Text.CardTitle.fontSize,
-                        lineHeight = M3ETokens.Text.CardTitle.lineHeight,
+                        fontSize = M3ETokens.Text.SectionTitle.fontSize,
+                        lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        lineHeight = M3ETokens.Text.BodySmall.lineHeight,
+                        fontSize = M3ETokens.Text.Caption.fontSize,
+                        lineHeight = M3ETokens.Text.Caption.lineHeight,
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
