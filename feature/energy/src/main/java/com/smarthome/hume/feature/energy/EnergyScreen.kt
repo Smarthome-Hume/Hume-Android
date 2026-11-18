@@ -61,19 +61,14 @@ fun solisStatusVN(raw: String): String {
 
 /**
  * Mau dot theo trang thai inverter (giong HA, port iOS f4a786b).
+ * (A-12) Uy thac ve ham chung [inverterStatusColor] — map hardcode cu
+ * (trung lap voi EnergyFlowCard) da xoa. Ham nay hien khong co caller
+ * trong repo (chi giu de tuong thich); mau that dung o EnergyFlowCard.
  */
-fun solisStatusColor(raw: String): androidx.compose.ui.graphics.Color {
-    return when (raw.lowercase().trim()) {
-        "generating" -> androidx.compose.ui.graphics.Color(0xFFF5B80B) // vang
-        "no grid" -> androidx.compose.ui.graphics.Color(0xFF8B5CF6) // tim
-        "waiting" -> androidx.compose.ui.graphics.Color(0xFF2DD4BF) // teal
-        "normal operation" -> androidx.compose.ui.graphics.Color(0xFFEF4444) // do
-        "bypass / inverting / running" -> androidx.compose.ui.graphics.Color(0xFFEC72A8) // hong
-        "bypass / inverting / synchronize" -> androidx.compose.ui.graphics.Color(0xFFA16207) // nau
-        "fault" -> androidx.compose.ui.graphics.Color(0xFFEF4444) // do
-        else -> androidx.compose.ui.graphics.Color(0xFF22C55E) // xanh la mac dinh
-    }
-}
+fun solisStatusColor(
+    raw: String,
+    cs: androidx.compose.material3.ColorScheme,
+): androidx.compose.ui.graphics.Color = inverterStatusColor(raw, cs)
 
 /**
  * Tab Dien: header + esub (Tieu thu / Dien mat troi) + noi dung theo demo v4 rev12.

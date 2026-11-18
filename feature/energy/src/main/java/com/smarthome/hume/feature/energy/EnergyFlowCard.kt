@@ -132,20 +132,23 @@ private fun hasPowerFlow(watts: Double): Boolean = watts.roundToInt() != 0
  */
 
 /** Dich trang thai inverter Solis sang tieng Viet (port iOS solisStatusVN). */
-private fun solisStatusVn(raw: String): Pair<String, Color> {
-    return when (raw.lowercase().trim()) {
-        "generating" -> "Đang phát điện" to Color(0xFFF5B80B)
-        "no grid" -> "Mất điện lưới" to Color(0xFF8B5CF6)
-        "waiting" -> "Đang chờ" to Color(0xFF2DD4BF)
-        "normal operation" -> "Hoạt động bình thường" to Color(0xFFEF4444)
-        "bypass / inverting / running" -> "Đang chạy bypass" to Color(0xFFEC72A8)
-        "bypass / inverting / synchronize" -> "Đang đồng bộ" to Color(0xFFA16207)
-        "fault" -> "Lỗi" to Color(0xFFEF4444)
-        "standby" -> "Chờ sẵn" to Color(0xFF22C55E)
+private fun solisStatusVn(raw: String, cs: androidx.compose.material3.ColorScheme): Pair<String, Color> {
+    // (A-12) Nhan tieng Viet giu nguyen tai day; mau lay tu ham chung
+    // [inverterStatusColor] (standby / khong ro -> xanh la nhu cu).
+    val label = when (raw.lowercase().trim()) {
+        "generating" -> "Đang phát điện"
+        "no grid" -> "Mất điện lưới"
+        "waiting" -> "Đang chờ"
+        "normal operation" -> "Hoạt động bình thường"
+        "bypass / inverting / running" -> "Đang chạy bypass"
+        "bypass / inverting / synchronize" -> "Đang đồng bộ"
+        "fault" -> "Lỗi"
+        "standby" -> "Chờ sẵn"
         // Trang thai la (ke ca "null" tu may) -> "Không rõ", khong hien gia
         // tri tho tieng Anh (port iOS M3EEnergyView.swift:31; rong -> "—").
-        else -> (if (raw.isEmpty()) "—" else "Không rõ") to Color(0xFF22C55E)
+        else -> if (raw.isEmpty()) "—" else "Không rõ"
     }
+    return label to inverterStatusColor(raw, cs)
 }
 
 // LineHeight chuan iOS (SwiftUI mac dinh = line height tu nhien cua
@@ -195,7 +198,7 @@ fun EnergyFlowCard(
                     // Bo chu thich "Dong chay thoi gian thuc" (2026-09-30, user yeu cau).
                     // Dong trang thai inverter (port iOS 007d8ce): doc tu sensor moi.
                     val invStatus = flow.inverterStatus
-                    val (statusText, statusColor) = solisStatusVn(invStatus)
+                    val (statusText, statusColor) = solisStatusVn(invStatus, MaterialTheme.colorScheme)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = M3ETokens.Spacing.Xs),
