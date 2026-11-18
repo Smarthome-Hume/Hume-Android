@@ -40,6 +40,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smarthome.hume.core.ui.components.M3EMotion
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Host cua trang Brief o tang root (2026-09-30: doi sang MO bang vuot ngang
@@ -188,7 +189,7 @@ fun BriefEdgeHost(
                 dismissButton = {
                     TextButton(onClick = { showLocSettings = false }) { Text("Để sau") }
                 },
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(M3ETokens.Corner.Dialog),
                 containerColor = mcs.surfaceContainerHigh,
                 titleContentColor = mcs.onSurface,
                 textContentColor = mcs.onSurfaceVariant,

@@ -394,6 +394,9 @@ fun MeScreen(
     if (showChooser) {
         AlertDialog(
             onDismissRequest = { showChooser = false },
+            // (C-13) Bo dialog tuong minh 28dp = Corner.Dialog (giu gia tri
+            // mac dinh M3).
+            shape = RoundedCornerShape(M3ETokens.Corner.Dialog),
             title = { Text("Đổi avatar") },
             text = {
                 Column {
@@ -440,6 +443,9 @@ fun MeScreen(
     if (showLogoutConfirm) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirm = false },
+            // (C-13) Bo dialog tuong minh 28dp = Corner.Dialog (giu gia tri
+            // mac dinh M3).
+            shape = RoundedCornerShape(M3ETokens.Corner.Dialog),
             title = { Text("Đăng xuất?") },
             text = { Text("App sẽ ngắt kết nối Home Assistant và quay về màn hình đăng nhập.") },
             confirmButton = {
