@@ -506,10 +506,10 @@ fun SuggestCard(
     M3ECard(
         modifier = modifier
             .fillMaxWidth()
-            // (2026-11-19) Cao co dinh 62dp ca 2 truong hop (user 06:01
-            // "dong bo" + 06:02 "1 tip cung len 62dp"): chieu cao khong
-            // nhay khi so tip thay doi; noi dung can giua doc ben trong.
-            .height(62.dp)
+            // (2026-11-19) Cao co dinh 70dp ca 2 truong hop (user 06:54
+            // "cho len 70dp"): chieu cao khong nhay khi so tip thay doi;
+            // noi dung can giua doc ben trong.
+            .height(70.dp)
             .graphicsLayer {
                 translationY = offsetYPx.value
                 scaleX = cardScale.value
