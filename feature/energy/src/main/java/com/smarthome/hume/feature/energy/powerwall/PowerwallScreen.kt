@@ -226,7 +226,9 @@ fun PowerwallScreen(
             },
             update = { webView ->
                 // Theme day ngay (hiem); data chi day khi payload doi that
-                // (ViewModel da throttle 2s + distinct — nhu iOS updateUIView).
+                // (ViewModel da sample 2s + distinct — nhu iOS updateUIView;
+                // payloadJson da duoc seed tu cache luc mo trang nen thuong
+                // co ngay truoc khi WebView load xong).
                 webView.setBackgroundColor(cs.surface.toArgb())
                 bridge.pushTheme(themeJson)
                 bridge.pushData(payloadJson)
@@ -376,10 +378,23 @@ private class PowerwallBridge(
         pushPending()
     }
 
-    /** Day data (chi khi doi that; ViewModel da throttle 2s). */
+    /** Day data (chi khi doi that; ViewModel da sample 2s + distinct). */
     fun pushData(dataJson: String?, onFirstApplied: (() -> Unit)? = null) {
         if (onFirstApplied != null) firstDataCallback = onFirstApplied
-        if (dataJson == null) return // Chua co data: giu callback, doi lan push sau.
+        if (dataJson == null) {
+            // (v81 seed) Data co the da duoc flush truoc do qua update()
+            // (payloadJson doi trong luc trang dang load) ma callback nay
+            // toi sau — onPageFinished goi pushData(null) vi gia tri
+            // payloadJson no thay la ban stale luc factory tao WebView.
+            // Trang da co so thi bao applied ngay, khoi cho push sau roi
+            // ket toi fallback 4s. Chua co data that (lastDataJson null)
+            // thi giu callback, doi lan push sau nhu cu.
+            if (isReady && lastDataJson != null) {
+                firstDataCallback?.invoke()
+                firstDataCallback = null
+            }
+            return
+        }
         if (dataJson == lastDataJson) {
             if (isReady) {
                 firstDataCallback?.invoke()

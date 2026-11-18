@@ -99,6 +99,10 @@ object PowerwallLiveData {
         addAll(settingEntityIds)
     }
 
+    /** Set tra cứu của [entityIds] (dùng cho `filterKeys` trong
+     * PowerwallViewModel — chỉ build payload khi đúng 205 entity này đổi). */
+    val entityIdsSet: Set<String> = entityIds.toSet()
+
     // MARK: - Payload {sys, packs} cho window.__humePowerwallLive
 
     /**
