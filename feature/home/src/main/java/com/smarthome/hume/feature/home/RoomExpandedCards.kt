@@ -1123,7 +1123,9 @@ fun LightExpandedView(
 
     // (2026-11-18) GIU khe doc tong the den 8dp, LECH CO CHU Y so voi iOS 14pt:
     // Slider M3 min 48dp (iOS ~31pt) + khoi mau 2 hang da cong +47dp; khe 14
-    // se day den len 199,7dp (+53 so voi iOS). Tong sau sua: 187,7dp.
+    // se day den len 199,7dp (+53 so voi iOS).
+    // Giam 6dp vong 18/11: khoi mau 68->62dp (cham 32->28, hue 28->26);
+    // tong khong hieu ung 124->118dp, co hieu ung 187,7->181,7dp.
     Column(verticalArrangement = Arrangement.spacedBy(M3ETokens.RoomSheet.LightGap)) {
         // Do sang.
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1184,7 +1186,8 @@ fun LightExpandedView(
                 val rgb = currentRgb()
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        // (2026-11-18) Giam 6dp: cham mau 32->28dp (token; khoi mau 68->62dp).
+                        .size(M3ETokens.RoomSheet.LightColorDot)
                         .clip(CircleShape)
                         .background(Color(rgb[0], rgb[1], rgb[2]))
                         .border(1.dp, cs.outlineVariant, CircleShape),
@@ -1193,7 +1196,8 @@ fun LightExpandedView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(28.dp)
+                    // (2026-11-18) Giam 6dp: thanh hue 28->26dp (token; khoi mau 68->62dp).
+                    .height(M3ETokens.RoomSheet.LightHueHeight)
                     .clip(CircleShape)
                     .background(
                         Brush.horizontalGradient(

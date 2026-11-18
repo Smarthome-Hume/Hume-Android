@@ -451,6 +451,14 @@ object M3ETokens {
         /** Khe trong khoi mau / khoi hieu ung den (iOS 8pt). */
         val LightInnerGap: Dp = 8.dp
 
+        /**
+         * Cham mau hien tai 28dp / thanh hue 26dp (giam 6dp vong 18/11:
+         * cham 32->28dp, hue 28->26dp; khoi mau 68->62dp).
+         * Token MOI — truoc day la literal trong khoi mau den.
+         */
+        val LightColorDot: Dp = 28.dp
+        val LightHueHeight: Dp = 26.dp
+
         /** Padding doc chip hieu ung den (iOS 8dp -> chip 30,6dp). */
         val LightEffectChipPaddingV: Dp = 8.dp
 
