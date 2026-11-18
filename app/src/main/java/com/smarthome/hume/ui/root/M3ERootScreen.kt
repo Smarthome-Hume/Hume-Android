@@ -709,12 +709,23 @@ private fun M3ENavBar(
                 // Bo shadow (2026-10-01): user "bo het shadow cho dong nhat".
                 .clip(pill)
                 // Navbar dac 0.98 (user 2026-10-02).
-                // Navbar = surfaceContainerHighest (phuong an A, user 18/11):
-                // trung nen the M3ECard — truoc day surfaceContainerLowest
-                // (theo iOS M3ERootView.swift:252). CHI DOI MAU NEN, khong
-                // dung hinh hoc navbar (pill R24 + dong tam la v82, lam sau).
-                // Seed Indigo: light F4F2EF -> FFFFFF, dark 06070D -> 1A203B.
-                .background(cs.surfaceContainerHighest.copy(alpha = 0.98f))
+                // Navbar = surfaceContainer (user 18/11 09:47: nen nam GIUA
+                // nen the va nen trang — KHOP quyet iOS "dam hon 1 nac"):
+                // midpoint 50/50 surfaceContainerHighest<->surface tren
+                // seed Indigo (tinh tu generator colorSchemeForCustom,
+                // float32 nhu Compose): light #FAFBFD vs the #FFFFFF =
+                // 1,04:1 — gan nhu khong thay (duoi nguong 1,05:1, giong
+                // iOS); dark #111527 vs the #1A203B = 1,13:1 (thay duoc
+                // nhung phai 1 quy tac chung 2 mode). surfaceContainer
+                // (light #F2F3F9 / dark #0F1222, token san co) vs the:
+                // 1,11:1 light / 1,16:1 dark — thay ro ca 2 mode.
+                // CHI DOI TOKEN, khong hardcode hex (M3EColorSchemes.kt
+                // la file generate, cam sua), khong dung hinh hoc navbar.
+                // LUU Y: nen pressed cua pill active cung la
+                // surfaceContainer (xem duoi) nen sau doi nay pill nhan
+                // se trung nen navbar — chi con scale/fade lam feedback;
+                // chua doi o vong nay, cho user phan.
+                .background(cs.surfaceContainer.copy(alpha = 0.98f))
                 // (navbar 21:24) Padding doc 10 -> 6dp: khe tren/duoi
                 // (nen active -> mep nen ngoai) cu = 10 (Row) + 4 (item)
                 // = 14dp, lon hon khe canh = 10dp (Row ngang). Giam de
