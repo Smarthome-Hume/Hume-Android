@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Connected button group single-select theo spec M3E (demo rev flow card):
@@ -39,11 +39,12 @@ fun <T> M3EConnectedButtonGroup(
     label: (T) -> String = { it.toString() },
     icon: ((T) -> String)? = null,
 ) {
-    val pill = RoundedCornerShape(50)
+    // B-06: pill percent 50 -> Corner.Pill (999dp, cung y "tron het co").
+    val pill = RoundedCornerShape(M3ETokens.Corner.Pill)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outline, pill)
+            .border(M3ETokens.Border.Thin, MaterialTheme.colorScheme.outline, pill)
             .clip(pill),
     ) {
         options.forEach { opt ->
@@ -57,7 +58,7 @@ fun <T> M3EConnectedButtonGroup(
                     .weight(1f)
                     .background(bg)
                     .clickable { onSelect(opt) }
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                    .padding(vertical = M3ETokens.Spacing.Md, horizontal = M3ETokens.Spacing.Sm),
             ) {
                 AnimatedVisibility(
                     visible = isSel,
@@ -67,7 +68,8 @@ fun <T> M3EConnectedButtonGroup(
                     MsIcon(
                         M3EIcons.Check,
                         null,
-                        modifier = Modifier.size(18.dp),
+                        // B-06/B-20: icon check 18dp -> Icon.XSmall 16dp (icon nho trong group; DOI GIA TRI 18 -> 16dp).
+                        modifier = Modifier.size(M3ETokens.Icon.XSmall),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                 }
@@ -76,8 +78,8 @@ fun <T> M3EConnectedButtonGroup(
                         it(opt),
                         null,
                         modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 4.dp),
+                            .size(M3ETokens.Icon.Small)
+                            .padding(end = M3ETokens.Spacing.Xs),
                         tint = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
