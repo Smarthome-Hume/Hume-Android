@@ -255,16 +255,16 @@ object M3ETokens {
 
     // ---------- minHeight nut & chip ----------
     object MinHeight {
-        /** Nut Huy / Xac nhan inline (khoi phuc tu 32dp sau cat 18/11; iOS 40pt). */
-        val ConfirmCancelButton: Dp = 40.dp
+        /** Nut Huy / Xac nhan inline (giam 6dp vong 18/11: 40->34dp; padding doc 10->9dp de noi dung 32,6dp < min 34dp). */
+        val ConfirmCancelButton: Dp = 34.dp
 
         /**
-         * Chip MO/DONG DeviceRow (khoi phuc tu 21,4dp sau cat 18/11; iOS 27,4pt).
-         * DA NOI DAY 18/11: DeviceRow dung token nay qua heightIn(min) +
-         * padding doc [M3ETokens.RoomSheet.OpenCloseChipPaddingV] (7dp x 2 +
-         * LH 13,4 = 27,4dp) — khong con la token chet.
+         * Chip MO/DONG DeviceRow (giam 6dp vong 18/11: 27,4->21,4dp).
+         * DeviceRow dung token nay qua heightIn(min) +
+         * padding doc [M3ETokens.RoomSheet.OpenCloseChipPaddingV] (4dp x 2 +
+         * LH 13,4 = 21,4dp).
          */
-        val OpenCloseChip: Dp = 27.4.dp
+        val OpenCloseChip: Dp = 21.4.dp
 
         /** Chip che do ClimateMode (giam 6dp vong 18/11: 44->38dp; hop modes 14+38+14 = 66dp). */
         val ModeChip: Dp = 38.dp
@@ -454,12 +454,12 @@ object M3ETokens {
         /** Padding doc chip hieu ung den (iOS 8dp -> chip 30,6dp). */
         val LightEffectChipPaddingV: Dp = 8.dp
 
-        /** Padding nut Huy/Xac nhan: ngang 12 / doc 10 (iOS; nut 40dp). */
+        /** Padding nut Huy/Xac nhan: ngang 12 / doc 9 (giam 6dp vong 18/11: doc 10->9dp; nut max(34; 9+14,6+9=32,6) = 34dp). */
         val ConfirmCancelPaddingH: Dp = 12.dp
-        val ConfirmCancelPaddingV: Dp = 10.dp
+        val ConfirmCancelPaddingV: Dp = 9.dp
 
-        /** Padding doc chip MO/DONG (iOS 7dp x 2 + LH 13,4 = 27,4dp). */
-        val OpenCloseChipPaddingV: Dp = 7.dp
+        /** Padding doc chip MO/DONG (giam 6dp vong 18/11: 7->4dp; chip 4+13,4+4 = 21,4dp). */
+        val OpenCloseChipPaddingV: Dp = 4.dp
     }
 }
 

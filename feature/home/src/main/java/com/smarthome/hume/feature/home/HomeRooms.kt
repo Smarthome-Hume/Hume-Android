@@ -1152,8 +1152,7 @@ fun DeviceRow(
                             if (contactOpen) cs.errorContainer
                             else cs.surfaceContainer,
                         )
-                        // (2026-11-18) Khoi phuc: padding doc chip 4->7dp (chip 21,4->27,4dp, iOS 27,4pt);
-                        // token MinHeight.OpenCloseChip da duoc noi day qua heightIn(min) o duoi.
+                        // (2026-11-18) Giam 6dp: padding doc chip 7->4dp (chip 21,4dp; token MinHeight.OpenCloseChip 27,4->21,4dp).
                         .heightIn(min = M3ETokens.MinHeight.OpenCloseChip)
                         .padding(horizontal = 14.dp, vertical = M3ETokens.RoomSheet.OpenCloseChipPaddingV),
                 ) {
@@ -1218,7 +1217,8 @@ fun DeviceRow(
                             // iOS HomeRooms.swift:805 .frame(minHeight: 40)
                             // — Android cu: labelMedium 12/16 + padding 20
                             // = 36dp, thap hon iOS 4dp.
-                            // (2026-11-18) Khoi phuc: minHeight 32->40dp, padding doc 6->10dp (token).
+                            // (2026-11-18) Giam 6dp: minHeight 40->34dp, padding doc 10->9dp (token);
+                            // nut max(34; 9+14,6+9=32,6) = 34dp, chu 12sp giu.
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
@@ -1245,7 +1245,7 @@ fun DeviceRow(
                             }
                             // Nut Xac nhan (do)
                             // iOS HomeRooms.swift:819 .frame(minHeight: 40).
-                            // (2026-11-18) Khoi phuc: minHeight 32->40dp, padding doc 6->10dp (token).
+                            // (2026-11-18) Giam 6dp: minHeight 40->34dp, padding doc 10->9dp (token); nut 34dp nhu nut Huy.
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
