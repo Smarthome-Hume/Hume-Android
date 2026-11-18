@@ -154,6 +154,11 @@ private fun themed(weight: FontWeight, name: String) = androidx.compose.ui.text.
 
 /** Dung Typography voi font tuy chon — gan cho TOAN BO text styles.
  *
+ * LineHeight = fontSize x 1,219 (line height tu nhien cua Montserrat,
+ * Q1(a) chot 18/11 — dong bo voi [M3ETokens.Text]; khong dung lineHeight
+ * mac dinh M3 1,33-1,5x). 361 call site dung `typography.*` tu theo,
+ * khong thay call site nao.
+ *
  * He thong chu M3E (Montserrat), dinh nghia day du de toan app dung chung
  * qua MaterialTheme.typography.* thay vi hardcode fontSize/fontWeight roi rac:
  * - Display: so lieu hero, tieu de cuc lon (57/700 da duyet).
@@ -168,77 +173,77 @@ fun humeTypography(fontName: String): Typography {
         displayLarge = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp,
+            fontSize = 57.sp, lineHeight = 69.5.sp, letterSpacing = (-0.25).sp,
         ),
         displayMedium = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 45.sp, lineHeight = 52.sp,
+            fontSize = 45.sp, lineHeight = 54.9.sp,
         ),
         displaySmall = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 36.sp, lineHeight = 44.sp,
+            fontSize = 36.sp, lineHeight = 43.9.sp,
         ),
         headlineLarge = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 32.sp, lineHeight = 40.sp,
+            fontSize = 32.sp, lineHeight = 39.0.sp,
         ),
         headlineMedium = TextStyle(
             fontFamily = family, fontWeight = FontWeight.Medium,
             fontFeatureSettings = "tnum",
-            fontSize = 24.sp, lineHeight = 32.sp,
+            fontSize = 24.sp, lineHeight = 29.3.sp,
         ),
         headlineSmall = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 20.sp, lineHeight = 28.sp,
+            fontSize = 20.sp, lineHeight = 24.4.sp,
         ),
         titleLarge = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 22.sp, lineHeight = 28.sp,
+            fontSize = 22.sp, lineHeight = 26.8.sp,
         ),
         titleMedium = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 16.sp, lineHeight = 24.sp,
+            fontSize = 16.sp, lineHeight = 19.5.sp,
         ),
         titleSmall = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 14.sp, lineHeight = 20.sp,
+            fontSize = 14.sp, lineHeight = 17.1.sp,
         ),
         bodyLarge = TextStyle(
             fontFamily = family, fontWeight = FontWeight.Medium,
             fontFeatureSettings = "tnum",
-            fontSize = 16.sp, lineHeight = 24.sp,
+            fontSize = 16.sp, lineHeight = 19.5.sp,
         ),
         bodyMedium = TextStyle(
             fontFamily = family, fontWeight = FontWeight.Medium,
             fontFeatureSettings = "tnum",
-            fontSize = 14.sp, lineHeight = 20.sp,
+            fontSize = 14.sp, lineHeight = 17.1.sp,
         ),
         bodySmall = TextStyle(
             fontFamily = family, fontWeight = FontWeight.Medium,
             fontFeatureSettings = "tnum",
-            fontSize = 12.sp, lineHeight = 16.sp,
+            fontSize = 12.sp, lineHeight = 14.6.sp,
         ),
         labelLarge = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 14.sp, lineHeight = 20.sp,
+            fontSize = 14.sp, lineHeight = 17.1.sp,
         ),
         labelMedium = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 12.sp, lineHeight = 16.sp,
+            fontSize = 12.sp, lineHeight = 14.6.sp,
         ),
         labelSmall = TextStyle(
             fontFamily = family, fontWeight = FontWeight.SemiBold,
             fontFeatureSettings = "tnum",
-            fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp,
+            fontSize = 11.sp, lineHeight = 13.4.sp, letterSpacing = 0.5.sp,
         ),
     )
 }
