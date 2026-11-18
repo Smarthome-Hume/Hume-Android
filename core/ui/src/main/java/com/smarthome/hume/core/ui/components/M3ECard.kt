@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * The chuan M3E Hume: 28dp, surfaceContainerHighest, khong border/shadow.
@@ -23,9 +25,10 @@ import androidx.compose.ui.unit.dp
 fun M3ECard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    shape: Shape = MaterialTheme.shapes.medium,
+    // B-01: shape mac dinh qua token (28dp = HumeShapes.medium cu) thay vi Shapes.
+    shape: Shape = RoundedCornerShape(M3ETokens.Corner.Card),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
-    contentPadding: Dp = 20.dp,
+    contentPadding: Dp = M3ETokens.Spacing.Xl,
     elevation: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
