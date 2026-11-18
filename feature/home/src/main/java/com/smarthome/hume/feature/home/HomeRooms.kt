@@ -1055,7 +1055,7 @@ fun DeviceRow(
                 onClick = null,
             )
             .background(cs.surfaceContainerHighest)
-            // (2026-11-18) Khoi phuc: padding doc DeviceRow 8->14dp (iOS 14pt; ngang 16 giu).
+            // (2026-11-18) Giam 6dp: padding doc DeviceRow 14->13dp (the 13+44+13 = 70dp; ngang 16 giu).
             .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.RoomSheet.DeviceRowPaddingV),
     ) {
         // (GAP-29) Tap than the (hang header, ngoai cum icon+ten) huy
@@ -1091,8 +1091,9 @@ fun DeviceRow(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        // (2026-11-18) Khoi phuc: icon thiet bi 36->48dp, glyph 20->24dp (iOS 48/24pt).
-                        .size(M3ETokens.Icon.IconBoxLarge)
+                        // (2026-11-18) Giam 6dp: icon thiet bi 48->44dp, glyph 24->22dp
+                        // (token rieng RoomSheet.DeviceRowIconBox/Icon — IconBoxLarge/Standard goc dung chung, khong doi).
+                        .size(M3ETokens.RoomSheet.DeviceRowIconBox)
                         .clip(CircleShape)
                         .background(
                             if (d.isOn) cs.primaryContainer
@@ -1103,7 +1104,7 @@ fun DeviceRow(
                         d.iconKey, null,
                         tint = if (d.isOn) cs.onPrimaryContainer
                         else cs.onSurfaceVariant,
-                        modifier = Modifier.size(M3ETokens.Icon.Standard),
+                        modifier = Modifier.size(M3ETokens.RoomSheet.DeviceRowIcon),
                     )
                 }
                 Spacer(Modifier.width(13.dp))

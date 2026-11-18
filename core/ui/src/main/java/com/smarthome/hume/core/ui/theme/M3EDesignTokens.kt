@@ -371,8 +371,17 @@ object M3ETokens {
         /** Padding ngang quanh so nhiet do stepper (iOS 8dp). */
         val TempPaddingH: Dp = 8.dp
 
-        /** Padding doc DeviceRow (iOS 14pt; ngang 16dp giu nguyen). */
-        val DeviceRowPaddingV: Dp = 14.dp
+        /** Padding doc DeviceRow (giam 6dp vong 18/11: 14->13dp; the 13+44+13 = 70dp; ngang 16dp giu nguyen). */
+        val DeviceRowPaddingV: Dp = 13.dp
+
+        /**
+         * Box icon / glyph rieng DeviceRow (giam 6dp vong 18/11: 48/24 -> 44/22).
+         * TACH MOI — khong doi [Icon.IconBoxLarge]/[Icon.Standard] goc vi
+         * dung chung: IconBoxLarge con dung o RoomCard (:202/:239) +
+         * BatteryCard, Standard con dung o RoomCard/RoomExpandedCards/energy.
+         */
+        val DeviceRowIconBox: Dp = 44.dp
+        val DeviceRowIcon: Dp = 22.dp
 
         /** Khe tren slot mo rong (iOS VStack spacing 12pt). */
         val ExpandedGap: Dp = 12.dp
