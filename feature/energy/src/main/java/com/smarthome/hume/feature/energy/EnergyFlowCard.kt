@@ -79,11 +79,18 @@ private const val VB_H = 430f
 // iOS FlowNodeView van 150 + offset 6 — day la sua rieng Android theo
 // lenh user, khong copy iOS.
 // Giam chieu cao node 190->175 (2026-10-01, user: the can doi hon).
+// 2026-11-18 (user 09:49): giam MANH chieu cao node — san NODE_H
+// 175->150 + thu icon/box/padding/chu trong node (xem FlowNode):
+// node cao nhat (Pin) 172,5 -> 146,1dp (-26,4dp, -15,3%), tinh theo
+// tong chieu cao cac thanh phan (padding doc 20->16, icon box 44->36,
+// khe icon->label 8->6, gia tri 16->14sp, kWh 14->12sp, badge/SOC gon
+// lai). San 150 van tren san noi dung moi o be rong dien thoai
+// thuong (150*maxW/380 ~ 130dp < 146,1dp) nen noi dung quyet dinh.
 private const val NODE_W = 150f
 private const val NODE_OUT = 6f // do rong them moi ben ra ngoai (don vi viewBox)
-private const val NODE_H = 175f
+private const val NODE_H = 150f
 
-// d = delta chieu cao moi hang node so voi thiet ke goc (NODE_H 175),
+// d = delta chieu cao moi hang node so voi thiet ke goc (NODE_H 150),
 // do FlowArea do duoc. Hang tren dich hub +d; hang duoi dich +2d vi ca hang
 // tren da cao them. d = 0 -> dung toa do goc.
 private fun prodPath(d: Float) = Path().apply {
@@ -280,7 +287,7 @@ private fun FlowArea(
 
         val pvM = subcompose("pv") {
         FlowNode(
-            icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(M3ETokens.Icon.Standard)) },
+            icon = { MsIcon(M3EIcons.SolarPower, null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp)) },
             tintBg = Color(0xFFF59E0B).copy(alpha = 0.16f),
             tintFg = Color(0xFFD97706),
             label = "Sản xuất", valueKw = flow.prodKw,
@@ -301,7 +308,7 @@ private fun FlowArea(
         val gridM = subcompose("grid") {
         val gridBadgeFg = if (flow.gridOn) LocalHumeExtraColors.current.success else Color(0xFFBA1A1A)
         FlowNode(
-            icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(M3ETokens.Icon.Standard)) },
+            icon = { MsIcon(M3EIcons.ElectricMeter, null, tint = Color(0xFF2F6EA3), modifier = Modifier.size(20.dp)) },
             tintBg = Color(0xFF2F6EA3).copy(alpha = 0.16f),
             tintFg = Color(0xFF2F6EA3),
             label = "Lưới điện", valueKw = flow.gridKw,
@@ -337,7 +344,7 @@ private fun FlowArea(
                     if (flow.gridOn) M3EIcons.Home else M3EIcons.Plug,
                     null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(M3ETokens.Icon.Standard),
+                    modifier = Modifier.size(20.dp),
                 )
             },
             tintBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
@@ -366,9 +373,10 @@ private fun FlowArea(
                 HorizontalBatteryIcon(
                     soc = soc.roundToInt(),
                     color = battFg,
+                    // Icon pin thu theo node (30x18 -> 26x16dp, 2026-11-18).
                     modifier = Modifier.size(
-                        width = M3ETokens.Icon.BatteryIconWidth,
-                        height = M3ETokens.Icon.BatteryIconHeight,
+                        width = 26.dp,
+                        height = 16.dp,
                     ),
                 )
             },
@@ -410,7 +418,9 @@ private fun FlowArea(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.height(6.dp))
+            // 2026-11-18: khe SOC -> thanh 6 -> 4dp, thanh SOC 6 -> 5dp
+            // (ha chieu cao node Pin, node cao nhat).
+            Spacer(Modifier.height(4.dp))
             // demo .flsocbar i{transition:width .6s ease}
             val socFrac by animateFloatAsState(
                 targetValue = (soc / 100).toFloat().coerceIn(0f, 1f),
@@ -420,14 +430,14 @@ private fun FlowArea(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
+                    .height(5.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(socFrac)
-                        .height(6.dp)
+                        .height(5.dp)
                         .clip(CircleShape)
                         .background(LocalHumeExtraColors.current.success),
                 )
@@ -642,19 +652,24 @@ private fun FlowNode(
             .clip(RoundedCornerShape(M3ETokens.Corner.SmallBox))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .pressMorph(pressedScale = 0.93f, onClick = onClick)
-            // iOS: .padding(.vertical, 10) — gon hon de chua them dong kWh
-            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.CardGap),
+            // iOS: .padding(.vertical, 10) — gon hon de chua them dong kWh.
+            // 2026-11-18: padding doc 10 -> 8dp (Spacing.Sm) de ha chieu
+            // cao node theo lenh user (node Pin 172,5 -> 146,1dp).
+            .padding(horizontal = M3ETokens.Spacing.Lg, vertical = M3ETokens.Spacing.Sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(M3ETokens.Icon.IconBox)
+                    // 2026-11-18: box icon 44 -> 36dp, icon 24 -> 20dp
+                    // (ti le icon/box 0,55 -> 0,56, giu nguyen) de ha
+                    // chieu cao node; box trong 28 -> 24dp theo.
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(tintBg),
             ) {
                 Box(
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(24.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     icon()
@@ -680,7 +695,8 @@ private fun FlowNode(
                 )
             }
         }
-        Spacer(Modifier.height(M3ETokens.Spacing.Sm))
+        // 2026-11-18: khe icon -> nhan 8 -> 6dp (ha chieu cao node).
+        Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 label,
@@ -710,7 +726,7 @@ private fun FlowNode(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(badgeBg)
-                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                        .padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
         }
@@ -722,9 +738,12 @@ private fun FlowNode(
             Text(
                 num,
                 style = MaterialTheme.typography.titleMedium.copy(
+                    // 2026-11-18: gia tri 16 -> 14sp (token Text.Body)
+                    // de ha chieu cao node; van Semibold + tnum.
+                    fontSize = M3ETokens.Text.Body.fontSize,
                     fontWeight = FontWeight.SemiBold,
                     fontFeatureSettings = "tnum",
-                    lineHeight = M3ETokens.Text.SectionTitle.lineHeight,
+                    lineHeight = M3ETokens.Text.Body.lineHeight,
                 ),
                 maxLines = 1,
                 softWrap = false,
@@ -788,11 +807,13 @@ private fun FlowNodeKwhRow(
         }
         Text(
             String.format(Locale.US, "%.1f", kwh),
-            // iOS mac dinh 14pt x 1.219 = 17.1 — Android dang ep 16sp,
-            // chat hon ca iOS (sua 16 -> 17.1, dong kWh cao them 1.1).
+            // 2026-11-18: gia tri kWh 14 -> 12sp (token Text.BodySmall)
+            // de ha chieu cao node; moi dong kWh tiet kiem 2,5dp
+            // (node Pin co 2 dong -> 5dp).
             style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = M3ETokens.Text.BodySmall.fontSize,
                 fontWeight = FontWeight.Medium,
-                lineHeight = M3ETokens.Text.Body.lineHeight,
+                lineHeight = M3ETokens.Text.BodySmall.lineHeight,
                 fontFeatureSettings = "tnum",
             ),
             color = cs.onSurfaceVariant,
@@ -861,7 +882,8 @@ private fun SegBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 5.dp),
+                // 2026-11-18: khe thanh -> legend 5 -> 4dp (ha chieu cao node).
+                .padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(M3ETokens.Spacing.Md),
         ) {
             items.forEach { (name, _) ->
