@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.smarthome.hume.core.ui.theme.M3ETokens
 
 /**
  * Switch M3E custom theo demo (.tgl):
@@ -66,17 +67,20 @@ fun M3ESwitch(
         label = "swPressSX",
     )
 
-    val shape = RoundedCornerShape(16.dp)
+    // B-03: bo 16dp -> Corner.Switch. Cac offset animation noi bo
+    // (knob 20/16dp, knobX 26/8dp, knobY 6/8dp) GIU NGUYEN literal:
+    // hinh hoc noi bo cua switch, khong co token.
+    val shape = RoundedCornerShape(M3ETokens.Corner.Switch)
     Box(
         modifier
-            .size(52.dp, 32.dp)
+            .size(M3ETokens.Switch.Width, M3ETokens.Switch.Height)
             .clip(shape)
             .background(
                 if (checked) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.surfaceContainerHighest // (fix 3) switch OFF: extra.surfaceHighest fallback Cam = nau khi seed Indigo/Lime; giong cac the inactive khac (surfaceContainerHighest)
             )
             .border(
-                2.dp,
+                M3ETokens.Border.Focused,
                 if (checked) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outline,
                 shape,
