@@ -77,6 +77,17 @@ fun CameraFeedCard(
     /** HLS URL cho fullscreen native player (port iOS LiveNativePlayer, #13); null = an nut. */
     hlsUrl: String? = null,
     onFullscreen: (() -> Unit)? = null,
+    /**
+     * false = chi ve vo the (nen gradient, khong feed/blur/badge).
+     * Popup camera truyen !closing: luc thu gon, feed (AsyncImage blur
+     * 16dp / MjpegView live) phai ve lai + do lai moi frame theo kich
+     * thuoc the dang thu nho — vuot ngan sach 8.3ms/frame o 120Hz nen
+     * animation rot frame, nhin nhu khung. Chi ve vo thi moi frame chi
+     * la 1 rounded rect, chay du 120Hz. (2026-11-19, user bao van khung
+     * sau fix delay 300ms — delay chi doi luc an, khong giam chi phi
+     * moi frame.)
+     */
+    showFeed: Boolean = true,
 ) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
@@ -125,26 +136,34 @@ fun CameraFeedCard(
                         M3ETokens.CameraColors.Gradient,
                     ),
                 )
-                .drawBehind {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.09f), Color.Transparent),
-                            center = Offset(size.width * 0.2f, size.height * 0.3f),
-                            radius = 120.dp.toPx(),
-                        ),
-                        radius = 120.dp.toPx(),
-                        center = Offset(size.width * 0.2f, size.height * 0.3f),
-                    )
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.06f), Color.Transparent),
-                            center = Offset(size.width * 0.75f, size.height * 0.7f),
-                            radius = 200.dp.toPx(),
-                        ),
-                        radius = 200.dp.toPx(),
-                        center = Offset(size.width * 0.75f, size.height * 0.7f),
-                    )
-                }
+                // (2026-11-19) showFeed=false (luc thu popup): bo 2 radial
+                // gradient — chung ve lai moi frame theo kich thuoc the.
+                .then(
+                    if (showFeed) {
+                        Modifier.drawBehind {
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(Color.White.copy(alpha = 0.09f), Color.Transparent),
+                                    center = Offset(size.width * 0.2f, size.height * 0.3f),
+                                    radius = 120.dp.toPx(),
+                                ),
+                                radius = 120.dp.toPx(),
+                                center = Offset(size.width * 0.2f, size.height * 0.3f),
+                            )
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(Color.White.copy(alpha = 0.06f), Color.Transparent),
+                                    center = Offset(size.width * 0.75f, size.height * 0.7f),
+                                    radius = 200.dp.toPx(),
+                                ),
+                                radius = 200.dp.toPx(),
+                                center = Offset(size.width * 0.75f, size.height * 0.7f),
+                            )
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
                 // demo scfeed keyboard: Enter/Space mo khoa
                 .focusable()
                 .onKeyEvent {
@@ -166,7 +185,9 @@ fun CameraFeedCard(
                     modifier = Modifier.size(64.dp),
                 )
             }
-            if (streaming) {
+            // (2026-11-19) showFeed=false (luc thu popup): khong ve feed —
+            // MJPEG/anh blur phai ve lai + do lai moi frame theo the dang thu.
+            if (showFeed && streaming) {
                 // Live that: MJPEG multipart stream (port iOS MjpegLiveView).
                 // Loi → mjpegFailed=true → tu roi ve snapshot 3s.
                 AndroidView(
@@ -180,7 +201,7 @@ fun CameraFeedCard(
                     onRelease = { it.stop() },
                     modifier = Modifier.fillMaxSize(),
                 )
-            } else {
+            } else if (showFeed) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(if (unlocked) "$url?t=$frame" else url)
@@ -204,6 +225,9 @@ fun CameraFeedCard(
                 )
             }
 
+            // (2026-11-19) showFeed=false (luc thu popup): an badge + tat
+            // blink (no recompose lien tuc trong luc animation thu).
+            if (showFeed) {
             // LIVE badge (demo .scfeed .live: top/left 10px, padding 5px 10px, radius 8px,
             // 10px/800/ls 1px, dot 7px blink 1.4s)
             Row(
@@ -270,8 +294,9 @@ fun CameraFeedCard(
                     }
                 }
             }
+            } // if (showFeed) — badge
 
-            if (!unlocked) {
+            if (showFeed && !unlocked) {
                 // unlock overlay (demo .scunlock: 13px/600, icon 34px, gap 8px)
                 Column(
                     Modifier

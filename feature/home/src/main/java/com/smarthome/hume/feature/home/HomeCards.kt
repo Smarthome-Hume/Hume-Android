@@ -805,6 +805,12 @@ fun CameraPopupOverlay(
                 unlocked = unlocked,
                 onUnlock = { unlocked = true },
                 mjpegUrl = secRepo.mjpegUrl(camKey),
+                // (2026-11-19) Luc thu (closing): chi ve vo the, khong ve
+                // feed/blur/badge — moi frame do lai + ve lai feed theo the
+                // dang thu nho vuot ngan sach 8.3ms o 120Hz nen animation
+                // rot frame, nhin nhu khung (user bao van khung sau fix
+                // delay 300ms). Vo the chi la 1 rounded rect, chay du 120Hz.
+                showFeed = !closing,
                 modifier = Modifier
                     .offset { localOffset }
                     .size(
