@@ -720,7 +720,11 @@ fun CameraPopupOverlay(
     var scrimOn by remember { mutableStateOf(false) }
     val scrimAlpha by animateFloatAsState(
         targetValue = if (closing) 0f else if (scrimOn) 0.55f else 0f,
-        animationSpec = tween(250, easing = M3EMotion.emphasized),
+        // (2026-11-19) 300ms = dung thoi gian an overlay o requestClose
+        // (giong iOS: bgOpacity ve 0 trong cung block animation 0.3s voi
+        // rect) — truoc day 250ms nen nen mo het truoc khi card thu xong,
+        // cang lo ro luc card dung yen o duoi spring.
+        animationSpec = tween(300, easing = M3EMotion.emphasized),
         label = "camScrim",
     )
 
@@ -753,10 +757,20 @@ fun CameraPopupOverlay(
             val closeRect = sourceRect ?: rectAnim.value.let { r ->
                 Rect(r.center.x - 20f, r.center.y - 20f, r.center.x + 20f, r.center.y + 20f)
             }
-            rectAnim.animateTo(
-                closeRect,
-                spring(stiffness = 439f, dampingRatio = 0.8f),
-            )
+            // Spring chay tren coroutine rieng — khong doi no settle het.
+            launch {
+                rectAnim.animateTo(
+                    closeRect,
+                    spring(stiffness = 439f, dampingRatio = 0.8f),
+                )
+            }
+            // (2026-11-19) An overlay sau 300ms CO DINH, giong iOS
+            // CameraOverlayView.dismiss (asyncAfter 0.3s): truoc day doi
+            // animateTo settle het moi onDismiss — spring damping 0.8 co
+            // duoi tiem can dai nen card dung yen gan nut 1 luc roi moi
+            // bien mat (khung nhu anh user gui 06:57). iOS an dung luc
+            // card gan toi nut nen nhin nhu 1 mach thu vao roi an.
+            delay(300)
             onDismiss()
         }
     }
